@@ -15,7 +15,10 @@ CREATE TABLE IF NOT EXISTS public.org
     name character varying(200) NOT NULL,
     description character varying(2048) NOT NULL,
     index_prefix character varying NOT NULL DEFAULT ''::character varying,
+    contact_id varchar NOT NULL,
     CONSTRAINT "org_pkey" PRIMARY KEY (id)
+    CONSTRAINT "contact_fkey" FOREIGN KEY (contact_id)
+      REFERENCES public."user" (edipi);
 );
 
 -- Role ID Sequence
