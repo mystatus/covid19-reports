@@ -9,7 +9,7 @@ import {
 import { Org } from '../org/org.model';
 import { User } from '../user/user.model';
 
-enum AccessRequestStatus {
+export enum AccessRequestStatus {
   Pending = 'pending',
   Rejected = 'rejected',
 }
