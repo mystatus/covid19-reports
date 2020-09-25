@@ -41,10 +41,6 @@ export const RequestAccessPage = () => {
     setAccessRequests(response.data);
   }
 
-  function handleEmailClick(org: Org) {
-    copyToClipboard(org.contact.email);
-  }
-
   function handleRequestAccess(org: Org) {
     async function requestAccess() {
       const response = await axios.post(`api/access-request/${org.id}`) as AxiosResponse<AccessRequest>;
@@ -55,15 +51,6 @@ export const RequestAccessPage = () => {
     }
 
     requestAccess();
-  }
-
-  function copyToClipboard(text: string) {
-    const dummy = document.createElement('input');
-    document.body.appendChild(dummy);
-    dummy.setAttribute('value', text);
-    dummy.select();
-    document.execCommand('copy');
-    document.body.removeChild(dummy);
   }
 
   useEffect(() => {
@@ -97,7 +84,7 @@ export const RequestAccessPage = () => {
                   <TableRow>
                     <TableCell>Group Name</TableCell>
                     <TableCell>Contact</TableCell>
-                    <TableCell style={{ paddingLeft: '28px' }}>Email</TableCell>
+                    <TableCell className={classes.emailHeader}>Email</TableCell>
                     <TableCell>Phone</TableCell>
                     <TableCell>Status</TableCell>
                   </TableRow>
@@ -110,11 +97,9 @@ export const RequestAccessPage = () => {
                       </TableCell>
                       <TableCell>{`${req.org.contact.first_name} ${req.org.contact.last_name}`}</TableCell>
                       <TableCell>
-                        <Tooltip title="Copy to clipboard" aria-label="copy email to clipboard">
-                          <IconButton onClick={() => handleEmailClick(req.org)} aria-label="email">
-                            <MailOutline />
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton href={`mailto:${req.org.contact.email}`} target="_blank" aria-label="email">
+                          <MailOutline />
+                        </IconButton>
                       </TableCell>
                       <TableCell>{req.org.contact.phone}</TableCell>
                       <TableCell>
@@ -175,7 +160,7 @@ export const RequestAccessPage = () => {
                 <TableRow>
                   <TableCell>Group Name</TableCell>
                   <TableCell>Contact</TableCell>
-                  <TableCell style={{ paddingLeft: '28px' }}>Email</TableCell>
+                  <TableCell className={classes.emailHeader}>Email</TableCell>
                   <TableCell>Phone</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
@@ -188,11 +173,9 @@ export const RequestAccessPage = () => {
                     </TableCell>
                     <TableCell>{`${org.contact.first_name} ${org.contact.last_name}`}</TableCell>
                     <TableCell>
-                      <Tooltip title="Copy to clipboard" aria-label="copy email to clipboard">
-                        <IconButton onClick={() => handleEmailClick(org)} aria-label="email">
-                          <MailOutline />
-                        </IconButton>
-                      </Tooltip>
+                      <IconButton href={`mailto:${org.contact.email}`} target="_blank" aria-label="email">
+                        <MailOutline />
+                      </IconButton>
                     </TableCell>
                     <TableCell>{org.contact.phone}</TableCell>
                     <TableCell>

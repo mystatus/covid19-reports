@@ -38,4 +38,7 @@ export default makeStyles((theme: Theme) => createStyles({
     display: 'flex',
     justifyContent: 'center',
   },
+  emailHeader: {
+    paddingLeft: '28px',
+  },
 }));
