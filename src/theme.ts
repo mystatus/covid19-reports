@@ -105,6 +105,9 @@ theme.props = {
     color: 'primary',
     variant: 'contained',
   },
+  MuiIconButton: {
+    color: 'primary',
+  },
   MuiTextField: {
     InputLabelProps: {
       shrink: true,

@@ -2,6 +2,9 @@ import { createStyles, Theme } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 
 export default makeStyles((theme: Theme) => createStyles({
+  paper: {
+    marginBottom: theme.spacing(3),
+  },
   infoCard: {
     backgroundColor: '#ECF4FC',
     marginBottom: theme.spacing(3),
@@ -34,5 +37,9 @@ export default makeStyles((theme: Theme) => createStyles({
   infoCardActions: {
     display: 'flex',
     justifyContent: 'center',
+  },
+  phoneColumnCell: {
+    borderLeft: 'solid 1px rgb(224, 224, 224)',
+    borderRight: 'solid 1px rgb(224, 224, 224)',
   },
 }));

@@ -37,6 +37,7 @@ class AccessRequestController {
       where: {
         id: orgId,
       },
+      relations: ['contact'],
     });
 
     if (!org) {

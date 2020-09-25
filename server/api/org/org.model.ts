@@ -24,7 +24,7 @@ export class Org extends BaseEntity {
   })
   index_prefix: string;
 
-  @ManyToOne(() => User, user => user.edipi)
+  @ManyToOne(() => User, user => user.edipi, { onDelete: 'RESTRICT' })
   @JoinColumn({
     name: 'contact_id',
   })

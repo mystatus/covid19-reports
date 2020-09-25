@@ -1,42 +1,138 @@
 import {
-  Button,
-  Card, CardActionArea, CardContent, Container, Paper, Snackbar, Table, TableBody, TableCell, TableContainer,
-  TableFooter, TableHead,
-  TablePagination,
-  TableRow, Toolbar, Typography
+  Button, Card, CardContent, Chip, Container, IconButton, Paper, Snackbar, Table, TableBody, TableCell, TableContainer,
+  TableHead, TableRow, Toolbar, Tooltip, Typography,
 } from '@material-ui/core';
+import { MailOutline, PersonAdd } from '@material-ui/icons';
 import { Alert } from '@material-ui/lab';
 import axios, { AxiosResponse } from 'axios';
 import React, { useEffect, useState } from 'react';
 import { UserData } from '../../../actions/userActions';
 import useStyles from './RequestAccess.styles';
 
-interface Group {
+interface Org {
+  id: number
   name: string
   contact: UserData
 }
 
+interface AccessRequest {
+  id: number
+  org: Org
+  request_date: Date
+  status: string
+}
+
 export const RequestAccessPage = () => {
   const classes = useStyles();
+  const [isLoading, setIsLoading] = useState(true);
   const [isAlertVisible, setIsAlertVisible] = useState(true);
   const [isInfoCardVisible, setIsInfoCardVisible] = useState(true);
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [orgs, setOrgs] = useState<Org[]>([]);
+  const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
 
-  async function fetchGroups() {
-    const response = await axios.get('api/org') as AxiosResponse<Group[]>;
-    setGroups(response.data);
+  async function fetchOrgs() {
+    const response = await axios.get('api/org') as AxiosResponse<Org[]>;
+    setOrgs(response.data);
+  }
+
+  async function fetchAccessRequests() {
+    const response = await axios.get('api/user/access-requests') as AxiosResponse<AccessRequest[]>;
+    console.log('accessRequests', response.data);
+    setAccessRequests(response.data);
+  }
+
+  function handleEmailClick(org: Org) {
+    copyToClipboard(org.contact.email);
+  }
+
+  function handleRequestAccess(org: Org) {
+    async function requestAccess() {
+      const response = await axios.post(`api/access-request/${org.id}`) as AxiosResponse<AccessRequest>;
+      setAccessRequests([
+        ...accessRequests,
+        response.data,
+      ]);
+    }
+
+    requestAccess();
+  }
+
+  function copyToClipboard(text: string){
+    var dummy = document.createElement('input');
+    document.body.appendChild(dummy);
+    dummy.setAttribute('value', text);
+    dummy.select();
+    document.execCommand('copy');
+    document.body.removeChild(dummy);
   }
 
   useEffect(() => {
-    fetchGroups();
+    async function fetchData() {
+      await Promise.all([
+        fetchOrgs(),
+        fetchAccessRequests(),
+      ]);
+
+      setIsLoading(false);
+    }
+
+    fetchData();
   }, []);
+
+  if (isLoading) {
+    return <></>;
+  }
 
   return (
     <>
       <Container maxWidth="md">
         <h1>My Groups</h1>
 
-        {isInfoCardVisible && (
+        {/* Requests */}
+        {accessRequests.length > 0 && (
+          <Paper className={classes.paper}>
+            <TableContainer>
+              <Table size="small" aria-label="access requests table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Group Name</TableCell>
+                    <TableCell>Contact</TableCell>
+                    <TableCell style={{ paddingLeft: '28px' }}>Email</TableCell>
+                    <TableCell>Phone</TableCell>
+                    <TableCell>Status</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {accessRequests.map(req => (
+                    <TableRow key={req.org.name}>
+                      <TableCell component="th" scope="row">
+                        {req.org.name}
+                      </TableCell>
+                      <TableCell>{`${req.org.contact.first_name} ${req.org.contact.last_name}`}</TableCell>
+                      <TableCell>
+                        <Tooltip title="Copy to clipboard" aria-label="copy email to clipboard">
+                          <IconButton onClick={() => handleEmailClick(req.org)} aria-label="email">
+                            <MailOutline />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell className={classes.phoneColumnCell}>{req.org.contact.phone}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={req.status}
+                          color="primary"
+                          variant="outlined"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        )}
+
+        {accessRequests.length === 0 && isInfoCardVisible && (
           <Card className={classes.infoCard} variant="outlined">
             <CardContent className={classes.infoCardContent}>
               <header>
@@ -52,7 +148,7 @@ export const RequestAccessPage = () => {
                   Find your group(s) using the table below.
                 </li>
                 <li>
-                  Use the “request access” button to send an access request to the group’s admin.
+                  Use the “request access” button to send an access request to the group’s contact.
                 </li>
                 <li>
                   Keep track of your access requests, status and joined groups via this screen.
@@ -66,33 +162,48 @@ export const RequestAccessPage = () => {
           </Card>
         )}
 
-        <Paper>
+        {/* All Groups */}
+        <Paper className={classes.paper}>
           <Toolbar>
             <Typography variant="h6" id="tableTitle" component="div">
               All Groups
             </Typography>
           </Toolbar>
           <TableContainer>
-            <Table aria-label="simple table">
+            <Table size="small" aria-label="all groups table">
               <TableHead>
                 <TableRow>
                   <TableCell>Group Name</TableCell>
-                  <TableCell>Admin</TableCell>
-                  <TableCell>Email</TableCell>
+                  <TableCell>Contact</TableCell>
+                  <TableCell style={{ paddingLeft: '28px' }}>Email</TableCell>
                   <TableCell>Phone</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {groups.map(group => (
-                  <TableRow key={group.name}>
+                {orgs.map(org => (
+                  <TableRow key={org.name}>
                     <TableCell component="th" scope="row">
-                      {group.name}
+                      {org.name}
                     </TableCell>
-                    <TableCell>{`${group.contact.first_name} ${group.contact.last_name}`}</TableCell>
-                    <TableCell>{group.contact.email}</TableCell>
-                    <TableCell>{group.contact.phone}</TableCell>
-                    <TableCell>Request Access</TableCell>
+                    <TableCell>{`${org.contact.first_name} ${org.contact.last_name}`}</TableCell>
+                    <TableCell>
+                      <Tooltip title="Copy to clipboard" aria-label="copy email to clipboard">
+                        <IconButton onClick={() => handleEmailClick(org)} aria-label="email">
+                          <MailOutline />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell className={classes.phoneColumnCell}>{org.contact.phone}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="text"
+                        startIcon={<PersonAdd />}
+                        onClick={() => handleRequestAccess(org)}
+                      >
+                        Request Access
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS public.org
     contact_id varchar NOT NULL,
     CONSTRAINT "org_pkey" PRIMARY KEY (id)
     CONSTRAINT "contact_fkey" FOREIGN KEY (contact_id)
-      REFERENCES public."user" (edipi);
+      REFERENCES public."user" (edipi)
+      ON DELETE RESTRICT;
 );
 
 -- Role ID Sequence
