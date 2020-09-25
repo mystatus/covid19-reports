@@ -38,8 +38,4 @@ export default makeStyles((theme: Theme) => createStyles({
     display: 'flex',
     justifyContent: 'center',
   },
-  phoneColumnCell: {
-    borderLeft: 'solid 1px rgb(224, 224, 224)',
-    borderRight: 'solid 1px rgb(224, 224, 224)',
-  },
 }));

@@ -57,8 +57,8 @@ export const RequestAccessPage = () => {
     requestAccess();
   }
 
-  function copyToClipboard(text: string){
-    var dummy = document.createElement('input');
+  function copyToClipboard(text: string) {
+    const dummy = document.createElement('input');
     document.body.appendChild(dummy);
     dummy.setAttribute('value', text);
     dummy.select();
@@ -116,7 +116,7 @@ export const RequestAccessPage = () => {
                           </IconButton>
                         </Tooltip>
                       </TableCell>
-                      <TableCell className={classes.phoneColumnCell}>{req.org.contact.phone}</TableCell>
+                      <TableCell>{req.org.contact.phone}</TableCell>
                       <TableCell>
                         <Chip
                           label={req.status}
@@ -194,7 +194,7 @@ export const RequestAccessPage = () => {
                         </IconButton>
                       </Tooltip>
                     </TableCell>
-                    <TableCell className={classes.phoneColumnCell}>{org.contact.phone}</TableCell>
+                    <TableCell>{org.contact.phone}</TableCell>
                     <TableCell>
                       <Button
                         variant="text"
