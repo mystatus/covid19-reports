@@ -18,7 +18,7 @@ interface Org {
 interface AccessRequest {
   id: number
   org: Org
-  request_date: Date
+  requestDate: Date
   status: string
 }
 
@@ -95,7 +95,7 @@ export const RequestAccessPage = () => {
                       <TableCell component="th" scope="row">
                         {req.org.name}
                       </TableCell>
-                      <TableCell>{`${req.org.contact.first_name} ${req.org.contact.last_name}`}</TableCell>
+                      <TableCell>{`${req.org.contact.firstName} ${req.org.contact.lastName}`}</TableCell>
                       <TableCell>
                         <IconButton href={`mailto:${req.org.contact.email}`} target="_blank" aria-label="email">
                           <MailOutline />
@@ -171,7 +171,7 @@ export const RequestAccessPage = () => {
                     <TableCell component="th" scope="row">
                       {org.name}
                     </TableCell>
-                    <TableCell>{`${org.contact.first_name} ${org.contact.last_name}`}</TableCell>
+                    <TableCell>{`${org.contact.firstName} ${org.contact.lastName}`}</TableCell>
                     <TableCell>
                       <IconButton href={`mailto:${org.contact.email}`} target="_blank" aria-label="email">
                         <MailOutline />
