@@ -9,7 +9,7 @@ import { getOptionalParam, getRequiredParam } from '../../util/util';
 class RosterController {
 
   async getRosterTemplate(req: ApiRequest, res: Response) {
-    const file = `${__dirname}/uploads/roster_template.csv`;
+    const file = `${__dirname}/uploads/roster-template.csv`;
     res.download(file);
   }
 

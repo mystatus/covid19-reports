@@ -1,4 +1,4 @@
-import { User, UserData } from '../actions/userActions';
+import { User, UserData } from '../actions/user.actions';
 
 export const userInitialState: UserState = {
   edipi: '',

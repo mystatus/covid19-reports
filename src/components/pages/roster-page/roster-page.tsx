@@ -8,9 +8,9 @@ import KeyboardArrowRight from '@material-ui/icons/KeyboardArrowRight';
 import LastPageIcon from '@material-ui/icons/LastPage';
 import React, { ChangeEvent, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Roster } from '../../../actions/rosterActions';
-import useStyles from './RosterPage.styles';
-import { UserState } from '../../../reducers/userReducer';
+import { Roster } from '../../../actions/roster.actions';
+import useStyles from './roster-page.styles';
+import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
 
 interface RosterEntry {

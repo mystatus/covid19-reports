@@ -1,13 +1,13 @@
 import {
   Button, Card, CardContent, Chip, Container, IconButton, Paper, Snackbar, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Toolbar, Tooltip, Typography,
+  TableHead, TableRow, Toolbar, Typography,
 } from '@material-ui/core';
 import { MailOutline, PersonAdd } from '@material-ui/icons';
 import { Alert } from '@material-ui/lab';
 import axios, { AxiosResponse } from 'axios';
 import React, { useEffect, useState } from 'react';
-import { UserData } from '../../../actions/userActions';
-import useStyles from './RequestAccess.styles';
+import { UserData } from '../../../actions/user.actions';
+import useStyles from './request-access.styles';
 
 interface Org {
   id: number

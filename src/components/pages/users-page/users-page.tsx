@@ -20,8 +20,8 @@ import { useSelector } from 'react-redux';
 import MailOutlineIcon from '@material-ui/icons/MailOutline';
 import CheckIcon from '@material-ui/icons/Check';
 import axios from 'axios';
-import useStyles from './UsersPage.styles';
-import { UserState } from '../../../reducers/userReducer';
+import useStyles from './users-page.styles';
+import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
 
 interface UserRole {
