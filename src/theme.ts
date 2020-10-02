@@ -9,6 +9,15 @@ const theme = createMuiTheme({
       main: '#005ea2',
       light: '#73B3E7',
     },
+    warning: {
+      main: '#C25D00',
+    },
+    error: {
+      main: '#E41D3D',
+    },
+    success: {
+      main: '#00A91C',
+    },
   },
   typography: {
     h1: {
@@ -28,6 +37,9 @@ theme.overrides = {
     '@global': {
       body: {
         backgroundColor: 'rgb(240, 240, 240)',
+      },
+      a: {
+        textDecoration: 'none',
       },
     },
   },
@@ -96,6 +108,20 @@ theme.overrides = {
         paddingLeft: theme.spacing(2),
         paddingRight: theme.spacing(2),
       },
+    },
+  },
+  MuiMenuItem: {
+    root: {
+      '& a': {
+        color: 'inherit',
+      },
+    },
+  },
+  MuiChip: {
+    root: {
+      borderRadius: '4px',
+      fontWeight: 700,
+      textTransform: 'uppercase',
     },
   },
 };

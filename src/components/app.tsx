@@ -80,6 +80,9 @@ export const App = () => {
             <Route path="/users">
               <UsersPage />
             </Route>
+            <Route path="/request-access">
+              <RequestAccessPage />
+            </Route>
             <Route path="/*">
               <Redirect to="/home" />
             </Route>
