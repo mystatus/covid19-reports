@@ -25,7 +25,13 @@ const theme = createMuiTheme({
       fontWeight: 700,
       lineHeight: '48px',
     },
+    h2: {
+      fontSize: '33px',
+      fontWeight: 700,
+      lineHeight: '48px',
+    },
     subtitle1: {
+      fontSize: '18px',
       fontWeight: 400,
       lineHeight: '29px',
     },
@@ -64,7 +70,10 @@ theme.overrides = {
   },
   MuiCardContent: {
     root: {
-      padding: theme.spacing(3),
+      padding: theme.spacing(4),
+
+      '& header > *:nth-child(1)': theme.typography.h2,
+      '& header p': theme.typography.subtitle1,
     },
   },
   MuiCardActions: {

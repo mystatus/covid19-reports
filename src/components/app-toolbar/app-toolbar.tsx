@@ -64,7 +64,7 @@ export const AppToolbar = () => {
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
           >
             <MenuItem>
-              <Link to="/request-access" onClick={() => setUserMenuAnchor(null)}>
+              <Link to="/groups" onClick={() => setUserMenuAnchor(null)}>
                 My Groups
               </Link>
             </MenuItem>

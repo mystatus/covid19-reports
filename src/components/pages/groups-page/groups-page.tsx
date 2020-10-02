@@ -1,5 +1,7 @@
 import {
-  Button, Card, CardContent, Container, IconButton, Menu, MenuItem, Paper, Snackbar, Table, TableBody, TableCell,
+  Button, Card, CardActionArea, CardActions, CardContent, Container, IconButton, Menu, MenuItem, Paper, Snackbar, Table,
+  TableBody,
+  TableCell,
   TableContainer, TableHead, TableRow, Toolbar, Typography,
 } from '@material-ui/core';
 import { MailOutline, PersonAdd, MoreVert } from '@material-ui/icons';
@@ -10,10 +12,10 @@ import { useSelector } from 'react-redux';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
 import { StatusChip } from '../../status-chip/status-chip';
-import useStyles from './request-access.styles';
+import useStyles from './groups-page.styles';
 import { ApiAccessRequest, ApiOrg } from '../../../models/api-response';
 
-export const RequestAccessPage = () => {
+export const GroupsPage = () => {
   const classes = useStyles();
   const user = useSelector<AppState, UserState>(state => state.user);
   const [isLoading, setIsLoading] = useState(true);
@@ -178,7 +180,9 @@ export const RequestAccessPage = () => {
   return (
     <>
       <Container maxWidth="md">
-        <h1>Groups</h1>
+        <header>
+          <h1>Groups</h1>
+        </header>
 
         {/* My Groups */}
         {(myOrgs.length > 0) && (
@@ -268,25 +272,42 @@ export const RequestAccessPage = () => {
                 <div>You are not a member of any groups.</div>
                 <p>
                   In order to use StatusEngine and view data, you must first belong to a group. Joining a group is easy.
-                  Simply follow the these three steps and you’ll be on your way in no time!
+                  Simply follow these three steps and you’ll be on your way in no time!
                 </p>
               </header>
 
-              <ol>
-                <li>
-                  Find your group(s) using the table below.
-                </li>
-                <li>
-                  Use the “request access” button to send an access request to the group’s contact.
-                </li>
-                <li>
-                  Keep track of your access requests, status and joined groups via this screen.
-                </li>
-              </ol>
+              <div className={classes.infoCardStepList}>
+                <div className={classes.infoCardStep}>
+                  <div>
+                    <span className={classes.infoCardStepNumber}>
+                      1
+                    </span>
+                  </div>
+                  <div>Find your group(s) using the table below.</div>
+                </div>
+                <div className={classes.infoCardStep}>
+                  <div>
+                    <span className={classes.infoCardStepNumber}>
+                      2
+                    </span>
+                  </div>
+                  <div>Use the Request Access button to send an access request to the group’s contact.</div>
+                </div>
+                <div className={classes.infoCardStep}>
+                  <div>
+                    <span className={classes.infoCardStepNumber}>
+                      3
+                    </span>
+                  </div>
+                  <div>Keep track of your access requests, status, and joined groups via this page.</div>
+                </div>
+              </div>
 
-              <Button size="large" onClick={() => setIsInfoCardVisible(false)}>
-                Ok, I got it
-              </Button>
+              <CardActions>
+                <Button size="large" onClick={() => setIsInfoCardVisible(false)}>
+                  Ok, I got it
+                </Button>
+              </CardActions>
             </CardContent>
           </Card>
         )}
