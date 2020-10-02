@@ -1,8 +1,6 @@
 import {
-  Button, Card, CardActionArea, CardActions, CardContent, Container, IconButton, Menu, MenuItem, Paper, Snackbar, Table,
-  TableBody,
-  TableCell,
-  TableContainer, TableHead, TableRow, Toolbar, Typography,
+  Button, Card, CardActions, CardContent, Container, IconButton, Menu, MenuItem, Paper, Snackbar, Table, TableBody,
+  TableCell, TableContainer, TableHead, TableRow, Toolbar, Typography,
 } from '@material-ui/core';
 import { MailOutline, PersonAdd, MoreVert } from '@material-ui/icons';
 import { Alert } from '@material-ui/lab';
@@ -38,7 +36,7 @@ export const GroupsPage = () => {
   }
 
   function handleRequestAccessClick(org: ApiOrg) {
-    requestAccess(org);
+    requestAccess(org).then();
   }
 
   async function requestAccess(org: ApiOrg) {
@@ -69,12 +67,12 @@ export const GroupsPage = () => {
 
   function handleCancelRequestClick(org: MyOrg) {
     closeMyOrgMenu();
-    cancelRequest(org);
+    cancelRequest(org).then();
   }
 
   function handleResubmitRequestClick(org: MyOrg) {
     closeMyOrgMenu();
-    requestAccess(org);
+    requestAccess(org).then();
   }
 
   function getStatusLabel(org: MyOrg) {
@@ -145,7 +143,7 @@ export const GroupsPage = () => {
       setIsLoading(false);
     }
 
-    fetchData();
+    fetchData().then();
   }, []);
 
   useEffect(() => {
