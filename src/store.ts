@@ -6,12 +6,12 @@ import { appFrameInitialState, appFrameReducer, AppFrameState } from './reducers
 import { UserState, userInitialState, userReducer } from './reducers/user.reducer';
 
 export interface AppState {
-  userState: UserState
+  user: UserState
   appFrame: AppFrameState
 }
 
 export const initialState: AppState = {
-  userState: userInitialState,
+  user: userInitialState,
   appFrame: appFrameInitialState,
 };
 
@@ -24,7 +24,7 @@ const composeEnhancers = typeof window === 'object' && (window as any).__REDUX_D
 
 export default createStore(
   combineReducers({
-    userState: userReducer,
+    user: userReducer,
     appFrame: appFrameReducer,
   }),
   initialState,

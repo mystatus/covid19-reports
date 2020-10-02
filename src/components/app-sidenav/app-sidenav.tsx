@@ -6,7 +6,6 @@ import BarChartIcon from '@material-ui/icons/BarChart';
 import HomeIcon from '@material-ui/icons/Home';
 import ListAltIcon from '@material-ui/icons/ListAlt';
 import PeopleIcon from '@material-ui/icons/People';
-import SecurityIcon from '@material-ui/icons/Security';
 import clsx from 'clsx';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
@@ -17,7 +16,7 @@ import useStyles from './app-sidenav.styles';
 
 export const AppSidenav = () => {
   const classes = useStyles();
-  const userState = useSelector<AppState, UserState>(state => state.userState);
+  const user = useSelector<AppState, UserState>(state => state.user);
   const appFrame = useSelector<AppState, AppFrameState>(state => state.appFrame);
 
   return (
@@ -43,7 +42,7 @@ export const AppSidenav = () => {
               <ListItemText primary="Home" />
             </ListItem>
           </Link>
-          <a href={`/dashboard?orgId=${userState.activeRole?.org?.id}`}>
+          <a href={`/dashboard?orgId=${user.activeRole?.org?.id}`}>
             <ListItem button key="Analytics">
               <ListItemIcon><BarChartIcon /></ListItemIcon>
               <ListItemText primary="Analytics" />
@@ -52,7 +51,7 @@ export const AppSidenav = () => {
         </List>
         <Divider />
         <List>
-          {userState.activeRole?.canManageGroup && (
+          {user.activeRole?.canManageGroup && (
             <Link to="/users">
               <ListItem button key="Users">
                 <ListItemIcon><PeopleIcon /></ListItemIcon>
@@ -61,7 +60,7 @@ export const AppSidenav = () => {
             </Link>
           )}
 
-          {userState.activeRole?.canManageRoster && (
+          {user.activeRole?.canManageRoster && (
             <Link to="/roster">
               <ListItem button key="Roster">
                 <ListItemIcon><ListAltIcon /></ListItemIcon>

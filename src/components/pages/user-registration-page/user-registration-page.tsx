@@ -15,7 +15,7 @@ import services from '../../../data/services';
 export const UserRegistrationPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
-  const userState = useSelector<AppState, UserState>(state => state.userState);
+  const user = useSelector<AppState, UserState>(state => state.user);
   const [inputData, setInputData] = useState<UserRegisterData>({
     firstName: '',
     lastName: '',
@@ -101,7 +101,7 @@ export const UserRegistrationPage = () => {
               <TextField
                 id="edipi"
                 label="EDIPI"
-                value={userState.user?.edipi}
+                value={user.edipi}
                 required
                 disabled
               />

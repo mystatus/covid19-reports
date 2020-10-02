@@ -12,7 +12,7 @@ import logoImage from '../../media/images/logo.png';
 export const AppToolbar = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
-  const userState = useSelector<AppState, UserState>(state => state.userState);
+  const user = useSelector<AppState, UserState>(state => state.user);
 
   function handleOrgChanged(event: React.ChangeEvent<{ value: unknown }>) {
     dispatch(User.changeOrg(event.target.value as number));
@@ -27,12 +27,12 @@ export const AppToolbar = () => {
         <Toolbar>
           <img className={classes.logo} src={logoImage} alt="StatusEngine Logo" height="35" />
 
-          {userState.activeRole && userState.user?.roles && userState.user.roles.length > 1 && (
+          {user.activeRole && user.roles && user.roles.length > 1 && (
             <Select
               className={classes.orgSelect}
               labelId="org-select-label"
               id="org-select"
-              value={userState.activeRole.org?.id}
+              value={user.activeRole.org?.id}
               onChange={handleOrgChanged}
               inputProps={{
                 classes: {
@@ -40,7 +40,7 @@ export const AppToolbar = () => {
                 },
               }}
             >
-              {userState.user.roles.map(role => (
+              {user.roles.map(role => (
                 <MenuItem value={role.org?.id} key={role.org?.id}>{role.org?.name}</MenuItem>
               ))}
             </Select>

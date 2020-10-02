@@ -40,7 +40,7 @@ export const UsersPage = () => {
   const [accessRequests, setAccessRequests] = useState<AccessRequestRow[]>([]);
   const [alert, setAlert] = useState({ open: false, message: '', title: '' });
 
-  const orgId = useSelector<AppState, UserState>(state => state.userState).activeRole?.org?.id;
+  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
 
   async function initializeTable() {
     const users = (await axios.get(`api/user/${orgId}`)).data as ApiUser[];

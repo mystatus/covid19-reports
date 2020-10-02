@@ -2,10 +2,19 @@ import { User } from '../actions/user.actions';
 import { ApiRole, ApiUser } from '../models/api-response';
 
 export const userInitialState: UserState = {
-  user: undefined,
+  edipi: '',
+  firstName: '',
+  lastName: '',
+  phone: '',
+  service: '',
+  email: '',
+  rootAdmin: false,
+  isRegistered: false,
+  roles: [],
   activeRole: undefined,
   isLoggedIn: false,
 };
+
 
 export function userReducer(state = userInitialState, action: any): UserState {
   switch (action.type) {
@@ -29,7 +38,7 @@ export function userReducer(state = userInitialState, action: any): UserState {
       return userInitialState;
     case User.Actions.ChangeOrg.type: {
       const orgId = (action as User.Actions.ChangeOrg).payload.orgId;
-      const activeRole = state.user?.roles?.find(role => role.org?.id === orgId);
+      const activeRole = state.roles?.find(role => role.org?.id === orgId);
       return {
         ...state,
         activeRole,
@@ -45,7 +54,7 @@ function loggedInState(user: ApiUser): Partial<UserState> {
     user.roles = [];
   }
   return {
-    user,
+    ...user,
     activeRole: getDefaultActiveRole(user.roles),
     isLoggedIn: true,
   };
@@ -55,8 +64,7 @@ function getDefaultActiveRole(roles: ApiRole[]) {
   return roles.length > 0 ? roles[0] : undefined;
 }
 
-export interface UserState {
-  user: ApiUser | undefined,
+export interface UserState extends ApiUser {
   activeRole: ApiRole | undefined
   isLoggedIn: boolean
 }
