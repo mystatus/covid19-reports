@@ -82,7 +82,7 @@ export const GroupsPage = () => {
       return org.accessRequest.status;
     }
 
-    const role = user.roles!.find(r => r.org!.id === r.id);
+    const role = user.roles!.find(r => r.org!.id === org.id);
     return role!.name;
   }
 
