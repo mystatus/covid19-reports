@@ -18,7 +18,7 @@ import { UserRegistrationPage } from './pages/user-registration-page/user-regist
 import { UsersPage } from './pages/users-page/users-page';
 
 export const App = () => {
-  const user = useSelector<AppState, UserState>(state => state.user);
+  const userState = useSelector<AppState, UserState>(state => state.userState);
   const appFrame = useSelector<AppState, AppFrameState>(state => state.appFrame);
   const dispatch = useDispatch();
   const classes = useStyles();
@@ -28,12 +28,12 @@ export const App = () => {
   }, [dispatch]);
 
   function routes() {
-    if (!user.isLoggedIn) {
+    if (!userState.isLoggedIn) {
       // TODO: Show spinner here.
       return <></>;
     }
 
-    if (!user.isRegistered) {
+    if (!userState.user?.isRegistered) {
       return (
         <Switch>
           <Route path="/register">
@@ -44,7 +44,7 @@ export const App = () => {
       );
     }
 
-    if (!user.activeRole) {
+    if (!userState.activeRole) {
       return (
         <>
           <AppToolbar />

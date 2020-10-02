@@ -15,7 +15,7 @@ import services from '../../../data/services';
 export const UserRegistrationPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
-  const user = useSelector<AppState, UserState>(state => state.user);
+  const userState = useSelector<AppState, UserState>(state => state.userState);
   const [inputData, setInputData] = useState<UserRegisterData>({
     firstName: '',
     lastName: '',
@@ -36,14 +36,13 @@ export const UserRegistrationPage = () => {
   }
 
   function isCreateAccountButtonDisabled() {
-    const disabled = (
+    return (
       !inputData.firstName
       || !inputData.lastName
       || !inputData.phone
       || !inputData.service
       || !inputData.email
     );
-    return disabled;
   }
 
   return (
@@ -102,7 +101,7 @@ export const UserRegistrationPage = () => {
               <TextField
                 id="edipi"
                 label="EDIPI"
-                value={user.edipi}
+                value={userState.user?.edipi}
                 required
                 disabled
               />

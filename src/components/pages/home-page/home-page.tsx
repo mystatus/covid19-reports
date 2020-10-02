@@ -10,7 +10,7 @@ import useStyles from './home-page.styles';
 import welcomeImage from '../../../media/images/welcome-image.png';
 
 export const HomePage = () => {
-  const user = useSelector<AppState, UserState>(state => state.user);
+  const userState = useSelector<AppState, UserState>(state => state.userState);
   const classes = useStyles();
 
   return (
@@ -72,7 +72,7 @@ export const HomePage = () => {
           </Grid>
 
           {/* Analytics & Reporting */}
-          {user.activeRole && (
+          {userState.activeRole && (
             <Grid item xs={6}>
               <Card className={classes.card}>
                 <CardContent>
@@ -87,7 +87,7 @@ export const HomePage = () => {
                 </CardContent>
 
                 <CardActions>
-                  <a href={`/dashboard?orgId=${user.activeRole.org.id}`}>
+                  <a href={`/dashboard?orgId=${userState.activeRole.org?.id}`}>
                     <Button>
                       View Analytics
                     </Button>
@@ -98,7 +98,7 @@ export const HomePage = () => {
           )}
 
           {/* Roster Management */}
-          {user.activeRole && user.activeRole.canManageRoster && (
+          {userState.activeRole && userState.activeRole.canManageRoster && (
             <Grid item xs={6}>
               <Card className={classes.card}>
                 <CardContent>
