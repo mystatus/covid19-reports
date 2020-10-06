@@ -10,7 +10,7 @@ export class User extends BaseEntity {
   @PrimaryColumn({
     length: 10,
   })
-  edipi: string;
+  edipi!: string;
 
   @ManyToMany(() => Role, { cascade: true, onDelete: 'RESTRICT' })
   @JoinTable({
@@ -24,37 +24,37 @@ export class User extends BaseEntity {
       referencedColumnName: 'id',
     },
   })
-  roles: Role[];
+  roles!: Role[];
 
   @Column()
-  firstName: string;
+  firstName!: string;
 
   @Column()
-  lastName: string;
+  lastName!: string;
 
   @Column()
-  phone: string;
+  phone!: string;
 
   @Column()
-  email: string;
+  email!: string;
 
   @Column()
-  service: string;
+  service!: string;
 
   @Column({
     default: true,
   })
-  enabled: boolean;
+  enabled?: boolean;
 
   @Column({
     default: false,
   })
-  rootAdmin: boolean;
+  rootAdmin?: boolean;
 
   @Column({
     default: false,
   })
-  isRegistered: boolean;
+  isRegistered?: boolean;
 
   getKibanaIndex(role: Role) {
     if (this.rootAdmin) {

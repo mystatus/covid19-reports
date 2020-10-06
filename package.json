@@ -77,11 +77,13 @@
     "typescript": "^3.7.5"
   },
   "scripts": {
+    "prestart": "./prestart.sh",
     "start": "./run-prod.sh",
     "dev": "./run-dev.sh",
     "build": "./build-prod.sh",
     "test": "./test.sh",
-    "seed-dev": "./seed-dev.sh"
+    "seed-dev": "./seed-dev.sh",
+    "typeorm": "ts-node --project ./server/tsconfig.json ./node_modules/.bin/typeorm"
   },
   "eslintConfig": {
     "extends": "react-app"
