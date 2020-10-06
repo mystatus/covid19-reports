@@ -15,12 +15,13 @@ Ensure the following packages are installed.
 
 ### Development
 
-- Create a file named `.env` at project root with the following in it:
+- Create a file named `.env` at project root with the following in it. You can change the `USER_EDIPI` value to any
+number greater than 1 to create a new user.
 ```
-USER_EDIPI=2
+USER_EDIPI=1
 ```
 
-- Navigate to the project root and run the following:
+- Navigate to the project root and run the following.
 ```
 npm install
 npm run seed-dev
