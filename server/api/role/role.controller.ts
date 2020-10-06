@@ -4,6 +4,7 @@ import { ApiRequest, OrgParam, OrgRoleParams } from '../index';
 import { Role } from './role.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
 import { RosterPIIColumns } from '../roster/roster.model';
+import { Workspace } from '../workspace/workspace.model';
 
 class RoleController {
 
@@ -13,6 +14,7 @@ class RoleController {
     }
 
     const roles = await Role.find({
+      relations: ['workspace'],
       where: {
         org: req.appOrg.id,
       },
@@ -41,9 +43,14 @@ class RoleController {
       throw new BadRequestError('An index prefix must be supplied when adding a role.');
     }
 
+    if (!req.body.workspaceId) {
+      throw new BadRequestError('A workspace must be supplied when adding a role.');
+    }
+
+
     const role = new Role();
     role.org = req.appOrg;
-    setRoleFromBody(role, req.body);
+    await setRoleFromBody(req.appOrg.id, role, req.body);
 
     const newRole = await role.save();
 
@@ -58,6 +65,7 @@ class RoleController {
     const roleId = parseInt(req.params.roleId);
 
     const role = await Role.findOne({
+      relations: ['workspace'],
       where: {
         id: roleId,
         org: req.appOrg.id,
@@ -121,7 +129,7 @@ class RoleController {
       throw new NotFoundError('Role could not be found.');
     }
 
-    setRoleFromBody(role, req.body);
+    await setRoleFromBody(req.appOrg.id, role, req.body);
 
     const updatedRole = await role.save();
 
@@ -130,7 +138,7 @@ class RoleController {
 
 }
 
-function setRoleFromBody(role: Role, body: RoleBody) {
+async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
   if (body.name != null) {
     role.name = body.name;
   }
@@ -139,6 +147,20 @@ function setRoleFromBody(role: Role, body: RoleBody) {
   }
   if (body.indexPrefix != null) {
     role.indexPrefix = body.indexPrefix;
+  }
+  if (body.workspaceId != null) {
+    const workspace = await Workspace.findOne({
+      where: {
+        id: body.workspaceId,
+        org: orgId,
+      },
+    });
+
+    if (!workspace) {
+      throw new NotFoundError('Workspace could not be found.');
+    }
+
+    role.workspace = workspace;
   }
   if (body.allowedRosterColumns != null) {
     // TODO: This validation logic could be shared with the client-side parsing functionality
@@ -185,6 +207,7 @@ type RoleBody = {
   name?: string
   description?: string
   indexPrefix?: string
+  workspaceId?: number
   allowedRosterColumns?: string
   allowedNotificationEvents?: string
   canManageGroup?: boolean

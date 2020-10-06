@@ -2,6 +2,7 @@ import {
   Entity, PrimaryGeneratedColumn, Column, BaseEntity, JoinColumn, ManyToOne,
 } from 'typeorm';
 import { Org } from '../org/org.model';
+import { Workspace } from '../workspace/workspace.model';
 
 @Entity()
 export class Role extends BaseEntity {
@@ -27,6 +28,12 @@ export class Role extends BaseEntity {
     name: 'org_id',
   })
   org?: Org;
+
+  @ManyToOne(() => Workspace, { cascade: true, onDelete: 'RESTRICT', nullable: true })
+  @JoinColumn({
+    name: 'workspace_id',
+  })
+  workspace?: Workspace;
 
   @Column({
     default: '',

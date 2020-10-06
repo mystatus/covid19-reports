@@ -62,3 +62,19 @@ export interface ApiRosterEntry {
   romRelease?: string
   lastReported?: Date,
 }
+
+export interface ApiWorkspaceTemplate {
+  id: number,
+  name: string,
+  description: string,
+  pii: boolean,
+}
+
+export interface ApiWorkspace {
+  id: number,
+  name: string,
+  description: string,
+  org?: ApiOrg,
+  workspaceTemplate?: ApiWorkspaceTemplate,
+  pii: boolean,
+}

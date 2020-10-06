@@ -108,7 +108,6 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
         await axios.post(`api/role/${orgId}`, body);
       }
     } catch (error) {
-      console.log(error, onError);
       if (onError) {
         let message = 'Internal Server Error';
         if (error.response?.data?.errors && error.response.data.errors.length > 0) {
