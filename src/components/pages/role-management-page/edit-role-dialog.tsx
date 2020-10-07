@@ -77,8 +77,20 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
     });
   };
 
+  const filterAllowedRosterColumns = (viewPII: boolean, viewMuster: boolean) => {
+    Object.keys(allowedRosterColumns).forEach(column => {
+      const allowed = columnAllowed(column, viewPII);
+      const previousValue = Reflect.get(allowedRosterColumns, column);
+      Reflect.set(allowedRosterColumns, column, previousValue && allowed);
+    });
+    allowedRosterColumns.lastReported = viewMuster;
+  };
+
   const onSave = async () => {
     setFormDisabled(true);
+    const viewPII = canManageGroup || canViewPII;
+    const viewMuster = canManageGroup || canViewMuster;
+    filterAllowedRosterColumns(viewPII, viewMuster);
     const body = {
       name,
       description,
@@ -89,10 +101,9 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
       canManageRoster: canManageGroup || canManageRoster,
       canManageWorkspace: canManageGroup || canManageWorkspace,
       canViewRoster: canManageGroup || canManageRoster || canViewRoster,
-      canViewMuster: canManageGroup || canViewMuster,
-      canViewPII: canManageGroup || canViewPII,
+      canViewMuster: viewMuster,
+      canViewPII: viewPII,
     };
-    console.log(body, allowedRosterColumns, allowedNotificationEvents);
     try {
       if (existingRole) {
         await axios.put(`api/role/${orgId}/${role!.id}`, body);
@@ -103,10 +114,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
       console.log(error, onError);
       if (onError) {
         let message = 'Internal Server Error';
-        if (error.response
-          && error.response.data
-          && error.response.data.errors
-          && error.response.data.errors.length > 0) {
+        if (error.response?.data?.errors && error.response.data.errors.length > 0) {
           message = error.response.data.errors[0].message;
         }
         onError(message);
@@ -123,21 +131,23 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
     return !formDisabled && name.length > 0 && description.length > 0;
   };
 
-  const columnAllowed = (column: string) => {
-    return !Reflect.get(RosterPIIColumns, column) || canViewPII;
+  const columnAllowed = (column: string, viewPII: boolean) => {
+    return !Reflect.get(RosterPIIColumns, column) || viewPII;
   };
 
   const buildRosterColumnRows = () => {
-    return Object.keys(allowedRosterColumns).map(column => (
-      <TableRow>
+    const viewPII = canManageGroup || canViewPII;
+    const columns = Object.keys(allowedRosterColumns).filter(column => column !== 'lastReported');
+    return columns.map(column => (
+      <TableRow key={column}>
         <TableCell className={classes.textCell}>
           {Reflect.get(RosterColumnDisplayName, column) || 'Unknown'}
         </TableCell>
         <TableCell className={classes.iconCell}>
           <Checkbox
             color="primary"
-            disabled={formDisabled || !columnAllowed(column)}
-            checked={Reflect.get(allowedRosterColumns, column) && columnAllowed(column)}
+            disabled={formDisabled || !columnAllowed(column, viewPII)}
+            checked={Reflect.get(allowedRosterColumns, column) && columnAllowed(column, viewPII)}
             onChange={onRosterColumnChanged(column)}
           />
         </TableCell>
@@ -147,7 +157,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
 
   const buildNotificationEventRows = () => {
     return Object.keys(allowedNotificationEvents).map(event => (
-      <TableRow>
+      <TableRow key={event}>
         <TableCell className={classes.textCell}>
           {Reflect.get(NotificationEventDisplayName, event) || 'Unknown'}
         </TableCell>

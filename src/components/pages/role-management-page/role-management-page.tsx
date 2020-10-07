@@ -107,10 +107,7 @@ export const RoleManagementPage = () => {
       await axios.delete(`api/role/${orgId}/${roles[selectedRoleIndex].id}`);
     } catch (error) {
       let message = 'Internal Server Error';
-      if (error.response
-        && error.response.data
-        && error.response.data.errors
-        && error.response.data.errors.length > 0) {
+      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
         message = error.response.data.errors[0].message;
       }
       setAlertDialogProps({
@@ -134,7 +131,7 @@ export const RoleManagementPage = () => {
     }
     const viewableColumns = roleData[index].allowedRosterColumns;
     return Object.keys(viewableColumns).map(column => (
-      <TableRow>
+      <TableRow key={column}>
         <TableCell className={classes.textCell}>
           {Reflect.get(RosterColumnDisplayName, column) || 'Unknown'}
         </TableCell>
@@ -153,7 +150,7 @@ export const RoleManagementPage = () => {
     }
     const allowedEvents = roleData[index].allowedNotificationEvents;
     return Object.keys(allowedEvents).map(event => (
-      <TableRow>
+      <TableRow key={event}>
         <TableCell className={classes.textCell}>
           {Reflect.get(NotificationEventDisplayName, event) || 'Unknown'}
         </TableCell>
@@ -192,6 +189,7 @@ export const RoleManagementPage = () => {
         </div>
         {roles.map((row, index) => (
           <Accordion
+            key={row.id}
             className={classes.roleAccordion}
             expanded={selectedRoleIndex === index}
             onChange={handleRoleChange(index)}

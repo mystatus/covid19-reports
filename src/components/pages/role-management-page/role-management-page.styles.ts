@@ -33,6 +33,9 @@ export default makeStyles((theme: Theme) => createStyles({
     '& .MuiAccordionSummary-root.Mui-expanded': {
       borderBottom: '1px solid #DCDEE0',
     },
+    '&:before': {
+      backgroundColor: 'initial',
+    },
   },
   nameColumn: {
     flexBasis: '33.33%',
