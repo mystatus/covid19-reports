@@ -7,4 +7,5 @@ if [ -z "$NAME" ]; then
   exit
 fi
 
+./migration-run.sh
 npm run typeorm -- migration:generate -n "$NAME"
