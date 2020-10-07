@@ -10,13 +10,11 @@ export class Role extends BaseEntity {
   id!: number;
 
   @Column({
-    nullable: false,
     length: 2048,
   })
   name!: string;
 
   @Column({
-    nullable: false,
     length: 2048,
   })
   description!: string;
@@ -31,19 +29,16 @@ export class Role extends BaseEntity {
   org?: Org;
 
   @Column({
-    nullable: false,
     default: '',
   })
   indexPrefix!: string;
 
   @Column({
-    nullable: false,
     default: '',
   })
   allowedRosterColumns!: string;
 
   @Column({
-    nullable: false,
     default: '',
   })
   allowedNotificationEvents!: string;

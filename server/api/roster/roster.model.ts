@@ -52,37 +52,37 @@ export class Roster extends BaseEntity {
   rateRank?: string;
 
   @Column({
-    default: false,
+    nullable: true,
   })
   pilot?: boolean;
 
   @Column({
-    default: false,
+    nullable: true,
   })
   aircrew?: boolean;
 
   @Column({
-    default: false,
+    nullable: true,
   })
   cdi?: boolean;
 
   @Column({
-    default: false,
+    nullable: true,
   })
   cdqar?: boolean;
 
   @Column({
-    default: false,
+    nullable: true,
   })
   dscacrew?: boolean;
 
   @Column({
-    default: false,
+    nullable: true,
   })
   advancedParty?: boolean;
 
   @Column({
-    default: false,
+    nullable: true,
   })
   pui?: boolean;
 
