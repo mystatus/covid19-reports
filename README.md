@@ -60,11 +60,11 @@ models.
 
 *NOTE: There's currently a known bug in TypeORM's migration generator, where it will always add unnecessary alterations
 on date columns that use `default: () => 'null'`. So make sure you review the generated migration and remove any of
-these unnecessary alterations before committing them.*
+these unnecessary alterations before committing them (and also format the generated file to match our eslint rules).*
 
 #### Creating
 
-If you want to write a migration from scratch, you can create a new blank migration with `./migration-create.sh {name}`
+If you want to write a migration from scratch, you can create a new blank migration with `./migration-create.sh {name}`,
 where `{name}` is the name of the migration you want to create. An empty template will be generated in
 `/server/migrations`.
 
