@@ -14,6 +14,7 @@ import useStyles from './edit-role-dialog.styles';
 import { ApiRole } from '../../../models/api-response';
 import { AllowedRosterColumns, RosterColumnDisplayName, RosterPIIColumns } from '../../../models/roster-columns';
 import { AllowedNotificationEvents, NotificationEventDisplayName } from '../../../models/notification-events';
+import { parsePermissions, permissionsToString } from '../../../utility/permission-set';
 
 export interface EditRoleDialogProps {
   open: boolean,
@@ -34,12 +35,8 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   const [name, setName] = useState(role?.name || '');
   const [description, setDescription] = useState(role?.description || '');
   const [indexPrefix, setIndexPrefix] = useState(role?.indexPrefix || '');
-  const [allowedRosterColumns, setAllowedRosterColumns] = useState(() => {
-    return role ? new AllowedRosterColumns().parse(role.allowedRosterColumns) : new AllowedRosterColumns();
-  });
-  const [allowedNotificationEvents, setAllowedNotificationEvents] = useState(() => {
-    return role ? new AllowedNotificationEvents().parse(role.allowedNotificationEvents) : new AllowedNotificationEvents();
-  });
+  const [allowedRosterColumns, setAllowedRosterColumns] = useState(parsePermissions(new AllowedRosterColumns(), role?.allowedRosterColumns));
+  const [allowedNotificationEvents, setAllowedNotificationEvents] = useState(parsePermissions(new AllowedNotificationEvents(), role?.allowedNotificationEvents));
   const [canManageGroup, setCanManageGroup] = useState(role ? role.canManageGroup : false);
   const [canManageRoster, setCanManageRoster] = useState(role ? role.canManageRoster : false);
   const [canManageWorkspace, setCanManageWorkspace] = useState(role ? role.canManageWorkspace : false);
@@ -61,8 +58,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
 
   const onRosterColumnChanged = (property: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setAllowedRosterColumns(previous => {
-      const newState = new AllowedRosterColumns();
-      Object.assign(newState, previous);
+      const newState = { ...previous };
       Reflect.set(newState, property, event.target.checked);
       return newState;
     });
@@ -70,33 +66,34 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
 
   const onNotificationEventChanged = (property: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setAllowedNotificationEvents(previous => {
-      const newState = new AllowedNotificationEvents();
-      Object.assign(newState, previous);
+      const newState = { ...previous };
       Reflect.set(newState, property, event.target.checked);
       return newState;
     });
   };
 
   const filterAllowedRosterColumns = (viewPII: boolean, viewMuster: boolean) => {
+    const allowedColumns = new AllowedRosterColumns();
     Object.keys(allowedRosterColumns).forEach(column => {
       const allowed = columnAllowed(column, viewPII);
       const previousValue = Reflect.get(allowedRosterColumns, column);
-      Reflect.set(allowedRosterColumns, column, previousValue && allowed);
+      Reflect.set(allowedColumns, column, previousValue && allowed);
     });
-    allowedRosterColumns.lastReported = viewMuster;
+    allowedColumns.lastReported = viewMuster;
+    return allowedColumns;
   };
 
   const onSave = async () => {
     setFormDisabled(true);
     const viewPII = canManageGroup || canViewPII;
     const viewMuster = canManageGroup || canViewMuster;
-    filterAllowedRosterColumns(viewPII, viewMuster);
+    const allowedColumns = filterAllowedRosterColumns(viewPII, viewMuster);
     const body = {
       name,
       description,
       indexPrefix,
-      allowedRosterColumns: allowedRosterColumns.toString(),
-      allowedNotificationEvents: allowedNotificationEvents.toString(),
+      allowedRosterColumns: permissionsToString(allowedColumns),
+      allowedNotificationEvents: permissionsToString(allowedNotificationEvents),
       canManageGroup,
       canManageRoster: canManageGroup || canManageRoster,
       canManageWorkspace: canManageGroup || canManageWorkspace,

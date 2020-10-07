@@ -1,6 +1,4 @@
-import { PermissionSet } from './permission-set';
-
-export class AllowedNotificationEvents extends PermissionSet {
+export class AllowedNotificationEvents {
   accessRequest: boolean = false;
 }
 

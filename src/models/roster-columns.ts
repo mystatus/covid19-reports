@@ -1,6 +1,4 @@
-import { PermissionSet } from './permission-set';
-
-export class AllowedRosterColumns extends PermissionSet {
+export class AllowedRosterColumns {
   edipi: boolean = false;
   rateRank: boolean = false;
   firstName: boolean = false;

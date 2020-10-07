@@ -27,6 +27,7 @@ import { AllowedNotificationEvents, NotificationEventDisplayName } from '../../.
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { RosterColumnDisplayName, AllowedRosterColumns } from '../../../models/roster-columns';
 import { EditRoleDialog, EditRoleDialogProps } from './edit-role-dialog';
+import { parsePermissions } from '../../../utility/permission-set';
 
 interface ParsedRoleData {
   allowedRosterColumns: AllowedRosterColumns,
@@ -50,8 +51,8 @@ export const RoleManagementPage = () => {
     const orgRoles = (await axios.get(`api/role/${orgId}`)).data as ApiRole[];
     const parsedRoleData = orgRoles.map(role => {
       return {
-        allowedRosterColumns: new AllowedRosterColumns().parse(role.allowedRosterColumns),
-        allowedNotificationEvents: new AllowedNotificationEvents().parse(role.allowedNotificationEvents),
+        allowedRosterColumns: parsePermissions(new AllowedRosterColumns(), role.allowedRosterColumns),
+        allowedNotificationEvents: parsePermissions(new AllowedNotificationEvents(), role.allowedNotificationEvents),
       };
     });
     setRoleData(parsedRoleData);
