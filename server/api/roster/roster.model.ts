@@ -11,11 +11,14 @@ export class Roster extends BaseEntity {
   })
   edipi!: string;
 
-  @ManyToOne(() => Org, org => org.id, { primary: true, cascade: true })
+  @ManyToOne(() => Org, org => org.id, {
+    primary: true,
+    cascade: true,
+  })
   @JoinColumn({
     name: 'org_id',
   })
-  org!: Org;
+  org?: Org;
 
   @Column({
     length: 100,

@@ -12,7 +12,10 @@ export class User extends BaseEntity {
   })
   edipi!: string;
 
-  @ManyToMany(() => Role, { cascade: true, onDelete: 'RESTRICT' })
+  @ManyToMany(() => Role, {
+    cascade: true,
+    onDelete: 'RESTRICT',
+  })
   @JoinTable({
     name: 'user_roles',
     joinColumn: {
@@ -24,7 +27,7 @@ export class User extends BaseEntity {
       referencedColumnName: 'id',
     },
   })
-  roles!: Role[];
+  roles?: Role[];
 
   @Column()
   firstName!: string;
@@ -60,11 +63,11 @@ export class User extends BaseEntity {
     if (this.rootAdmin) {
       return '*';
     }
-    return `${role.org.indexPrefix}-${role.indexPrefix}`;
+    return `${role.org!.indexPrefix}-${role.indexPrefix}`;
   }
 
   getKibanaUserClaim(role: Role) {
-    return `org${role.org.id}-role${role.id}`;
+    return `org${role.org!.id}-role${role.id}`;
   }
 
   getKibanaRoles(role: Role) {

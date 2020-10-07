@@ -24,10 +24,13 @@ export class Org extends BaseEntity {
   })
   indexPrefix!: string;
 
-  @ManyToOne(() => User, user => user.edipi, { onDelete: 'RESTRICT', nullable: false })
+  @ManyToOne(() => User, user => user.edipi, {
+    onDelete: 'RESTRICT',
+    nullable: false,
+  })
   @JoinColumn({
     name: 'contact_id',
   })
-  contact!: User;
+  contact?: User;
 
 }
