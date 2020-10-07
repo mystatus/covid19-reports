@@ -77,7 +77,6 @@
     "typescript": "^3.7.5"
   },
   "scripts": {
-    "prestart": "./prestart.sh",
     "start": "./run-prod.sh",
     "dev": "./run-dev.sh",
     "build": "./build-prod.sh",
