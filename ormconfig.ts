@@ -1,3 +1,5 @@
+import { TlsOptions } from 'tls';
+import { ConnectionOptions } from 'typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { User } from './server/api/user/user.model';
 import { Role } from './server/api/role/role.model';
@@ -5,8 +7,16 @@ import { Org } from './server/api/org/org.model';
 import { Roster } from './server/api/roster/roster.model';
 import { AccessRequest } from './server/api/access-request/access-request.model';
 
-/* @ts-ignore */
-export = {
+let ssl: TlsOptions | undefined;
+
+if (process.env.SQL_CERT) {
+  ssl = {
+    rejectUnauthorized: false,
+    ca: process.env.SQL_CERT,
+  };
+}
+
+const config: ConnectionOptions = {
   type: 'postgres',
   host: process.env.SQL_HOST || 'localhost',
   port: parseInt(process.env.SQL_PORT || '5432'),
@@ -22,4 +32,8 @@ export = {
   cli: {
     migrationsDir: 'server/migration',
   },
+  ssl,
 };
+
+module.exports = config;
+export default config;
