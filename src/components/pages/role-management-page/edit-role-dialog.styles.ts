@@ -3,8 +3,9 @@ import { makeStyles } from '@material-ui/styles';
 
 export default makeStyles((theme: Theme) => createStyles({
   root: {
-    flexGrow: 1,
-    padding: theme.spacing(3),
+    '& .MuiGrid-spacing-xs-3': {
+      margin: '0px -12px',
+    },
   },
   textField: {
     width: '100%',
@@ -26,6 +27,16 @@ export default makeStyles((theme: Theme) => createStyles({
   tableScroll: {
     maxHeight: '193px',
     overflowY: 'auto',
+  },
+  workspaceSelect: {
+    width: '100%',
+    '&:before': {
+      border: 'none',
+    },
+  },
+  workspaceDescription: {
+    width: '100%',
+    margin: 0,
   },
   roleTable: {
     '&  .MuiTableCell-root': {

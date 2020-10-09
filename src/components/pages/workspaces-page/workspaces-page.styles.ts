@@ -14,4 +14,12 @@ export default makeStyles((theme: Theme) => createStyles({
   table: {
     marginBottom: '39px',
   },
+  iconCell: {
+    width: '81px',
+    '& > svg': {
+      position: 'relative',
+      top: '3px',
+      color: theme.palette.primary.light,
+    },
+  },
 }));

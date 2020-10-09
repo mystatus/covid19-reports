@@ -43,11 +43,6 @@ class RoleController {
       throw new BadRequestError('An index prefix must be supplied when adding a role.');
     }
 
-    if (!req.body.workspaceId) {
-      throw new BadRequestError('A workspace must be supplied when adding a role.');
-    }
-
-
     const role = new Role();
     role.org = req.appOrg;
     await setRoleFromBody(req.appOrg.id, role, req.body);
@@ -148,35 +143,34 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
   if (body.indexPrefix != null) {
     role.indexPrefix = body.indexPrefix;
   }
-  if (body.workspaceId != null) {
-    const workspace = await Workspace.findOne({
-      where: {
-        id: body.workspaceId,
-        org: orgId,
-      },
-    });
+  if (body.workspaceId !== undefined) {
+    console.log('workspaceId', body.workspaceId);
+    if (body.workspaceId == null) {
+      role.workspace = null;
+    } else {
+      const workspace = await Workspace.findOne({
+        where: {
+          id: body.workspaceId,
+          org: orgId,
+        },
+      });
 
-    if (!workspace) {
-      throw new NotFoundError('Workspace could not be found.');
+      if (!workspace) {
+        throw new NotFoundError('Workspace could not be found.');
+      }
+
+      role.workspace = workspace;
     }
-
-    role.workspace = workspace;
   }
   if (body.allowedRosterColumns != null) {
-    // TODO: This validation logic could be shared with the client-side parsing functionality
-    const columns = body.allowedRosterColumns.split(',').filter(column => column.length > 0);
-    if (columns.length === 0) {
-      role.allowedRosterColumns = '';
-    } else if (columns.length === 1 && columns[0] === '*') {
-      role.allowedRosterColumns = '*';
-    } else {
-      for (const column of columns) {
+    if (!(body.allowedRosterColumns.length === 1 && body.allowedRosterColumns[0] === '*')) {
+      for (const column of body.allowedRosterColumns) {
         if (!RosterPIIColumns.hasOwnProperty(column)) {
           throw new BadRequestError(`Unknown roster column: ${column}`);
         }
       }
-      role.allowedRosterColumns = body.allowedRosterColumns;
     }
+    role.allowedRosterColumns = body.allowedRosterColumns;
   }
   if (body.allowedNotificationEvents != null) {
     // TODO: Validate notification events
@@ -207,9 +201,9 @@ type RoleBody = {
   name?: string
   description?: string
   indexPrefix?: string
-  workspaceId?: number
-  allowedRosterColumns?: string
-  allowedNotificationEvents?: string
+  workspaceId?: number | null
+  allowedRosterColumns?: string[]
+  allowedNotificationEvents?: string[]
   canManageGroup?: boolean
   canManageRoster?: boolean
   canManageWorkspace?: boolean

@@ -31,4 +31,7 @@ export class Workspace extends BaseEntity {
   @Column()
   pii!: boolean;
 
+  @Column()
+  phi!: boolean;
+
 }

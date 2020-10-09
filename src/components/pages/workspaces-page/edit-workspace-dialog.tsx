@@ -5,9 +5,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid, Select, TextField, Typography,
+  Grid, Select, Table, TableBody, TableCell, TableRow, TextField, Typography,
 } from '@material-ui/core';
 import axios from 'axios';
+import CheckIcon from '@material-ui/icons/Check';
 import useStyles from './edit-workspace-dialog.styles';
 import { ApiWorkspace, ApiWorkspaceTemplate } from '../../../models/api-response';
 
@@ -30,7 +31,7 @@ export const EditWorkspaceDialog = (props: EditWorkspaceDialogProps) => {
   const existingWorkspace: boolean = !!workspace;
   const [name, setName] = useState(workspace?.name || '');
   const [description, setDescription] = useState(workspace?.description || '');
-  const [workspaceTemplate, setWorkspaceTemplate] = useState(workspace?.workspaceTemplate?.id || -1);
+  const [templateId, setTemplateId] = useState(workspace?.workspaceTemplate?.id || ((templates && templates.length > 0) ? templates[0].id : -1));
 
   if (!open) {
     return <></>;
@@ -41,15 +42,45 @@ export const EditWorkspaceDialog = (props: EditWorkspaceDialogProps) => {
   };
 
   const onWorkspaceTemplateChanged = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setWorkspaceTemplate(event.target.value as number);
+    setTemplateId(parseInt(event.target.value as string));
   };
+
+  const getTemplateName = () => {
+    const selectedTemplate = templates?.find(template => {
+      return template.id === templateId;
+    });
+    return selectedTemplate?.name || 'None';
+  };
+
+  const getTemplateDescription = () => {
+    const selectedTemplate = templates?.find(template => {
+      return template.id === templateId;
+    });
+    return selectedTemplate?.description || 'No workspace template selected.';
+  };
+
+  const getTemplatePII = () => {
+    const selectedTemplate = templates?.find(template => {
+      return template.id === templateId;
+    });
+    return selectedTemplate?.pii || false;
+  };
+
+  /*
+  const getTemplatePHI = () => {
+    const selectedTemplate = templates?.find(template => {
+      return template.id === workspaceTemplate;
+    });
+    return selectedTemplate?.phi || false;
+  };
+  */
 
   const onSave = async () => {
     setFormDisabled(true);
     const body = {
       name,
       description,
-      workspaceTemplate,
+      templateId,
     };
     try {
       if (existingWorkspace) {
@@ -78,12 +109,12 @@ export const EditWorkspaceDialog = (props: EditWorkspaceDialogProps) => {
   };
 
   return (
-    <Dialog maxWidth="md" onClose={onClose} open={open}>
+    <Dialog className={classes.root} maxWidth="md" onClose={onClose} open={open}>
       <DialogTitle id="alert-dialog-title">{existingWorkspace ? 'Edit Workspace' : 'New Workspace'}</DialogTitle>
       <DialogContent>
         <Grid container spacing={3}>
           <Grid item xs={6}>
-            <Typography className={classes.roleHeader}>Workspace Name:</Typography>
+            <Typography className={classes.workspaceHeader}>Workspace Name:</Typography>
             <TextField
               className={classes.textField}
               id="workspace-name"
@@ -93,33 +124,7 @@ export const EditWorkspaceDialog = (props: EditWorkspaceDialogProps) => {
             />
           </Grid>
           <Grid item xs={6}>
-            <Typography className={classes.roleHeader}>Workspace Template:</Typography>
-            <Select
-              native
-              disabled={formDisabled || existingWorkspace}
-              autoFocus
-              value={workspaceTemplate}
-              onChange={onWorkspaceTemplateChanged}
-              inputProps={{
-                name: 'template',
-                id: 'template-select',
-              }}
-            >
-              <option key={-1} value={-1}>None</option>
-              {templates && templates.map((role, index) => (
-                <option key={role.id} value={index}>{role.name}</option>
-              ))}
-            </Select>
-            <TextField
-              className={classes.textField}
-              id="workspace-template"
-              disabled={existingWorkspace}
-              value={workspace?.workspaceTemplate?.id || 'None'}
-              onChange={onWorkspaceTemplateChanged}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Typography className={classes.roleHeader}>Description:</Typography>
+            <Typography className={classes.workspaceHeader}>Workspace Description:</Typography>
             <TextField
               className={classes.textField}
               id="workspace-description"
@@ -130,9 +135,66 @@ export const EditWorkspaceDialog = (props: EditWorkspaceDialogProps) => {
               onChange={onInputChanged(setDescription)}
             />
           </Grid>
+          <Grid item xs={6}>
+            <Typography className={classes.workspaceHeader}>Template:</Typography>
+            {existingWorkspace && (
+              <Typography className={classes.templateText}>
+                {getTemplateName()}
+              </Typography>
+            )}
+            {!existingWorkspace && (
+              <Select
+                className={classes.templateSelect}
+                native
+                disabled={formDisabled || existingWorkspace}
+                autoFocus
+                value={templateId}
+                onChange={onWorkspaceTemplateChanged}
+                inputProps={{
+                  name: 'template',
+                  id: 'template-select',
+                }}
+              >
+                {templates && templates.map(template => (
+                  <option key={template.id} value={template.id}>{template.name}</option>
+                ))}
+              </Select>
+            )}
+          </Grid>
+          <Grid item xs={6}>
+            <Typography className={classes.workspaceHeader}>Template Description:</Typography>
+            <Typography className={classes.templateText}>
+              {getTemplateDescription()}
+            </Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography className={classes.workspaceHeader}>Template Data:</Typography>
+            <Table aria-label="Permissions" className={classes.templateDataTable}>
+              <TableBody>
+                <TableRow>
+                  <TableCell className={classes.textCell}>Contains PII</TableCell>
+                  <TableCell className={classes.iconCell}>
+                    {getTemplatePII() && (
+                      <CheckIcon />
+                    )}
+                  </TableCell>
+                </TableRow>
+                {/* Re-add when PHI templates are available
+                <TableRow>
+                  <TableCell className={classes.textCell}>Contains PHI</TableCell>
+                  <TableCell className={classes.iconCell}>
+                    {getTemplatePHI && (
+                      <CheckIcon />
+                    )}
+                  </TableCell>
+                </TableRow>
+                */}
+              </TableBody>
+            </Table>
+          </Grid>
         </Grid>
       </DialogContent>
-      <DialogActions className={classes.roleDialogActions}>
+      <DialogActions className={classes.dialogActions}>
         <Button disabled={formDisabled} variant="outlined" onClick={onClose} color="primary">
           Cancel
         </Button>

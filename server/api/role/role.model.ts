@@ -33,22 +33,22 @@ export class Role extends BaseEntity {
   @JoinColumn({
     name: 'workspace_id',
   })
-  workspace?: Workspace;
+  workspace?: Workspace | null;
 
   @Column({
     default: '',
   })
   indexPrefix!: string;
 
-  @Column({
+  @Column('simple-array', {
     default: '',
   })
-  allowedRosterColumns!: string;
+  allowedRosterColumns!: string[];
 
-  @Column({
+  @Column('simple-array', {
     default: '',
   })
-  allowedNotificationEvents!: string;
+  allowedNotificationEvents!: string[];
 
   //
   // ROLE PERMISSIONS - Must be prefixed with "can"
@@ -102,8 +102,8 @@ export class Role extends BaseEntity {
     adminRole.description = 'Site Administrator';
     adminRole.org = org;
     adminRole.indexPrefix = '';
-    adminRole.allowedNotificationEvents = '*';
-    adminRole.allowedRosterColumns = '*';
+    adminRole.allowedNotificationEvents = ['*'];
+    adminRole.allowedRosterColumns = ['*'];
 
     // Allow all permissions
     for (const key of Object.keys(adminRole)) {

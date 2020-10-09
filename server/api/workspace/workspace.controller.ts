@@ -33,9 +33,7 @@ class WorkspaceController {
     }
 
     const templates = await WorkspaceTemplate.find({
-      where: {
-        org: req.appOrg.id,
-      },
+      select: ['id', 'name', 'description', 'pii', 'phi'],
       order: {
         id: 'ASC',
       },
@@ -57,7 +55,7 @@ class WorkspaceController {
       throw new BadRequestError('A description must be supplied when adding a workspace.');
     }
 
-    if (!req.body.workspaceTemplateId) {
+    if (!req.body.templateId) {
       throw new BadRequestError('A base template must be supplied when adding a workspace.');
     }
 
@@ -65,8 +63,7 @@ class WorkspaceController {
     workspace.org = req.appOrg;
     const template = await WorkspaceTemplate.findOne({
       where: {
-        id: req.body.workspaceTemplateId,
-        org: req.appOrg.id,
+        id: req.body.templateId,
       },
     });
 
@@ -75,6 +72,8 @@ class WorkspaceController {
     }
 
     workspace.workspaceTemplate = template;
+    workspace.pii = template.pii;
+    workspace.phi = template.phi;
     await setWorkspaceFromBody(workspace, req.body);
 
     const newWorkspace = await workspace.save();
@@ -173,7 +172,7 @@ async function setWorkspaceFromBody(workspace: Workspace, body: WorkspaceBody) {
 type WorkspaceBody = {
   name?: string
   description?: string
-  workspaceTemplateId?: number
+  templateId?: number
 };
 
 export default new WorkspaceController();

@@ -9,11 +9,12 @@ export interface ApiOrg {
 export interface ApiRole {
   id: number,
   org?: ApiOrg,
+  workspace?: ApiWorkspace,
   name: string,
   description: string,
   indexPrefix: string,
-  allowedRosterColumns: string,
-  allowedNotificationEvents: string,
+  allowedRosterColumns: string[],
+  allowedNotificationEvents: string[],
   canManageGroup: boolean,
   canManageRoster: boolean,
   canManageWorkspace: boolean,
@@ -68,6 +69,7 @@ export interface ApiWorkspaceTemplate {
   name: string,
   description: string,
   pii: boolean,
+  phi: boolean,
 }
 
 export interface ApiWorkspace {
@@ -77,4 +79,5 @@ export interface ApiWorkspace {
   org?: ApiOrg,
   workspaceTemplate?: ApiWorkspaceTemplate,
   pii: boolean,
+  phi: boolean,
 }
