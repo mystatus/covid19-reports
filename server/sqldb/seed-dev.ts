@@ -3,6 +3,9 @@ import database from '.';
 import { Org } from '../api/org/org.model';
 import { Role } from '../api/role/role.model';
 import { User } from '../api/user/user.model';
+import { WorkspaceTemplate } from '../api/workspace/workspace-template.model';
+import { Workspace } from '../api/workspace/workspace.model';
+import { kibanaSavedObjectsMock } from '../kibana/kibana-saved-objects.mock';
 
 export default (async function() {
   if (process.env.NODE_ENV !== 'development') {
@@ -23,6 +26,23 @@ export default (async function() {
   groupAdmin.service = 'Space Force';
   groupAdmin.isRegistered = true;
   await groupAdmin.save();
+
+  // Create workspace templates
+  const workspaceTemplatePII = new WorkspaceTemplate();
+  workspaceTemplatePII.name = 'Symptom Tracking (Non-PII)';
+  workspaceTemplatePII.description = 'Symptom tracker without PII data';
+  workspaceTemplatePII.pii = false;
+  workspaceTemplatePII.phi = false;
+  workspaceTemplatePII.kibanaSavedObjects = kibanaSavedObjectsMock.nonPii;
+  await workspaceTemplatePII.save();
+
+  const workspaceTemplateNonPII = new WorkspaceTemplate();
+  workspaceTemplateNonPII.name = 'Symptom Tracking (PII)';
+  workspaceTemplateNonPII.description = 'Symptom tracker with PII data';
+  workspaceTemplateNonPII.pii = true;
+  workspaceTemplateNonPII.phi = false;
+  workspaceTemplateNonPII.kibanaSavedObjects = kibanaSavedObjectsMock.pii;
+  await workspaceTemplateNonPII.save();
 
   // Create orgs
   const testOrg = new Org();
@@ -53,7 +73,7 @@ export default (async function() {
   console.log('Finished!');
 }());
 
-async function createGroupAdminRole(org: Org) {
+async function createGroupAdminRole(org: Org, workspace?: Workspace) {
   const role = new Role();
   role.name = 'Group Admin';
   role.description = 'For managing the group.';
@@ -66,10 +86,11 @@ async function createGroupAdminRole(org: Org) {
   role.canViewMuster = true;
   role.canViewPII = true;
   role.canViewRoster = true;
+  role.workspace = workspace;
   return role.save();
 }
 
-async function createRosterManagerRole(org: Org) {
+async function createRosterManagerRole(org: Org, workspace?: Workspace) {
   const role = new Role();
   role.name = 'Roster Manager';
   role.description = 'For managing the roster.';
@@ -78,5 +99,6 @@ async function createRosterManagerRole(org: Org) {
   role.allowedNotificationEvents = [];
   role.canManageRoster = true;
   role.canViewRoster = true;
+  role.workspace = workspace;
   return role.save();
 }
