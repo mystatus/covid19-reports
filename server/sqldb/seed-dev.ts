@@ -27,23 +27,6 @@ export default (async function() {
   groupAdmin.isRegistered = true;
   await groupAdmin.save();
 
-  // Create workspace templates
-  const workspaceTemplatePII = new WorkspaceTemplate();
-  workspaceTemplatePII.name = 'Symptom Tracking (Non-PII)';
-  workspaceTemplatePII.description = 'Symptom tracker without PII data';
-  workspaceTemplatePII.pii = false;
-  workspaceTemplatePII.phi = false;
-  workspaceTemplatePII.kibanaSavedObjects = kibanaSavedObjectsMock.nonPii;
-  await workspaceTemplatePII.save();
-
-  const workspaceTemplateNonPII = new WorkspaceTemplate();
-  workspaceTemplateNonPII.name = 'Symptom Tracking (PII)';
-  workspaceTemplateNonPII.description = 'Symptom tracker with PII data';
-  workspaceTemplateNonPII.pii = true;
-  workspaceTemplateNonPII.phi = false;
-  workspaceTemplateNonPII.kibanaSavedObjects = kibanaSavedObjectsMock.pii;
-  await workspaceTemplateNonPII.save();
-
   // Create orgs
   const testOrg = new Org();
   testOrg.name = 'Test Org';
