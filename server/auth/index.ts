@@ -105,10 +105,10 @@ export async function requireOrgAccess(req: any, res: Response, next: NextFuncti
 }
 
 export function requireWorkspaceAccess(req: any, res: Response, next: NextFunction) {
-  if (!req.appWorkspace) {
-    throw new BadRequestError('req.appWorkspace is not set');
+  if (req.appWorkspace) {
+    return next();
   }
-  next();
+  throw new ForbiddenError('User does not have sufficient privileges to perform this action.');
 }
 
 export function requireRolePermission(action: (role: Role) => boolean) {
