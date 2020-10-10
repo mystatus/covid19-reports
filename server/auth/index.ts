@@ -104,6 +104,13 @@ export async function requireOrgAccess(req: any, res: Response, next: NextFuncti
   throw new ForbiddenError('User does not have sufficient privileges to perform this action.');
 }
 
+export function requireWorkspaceAccess(req: any, res: Response, next: NextFunction) {
+  if (!req.appWorkspace) {
+    throw new BadRequestError('req.appWorkspace is not set');
+  }
+  next();
+}
+
 export function requireRolePermission(action: (role: Role) => boolean) {
   return async (req: ApiRequest, res: Response, next: NextFunction) => {
     if (req.appRole && action(req.appRole)) {
