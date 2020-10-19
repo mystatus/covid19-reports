@@ -26,6 +26,7 @@ class RosterController {
     if (!req.body.type) {
       throw new BadRequestError('A type must be supplied when adding a new column.');
     }
+
     const columnName = req.body.name as string;
     const existingColumn = await CustomRosterColumn.findOne({
       where: {
@@ -34,7 +35,7 @@ class RosterController {
       },
     });
 
-    if (existingColumn) {
+    if (BaseRosterColumns.find(column => column.name === columnName) || existingColumn) {
       throw new BadRequestError('There is already a column with that name.');
     }
 

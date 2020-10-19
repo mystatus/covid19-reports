@@ -68,7 +68,7 @@ export const RoleManagementPage = () => {
     setRosterColumns(orgRosterColumns);
     setRoles(orgRoles);
     dispatch(AppFrame.setPageLoading(false));
-  }, [orgId]);
+  }, [orgId, dispatch]);
 
   const cancelDeleteRoleDialog = () => {
     setDeleteRoleDialogOpen(false);

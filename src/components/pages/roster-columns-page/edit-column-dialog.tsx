@@ -7,8 +7,6 @@ import {
   DialogTitle,
   Grid,
   Select,
-  Table,
-  TableBody,
   TableCell,
   TableRow,
   TextField,
