@@ -41,7 +41,7 @@ export const RosterColumnsPage = () => {
 
   const initializeTable = React.useCallback(async () => {
     dispatch(AppFrame.setPageLoading(true));
-    const allColumns = (await axios.get(`api/roster/column/${orgId}`)).data as ApiRosterColumnInfo[];
+    const allColumns = (await axios.get(`api/roster/${orgId}/column`)).data as ApiRosterColumnInfo[];
     const customColumns = allColumns.filter(column => column.custom);
     setColumns(customColumns);
     dispatch(AppFrame.setPageLoading(false));
@@ -103,7 +103,7 @@ export const RosterColumnsPage = () => {
       return;
     }
     try {
-      await axios.delete(`api/roster/column/${orgId}/${columnToDelete.name}`);
+      await axios.delete(`api/roster/${orgId}/column/${columnToDelete.name}`);
     } catch (error) {
       let message = 'Internal Server Error';
       if (error.response?.data?.errors && error.response.data.errors.length > 0) {
