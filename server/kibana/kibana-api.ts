@@ -21,7 +21,7 @@ export class KibanaApi {
       throw new Error('KibanaApi.connect() requires req.appOrg to be set');
     }
     if (!req.appWorkspace) {
-      throw new Error('KibanaApi.connect() requires req.appOrg to be set');
+      throw new Error('KibanaApi.connect() requires req.appWorkspace to be set');
     }
 
     const kibanaApi = new KibanaApi();
