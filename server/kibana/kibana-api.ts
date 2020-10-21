@@ -36,7 +36,6 @@ export class KibanaApi {
       maxRedirects: 0,
       httpsAgent: new https.Agent({
         rejectUnauthorized: false,
-        ca: process.env.KIBANA_CA ? fs.readFileSync(process.env.KIBANA_CA) : undefined,
       }),
       withCredentials: true,
     });
