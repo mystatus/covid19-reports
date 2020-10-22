@@ -3,6 +3,7 @@ import {
 } from 'typeorm';
 import { Org } from '../org/org.model';
 import { Workspace } from '../workspace/workspace.model';
+import { escapeRegExp } from '../../util/util';
 
 @Entity()
 export class Role extends BaseEntity {
@@ -102,7 +103,7 @@ export class Role extends BaseEntity {
 
   getKibanaIndex() {
     const suffix = this.canViewPHI ? 'phi' : (this.canViewPII ? 'pii' : 'base');
-    const unitFilter = this.indexPrefix.replace('-', '_');
+    const unitFilter = this.indexPrefix.replace(new RegExp(escapeRegExp('-'), 'g'), '_');
     return `${this.org!.indexPrefix}-${unitFilter}-${suffix}-*`;
   }
 
