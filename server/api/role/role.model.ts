@@ -102,7 +102,8 @@ export class Role extends BaseEntity {
 
   getKibanaIndex() {
     const suffix = this.canViewPHI ? 'phi' : (this.canViewPII ? 'pii' : 'base');
-    return `${this.org!.indexPrefix}-${this.indexPrefix}-${suffix}`;
+    const unitFilter = this.indexPrefix.replace('-', '_');
+    return `${this.org!.indexPrefix}-${unitFilter}-${suffix}-*`;
   }
 
   getKibanaRoles() {
