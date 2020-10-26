@@ -1,3 +1,8 @@
+export interface ApiArrayPaginated {
+  rows: any[],
+  totalRowsCount: number,
+}
+
 export interface ApiOrg {
   id: number,
   name: string,
@@ -42,6 +47,10 @@ export interface ApiAccessRequest {
   requestDate: Date,
   user: ApiUser,
   status: 'approved' | 'pending' | 'denied',
+}
+
+export interface ApiRosterPaginated extends ApiArrayPaginated {
+  rows: ApiRosterEntry[],
 }
 
 export enum ApiRosterColumnType {

@@ -11,7 +11,11 @@
   },
   "globals": {},
   "plugins": [
-    "@typescript-eslint"
+    "@typescript-eslint",
+    "jsx-a11y",
+    "react",
+    "react-hooks",
+    "import"
   ],
   "rules": {
     "@typescript-eslint/lines-between-class-members": "off",
@@ -66,6 +70,7 @@
     "react/jsx-one-expression-per-line": "off",
     "react/jsx-props-no-spreading": "off",
     "react/require-default-props": "off",
+    "react-hooks/exhaustive-deps": "error",
     "space-before-function-paren": ["error", {
       "anonymous": "never",
       "named": "never",
