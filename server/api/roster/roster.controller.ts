@@ -164,13 +164,12 @@ class RosterController {
       })
       .getRawMany<RosterEntryData>();
 
-    res.json(roster);
-  }
+    const totalRowsCount = await (await queryAllowedRoster(req.appOrg!, req.appRole!)).getCount();
 
-  async getRosterCount(req: ApiRequest<OrgParam>, res: Response) {
-    const count = await (await queryAllowedRoster(req.appOrg!, req.appRole!)).getCount();
-
-    res.json({ count });
+    res.json({
+      rows: roster,
+      totalRowsCount,
+    });
   }
 
   async uploadRosterEntries(req: ApiRequest<OrgParam>, res: Response) {

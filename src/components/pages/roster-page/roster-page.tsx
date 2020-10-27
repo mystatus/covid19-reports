@@ -1,91 +1,27 @@
 import {
-  Button, Container, Paper, Table, TableBody, TableCell, TableContainer, TablePagination, TableHead, TableRow,
-  IconButton, TableFooter, DialogActions, Dialog, DialogTitle, DialogContent, DialogContentText,
+  Button, Container, Paper, Table, TableContainer, TableRow, TableFooter,
+  DialogActions, Dialog, DialogTitle, DialogContent, DialogContentText,
 } from '@material-ui/core';
-import FirstPageIcon from '@material-ui/icons/FirstPage';
-import KeyboardArrowLeft from '@material-ui/icons/KeyboardArrowLeft';
-import KeyboardArrowRight from '@material-ui/icons/KeyboardArrowRight';
-import LastPageIcon from '@material-ui/icons/LastPage';
-import EditIcon from '@material-ui/icons/Edit';
-import DeleteIcon from '@material-ui/icons/Delete';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import PublishIcon from '@material-ui/icons/Publish';
 import GetAppIcon from '@material-ui/icons/GetApp';
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, {
+  ChangeEvent, MouseEvent, useCallback, useEffect, useState,
+} from 'react';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { Roster } from '../../../actions/roster.actions';
+import { getNewPageIndex } from '../../../utility/table';
+import { TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
+import { TablePagination } from '../../tables/table-pagination/table-pagination';
 import useStyles from './roster-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
-import { ApiRosterEntry, ApiRosterColumnInfo } from '../../../models/api-response';
+import { ApiRosterEntry, ApiRosterColumnInfo, ApiRosterPaginated } from '../../../models/api-response';
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditRosterEntryDialog, EditRosterEntryDialogProps } from './edit-roster-entry-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
-
-interface CountResponse {
-  count: number
-}
-
-interface TablePaginationActionsProps {
-  count: number;
-  page: number;
-  rowsPerPage: number;
-  onChangePage: (event: React.MouseEvent<HTMLButtonElement>, newPage: number) => void;
-}
-
-function TablePaginationActions(props: TablePaginationActionsProps) {
-  const classes = useStyles();
-  const {
-    count, page, rowsPerPage, onChangePage,
-  } = props;
-
-  const handleFirstPageButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onChangePage(event, 0);
-  };
-
-  const handleBackButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onChangePage(event, page - 1);
-  };
-
-  const handleNextButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onChangePage(event, page + 1);
-  };
-
-  const handleLastPageButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onChangePage(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
-  };
-
-  return (
-    <div className={classes.tableFooter}>
-      <IconButton
-        onClick={handleFirstPageButtonClick}
-        disabled={page === 0}
-        aria-label="first page"
-      >
-        <FirstPageIcon />
-      </IconButton>
-      <IconButton onClick={handleBackButtonClick} disabled={page === 0} aria-label="previous page">
-        <KeyboardArrowLeft />
-      </IconButton>
-      <IconButton
-        onClick={handleNextButtonClick}
-        disabled={page >= Math.ceil(count / rowsPerPage) - 1}
-        aria-label="next page"
-      >
-        <KeyboardArrowRight />
-      </IconButton>
-      <IconButton
-        onClick={handleLastPageButtonClick}
-        disabled={page >= Math.ceil(count / rowsPerPage) - 1}
-        aria-label="last page"
-      >
-        <LastPageIcon />
-      </IconButton>
-    </div>
-  );
-}
 
 export const RosterPage = () => {
   const classes = useStyles();
@@ -97,7 +33,7 @@ export const RosterPage = () => {
 
   const [rows, setRows] = useState<ApiRosterEntry[]>([]);
   const [page, setPage] = useState(0);
-  const [rosterSize, setRosterSize] = useState(0);
+  const [totalRowsCount, setTotalRowsCount] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedRosterEntry, setSelectedRosterEntry] = useState<ApiRosterEntry>();
   const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
@@ -110,28 +46,18 @@ export const RosterPage = () => {
 
   const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
 
-  const handleChangePage = async (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
-    const response = await fetch(`api/roster/${orgId}?limit=${rowsPerPage}&page=${newPage}`);
-    const rosterResponse = (await response.json()) as ApiRosterEntry[];
-    setPage(newPage);
-    setRows(rosterResponse);
-  };
+  //
+  // Effects
+  //
 
-  const initializeTable = React.useCallback(async () => {
+  const reloadTable = useCallback(async () => {
+    const response = await axios.get(`api/roster/${orgId}/?limit=${rowsPerPage}&page=${page}`);
+    const data = response.data as ApiRosterPaginated;
+    setRows(data.rows);
+    setTotalRowsCount(data.totalRowsCount);
+  }, [page, rowsPerPage, orgId]);
 
-    dispatch(AppFrame.setPageLoading(true));
-
-    initializeRosterColumnInfo();
-
-    const countData = (await axios.get(`api/roster/${orgId}/count`)).data as CountResponse;
-    setRosterSize(countData.count);
-    await handleChangePage(null, 0);
-
-    dispatch(AppFrame.setPageLoading(false));
-
-  }, [orgId]);
-
-  async function initializeRosterColumnInfo() {
+  const initializeRosterColumnInfo = useCallback(async () => {
     try {
       const infos = (await axios.get(`api/roster/${orgId}/info`)).data as ApiRosterColumnInfo[];
       setRosterColumnInfos(infos);
@@ -147,9 +73,35 @@ export const RosterPage = () => {
         onClose: () => { setAlertDialogProps({ open: false }); },
       });
     }
-  }
+  }, [orgId]);
 
-  function handleFileInputChange(e: ChangeEvent<HTMLInputElement>) {
+  const initializeTable = useCallback(async () => {
+    dispatch(AppFrame.setPageLoading(true));
+    await initializeRosterColumnInfo();
+    await reloadTable();
+    dispatch(AppFrame.setPageLoading(false));
+  }, [dispatch, initializeRosterColumnInfo, reloadTable]);
+
+  useEffect(() => {
+    initializeTable().then();
+  }, [initializeTable]);
+
+  //
+  // Functions
+  //
+
+  const handleChangePage = (event: MouseEvent<HTMLButtonElement> | null, pageNew: number) => {
+    setPage(pageNew);
+  };
+
+  const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const rowsPerPageNew = parseInt(event.target.value);
+    const pageNew = getNewPageIndex(rowsPerPage, page, rowsPerPageNew);
+    setRowsPerPage(rowsPerPageNew);
+    setPage(pageNew);
+  };
+
+  const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files[0] == null) {
       return;
     }
@@ -169,20 +121,9 @@ export const RosterPage = () => {
           message: `Successfully uploaded ${count} roster entries.`,
           onClose: () => { setAlertDialogProps({ open: false }); },
         });
-        initializeTable();
+        await initializeTable();
       }
     }));
-  }
-
-  const handleChangeRowsPerPage = async (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
-    const response = await fetch(`api/roster/${orgId}?limit=${newRowsPerPage}&page=0`);
-    const rosterResponse = (await response.json()) as ApiRosterEntry[];
-    setPage(0);
-    setRows(rosterResponse);
-    setRowsPerPage(newRowsPerPage);
   };
 
   const editButtonClicked = async (rosterEntry: ApiRosterEntry) => {
@@ -226,10 +167,10 @@ export const RosterPage = () => {
     });
   };
 
-  function deleteButtonClicked(rosterEntry: ApiRosterEntry) {
+  const deleteButtonClicked = (rosterEntry: ApiRosterEntry) => {
     setSelectedRosterEntry(rosterEntry);
     setDeleteRosterEntryDialogOpen(true);
-  }
+  };
 
   const deleteRosterEntry = async () => {
     try {
@@ -324,54 +265,20 @@ export const RosterPage = () => {
     }
   };
 
-  useEffect(() => { initializeTable().then(); }, [initializeTable]);
-
-  const buildColumnHeaders = () => {
-    const columns = rosterColumnInfos?.slice(0, maxNumColumnsToShow);
-    return columns?.map(columnInfo => (
-      <TableCell key={columnInfo.name}>{columnInfo.displayName}</TableCell>
-    ));
+  const getVisibleColumns = () => {
+    return rosterColumnInfos.slice(0, maxNumColumnsToShow);
   };
 
-  const buildTableRows = () => {
-    const columns = rosterColumnInfos?.slice(0, maxNumColumnsToShow);
-
-    return rows.map(row => (
-
-      <TableRow key={row.edipi as string}>
-
-        {columns.map(columnInfo => (
-          <TableCell key={`${columnInfo.name}-${row.edipi}`}>
-            {row[columnInfo.name]}
-          </TableCell>
-        ))}
-
-        <TableCell className={classes.tableButtons}>
-          <Button
-            className={classes.editRosterEntryButton}
-            variant="outlined"
-            onClick={() => editButtonClicked(row)}
-          >
-            <EditIcon />
-          </Button>
-          <Button
-            className={classes.deleteRosterEntryButton}
-            variant="outlined"
-            onClick={() => deleteButtonClicked(row)}
-          >
-            <DeleteIcon />
-          </Button>
-        </TableCell>
-      </TableRow>
-
-    ));
-  };
+  //
+  // Render
+  //
 
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <div className={classes.buttons}>
+        <h1>Roster</h1>
 
+        <div className={classes.buttons}>
           <input
             accept="text/csv"
             id="raised-button-file"
@@ -418,35 +325,30 @@ export const RosterPage = () => {
           >
             Add
           </Button>
-
         </div>
 
         <TableContainer component={Paper}>
           <Table aria-label="simple table">
-            <TableHead>
-              <TableRow>
-                {buildColumnHeaders()}
-                <TableCell />
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {buildTableRows()}
-            </TableBody>
+            <TableCustomColumnsContent
+              rows={rows}
+              columns={getVisibleColumns()}
+              idColumn="edipi"
+              rowOptions={{
+                showEditButton: true,
+                showDeleteButton: true,
+                onEditButtonClick: editButtonClicked,
+                onDeleteButtonClick: deleteButtonClicked,
+              }}
+            />
             <TableFooter>
               <TableRow>
                 <TablePagination
-                  rowsPerPageOptions={[10, 25, 50]}
-                  count={rosterSize}
-                  colSpan={5}
-                  rowsPerPage={rowsPerPage}
+                  count={totalRowsCount}
                   page={page}
-                  SelectProps={{
-                    inputProps: { 'aria-label': 'rows per page' },
-                    native: true,
-                  }}
+                  rowsPerPage={rowsPerPage}
+                  rowsPerPageOptions={[10, 25, 50]}
                   onChangePage={handleChangePage}
                   onChangeRowsPerPage={handleChangeRowsPerPage}
-                  ActionsComponent={TablePaginationActions}
                 />
               </TableRow>
             </TableFooter>

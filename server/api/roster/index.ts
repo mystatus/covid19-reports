@@ -64,11 +64,11 @@ router.get(
 );
 
 router.get(
-    '/:orgId/export',
-    requireOrgAccess,
-    requireRolePermission(role => role.canManageRoster),
-    controller.exportRosterToCSV,
-  );
+  '/:orgId/export',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageRoster),
+  controller.exportRosterToCSV,
+);
 
 router.get(
   '/:orgId/info',
@@ -81,14 +81,6 @@ router.get(
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),
   controller.getRoster,
-);
-
-router.get(
-  '/:orgId/count',
-  requireOrgAccess,
-  requireRolePermission(role => role.canManageRoster),
-  bodyParser.json(),
-  controller.getRosterCount,
 );
 
 router.post(

@@ -4,8 +4,9 @@ import React from 'react';
 import { OverrideType } from '../../utility/typescript-utils';
 import useStyles from './status-chip.styles';
 
-export type StatusChipProps = OverrideType<ChipProps, {
-  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error';
+type ChipPropsTrimmed = Omit<ChipProps, 'variant'>;
+export type StatusChipProps = OverrideType<ChipPropsTrimmed, {
+  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error'
   size?: 'small' | 'medium'
 }>;
 
