@@ -12,6 +12,7 @@ import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { Roster } from '../../../actions/roster.actions';
+import { getNewPageIndex } from '../../../utility/table';
 import { TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
 import useStyles from './roster-page.styles';
@@ -94,8 +95,10 @@ export const RosterPage = () => {
   };
 
   const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setRowsPerPage(parseInt(event.target.value));
-    setPage(0);
+    const rowsPerPageNew = parseInt(event.target.value);
+    const pageNew = getNewPageIndex(rowsPerPage, page, rowsPerPageNew);
+    setRowsPerPage(rowsPerPageNew);
+    setPage(pageNew);
   };
 
   const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -118,7 +121,7 @@ export const RosterPage = () => {
           message: `Successfully uploaded ${count} roster entries.`,
           onClose: () => { setAlertDialogProps({ open: false }); },
         });
-        initializeTable().then();
+        await initializeTable();
       }
     }));
   };
@@ -327,6 +330,7 @@ export const RosterPage = () => {
             <TableCustomColumnsContent
               rows={rows}
               columns={getVisibleColumns()}
+              idColumn="edipi"
               rowOptions={{
                 showEditButton: true,
                 showDeleteButton: true,

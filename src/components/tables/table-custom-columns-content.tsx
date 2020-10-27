@@ -20,13 +20,14 @@ type TableCustomColumnsContentProps = OverrideType<TableProps, {
     onEditButtonClick?: (row: any) => void
     onDeleteButtonClick?: (row: any) => void
   }
+  idColumn: string
 }>;
 
 export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps) => {
   const classes = useStyles();
 
   const {
-    rows, columns, rowOptions,
+    rows, columns, rowOptions, idColumn,
   } = props;
 
   const showActions = () => {
@@ -49,9 +50,9 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
 
       <TableBody>
         {rows.map(row => (
-          <TableRow key={`${row.edipi}`}>
+          <TableRow key={`${row[idColumn]}`}>
             {columns.map(column => (
-              <TableCell key={`${column.name}-${row.edipi}`}>
+              <TableCell key={`${column.name}-${row[idColumn]}`}>
                 {row[column.name]}
               </TableCell>
             ))}
@@ -59,14 +60,14 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
             {showActions() && (
               <TableCell className={classes.tableButtons}>
                 <Button
-                  className={classes.editRosterEntryButton}
+                  className={classes.editButton}
                   variant="outlined"
                   onClick={() => rowOptions?.onEditButtonClick?.(row)}
                 >
                   <EditIcon />
                 </Button>
                 <Button
-                  className={classes.deleteRosterEntryButton}
+                  className={classes.deleteButton}
                   variant="outlined"
                   onClick={() => rowOptions?.onDeleteButtonClick?.(row)}
                 >

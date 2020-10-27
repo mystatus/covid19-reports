@@ -11,14 +11,14 @@ export default makeStyles(() => createStyles({
       padding: '0px',
     },
   },
-  editRosterEntryButton: {
+  editButton: {
     marginRight: '16px',
     border: '2px solid',
     '&:hover': {
       border: '2px solid',
     },
   },
-  deleteRosterEntryButton: {
+  deleteButton: {
     color: '#E41D3D',
     border: '2px solid #E41D3D',
     '&:hover': {
