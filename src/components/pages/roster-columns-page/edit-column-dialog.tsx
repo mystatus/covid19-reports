@@ -14,7 +14,7 @@ import {
 } from '@material-ui/core';
 import axios from 'axios';
 import useStyles from './edit-column-dialog.styles';
-import { ApiRosterColumnInfo, ApiRosterColumnType } from '../../../models/api-response';
+import { ApiRosterColumnInfo, ApiRosterColumnType, rosterColumnTypeDisplayName } from '../../../models/api-response';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
 
 export interface EditColumnDialogProps {
@@ -133,10 +133,11 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
                   id: 'type-select',
                 }}
               >
-                <option value={ApiRosterColumnType.String}>{ApiRosterColumnType.String}</option>
-                <option value={ApiRosterColumnType.Number}>{ApiRosterColumnType.Number}</option>
-                <option value={ApiRosterColumnType.Date}>{ApiRosterColumnType.Date}</option>
-                <option value={ApiRosterColumnType.Boolean}>{ApiRosterColumnType.Boolean}</option>
+                <option value={ApiRosterColumnType.String}>{rosterColumnTypeDisplayName(ApiRosterColumnType.String)}</option>
+                <option value={ApiRosterColumnType.Number}>{rosterColumnTypeDisplayName(ApiRosterColumnType.Number)}</option>
+                <option value={ApiRosterColumnType.Date}>{rosterColumnTypeDisplayName(ApiRosterColumnType.Date)}</option>
+                <option value={ApiRosterColumnType.DateTime}>{rosterColumnTypeDisplayName(ApiRosterColumnType.DateTime)}</option>
+                <option value={ApiRosterColumnType.Boolean}>{rosterColumnTypeDisplayName(ApiRosterColumnType.Boolean)}</option>
               </Select>
             )}
           </Grid>

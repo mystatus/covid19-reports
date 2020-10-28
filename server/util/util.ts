@@ -5,7 +5,7 @@ export function getOptionalParam<T extends object, K extends keyof T>(param: K, 
     return undefined;
   }
   if (params[param] !== null && typeof params[param] !== type) {
-    throw new BadRequestError(`Expected type '${type}' for parameter: ${param}`);
+    throw new BadRequestError(`Expected type '${typeof params[param]}' for parameter: ${param}`);
   }
   return params[param];
 }

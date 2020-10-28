@@ -82,17 +82,8 @@ async function generateOrg(orgNum: number, admin: User, name: string, descriptio
     rosterEntry.edipi = `${orgNum}${`${i}`.padStart(9, '0')}`;
     rosterEntry.firstName = 'Roster';
     rosterEntry.lastName = `Entry${i}`;
-    rosterEntry.rateRank = `Rank ${randomNumber(1, 10)}`;
-    rosterEntry.pilot = Math.random() > 0.5;
-    rosterEntry.aircrew = Math.random() > 0.5;
-    rosterEntry.advancedParty = Math.random() > 0.5;
-    rosterEntry.cdi = Math.random() > 0.5;
-    rosterEntry.cdqar = Math.random() > 0.5;
-    rosterEntry.dscacrew = Math.random() > 0.5;
     // Ensure at least some roster entries are in unit 1.
     rosterEntry.unit = (i % 2 === 0) ? 'unit1' : `unit${randomNumber(2, 5)}`;
-    rosterEntry.billetWorkcenter = '';
-    rosterEntry.contractNumber = '';
     rosterEntry.lastReported = new Date();
     const customColumns: any = {};
     customColumns[customColumn.name] = `custom column value`;

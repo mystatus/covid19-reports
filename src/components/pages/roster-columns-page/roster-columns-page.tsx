@@ -17,7 +17,7 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import useStyles from './roster-columns-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
-import { ApiRosterColumnInfo } from '../../../models/api-response';
+import { ApiRosterColumnInfo, rosterColumnTypeDisplayName } from '../../../models/api-response';
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditColumnDialog, EditColumnDialogProps } from './edit-column-dialog';
 import { AppFrame } from '../../../actions/app-frame.actions';
@@ -169,7 +169,7 @@ export const RosterColumnsPage = () => {
                 <TableRow key={column.name}>
                   <TableCell component="th" scope="row">{column.name}</TableCell>
                   <TableCell>{column.displayName}</TableCell>
-                  <TableCell className={classes.typeColumn}>{column.type}</TableCell>
+                  <TableCell className={classes.typeColumn}>{rosterColumnTypeDisplayName(column.type)}</TableCell>
                   <TableCell className={classes.iconCell}>
                     {column.pii ? 'Yes' : 'No'}
                   </TableCell>

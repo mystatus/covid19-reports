@@ -3,13 +3,15 @@ import csv from 'csvtojson';
 import fs from 'fs';
 import { snakeCase } from 'typeorm/util/StringUtils';
 import {
-  ApiRequest, EdipiParam, OrgColumnNameParams, OrgEdipiParams, OrgParam,
+  ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams,
 } from '../index';
 import {
   baseRosterColumns, CustomColumnValue, Roster, RosterColumnInfo, RosterColumnType,
 } from './roster.model';
-import { BadRequestError, InternalServerError, NotFoundError, UnprocessableEntity } from '../../util/error-types';
-import { getOptionalParam, getRequiredParam } from '../../util/util';
+import {
+  BadRequestError, InternalServerError, NotFoundError, UnprocessableEntity,
+} from '../../util/error-types';
+import { BaseType, getOptionalParam, getRequiredParam } from '../../util/util';
 import { Org } from '../org/org.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { Role } from '../role/role.model';
@@ -103,12 +105,12 @@ class RosterController {
     jsonToCsvConverter.json2csv(rosterData, (err: Error, csvString: String) => {
       // on failure
       if (err) {
-          console.error("Failed to convert roster json data to CSV string.");
-          throw new InternalServerError('Failed to export Roster data to CSV.');
+        console.error('Failed to convert roster json data to CSV string.');
+        throw new InternalServerError('Failed to export Roster data to CSV.');
       } else {
         // on success
         const date = new Date().toISOString();
-        const filename = 'org_' + orgId + '_roster_export_' + date + '.csv'
+        const filename = `org_${orgId}_roster_export_${date}.csv`;
         res.header('Content-Type', 'text/csv');
         res.attachment(filename);
         res.send(csvString);
@@ -137,6 +139,9 @@ class RosterController {
             example.push('Example Text');
             break;
           case RosterColumnType.Date:
+            example.push(new Date().toLocaleDateString());
+            break;
+          case RosterColumnType.DateTime:
             example.push(new Date().toISOString());
             break;
           default:
@@ -215,20 +220,33 @@ class RosterController {
     res.json(columns);
   }
 
-  async getRosterInfosForIndividual(req: ApiRequest<EdipiParam>, res: Response) {
-    const entries = await Roster.find({
+  async getRosterInfosForIndividual(req: ApiRequest<EdipiParam, any, ReportDateQuery>, res: Response) {
+    const reportDate = dateFromString(req.query.reportDate);
+    if (!reportDate) {
+      throw new BadRequestError('Missing reportDate.');
+    }
+    const entries = (await Roster.find({
       relations: ['org'],
       where: {
         edipi: req.params.edipi,
       },
-    });
+    })).filter(entry => isActiveOnRoster(entry, reportDate));
 
     const responseData: RosterInfo[] = [];
     for (const roster of entries) {
       const columns = (await getRosterColumns(roster.org!.id)).map(column => {
+        let value: CustomColumnValue;
+        if (column.custom) {
+          value = roster.customColumns[column.name] || null;
+        } else if (column.type === RosterColumnType.Date || column.type === RosterColumnType.DateTime) {
+          const dateValue: Date = Reflect.get(roster, column.name);
+          value = dateValue ? dateValue.toISOString() : null;
+        } else {
+          value = Reflect.get(roster, column.name) || null;
+        }
         const columnValue: RosterColumnWithValue = {
           ...column,
-          value: column.custom ? roster.customColumns[column.name] : Reflect.get(roster, column.name),
+          value,
         };
         return columnValue;
       });
@@ -247,14 +265,16 @@ class RosterController {
 
   async addRosterEntry(req: ApiRequest<OrgParam, RosterEntryData>, res: Response) {
     const edipi = req.body.edipi as string;
-    const rosterEntry = await Roster.findOne({
+    const rosterEntries = await Roster.find({
       where: {
         edipi,
         org: req.appOrg!.id,
       },
     });
 
-    if (rosterEntry) {
+    const now = new Date();
+
+    if (rosterEntries.some(roster => isActiveOnRoster(roster, now))) {
       throw new BadRequestError('The individual is already in the roster.');
     }
 
@@ -267,13 +287,13 @@ class RosterController {
     res.status(201).json(newRosterEntry);
   }
 
-  async getRosterEntry(req: ApiRequest<OrgEdipiParams>, res: Response) {
-    const userEDIPI = req.params.edipi;
+  async getRosterEntry(req: ApiRequest<OrgRosterParams>, res: Response) {
+    const rosterId = req.params.rosterId;
 
     const queryBuilder = await queryAllowedRoster(req.appOrg!, req.appRole!);
     const rosterEntry = await queryBuilder
       .andWhere('edipi=\':edipi\'', {
-        edipi: userEDIPI,
+        id: rosterId,
       })
       .getRawOne<RosterEntryData>();
 
@@ -284,14 +304,13 @@ class RosterController {
     res.json(rosterEntry);
   }
 
-  async deleteRosterEntry(req: ApiRequest<OrgEdipiParams>, res: Response) {
-    const userEDIPI = req.params.edipi;
+  async deleteRosterEntry(req: ApiRequest<OrgRosterParams>, res: Response) {
+    const rosterId = req.params.rosterId;
 
     const rosterEntry = await Roster.findOne({
-      relations: ["org"],
+      relations: ['org'],
       where: {
-        edipi: userEDIPI,
-        org: req.appOrg!.id,
+        id: rosterId,
       },
     });
 
@@ -304,14 +323,13 @@ class RosterController {
     res.json(deletedEntry);
   }
 
-  async updateRosterEntry(req: ApiRequest<OrgEdipiParams, RosterEntryData>, res: Response) {
-    const userEDIPI = req.params.edipi;
+  async updateRosterEntry(req: ApiRequest<OrgRosterParams, RosterEntryData>, res: Response) {
+    const rosterId = req.params.rosterId;
 
     const entry = await Roster.findOne({
       relations: ['org'],
       where: {
-        edipi: userEDIPI,
-        org: req.appOrg!.id,
+        id: rosterId,
       },
     });
 
@@ -330,6 +348,7 @@ class RosterController {
 async function queryAllowedRoster(org: Org, role: Role) {
   const columns = await getAllowedRosterColumns(org, role);
   const queryBuilder = Roster.createQueryBuilder().select([]);
+  queryBuilder.addSelect('id');
   columns.forEach(column => {
     if (column.custom) {
       let selection: string;
@@ -353,6 +372,8 @@ async function queryAllowedRoster(org: Org, role: Role) {
     .where({
       org: org.id,
     })
+    .andWhere('(end_date IS NULL OR end_date > now())')
+    .andWhere('(start_date IS NULL OR start_date < now())')
     .andWhere('unit like :name', { name: role.indexPrefix.replace('*', '%') });
 }
 
@@ -410,6 +431,11 @@ function setCustomColumnFromBody(column: CustomRosterColumn, body: CustomColumnD
   }
 }
 
+function isActiveOnRoster(entry: Roster, date: Date) {
+  return (!entry.startDate || entry.startDate.getTime() <= date.getTime())
+    && (!entry.endDate || entry.endDate.getTime() >= date.getTime());
+}
+
 function setRosterParamsFromBody(entry: Roster, body: RosterEntryData, columns: RosterColumnInfo[], newEntry: boolean = false) {
   columns.forEach(column => {
     if (newEntry || column.updatable) {
@@ -420,20 +446,34 @@ function setRosterParamsFromBody(entry: Roster, body: RosterEntryData, columns: 
 
 function getColumnFromBody(roster: Roster, row: RosterEntryData, column: RosterColumnInfo, newEntry: boolean) {
   let objectValue: Date | CustomColumnValue | undefined;
+  let paramType: BaseType;
+  switch (column.type) {
+    case RosterColumnType.Date:
+    case RosterColumnType.DateTime:
+      paramType = 'string';
+      break;
+    default:
+      paramType = column.type;
+  }
   if (column.required && newEntry) {
-    objectValue = getRequiredParam(column.name, row, column.type === RosterColumnType.Date ? 'string' : column.type);
+    objectValue = getRequiredParam(column.name, row, paramType);
   } else {
-    objectValue = getOptionalParam(column.name, row, column.type === RosterColumnType.Date ? 'string' : column.type);
+    objectValue = getOptionalParam(column.name, row, paramType);
   }
   if (objectValue !== undefined) {
     if (objectValue === null && column.required) {
       throw new BadRequestError(`Required column '${column.name}' cannot be null.`);
     }
     if (column.custom) {
+      if (!roster.customColumns) {
+        roster.customColumns = {};
+      }
       roster.customColumns[column.name] = objectValue;
     } else {
-      if (objectValue !== null && column.type === RosterColumnType.Date) {
-        objectValue = new Date(objectValue as string);
+      if (objectValue !== null
+        && (column.type === RosterColumnType.Date
+          || column.type === RosterColumnType.DateTime)) {
+        objectValue = dateFromString(`${objectValue}`);
       }
       Reflect.set(roster, column.name, objectValue !== null ? objectValue : undefined);
     }
@@ -447,7 +487,7 @@ function getColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColu
   } else {
     stringValue = getOptionalParam(column.name, row);
   }
-  if (stringValue !== undefined) {
+  if (stringValue != null && stringValue.length > 0) {
     let value: any;
     switch (column.type) {
       case RosterColumnType.String:
@@ -459,20 +499,8 @@ function getColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColu
         }
         break;
       case RosterColumnType.Date:
-        console.log(`Processing date: ${stringValue} for column ${column.name}`);
-        if (stringValue.length > 0) {
-          const numericDate = Number(stringValue);
-          let date: Date;
-          if (!Number.isNaN(numericDate)) {
-            date = new Date(numericDate);
-          } else {
-            date = new Date(stringValue);
-          }
-          if (Number.isNaN(date.getTime())) {
-            throw new BadRequestError(`Unable to parse date '${stringValue}' for column ${column.name}.  Valid dates are ISO formatted date strings and UNIX timestamps.`);
-          }
-          value = date;
-        }
+      case RosterColumnType.DateTime:
+        value = dateFromString(stringValue);
         break;
       case RosterColumnType.Boolean:
         value = stringValue === 'true';
@@ -493,8 +521,25 @@ function getColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColu
   }
 }
 
+function dateFromString(dateStr: string) {
+  if (dateStr && dateStr.length > 0) {
+    const numericDate = Number(dateStr);
+    let date: Date;
+    if (!Number.isNaN(numericDate)) {
+      date = new Date(numericDate);
+    } else {
+      date = new Date(dateStr);
+    }
+    if (Number.isNaN(date.getTime())) {
+      throw new BadRequestError(`Unable to parse date '${dateStr}'.  Valid dates are ISO formatted date strings and UNIX timestamps.`);
+    }
+    return date;
+  }
+  return undefined;
+}
+
 interface RosterColumnWithValue extends RosterColumnInfo {
-  value: any,
+  value: CustomColumnValue,
 }
 
 interface RosterInfo {
@@ -505,6 +550,10 @@ interface RosterInfo {
 type GetRosterQuery = {
   limit: string
   page: string
+};
+
+type ReportDateQuery = {
+  reportDate: string
 };
 
 type RosterFileRow = {

@@ -1,24 +1,28 @@
 import {
-  Entity, Column, BaseEntity, JoinColumn, ManyToOne, PrimaryColumn, CreateDateColumn,
+  Entity, Column, BaseEntity, JoinColumn, ManyToOne, CreateDateColumn, PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Org } from '../org/org.model';
 
 @Entity()
 export class Roster extends BaseEntity {
 
-  @PrimaryColumn({
-    length: 10,
-  })
-  edipi!: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @ManyToOne(() => Org, org => org.id, {
-    primary: true,
+    nullable: false,
     cascade: true,
+    onDelete: 'CASCADE',
   })
   @JoinColumn({
     name: 'org_id',
   })
   org?: Org;
+
+  @Column({
+    length: 10,
+  })
+  edipi!: string;
 
   @Column({
     length: 100,
@@ -36,75 +40,18 @@ export class Roster extends BaseEntity {
   unit!: string;
 
   @Column({
-    length: 50,
-  })
-  billetWorkcenter!: string;
-
-  @Column({
-    length: 100,
-  })
-  contractNumber!: string;
-
-  @Column({
-    length: 100,
     nullable: true,
+    default: () => 'null',
   })
-  rateRank?: string;
+  startDate?: Date;
 
   @Column({
     nullable: true,
+    default: () => 'null',
   })
-  pilot?: boolean;
-
-  @Column({
-    nullable: true,
-  })
-  aircrew?: boolean;
-
-  @Column({
-    nullable: true,
-  })
-  cdi?: boolean;
-
-  @Column({
-    nullable: true,
-  })
-  cdqar?: boolean;
-
-  @Column({
-    nullable: true,
-  })
-  dscacrew?: boolean;
-
-  @Column({
-    nullable: true,
-  })
-  advancedParty?: boolean;
-
-  @Column({
-    nullable: true,
-  })
-  pui?: boolean;
-
-  @Column({
-    nullable: true,
-  })
-  covid19TestReturnDate?: Date;
-
-  @Column({
-    length: 50,
-    nullable: true,
-  })
-  rom?: string;
-
-  @Column({
-    length: 100,
-    nullable: true,
-  })
-  romRelease?: string;
+  endDate?: Date;
 
   @CreateDateColumn({
-    type: 'timestamp',
     nullable: true,
     default: () => 'null',
   })
@@ -127,6 +74,7 @@ export enum RosterColumnType {
   String = 'string',
   Boolean = 'boolean',
   Date = 'date',
+  DateTime = 'datetime',
   Number = 'number',
 }
 
@@ -146,7 +94,7 @@ export const baseRosterColumns: RosterColumnInfo[] = [
     name: 'edipi',
     displayName: 'EDIPI',
     type: RosterColumnType.String,
-    pii: false,
+    pii: true,
     phi: false,
     custom: false,
     required: true,
@@ -179,98 +127,8 @@ export const baseRosterColumns: RosterColumnInfo[] = [
     required: true,
     updatable: true,
   }, {
-    name: 'billetWorkcenter',
-    displayName: 'Billet Workcenter',
-    type: RosterColumnType.String,
-    pii: false,
-    phi: false,
-    custom: false,
-    required: true,
-    updatable: true,
-  }, {
-    name: 'contractNumber',
-    displayName: 'Contract Number',
-    type: RosterColumnType.String,
-    pii: false,
-    phi: false,
-    custom: false,
-    required: true,
-    updatable: true,
-  }, {
-    name: 'rateRank',
-    displayName: 'Rate/Rank',
-    type: RosterColumnType.String,
-    pii: false,
-    phi: false,
-    custom: false,
-    required: false,
-    updatable: true,
-  }, {
-    name: 'pilot',
-    displayName: 'Pilot',
-    type: RosterColumnType.Boolean,
-    pii: false,
-    phi: false,
-    custom: false,
-    required: false,
-    updatable: true,
-  }, {
-    name: 'aircrew',
-    displayName: 'Aircrew',
-    type: RosterColumnType.Boolean,
-    pii: false,
-    phi: false,
-    custom: false,
-    required: false,
-    updatable: true,
-  }, {
-    name: 'cdi',
-    displayName: 'CDI',
-    type: RosterColumnType.Boolean,
-    pii: false,
-    phi: false,
-    custom: false,
-    required: false,
-    updatable: true,
-  }, {
-    name: 'cdqar',
-    displayName: 'CDQAR',
-    type: RosterColumnType.Boolean,
-    pii: false,
-    phi: false,
-    custom: false,
-    required: false,
-    updatable: true,
-  }, {
-    name: 'dscacrew',
-    displayName: 'DSCA Crew',
-    type: RosterColumnType.Boolean,
-    pii: false,
-    phi: false,
-    custom: false,
-    required: false,
-    updatable: true,
-  }, {
-    name: 'advancedParty',
-    displayName: 'Advanced Party',
-    type: RosterColumnType.Boolean,
-    pii: false,
-    phi: false,
-    custom: false,
-    required: false,
-    updatable: true,
-  }, {
-    name: 'pui',
-    displayName: 'PUI',
-    type: RosterColumnType.Boolean,
-    pii: false,
-    phi: false,
-    custom: false,
-    required: false,
-    updatable: true,
-  }, {
-    name: 'covid19TestReturnDate',
-    displayName: 'COVID 19 Test Return Date',
+    name: 'startDate',
+    displayName: 'Start Date',
     type: RosterColumnType.Date,
     pii: false,
     phi: false,
@@ -278,18 +136,9 @@ export const baseRosterColumns: RosterColumnInfo[] = [
     required: false,
     updatable: true,
   }, {
-    name: 'rom',
-    displayName: 'ROM',
-    type: RosterColumnType.String,
-    pii: false,
-    phi: false,
-    custom: false,
-    required: false,
-    updatable: true,
-  }, {
-    name: 'romRelease',
-    displayName: 'ROM Release',
-    type: RosterColumnType.String,
+    name: 'endDate',
+    displayName: 'End Date',
+    type: RosterColumnType.Date,
     pii: false,
     phi: false,
     custom: false,
@@ -298,7 +147,7 @@ export const baseRosterColumns: RosterColumnInfo[] = [
   }, {
     name: 'lastReported',
     displayName: 'Last Reported',
-    type: RosterColumnType.Date,
+    type: RosterColumnType.DateTime,
     pii: false,
     phi: false,
     custom: false,
