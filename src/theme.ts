@@ -1,3 +1,5 @@
+// HACK: Using the unstable version of createMuiTheme fixes the findDOMNode warnings. It should be switched back to
+//       the regular function on the next material-ui version (5.x).
 import { unstable_createMuiStrictModeTheme as createMuiTheme } from '@material-ui/core';
 
 const theme = createMuiTheme({
