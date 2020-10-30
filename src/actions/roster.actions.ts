@@ -13,7 +13,7 @@ export namespace Roster {
 
   }
 
-  export const upload = (file: File, onComplete: (count: number) => void) => async (dispatch: Dispatch<Actions.Upload>, getState: () => AppState) => {
+  export const upload = (file: File, onComplete: (count: number, message?: string) => void) => async (dispatch: Dispatch<Actions.Upload>, getState: () => AppState) => {
     console.log('uploading file...');
     console.log('file', file);
 
@@ -37,8 +37,12 @@ export namespace Roster {
       });
 
       onComplete(response.data.count);
-    } catch {
-      onComplete(-1);
+    } catch (error) {
+      let message: string | undefined;
+      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
+        message = error.response.data.errors[0].message;
+      }
+      onComplete(-1, message);
     }
 
     console.log('upload complete!');

@@ -40,6 +40,10 @@ export type EdipiParam = {
   edipi: string
 };
 
+export type RosterParam = {
+  rosterId: string
+};
+
 export type WorkspaceParam = {
   workspaceId: string
 };
@@ -50,6 +54,7 @@ export type ColumnNameParam = {
 
 export type OrgRoleParams = OrgParam & RoleParam;
 export type OrgEdipiParams = OrgParam & EdipiParam;
+export type OrgRosterParams = OrgParam & RosterParam;
 export type OrgWorkspaceParams = OrgParam & WorkspaceParam;
 export type OrgColumnNameParams = OrgParam & ColumnNameParam;
 

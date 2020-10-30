@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import {
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Grid,
-  TextField,
-  Checkbox,
-  TableRow,
   TableCell,
+  TableRow,
+  TextField,
 } from '@material-ui/core';
-import { MuiPickersUtilsProvider, DateTimePicker } from '@material-ui/pickers';
+import { DatePicker, DateTimePicker, MuiPickersUtilsProvider } from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import MomentUtils from '@date-io/moment';
 import axios from 'axios';
@@ -36,6 +36,8 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     open, orgId, rosterColumnInfos, onClose, onError,
   } = props;
 
+  const hiddenEditFields = ['lastReported'];
+
   const [saveRosterEntryLoading, setSaveRosterEntryLoading] = useState(false);
 
   const existingRosterEntry: boolean = !!props.rosterEntry;
@@ -56,11 +58,16 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     updateRosterEntryProperty(columnName, event.target.value);
   };
 
+  const onNumberFieldChanged = (columnName: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    const number = parseFloat(event.target.value);
+    updateRosterEntryProperty(columnName, Number.isNaN(number) ? null : number);
+  };
+
   const onCheckboxChanged = (columnName: string) => (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
     updateRosterEntryProperty(columnName, checked);
   };
 
-  const onDateTimeFieldChanged = (columnName: string) => (date: MaterialUiPickersDate) => {
+  const onDateFieldChanged = (columnName: string) => (date: MaterialUiPickersDate) => {
     updateRosterEntryProperty(columnName, date?.toISOString());
   };
 
@@ -69,7 +76,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     try {
       setSaveRosterEntryLoading(true);
       if (existingRosterEntry) {
-        await axios.put(`api/roster/${orgId}/${rosterEntry!.edipi}`, rosterEntry);
+        await axios.put(`api/roster/${orgId}/${rosterEntry!.id}`, rosterEntry);
       } else {
         await axios.post(`api/roster/${orgId}`, rosterEntry);
       }
@@ -109,6 +116,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
         switch (column.type) {
           case ApiRosterColumnType.String:
           case ApiRosterColumnType.Date:
+          case ApiRosterColumnType.DateTime:
             if ((rosterEntry[column.name] as string).length === 0) {
               result = false;
             }
@@ -125,7 +133,9 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
 
 
   const buildCheckboxFields = () => {
-    const columns = rosterColumnInfos?.filter(columnInfo => columnInfo.type === 'boolean');
+    const columns = rosterColumnInfos?.filter(columnInfo => {
+      return columnInfo.type === 'boolean' && hiddenEditFields.indexOf(columnInfo.name) < 0;
+    });
     return columns?.map(columnInfo => (
       <TableRow key={columnInfo.name}>
         <TableCell>
@@ -145,6 +155,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   };
 
   const buildTextInput = (columnInfo: ApiRosterColumnInfo) => {
+    const numberField = columnInfo.type === ApiRosterColumnType.Number;
     return (
       <TextField
         className={classes.textField}
@@ -152,10 +163,28 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
         label={columnInfo.displayName}
         disabled={formDisabled || (existingRosterEntry && !columnInfo.updatable)}
         required={columnInfo.required}
-        onChange={onTextFieldChanged(columnInfo.name)}
+        onChange={numberField ? onNumberFieldChanged(columnInfo.name) : onTextFieldChanged(columnInfo.name)}
         value={rosterEntry[columnInfo.name] || ''}
-        type={columnInfo.type === ApiRosterColumnType.Number ? 'number' : 'text'}
+        type={numberField ? 'number' : 'text'}
       />
+    );
+  };
+
+  const buildDateInput = (columnInfo: ApiRosterColumnInfo) => {
+    return (
+      <MuiPickersUtilsProvider utils={MomentUtils}>
+        <DatePicker
+          className={classes.textField}
+          id={columnInfo.name}
+          format="MM/DD/YYYY"
+          label={columnInfo.displayName}
+          disabled={formDisabled || (existingRosterEntry && !columnInfo.updatable)}
+          required={columnInfo.required}
+          placeholder="mm/dd/yy"
+          value={rosterEntry[columnInfo.name] ? rosterEntry[columnInfo.name] as string : null}
+          onChange={onDateFieldChanged(columnInfo.name)}
+        />
+      </MuiPickersUtilsProvider>
     );
   };
 
@@ -165,19 +194,22 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
         <DateTimePicker
           className={classes.textField}
           id={columnInfo.name}
+          format="MM/DD/YYYY hh:mm A"
           label={columnInfo.displayName}
           disabled={formDisabled || (existingRosterEntry && !columnInfo.updatable)}
           required={columnInfo.required}
           placeholder="mm/dd/yy hh:mm:ss"
-          value={rosterEntry[columnInfo.name] as string}
-          onChange={onDateTimeFieldChanged(columnInfo.name)}
+          value={rosterEntry[columnInfo.name] ? rosterEntry[columnInfo.name] as string : null}
+          onChange={onDateFieldChanged(columnInfo.name)}
         />
       </MuiPickersUtilsProvider>
     );
   };
 
   const buildInputFields = () => {
-    const columns = rosterColumnInfos?.filter(columnInfo => columnInfo.type !== 'boolean');
+    const columns = rosterColumnInfos?.filter(columnInfo => {
+      return columnInfo.type !== 'boolean' && hiddenEditFields.indexOf(columnInfo.name) < 0;
+    });
     return columns?.map(columnInfo => (
       <Grid key={columnInfo.name} item xs={6}>
         {buildInputFieldForColumnType(columnInfo)}
@@ -190,8 +222,10 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
       case ApiRosterColumnType.String:
       case ApiRosterColumnType.Number:
         return buildTextInput(column);
-      case ApiRosterColumnType.Date:
+      case ApiRosterColumnType.DateTime:
         return buildDateTimeInput(column);
+      case ApiRosterColumnType.Date:
+        return buildDateInput(column);
       default:
         console.warn(`Unhandled column type found while creating input fields: ${column.type}`);
         return '';

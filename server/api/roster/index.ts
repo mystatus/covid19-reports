@@ -100,21 +100,21 @@ router.post(
 );
 
 router.get(
-  '/:orgId/:edipi',
+  '/:orgId/:rosterId',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),
   controller.getRosterEntry,
 );
 
 router.delete(
-  '/:orgId/:edipi',
+  '/:orgId/:rosterId',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),
   controller.deleteRosterEntry,
 );
 
 router.put(
-  '/:orgId/:edipi',
+  '/:orgId/:rosterId',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),
   bodyParser.json(),

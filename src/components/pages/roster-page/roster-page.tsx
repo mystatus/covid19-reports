@@ -1,6 +1,16 @@
 import {
-  Button, Container, Paper, Table, TableContainer, TableRow, TableFooter,
-  DialogActions, Dialog, DialogTitle, DialogContent, DialogContentText,
+  Button,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Paper,
+  Table,
+  TableContainer,
+  TableFooter,
+  TableRow,
 } from '@material-ui/core';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import PublishIcon from '@material-ui/icons/Publish';
@@ -18,7 +28,12 @@ import { TablePagination } from '../../tables/table-pagination/table-pagination'
 import useStyles from './roster-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
-import { ApiRosterEntry, ApiRosterColumnInfo, ApiRosterPaginated } from '../../../models/api-response';
+import {
+  ApiRosterColumnInfo,
+  ApiRosterColumnType,
+  ApiRosterEntry,
+  ApiRosterPaginated,
+} from '../../../models/api-response';
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditRosterEntryDialog, EditRosterEntryDialogProps } from './edit-roster-entry-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
@@ -106,12 +121,13 @@ export const RosterPage = () => {
       return;
     }
 
-    dispatch(Roster.upload(e.target.files[0], async count => {
+    dispatch(Roster.upload(e.target.files[0], async (count, message) => {
       if (count < 0) {
+        const msg = `An error occurred while uploading the roster: ${message || 'Please verify the roster data.'}`;
         setAlertDialogProps({
           open: true,
           title: 'Upload Error',
-          message: 'An error occurred while uploading roster. Please verify the roster data.',
+          message: msg,
           onClose: () => { setAlertDialogProps({ open: false }); },
         });
       } else {
@@ -124,6 +140,23 @@ export const RosterPage = () => {
         await initializeTable();
       }
     }));
+  };
+
+  const getCellDisplayValue = (rosterEntry: ApiRosterEntry, column: ApiRosterColumnInfo) => {
+    const value = rosterEntry[column.name];
+    if (value == null) {
+      return '';
+    }
+    switch (column.type) {
+      case ApiRosterColumnType.Date:
+        return new Date(value as string).toLocaleDateString();
+      case ApiRosterColumnType.DateTime:
+        return new Date(value as string).toUTCString();
+      case ApiRosterColumnType.Boolean:
+        return value ? 'Yes' : 'No';
+      default:
+        return value;
+    }
   };
 
   const editButtonClicked = async (rosterEntry: ApiRosterEntry) => {
@@ -175,7 +208,7 @@ export const RosterPage = () => {
   const deleteRosterEntry = async () => {
     try {
       setDeleteRosterEntryLoading(true);
-      await axios.delete(`api/roster/${orgId}/${selectedRosterEntry!.edipi}`);
+      await axios.delete(`api/roster/${orgId}/${selectedRosterEntry!.id}`);
     } catch (error) {
       let message = 'Internal Server Error';
       if (error.response?.data?.errors && error.response.data.errors.length > 0) {
@@ -332,12 +365,13 @@ export const RosterPage = () => {
             <TableCustomColumnsContent
               rows={rows}
               columns={getVisibleColumns()}
-              idColumn="edipi"
+              idColumn="id"
               rowOptions={{
                 showEditButton: true,
                 showDeleteButton: true,
                 onEditButtonClick: editButtonClicked,
                 onDeleteButtonClick: deleteButtonClicked,
+                renderCell: getCellDisplayValue,
               }}
             />
             <TableFooter>
@@ -365,7 +399,7 @@ export const RosterPage = () => {
           <DialogTitle id="alert-dialog-title">Remove Individual</DialogTitle>
           <DialogContent>
             <DialogContentText id="alert-dialog-description">
-              {`Are you sure you want to remove EPIDI '${selectedRosterEntry?.edipi}' from this roster?`}
+              Are you sure you want to remove this individual from this roster?
             </DialogContentText>
           </DialogContent>
           <DialogActions>

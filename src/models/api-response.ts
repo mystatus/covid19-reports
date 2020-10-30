@@ -57,7 +57,25 @@ export enum ApiRosterColumnType {
   String = 'string',
   Boolean = 'boolean',
   Date = 'date',
+  DateTime = 'datetime',
   Number = 'number',
+}
+
+export function rosterColumnTypeDisplayName(type: ApiRosterColumnType) {
+  switch (type) {
+    case ApiRosterColumnType.Boolean:
+      return 'Boolean';
+    case ApiRosterColumnType.Number:
+      return 'Number';
+    case ApiRosterColumnType.String:
+      return 'String';
+    case ApiRosterColumnType.Date:
+      return 'Date';
+    case ApiRosterColumnType.DateTime:
+      return 'Date/Time';
+    default:
+      break;
+  }
 }
 
 export interface ApiRosterColumnInfo {
@@ -72,6 +90,7 @@ export interface ApiRosterColumnInfo {
 }
 
 export interface ApiRosterEntry {
+  id: number,
   [key: string]: string | boolean | number | null,
 }
 

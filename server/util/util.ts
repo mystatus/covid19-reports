@@ -5,7 +5,7 @@ export function getOptionalParam<T extends object, K extends keyof T>(param: K, 
     return undefined;
   }
   if (params[param] !== null && typeof params[param] !== type) {
-    throw new BadRequestError(`Expected type '${type}' for parameter: ${param}`);
+    throw new BadRequestError(`Expected type '${type}' for parameter '${param}', but type was '${typeof params[param]}'.`);
   }
   return params[param];
 }
@@ -15,7 +15,7 @@ export function getRequiredParam<T extends object, K extends keyof T>(param: K, 
     throw new BadRequestError(`Missing parameter: ${param}`);
   }
   if (typeof params[param] !== type) {
-    throw new BadRequestError(`Expected type '${type}' for parameter: ${param}`);
+    throw new BadRequestError(`Expected type '${type}' for parameter '${param}', but type was '${typeof params[param]}'.`);
   }
   return params[param];
 }
