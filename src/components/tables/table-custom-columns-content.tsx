@@ -19,7 +19,7 @@ type TableCustomColumnsContentProps = OverrideType<TableProps, {
     showDeleteButton?: boolean
     onEditButtonClick?: (row: any) => void
     onDeleteButtonClick?: (row: any) => void
-    displayFunction?: (row: any, column: any) => void
+    renderCell?: (row: any, column: any) => void
   }
   idColumn: string
 }>;
@@ -54,7 +54,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
           <TableRow key={`${row[idColumn]}`}>
             {columns.map(column => (
               <TableCell key={`${column.name}-${row[idColumn]}`}>
-                {rowOptions?.displayFunction?.(row, column) || row[column.name]}
+                {rowOptions?.renderCell?.(row, column) || row[column.name]}
               </TableCell>
             ))}
 

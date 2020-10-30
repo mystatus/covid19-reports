@@ -59,7 +59,8 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   };
 
   const onNumberFieldChanged = (columnName: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    updateRosterEntryProperty(columnName, +event.target.value);
+    const number = parseFloat(event.target.value);
+    updateRosterEntryProperty(columnName, Number.isNaN(number) ? null : number);
   };
 
   const onCheckboxChanged = (columnName: string) => (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {

@@ -142,7 +142,7 @@ export const RosterPage = () => {
     }));
   };
 
-  const getColumnDisplayValue = (rosterEntry: ApiRosterEntry, column: ApiRosterColumnInfo) => {
+  const getCellDisplayValue = (rosterEntry: ApiRosterEntry, column: ApiRosterColumnInfo) => {
     const value = rosterEntry[column.name];
     if (value == null) {
       return '';
@@ -371,7 +371,7 @@ export const RosterPage = () => {
                 showDeleteButton: true,
                 onEditButtonClick: editButtonClicked,
                 onDeleteButtonClick: deleteButtonClicked,
-                displayFunction: getColumnDisplayValue,
+                renderCell: getCellDisplayValue,
               }}
             />
             <TableFooter>

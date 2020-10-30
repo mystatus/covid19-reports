@@ -220,7 +220,7 @@ class RosterController {
     res.json(columns);
   }
 
-  async getRosterInfosForIndividual(req: ApiRequest<EdipiParam, any, ReportDateQuery>, res: Response) {
+  async getRosterInfosForIndividual(req: ApiRequest<EdipiParam, null, ReportDateQuery>, res: Response) {
     const reportDate = dateFromString(req.query.reportDate);
     if (!reportDate) {
       throw new BadRequestError('Missing reportDate.');
@@ -292,7 +292,7 @@ class RosterController {
 
     const queryBuilder = await queryAllowedRoster(req.appOrg!, req.appRole!);
     const rosterEntry = await queryBuilder
-      .andWhere('edipi=\':edipi\'', {
+      .andWhere('id=\':id\'', {
         id: rosterId,
       })
       .getRawOne<RosterEntryData>();
@@ -345,12 +345,19 @@ class RosterController {
 
 }
 
+/**
+ * This function queries the roster, returning only columns and rows that are allowed by the role of the requester.
+ */
 async function queryAllowedRoster(org: Org, role: Role) {
   const columns = await getAllowedRosterColumns(org, role);
   const queryBuilder = Roster.createQueryBuilder().select([]);
+  // Always select the id column
   queryBuilder.addSelect('id');
+
+  // Add all columns that are allowed by the user's role
   columns.forEach(column => {
     if (column.custom) {
+      // Make sure custom columns are converted to appropriate types
       let selection: string;
       switch (column.type) {
         case RosterColumnType.Boolean:
@@ -368,6 +375,8 @@ async function queryAllowedRoster(org: Org, role: Role) {
       queryBuilder.addSelect(snakeCase(column.name), column.name);
     }
   });
+
+  // Filter out roster entries that are not on the active roster or are not allowed by the role's index prefix.
   return queryBuilder
     .where({
       org: org.id,
