@@ -5,6 +5,11 @@ export default makeStyles(() => createStyles({
   root: {
     flexGrow: 1,
   },
+  infoIcon: {
+    color: '#71767A',
+    fontSize: '20px',
+    marginLeft: '5px',
+  },
   alertsTable: {
     '& .MuiTableCell-root': {
       padding: '25px 16px 25px 0px',

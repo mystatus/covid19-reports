@@ -22,6 +22,7 @@ export const AppToolbar = () => {
 
   const handleOrgChanged = (id: number) => () => {
     dispatch(User.changeOrg(id));
+    setOrgMenuAnchor(null);
   };
 
   const getAvatarURL = () => {
@@ -80,7 +81,7 @@ export const AppToolbar = () => {
                 <Divider />
                 <MenuItem>
                   <div className={classes.activeGroup} />
-                  <Link to="/groups" onClick={() => setUserMenuAnchor(null)}>
+                  <Link to="/groups" onClick={() => setOrgMenuAnchor(null)}>
                     Other Groups
                   </Link>
                 </MenuItem>

@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import {
-  Button, Divider, Paper, Switch, Table, TableCell, TableRow, Typography,
+  Button, Divider, IconButton, Paper, Switch, Table, TableCell, TableRow, Typography,
 } from '@material-ui/core';
+import { HelpOutline } from '@material-ui/icons';
 import { ApiNotification, ApiUserNotificationSetting } from '../../../models/api-response';
 import useStyles from './notifications-tab.style';
 import { AppState } from '../../../store';
@@ -15,6 +16,10 @@ interface NotificationSettings {
   [key: string]: ApiUserNotificationSetting,
 }
 
+interface NotificationSaving {
+  [key: string]: boolean,
+}
+
 export const NotificationsTab = (props: TabPanelProps) => {
   const classes = useStyles();
   const {
@@ -22,6 +27,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
   } = props;
 
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({});
+  const [notificationSaving, setNotificationSaving] = useState<NotificationSaving>({});
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [editAlertDialogProps, setEditAlertDialogProps] = useState<EditAlertDialogProps>({ open: false });
 
@@ -34,8 +40,13 @@ export const NotificationsTab = (props: TabPanelProps) => {
     settingsResponse.forEach(setting => {
       settings[setting.notificationId] = setting;
     });
+    const saving: NotificationSaving = {};
+    notificationsResponse.forEach(notification => {
+      saving[notification.id] = false;
+    });
     setNotifications(notificationsResponse);
     setNotificationSettings(settings);
+    setNotificationSaving(saving);
   }, [orgId]);
 
   const editAlertClicked = async (setting: ApiUserNotificationSetting) => {
@@ -66,7 +77,15 @@ export const NotificationsTab = (props: TabPanelProps) => {
   };
 
   const toggleSetting = (notification: ApiNotification) => async (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
+    if (notificationSaving[notification.id]) {
+      return;
+    }
     try {
+      setNotificationSaving(prevState => {
+        const newState = { ...prevState };
+        newState[notification.id] = true;
+        return newState;
+      });
       if (checked) {
         const newSetting: ApiUserNotificationSetting = {
           id: -1,
@@ -77,8 +96,8 @@ export const NotificationsTab = (props: TabPanelProps) => {
           smsEnabled: false,
           emailEnabled: true,
         };
-        setNotificationSettings(previous => {
-          const newState = { ...previous };
+        setNotificationSettings(prevState => {
+          const newState = { ...prevState };
           newState[notification.id] = newSetting;
           return newState;
         });
@@ -86,13 +105,18 @@ export const NotificationsTab = (props: TabPanelProps) => {
         newSetting.id = response.id;
       } else {
         const setting = notificationSettings[notification.id];
-        setNotificationSettings(previous => {
-          const newState = { ...previous };
+        setNotificationSettings(prevState => {
+          const newState = { ...prevState };
           delete newState[notification.id];
           return newState;
         });
         await axios.delete(`api/notification/${orgId}/setting/${setting.id}`);
       }
+      setNotificationSaving(prevState => {
+        const newState = { ...prevState };
+        newState[notification.id] = false;
+        return newState;
+      });
     } catch (error) {
       let message = 'Internal Server Error';
       if (error.response?.data?.errors && error.response.data.errors.length > 0) {
@@ -129,6 +153,18 @@ export const NotificationsTab = (props: TabPanelProps) => {
     );
   };
 
+  const displayInfo = () => {
+    setAlertDialogProps({
+      open: true,
+      title: 'Alerts',
+      message: `Alerts within the StatusEngine application have been designed to give you the most up-to-date
+      information on your group and users without overburdening your inbox or mobile device. Each alert topic
+      has customizable parameters that allow you to tweak the alert type, threshold, frequency and minimum
+      time between individual alerts.`,
+      onClose: () => { setAlertDialogProps({ open: false }); },
+    });
+  };
+
   useEffect(() => { initializeTable().then(); }, [initializeTable]);
 
   return (
@@ -140,7 +176,12 @@ export const NotificationsTab = (props: TabPanelProps) => {
     >
       {value === index && (
         <Paper elevation={3}>
-          <h2>Alerts</h2>
+          <h2>
+            Alerts
+            <IconButton className={classes.infoIcon} aria-label="Alert Info" size="small" onClick={displayInfo}>
+              <HelpOutline fontSize="inherit" />
+            </IconButton>
+          </h2>
 
           {notifications.length > 0 && (
             <Table aria-label="Alerts" className={classes.alertsTable}>
