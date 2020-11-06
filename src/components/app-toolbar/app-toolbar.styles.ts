@@ -25,20 +25,6 @@ export default makeStyles((theme: Theme) => createStyles({
   spacer: {
     flex: 1,
   },
-  orgSelect: {
-    color: 'white',
-    border: 'none',
-    marginRight: '20px',
-    '&:before': {
-      borderColor: 'transparent',
-    },
-    '&:after': {
-      borderColor: 'transparent',
-    },
-  },
-  orgSelectIcon: {
-    fill: 'white',
-  },
   toolbar: {
     display: 'flex',
     alignItems: 'center',
@@ -47,11 +33,43 @@ export default makeStyles((theme: Theme) => createStyles({
     // necessary for content to be below app bar
     ...theme.mixins.toolbar,
   },
+  toolbarDivider: {
+    padding: '15px 0px',
+    borderLeft: '1px solid #536173',
+    margin: '10px',
+    alignSelf: 'center',
+  },
+  activeGroup: {
+    color: '#00A91C',
+    width: '24px',
+    position: 'relative',
+    top: '3px',
+    left: '-2px',
+    '& > svg': {
+      fontSize: '1.25rem',
+    },
+  },
   controls: {
     display: 'flex',
     justifyContent: 'space-between',
   },
-  userButton: {
+  toolbarButton: {
     color: 'white',
+    textTransform: 'none',
+    '& .MuiAvatar-root': {
+      width: '32px',
+      height: '32px',
+      marginRight: '10px',
+      top: '-1px',
+      backgroundColor: '#73B3E7',
+      fontSize: '14px',
+    },
+  },
+  userMenuIcon: {
+    position: 'relative',
+    left: '-5px',
+    top: '-1px',
+    marginRight: '5px',
+    color: '#757575',
   },
 }));

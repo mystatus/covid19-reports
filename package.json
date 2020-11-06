@@ -49,6 +49,7 @@
     "redux-thunk": "^2.3.0",
     "reflect-metadata": "^0.1.13",
     "tough-cookie": "^4.0.0",
+    "ts-md5": "^1.2.7",
     "typeorm": "^0.2.25",
     "typeorm-naming-strategies": "^2.0.0"
   },

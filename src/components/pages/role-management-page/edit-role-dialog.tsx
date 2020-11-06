@@ -11,10 +11,9 @@ import {
 } from '@material-ui/core';
 import axios from 'axios';
 import useStyles from './edit-role-dialog.styles';
-import { ApiRole, ApiRosterColumnInfo, ApiWorkspace } from '../../../models/api-response';
 import {
-  allNotificationEvents,
-} from '../../../models/notification-events';
+  ApiNotification, ApiRole, ApiRosterColumnInfo, ApiWorkspace,
+} from '../../../models/api-response';
 import {
   RolePermissions, parsePermissions, permissionsToArray,
 } from '../../../utility/permission-set';
@@ -27,6 +26,7 @@ export interface EditRoleDialogProps {
   role?: ApiRole,
   rosterColumns?: ApiRosterColumnInfo[],
   workspaces?: ApiWorkspace[],
+  notifications?: ApiNotification[],
   onClose?: () => void,
   onError?: (error: string) => void,
 }
@@ -36,7 +36,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
 
   const [formDisabled, setFormDisabled] = useState(false);
   const {
-    open, orgId, role, workspaces, rosterColumns, onClose, onError,
+    open, orgId, role, workspaces, rosterColumns, notifications, onClose, onError,
   } = props;
 
   const existingRole: boolean = !!role;
@@ -45,7 +45,12 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   const [indexPrefix, setIndexPrefix] = useState(role?.indexPrefix || '');
   const [workspaceId, setWorkspaceId] = useState(role?.workspace?.id || -1);
   const [allowedRosterColumns, setAllowedRosterColumns] = useState(parsePermissions(rosterColumns || [], role?.allowedRosterColumns));
-  const [allowedNotificationEvents, setAllowedNotificationEvents] = useState(parsePermissions(allNotificationEvents, role?.allowedNotificationEvents));
+  const [allowedNotificationEvents, setAllowedNotificationEvents] = useState(parsePermissions(notifications?.map(notification => {
+    return {
+      name: notification.id,
+      displayName: notification.name,
+    };
+  }) || [], role?.allowedNotificationEvents));
   const [canManageGroup, setCanManageGroup] = useState(role ? role.canManageGroup : false);
   const [canManageRoster, setCanManageRoster] = useState(role ? role.canManageRoster : false);
   const [canManageWorkspace, setCanManageWorkspace] = useState(role ? role.canManageWorkspace : false);
@@ -191,17 +196,17 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   };
 
   const buildNotificationEventRows = () => {
-    return allNotificationEvents.map(event => (
-      <TableRow key={event.name}>
+    return notifications?.map(notification => (
+      <TableRow key={notification.id}>
         <TableCell>
-          {event.displayName}
+          {notification.name}
         </TableCell>
         <TableCell>
           <Checkbox
             color="primary"
             disabled={formDisabled}
-            checked={allowedNotificationEvents[event.name]}
-            onChange={onNotificationEventChanged(event.name)}
+            checked={allowedNotificationEvents[notification.id]}
+            onChange={onNotificationEventChanged(notification.id)}
           />
         </TableCell>
       </TableRow>
