@@ -157,34 +157,43 @@ export const EditAlertDialog = (props: EditAlertDialogProps) => {
               inputProps={{ min: '1', step: '1' }}
             />
           </Grid>
-          <Grid item xs={6} className={classes.gridLabel}>
-            <Typography className={classes.label}>Daily limit (or 0 for no limit):</Typography>
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              className={classes.textField}
-              disabled={formDisabled}
-              required
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setMaxDailyCount(Math.max(0, parseInt(event.target.value)))}
-              value={maxDailyCount}
-              type="number"
-              inputProps={{ min: '0', step: '1' }}
-            />
-          </Grid>
-          <Grid item xs={6} className={classes.gridLabel}>
-            <Typography className={classes.label}>Minimum time between alerts:</Typography>
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              className={classes.textField}
-              disabled={formDisabled}
-              required
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setMinTimeBetweenAlerts(Math.max(0, parseFloat(event.target.value)))}
-              value={minTimeBetweenAlerts}
-              type="number"
-              inputProps={{ min: '0', step: '0.5' }}
-            />
-          </Grid>
+          { notification!.defaultMaxDailyCount >= 0 && (
+            <Grid item xs={6} className={classes.gridLabel}>
+              <Typography className={classes.label}>Daily limit (or 0 for no limit):</Typography>
+            </Grid>
+          )}
+          { notification!.defaultMaxDailyCount >= 0 && (
+            <Grid item xs={6}>
+              <TextField
+                className={classes.textField}
+                disabled={formDisabled}
+                required
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setMaxDailyCount(Math.max(0, parseInt(event.target.value)))}
+                value={maxDailyCount}
+                type="number"
+                inputProps={{ min: '0', step: '1' }}
+              />
+            </Grid>
+          )}
+
+          { notification!.defaultMinTimeBetweenAlerts >= 0 && (
+            <Grid item xs={6} className={classes.gridLabel}>
+              <Typography className={classes.label}>Minimum time between alerts:</Typography>
+            </Grid>
+          )}
+          { notification!.defaultMinTimeBetweenAlerts >= 0 && (
+            <Grid item xs={6}>
+              <TextField
+                className={classes.textField}
+                disabled={formDisabled}
+                required
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setMinTimeBetweenAlerts(Math.max(0, parseFloat(event.target.value)))}
+                value={minTimeBetweenAlerts}
+                type="number"
+                inputProps={{ min: '0', step: '0.5' }}
+              />
+            </Grid>
+          )}
           <Grid item xs={12}>
             {buildSettingBlock()}
           </Grid>

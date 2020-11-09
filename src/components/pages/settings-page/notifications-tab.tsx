@@ -233,7 +233,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
 
 export const buildSettingText = (template: string, setting: ApiUserNotificationSetting) => {
   let frequency: string;
-  if (setting.maxDailyCount === 0) {
+  if (setting.maxDailyCount <= 0) {
     if (setting.minTimeBetweenAlerts > 0) {
       frequency = `Do not alert me more than once every <b>${setting.minTimeBetweenAlerts / 60}</b> hour(s).`;
     } else {
