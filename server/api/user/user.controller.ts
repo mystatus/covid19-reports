@@ -110,9 +110,10 @@ class UserController {
       user.roles = [];
     }
 
-    const orgRole = user.roles.find(userRole => userRole.org!.id === org.id);
-    if (orgRole) {
-      throw new BadRequestError('The user already has a role in the organization.');
+    const orgRoleIndex = user.roles.findIndex(userRole => userRole.org!.id === org.id);
+
+    if (orgRoleIndex >= 0) {
+      user.roles.splice(orgRoleIndex, 1)
     }
 
     user.roles.push(role);
@@ -187,6 +188,37 @@ class UserController {
     const removedUser = await user.remove();
 
     res.json(removedUser);
+  }
+
+  async removeUser(req: ApiRequest<OrgEdipiParams>, res: Response) {
+    if (!req.appOrg) {
+      throw new NotFoundError('Organization was not found.');
+    }
+
+    const userEDIPI = req.params.edipi;
+
+    const user = await User.findOne({
+      relations: ['roles'],
+      where: {
+        edipi: userEDIPI,
+      },
+      join: {
+        alias: 'user',
+        leftJoinAndSelect: {
+          roles: 'user.roles',
+          org: 'roles.org',
+        },
+      },
+    });
+
+    const roleIndex = (user?.roles ?? []).findIndex((userRole) => userRole.org!.id === req.appOrg!.id);
+
+    if (roleIndex !== -1) {
+      user!.roles!.splice(roleIndex, 1);
+      res.json(await user!.save())
+    } else {
+      res.json({})
+    }
   }
 
   async getAccessRequests(req: ApiRequest, res: Response) {
