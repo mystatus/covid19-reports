@@ -7,19 +7,21 @@ interface ButtonWithSpinnerProps extends ButtonProps {
   loading?: boolean
 }
 
-export const ButtonWithSpinner = (props: ButtonWithSpinnerProps) => {
+export const ButtonWithSpinner = ({
+  children, disabled, loading, ...rest
+}: ButtonWithSpinnerProps) => {
   const classes = useStyles();
 
   return (
     <div className={classes.root}>
       <div className={classes.wrapper}>
         <Button
-          {...props}
-          {...props.loading ? { disabled: true } : {}}
+          {...rest}
+          disabled={Boolean(loading) || disabled}
         >
-          { props.children }
+          { children }
         </Button>
-        {props.loading && <CircularProgress size={24} className={classes.buttonProgress} />}
+        {loading && <CircularProgress size={24} className={classes.buttonProgress} />}
       </div>
     </div>
   );
