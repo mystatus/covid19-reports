@@ -6,16 +6,16 @@ import { requireOrgAccess, requireRolePermission } from '../../auth';
 const router = express.Router() as any;
 
 router.get(
-  '/',
-  requireOrgAccess,
-  requireRolePermission(role => role.canManageGroup),
-  controller.getAllNotifications,
-);
-
-router.get(
   '/:orgId',
   requireOrgAccess,
   controller.getAvailableNotifications,
+);
+
+router.get(
+  '/:orgId/all',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageGroup),
+  controller.getAllNotifications,
 );
 
 router.get(

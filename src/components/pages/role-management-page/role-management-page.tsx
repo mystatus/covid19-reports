@@ -57,7 +57,7 @@ export const RoleManagementPage = () => {
     const orgRoles = (await axios.get(`api/role/${orgId}`)).data as ApiRole[];
     const orgWorkspaces = (await axios.get(`api/workspace/${orgId}`)).data as ApiWorkspace[];
     const orgRosterColumns = (await axios.get(`api/roster/${orgId}/column`)).data as ApiRosterColumnInfo[];
-    const allNotifications = (await axios.get(`api/notification`)).data as ApiNotification[];
+    const allNotifications = (await axios.get(`api/notification/${orgId}/all`)).data as ApiNotification[];
     const parsedRoleData = orgRoles.map(role => {
       return {
         allowedRosterColumns: parsePermissions(orgRosterColumns, role.allowedRosterColumns),

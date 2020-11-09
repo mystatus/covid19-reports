@@ -145,7 +145,6 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
     role.indexPrefix = body.indexPrefix;
   }
   if (body.workspaceId !== undefined) {
-    console.log('workspaceId', body.workspaceId);
     if (body.workspaceId == null) {
       role.workspace = null;
     } else {
