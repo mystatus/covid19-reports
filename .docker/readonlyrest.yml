@@ -1,0 +1,33 @@
+readonlyrest:
+  enable: true
+  prompt_for_basic_auth: false
+
+  access_control_rules:
+    - name: "::USR-KIBANA-RO-STRICT::"
+      kibana_access: ro_strict
+      kibana_index: ".kibana_@{user}"
+      indices: [".kibana", ".kibana-devnull", ".kibana_@{user}", "@{x-se-fire-department-all}"]
+      kibana_hide_apps: ["readonlyrest_kbn", "kibana:dev_tools"]
+      jwt_auth:
+        name: "jwt1"
+        roles: ["kibana_ro_strict"]
+
+    - name: "::USR-KIBANA::"
+      kibana_access: admin
+      kibana_index: ".kibana_@{user}"
+      indices: [".kibana", ".kibana-devnull", ".kibana_@{user}", "@{x-se-fire-department-all}"]
+      kibana_hide_apps: ["readonlyrest_kbn", "kibana:dev_tools"]
+      jwt_auth:
+        name: "jwt1"
+        roles: ["kibana_admin"]
+
+    - name: "::KIBANA::"
+      auth_key: kibana:kibana
+      verbosity: info
+
+  jwt:
+    - name: jwt1
+      signature_algo: "HMAC"
+      signature_key: "woEayHiICafruph^gZJb3EG5Fnl1qou6XUT8xR^7OMwaCYxz^&@rr#Hi5*s*918tQS&iDJO&67xy0hP!F@pThb3#Aymx%XPV3x^"
+      user_claim: "firecares_id"
+      roles_claim: "roles"
