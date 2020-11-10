@@ -491,9 +491,9 @@ export const defaultNotifications = [{
   defaultThreshold: 1,
   defaultMinTimeBetweenAlerts: 60,
 }, {
-  id: 'contactRequestAlert',
+  id: 'speakToSomeoneAlert',
   uiSort: 2,
-  uiName: 'Individual Contact Request',
+  uiName: 'Individual Needs to Speak with Someone',
   uiDescription: 'Alert me when an individual in my group requests to speak with someone.',
   uiSettingsTemplate: 'Alert me by {type} when {threshold} or more individuals request to speak with someone.',
   smsTemplate: 'StatusEngine - We have identified __VALUE__ individual(s) within your group that have requested to speak with someone.',
@@ -515,7 +515,7 @@ export const defaultNotifications = [{
     + '<meta name="format-detection" content="date=no"> <!-- disable auto date linking in iOS -->'
     + '<meta name="format-detection" content="address=no"> <!-- disable auto address linking in iOS -->'
     + '<meta name="format-detection" content="email=no"> <!-- disable auto email linking in iOS -->'
-    + '<title>Individual Contact Request</title>'
+    + '<title>Individual Needs to Speak with Someone</title>'
     + '<style type="text/css">'
     + '/*Basics*/'
     + 'body {margin:0px!important;padding:0px!important;display:block!important;min-width:100%!important;width:100%!important;-webkit-text-size-adjust:none;}'
@@ -644,7 +644,7 @@ export const defaultNotifications = [{
     + '  <tr>'
     + '    <td class="center-text" align="center" style="font-family:\'Public Sans\', Arial, Helvetica, sans-serif;font-size:36px;line-height:40px;font-weight:700;font-style:normal;color:rgb(255, 255, 255);text-decoration:none;letter-spacing:0.75px;">'
     + '        <singleline>'
-    + '          <div style="margin: 0px; padding: 0px;"><p style="margin: 0px; padding: 0px;">Individual Contact Request</p><p style="margin: 0px; padding: 0px;">'
+    + '          <div style="margin: 0px; padding: 0px;"><p style="margin: 0px; padding: 0px;">Individual Needs to Speak with Someone</p><p style="margin: 0px; padding: 0px;">'
     + '          </p></div>'
     + '        </singleline>'
     + '    </td>'
