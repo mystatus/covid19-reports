@@ -56,11 +56,7 @@ class UserController {
   }
 
   async addUser(req: ApiRequest<OrgParam, AddUserBody>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
-    const org = req.appOrg;
+    const org = req.appOrg!;
     const roleId = (req.body.role != null) ? parseInt(req.body.role) : undefined;
     const edipi = req.body.edipi;
     const firstName = req.body.firstName;
@@ -141,13 +137,9 @@ class UserController {
     //   ON user_roles."user" = "user"."EDIPI"
     // WHERE role.org_id=1
 
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
     const roles = await Role.find({
       where: {
-        org: req.appOrg.id,
+        org: req.appOrg!.id,
       },
     });
 
@@ -168,16 +160,12 @@ class UserController {
   }
 
   async deleteUser(req: ApiRequest<OrgEdipiParams>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
     const userEDIPI = req.params.edipi;
 
     const user = await User.findOne({
       where: {
         edipi: userEDIPI,
-        org: req.appOrg.id,
+        org: req.appOrg!.id,
       },
     });
 
@@ -190,11 +178,7 @@ class UserController {
     res.json(removedUser);
   }
 
-  async removeUser(req: ApiRequest<OrgEdipiParams>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
+  async removeUserFromGroup(req: ApiRequest<OrgEdipiParams>, res: Response) {
     const userEDIPI = req.params.edipi;
 
     const user = await User.findOne({

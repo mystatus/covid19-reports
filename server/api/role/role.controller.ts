@@ -3,7 +3,6 @@ import { getConnection } from 'typeorm';
 import { ApiRequest, OrgParam, OrgRoleParams } from '../index';
 import { Role } from './role.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
-import { baseRosterColumns } from '../roster/roster.model';
 import { Workspace } from '../workspace/workspace.model';
 import { getRosterColumns } from '../roster/roster.controller';
 
