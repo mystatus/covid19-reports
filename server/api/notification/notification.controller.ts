@@ -158,7 +158,7 @@ function sanitizeNotification(notification?: Notification) {
     description: notification.uiDescription,
     settingsTemplate: notification.uiSettingsTemplate,
     defaultThreshold: notification.defaultThreshold,
-    defaultMinTimeBetweenAlerts: notification.defaultMinTimeBetweenAlerts,
+    defaultMinMinutesBetweenAlerts: notification.defaultMinMinutesBetweenAlerts,
     defaultMaxDailyCount: notification.defaultMaxDailyCount,
   };
 }
@@ -169,7 +169,7 @@ function sanitizeUserNotificationSetting(setting: UserNotificationSetting) {
     id: setting.id,
     notificationId: setting.notification?.id,
     threshold: setting.threshold,
-    minTimeBetweenAlerts: setting.minTimeBetweenAlerts,
+    minMinutesBetweenAlerts: setting.minMinutesBetweenAlerts,
     maxDailyCount: setting.maxDailyCount,
     smsEnabled: setting.smsEnabled,
     emailEnabled: setting.emailEnabled,
@@ -180,8 +180,8 @@ async function setNotificationSettingFromBody(setting: UserNotificationSetting, 
   if (body.threshold != null) {
     setting.threshold = body.threshold;
   }
-  if (body.minTimeBetweenAlerts != null) {
-    setting.minTimeBetweenAlerts = body.minTimeBetweenAlerts;
+  if (body.minMinutesBetweenAlerts != null) {
+    setting.minMinutesBetweenAlerts = body.minMinutesBetweenAlerts;
   }
   if (body.dailyCount != null) {
     setting.dailyCount = body.dailyCount;
@@ -203,7 +203,7 @@ async function setNotificationSettingFromBody(setting: UserNotificationSetting, 
 type UserNotificationSettingBody = {
   notificationId?: string,
   threshold?: number,
-  minTimeBetweenAlerts?: number,
+  minMinutesBetweenAlerts?: number,
   dailyCount?: number,
   maxDailyCount?: number,
   smsEnabled?: boolean,

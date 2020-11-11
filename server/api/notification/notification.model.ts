@@ -10,6 +10,8 @@ export class Notification extends BaseEntity {
   @PrimaryColumn()
   id!: string;
 
+  // This is a double precision field to allow new notifications to be added to the UI at any point without needing to
+  // re-write every other notification sort value.
   @Column({
     type: 'double precision',
   })
@@ -46,12 +48,11 @@ export class Notification extends BaseEntity {
   })
   defaultMaxDailyCount: number = 24;
 
-  // Minimum time between alerts (in minutes)
   @Column({
     type: 'integer',
     default: 60,
   })
-  defaultMinTimeBetweenAlerts: number = 60;
+  defaultMinMinutesBetweenAlerts: number = 60;
 
   @Column({
     nullable: true,

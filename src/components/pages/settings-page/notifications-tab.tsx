@@ -91,7 +91,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
           id: -1,
           notificationId: notification.id,
           threshold: notification.defaultThreshold,
-          minTimeBetweenAlerts: notification.defaultMinTimeBetweenAlerts,
+          minMinutesBetweenAlerts: notification.defaultMinMinutesBetweenAlerts,
           maxDailyCount: notification.defaultMaxDailyCount,
           smsEnabled: false,
           emailEnabled: true,
@@ -159,7 +159,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
       title: 'Alerts',
       message: `Alerts within the StatusEngine application have been designed to give you the most up-to-date
       information on your group and users without overburdening your inbox or mobile device. Each alert topic
-      has customizable parameters that allow you to tweak the alert type, threshold, frequency and minimum
+      has customizable parameters that allow you to tweak the alert type, threshold, frequency, and minimum
       time between individual alerts.`,
       onClose: () => { setAlertDialogProps({ open: false }); },
     });
@@ -197,7 +197,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
                       className={notificationSettings[notification.id] ? classes.alertSwitchActivated : classes.alertSwitchDeactivated}
                     />
                   </TableCell>
-                  <TableCell className={classes.alertDescriptionCell}>
+                  <TableCell>
                     <Typography className={classes.alertName}>{notification.name}</Typography>
                     <Typography>{notification.description}</Typography>
                   </TableCell>
@@ -234,13 +234,13 @@ export const NotificationsTab = (props: TabPanelProps) => {
 export const buildSettingText = (template: string, setting: ApiUserNotificationSetting) => {
   let frequency: string;
   if (setting.maxDailyCount <= 0) {
-    if (setting.minTimeBetweenAlerts > 0) {
-      frequency = `Do not alert me more than once every <b>${setting.minTimeBetweenAlerts / 60}</b> hour(s).`;
+    if (setting.minMinutesBetweenAlerts > 0) {
+      frequency = `Do not alert me more than once every <b>${setting.minMinutesBetweenAlerts / 60}</b> hour(s).`;
     } else {
       frequency = '';
     }
-  } else if (setting.minTimeBetweenAlerts > 0) {
-    frequency = `Do not alert me more than <b>${setting.maxDailyCount}</b> time(s) per day with a minimum of <b>${setting.minTimeBetweenAlerts / 60}</b> hour(s) between alerts.`;
+  } else if (setting.minMinutesBetweenAlerts > 0) {
+    frequency = `Do not alert me more than <b>${setting.maxDailyCount}</b> time(s) per day with a minimum of <b>${setting.minMinutesBetweenAlerts / 60}</b> hour(s) between alerts.`;
   } else {
     frequency = `Do not alert me more than <b>${setting.maxDailyCount}</b> time(s) per day.`;
   }

@@ -1,7 +1,7 @@
 import {
   AppBar, Avatar, Button, Divider, Menu, MenuItem, Toolbar,
 } from '@material-ui/core';
-import { ArrowDropDown, CheckCircleOutline, Settings } from '@material-ui/icons';
+import { ArrowDropDown, Settings } from '@material-ui/icons';
 
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -29,7 +29,7 @@ export const AppToolbar = () => {
     const md5 = new Md5();
     md5.appendStr(user.email.trim().toLowerCase());
     const hash = md5.end() as string;
-    return `https://www.gravatar.com/avatar/${hash}?d=404&s=32`;
+    return `https://www.gravatar.com/avatar/${hash}?d=404&s=64`;
   };
 
   return (
@@ -58,33 +58,22 @@ export const AppToolbar = () => {
                 getContentAnchorEl={null}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                className={classes.toolbarMenu}
               >
                 {user.roles.map(role => (
-                  <MenuItem onClick={handleOrgChanged(role.org!.id)}>
-
-                    {user.activeRole!.org!.id === role.org!.id ? (
-                      <>
-                        <div className={classes.activeGroup}>
-                          <CheckCircleOutline />
-                        </div>
-                        <b>{role.org!.name}</b>
-                      </>
-                    ) : (
-                      <>
-                        <div className={classes.activeGroup} />
-                        {role.org!.name}
-                      </>
-                    )}
-
+                  <MenuItem
+                    selected={user.activeRole!.org!.id === role.org!.id}
+                    onClick={handleOrgChanged(role.org!.id)}
+                  >
+                    {role.org!.name}
                   </MenuItem>
                 ))}
                 <Divider />
-                <MenuItem>
-                  <div className={classes.activeGroup} />
-                  <Link to="/groups" onClick={() => setOrgMenuAnchor(null)}>
+                <Link to="/groups" onClick={() => setOrgMenuAnchor(null)}>
+                  <MenuItem>
                     Other Groups
-                  </Link>
-                </MenuItem>
+                  </MenuItem>
+                </Link>
               </Menu>
             </>
           )}
@@ -108,13 +97,14 @@ export const AppToolbar = () => {
             getContentAnchorEl={null}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            className={classes.toolbarMenu}
           >
-            <MenuItem>
-              <Settings className={classes.userMenuIcon} />
-              <Link to="/settings" onClick={() => setUserMenuAnchor(null)}>
+            <Link to="/settings" onClick={() => setUserMenuAnchor(null)}>
+              <MenuItem>
+                <Settings className={classes.userMenuIcon} />
                 Settings
-              </Link>
-            </MenuItem>
+              </MenuItem>
+            </Link>
           </Menu>
         </Toolbar>
       </AppBar>

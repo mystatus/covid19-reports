@@ -35,7 +35,7 @@ export const EditAlertDialog = (props: EditAlertDialogProps) => {
 
   const [threshold, setThreshold] = useState(setting!.threshold);
   const [maxDailyCount, setMaxDailyCount] = useState(setting!.maxDailyCount);
-  const [minTimeBetweenAlerts, setMinTimeBetweenAlerts] = useState(setting!.minTimeBetweenAlerts / 60);
+  const [minHoursBetweenAlerts, setMinHoursBetweenAlerts] = useState(setting!.minMinutesBetweenAlerts / 60);
   const [smsEnabled, setSmsEnabled] = useState(setting!.smsEnabled);
   const [emailEnabled, setEmailEnabled] = useState(setting!.emailEnabled);
   const [saveSettingLoading, setSaveSettingLoading] = useState(false);
@@ -47,7 +47,7 @@ export const EditAlertDialog = (props: EditAlertDialogProps) => {
   const canSave = () => {
     return !Number.isNaN(threshold)
       && !Number.isNaN(maxDailyCount)
-      && !Number.isNaN(minTimeBetweenAlerts)
+      && !Number.isNaN(minHoursBetweenAlerts)
       && (smsEnabled || emailEnabled);
   };
 
@@ -58,7 +58,7 @@ export const EditAlertDialog = (props: EditAlertDialogProps) => {
       id: setting!.id,
       notificationId: setting!.notificationId,
       threshold,
-      minTimeBetweenAlerts: minTimeBetweenAlerts * 60,
+      minMinutesBetweenAlerts: Math.round(minHoursBetweenAlerts * 60),
       maxDailyCount,
       smsEnabled,
       emailEnabled,
@@ -78,7 +78,6 @@ export const EditAlertDialog = (props: EditAlertDialogProps) => {
         onError(message);
       }
       setFormDisabled(false);
-
     }
   };
 
@@ -94,7 +93,7 @@ export const EditAlertDialog = (props: EditAlertDialogProps) => {
       id: setting!.id,
       notificationId: setting!.notificationId,
       threshold,
-      minTimeBetweenAlerts: minTimeBetweenAlerts * 60,
+      minMinutesBetweenAlerts: minHoursBetweenAlerts * 60,
       maxDailyCount,
       smsEnabled,
       emailEnabled,
@@ -157,12 +156,12 @@ export const EditAlertDialog = (props: EditAlertDialogProps) => {
               inputProps={{ min: '1', step: '1' }}
             />
           </Grid>
-          { notification!.defaultMaxDailyCount >= 0 && (
+          {notification!.defaultMaxDailyCount >= 0 && (
             <Grid item xs={6} className={classes.gridLabel}>
               <Typography className={classes.label}>Daily limit (or 0 for no limit):</Typography>
             </Grid>
           )}
-          { notification!.defaultMaxDailyCount >= 0 && (
+          {notification!.defaultMaxDailyCount >= 0 && (
             <Grid item xs={6}>
               <TextField
                 className={classes.textField}
@@ -176,19 +175,19 @@ export const EditAlertDialog = (props: EditAlertDialogProps) => {
             </Grid>
           )}
 
-          { notification!.defaultMinTimeBetweenAlerts >= 0 && (
+          {notification!.defaultMinMinutesBetweenAlerts >= 0 && (
             <Grid item xs={6} className={classes.gridLabel}>
-              <Typography className={classes.label}>Minimum time between alerts:</Typography>
+              <Typography className={classes.label}>Minimum hours between alerts:</Typography>
             </Grid>
           )}
-          { notification!.defaultMinTimeBetweenAlerts >= 0 && (
+          {notification!.defaultMinMinutesBetweenAlerts >= 0 && (
             <Grid item xs={6}>
               <TextField
                 className={classes.textField}
                 disabled={formDisabled}
                 required
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setMinTimeBetweenAlerts(Math.max(0, parseFloat(event.target.value)))}
-                value={minTimeBetweenAlerts}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setMinHoursBetweenAlerts(Math.max(0, parseFloat(event.target.value)))}
+                value={minHoursBetweenAlerts}
                 type="number"
                 inputProps={{ min: '0', step: '0.5' }}
               />

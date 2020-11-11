@@ -85,14 +85,14 @@ export interface ApiNotification {
   settingsTemplate: string;
   defaultThreshold: number;
   defaultMaxDailyCount: number;
-  defaultMinTimeBetweenAlerts: number;
+  defaultMinMinutesBetweenAlerts: number;
 }
 
 export interface ApiUserNotificationSetting {
   id: number;
   notificationId: string;
   threshold: number;
-  minTimeBetweenAlerts: number;
+  minMinutesBetweenAlerts: number;
   maxDailyCount: number;
   smsEnabled: boolean;
   emailEnabled: boolean;

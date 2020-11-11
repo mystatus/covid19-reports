@@ -39,14 +39,13 @@ export default makeStyles((theme: Theme) => createStyles({
     margin: '10px',
     alignSelf: 'center',
   },
-  activeGroup: {
-    color: '#00A91C',
-    width: '24px',
-    position: 'relative',
-    top: '3px',
-    left: '-2px',
-    '& > svg': {
-      fontSize: '1.25rem',
+  toolbarMenu: {
+    '& a': {
+      textDecoration: 'none',
+      color: 'inherit',
+    },
+    '& .MuiDivider-root': {
+      margin: '8px 0px',
     },
   },
   controls: {
@@ -66,6 +65,7 @@ export default makeStyles((theme: Theme) => createStyles({
     },
   },
   userMenuIcon: {
+    pointerEvents: 'none',
     position: 'relative',
     left: '-5px',
     top: '-1px',

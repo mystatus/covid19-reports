@@ -47,12 +47,11 @@ export class UserNotificationSetting extends BaseEntity {
   })
   threshold: number = 1;
 
-  // Minimum time between alerts (in minutes)
   @Column({
     type: 'integer',
     default: 60,
   })
-  minTimeBetweenAlerts: number = 60;
+  minMinutesBetweenAlerts: number = 60;
 
   @Column({
     type: 'integer',

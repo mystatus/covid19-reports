@@ -1,4 +1,19 @@
-export const defaultNotifications = [{
+export interface NotificationDefinition {
+  id: string,
+  uiSort: number,
+  uiName: string,
+  uiDescription: string,
+  uiSettingsTemplate: string,
+  smsTemplate: string,
+  emailHtmlTemplate: string,
+  emailTextTemplate: string,
+  dashboardUuid: string,
+  defaultMaxDailyCount: number,
+  defaultThreshold: number,
+  defaultMinMinutesBetweenAlerts: number,
+}
+
+export const defaultNotifications: NotificationDefinition[] = [{
   id: 'userAccessAlert',
   uiSort: 0,
   uiName: 'New User Access Request',
@@ -243,7 +258,7 @@ export const defaultNotifications = [{
   dashboardUuid: '',
   defaultMaxDailyCount: 0,
   defaultThreshold: 1,
-  defaultMinTimeBetweenAlerts: 180,
+  defaultMinMinutesBetweenAlerts: 180,
 }, {
   id: 'medicalAttentionAlert',
   uiSort: 1,
@@ -489,7 +504,7 @@ export const defaultNotifications = [{
   dashboardUuid: '',
   defaultMaxDailyCount: 0,
   defaultThreshold: 1,
-  defaultMinTimeBetweenAlerts: 60,
+  defaultMinMinutesBetweenAlerts: 60,
 }, {
   id: 'speakToSomeoneAlert',
   uiSort: 2,
@@ -735,7 +750,7 @@ export const defaultNotifications = [{
   dashboardUuid: '',
   defaultMaxDailyCount: 1,
   defaultThreshold: 1,
-  defaultMinTimeBetweenAlerts: 0,
+  defaultMinMinutesBetweenAlerts: 0,
 }, {
   id: 'symptomTrendingAlert',
   uiSort: 3,
@@ -981,7 +996,7 @@ export const defaultNotifications = [{
   dashboardUuid: '',
   defaultMaxDailyCount: -1,
   defaultThreshold: 1,
-  defaultMinTimeBetweenAlerts: -1,
+  defaultMinMinutesBetweenAlerts: -1,
 }, {
   id: 'musterAlert',
   uiSort: 4,
@@ -1227,5 +1242,5 @@ export const defaultNotifications = [{
   dashboardUuid: '',
   defaultMaxDailyCount: 1,
   defaultThreshold: 15,
-  defaultMinTimeBetweenAlerts: 0,
+  defaultMinMinutesBetweenAlerts: 0,
 }];

@@ -48,9 +48,6 @@ export default makeStyles(() => createStyles({
       opacity: 1,
     },
   },
-  alertDescriptionCell: {
-
-  },
   alertSettingCell: {
     width: '50%',
     '& .MuiPaper-root': {
