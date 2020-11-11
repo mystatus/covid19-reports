@@ -55,12 +55,8 @@ class UserController {
     await res.status(201).json(updatedUser);
   }
 
-  async addUser(req: ApiRequest<OrgParam, AddUserBody>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
-    const org = req.appOrg;
+  async upsertUser(req: ApiRequest<OrgParam, UpsertUserBody>, res: Response) {
+    const org = req.appOrg!;
     const roleId = (req.body.role != null) ? parseInt(req.body.role) : undefined;
     const edipi = req.body.edipi;
     const firstName = req.body.firstName;
@@ -141,13 +137,9 @@ class UserController {
     //   ON user_roles."user" = "user"."EDIPI"
     // WHERE role.org_id=1
 
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
     const roles = await Role.find({
       where: {
-        org: req.appOrg.id,
+        org: req.appOrg!.id,
       },
     });
 
@@ -167,35 +159,12 @@ class UserController {
     res.json(users);
   }
 
-  async deleteUser(req: ApiRequest<OrgEdipiParams>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
+  async removeUserFromGroup(req: ApiRequest<OrgEdipiParams>, res: Response) {
     const userEDIPI = req.params.edipi;
 
-    const user = await User.findOne({
-      where: {
-        edipi: userEDIPI,
-        org: req.appOrg.id,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundError('User could not be found.');
+    if (req.appUser.edipi === userEDIPI) {
+      throw new Error("Unable to remove yourself from the group.")
     }
-
-    const removedUser = await user.remove();
-
-    res.json(removedUser);
-  }
-
-  async removeUser(req: ApiRequest<OrgEdipiParams>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
-    const userEDIPI = req.params.edipi;
 
     const user = await User.findOne({
       relations: ['roles'],
@@ -238,7 +207,7 @@ class UserController {
 
 }
 
-type AddUserBody = {
+type UpsertUserBody = {
   edipi: string
   role: string
   firstName: string

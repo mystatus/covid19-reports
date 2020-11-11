@@ -1,6 +1,7 @@
 import { Dispatch } from 'redux';
 import axios, { AxiosResponse } from 'axios';
 import { ApiUser } from '../models/api-response';
+import { UserClient } from '../client';
 
 export namespace User {
 
@@ -38,41 +39,33 @@ export namespace User {
   }
 
   export const login = () => async (dispatch: Dispatch<Actions.Login>) => {
-    const response = await axios.get('api/user/current') as AxiosResponse<ApiUser>;
+    const userData = await UserClient.current();
 
-    console.log('userData', response.data);
+    console.log('userData', userData);
 
-    dispatch({
-      ...new Actions.Login({ userData: response.data }),
-    });
+    dispatch(new Actions.Login({ userData }));
   };
 
   export const logout = () => (dispatch: Dispatch<Actions.Logout>) => {
-    dispatch({
-      ...new Actions.Logout(),
-    });
+    dispatch(new Actions.Logout());
   };
 
   export const changeOrg = (orgId: number) => (dispatch: Dispatch<Actions.ChangeOrg>) => {
-    dispatch({
-      ...new Actions.ChangeOrg({ orgId }),
-    });
+    dispatch(new Actions.ChangeOrg({ orgId }));
   };
 
   export const register = (data: UserRegisterData) => async (dispatch: Dispatch<Actions.Register>) => {
     console.log('register', data);
 
-    const response = await axios.post('api/user', {
+    const userData = await UserClient.register({
       firstName: data.firstName,
       lastName: data.lastName,
       phone: data.phone,
       email: data.email,
       service: data.service,
-    }) as AxiosResponse<ApiUser>;
-
-    dispatch({
-      ...new Actions.Register({ userData: response.data }),
     });
+
+    dispatch(new Actions.Register({ userData }));
   };
 }
 

@@ -46,37 +46,6 @@ export default makeStyles((theme: Theme) => createStyles({
     flexBasis: '33.33%',
     flexShrink: 0,
   },
-  roleHeader: {
-    textTransform: 'uppercase',
-    fontWeight: 'bold',
-    fontSize: '13px',
-    lineHeight: '24px',
-    color: '#A9AEB1',
-  },
-  tableScroll: {
-    maxHeight: '225px',
-    overflowY: 'auto',
-  },
-  roleTable: {
-    '&  .MuiTableCell-root': {
-      border: '1px solid #E0E0E0',
-      padding: '0px 16px',
-      height: '32px',
-    },
-  },
-  textCell: {
-    width: '70%',
-    backgroundColor: '#F0F1F1',
-  },
-  iconCell: {
-    textAlign: 'center',
-    backgroundColor: '#EAEAEA',
-    '& svg': {
-      position: 'relative',
-      top: '3px',
-      color: theme.palette.primary.light,
-    },
-  },
   roleButtons: {
     borderTop: '1px solid #DCDEE0',
     '& .MuiButton-root': {

@@ -15,18 +15,13 @@ import {
   DialogContent,
   DialogContentText,
   IconButton,
-  FormControl,
-  InputLabel,
-  Select,
 } from '@material-ui/core';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import MailOutlineIcon from '@material-ui/icons/MailOutline';
-import CheckIcon from '@material-ui/icons/Check';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ReportProblemOutlinedIcon from '@material-ui/icons/ReportProblemOutlined';
-import axios, { AxiosError } from 'axios';
-import axiosRetry from 'axios-retry';
+import client, { AccessRequestClient, UserClient } from '../../../client';
 import useStyles from './users-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
@@ -34,14 +29,23 @@ import { ApiRole, ApiUser, ApiAccessRequest } from '../../../models/api-response
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
+import SelectRoleDialog, { SelectRoleDialogProps } from './select-role-dialog';
+import { formatMessage } from '../../../utility/errors';
+import { UserSelector } from '../../../selectors/user.selector';
 
-axiosRetry(axios, {
-  retries: 3,
-  retryDelay: axiosRetry.exponentialDelay,
-});
+
+enum AccessRequestState {
+  Selected,
+  DenyPending,
+  ApprovePending,
+}
 
 interface AccessRequestRow extends ApiAccessRequest {
-  waiting?: boolean,
+  state?: AccessRequestState
+}
+
+function isWaiting(request: AccessRequestRow) {
+  return request.state === AccessRequestState.ApprovePending || request.state === AccessRequestState.DenyPending;
 }
 
 type UserMoreMenuState = {
@@ -52,176 +56,39 @@ type UserMoreMenuState = {
   user: ApiUser
 };
 
-type RoleSelectionDialogProps = {
-  availableRoles: ApiRole[]
-  confirmButtonText: string
-  loading: boolean
-  onCancel?: () => void
-  onChange: (selectedRole: ApiRole) => void
-  open?: boolean
-  user?: ApiUser
-};
-
-const RoleSelectionDialog: React.FunctionComponent<RoleSelectionDialogProps> = ({
-  availableRoles,
-  confirmButtonText,
-  loading,
-  onCancel,
-  onChange,
-  open,
-  user,
-}) => {
-  const classes = useStyles();
-  const [selectedRole, setSelectedRole] = useState<number>(0);
-
-  useEffect(() => {
-    if (availableRoles!.length > 0) {
-      const roleId = user?.roles?.length ? user.roles[0].id : availableRoles[0].id;
-      const roleIndex = availableRoles.findIndex(role => role.id === roleId);
-      setSelectedRole(roleIndex);
-    }
-  }, [user, availableRoles]);
-
-  function selectedRoleChanged(event: React.ChangeEvent<{ value: unknown }>) {
-    setSelectedRole(event.target.value as number);
-  }
-
-  return (
-    <Dialog onClose={onCancel} open={Boolean(open)}>
-      <DialogContent>
-        <DialogContentText align="center" color="textPrimary">
-          Please assign <b>{`${user?.firstName} ${user?.lastName}`}</b> a role:
-        </DialogContentText>
-        <FormControl className={classes.roleSelect}>
-          <InputLabel htmlFor="role-select">Role</InputLabel>
-          <Select
-            native
-            disabled={loading}
-            autoFocus
-            value={selectedRole}
-            onChange={selectedRoleChanged}
-            inputProps={{
-              name: 'role',
-              id: 'role-select',
-            }}
-          >
-            {availableRoles.map((role, index) => (
-              <option key={role.id} value={index}>
-                {role.name}
-              </option>
-            ))}
-          </Select>
-        </FormControl>
-        {availableRoles.length > selectedRole && (
-        <>
-          <DialogContentText color="textPrimary" className={classes.roleDescription}>
-            {availableRoles[selectedRole].description}
-          </DialogContentText>
-          <Table aria-label="Permissions">
-            <TableHead>
-              <TableRow>
-                <TableCell className={classes.rolePermissionHeader}>Permission</TableCell>
-                <TableCell className={classes.rolePermissionHeader}>Allowed</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell className={classes.rolePermissionCell}>Manage Group</TableCell>
-                <TableCell className={classes.rolePermissionIconCell}>
-                  {availableRoles[selectedRole].canManageGroup && <CheckIcon />}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className={classes.rolePermissionCell}>Manage Roster</TableCell>
-                <TableCell className={classes.rolePermissionIconCell}>
-                  {availableRoles[selectedRole].canManageRoster && <CheckIcon />}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className={classes.rolePermissionCell}>Manage Workspace</TableCell>
-                <TableCell className={classes.rolePermissionIconCell}>
-                  {availableRoles[selectedRole].canManageWorkspace && <CheckIcon />}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className={classes.rolePermissionCell}>View Roster</TableCell>
-                <TableCell className={classes.rolePermissionIconCell}>
-                  {availableRoles[selectedRole].canViewRoster && <CheckIcon />}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className={classes.rolePermissionCell}>View Muster Reports</TableCell>
-                <TableCell className={classes.rolePermissionIconCell}>
-                  {availableRoles[selectedRole].canViewMuster && <CheckIcon />}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className={classes.rolePermissionCell}>View PII</TableCell>
-                <TableCell className={classes.rolePermissionIconCell}>
-                  {availableRoles[selectedRole].canViewPII && <CheckIcon />}
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </>
-        )}
-      </DialogContent>
-      <DialogActions className={classes.roleDialogActions}>
-        <Button disabled={loading} variant="outlined" onClick={onCancel} color="primary">
-          Cancel
-        </Button>
-        <ButtonWithSpinner
-          onClick={() => onChange(availableRoles[selectedRole])}
-          color="primary"
-          loading={loading}
-        >
-          {confirmButtonText}
-        </ButtonWithSpinner>
-      </DialogActions>
-    </Dialog>
-  );
-};
-
 export const UsersPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
-  const [activeAccessRequest, setActiveAccessRequest] = useState<AccessRequestRow | undefined>();
-  const [availableRoles, setAvailableRoles] = useState<ApiRole[]>([]);
   const [userRows, setUserRows] = useState<ApiUser[]>([]);
   const [accessRequests, setAccessRequests] = useState<AccessRequestRow[]>([]);
-  const [finalizeApprovalLoading, setFinalizeApprovalLoading] = useState(false);
-  const [denyRequestsLoading, setDenyRequestsLoading] = useState({} as ({[rowId: number]: boolean}));
-  const [userMoreMenu, setUserMenu] = React.useState<null | UserMoreMenuState>(null);
+  const [userMoreMenu, setUserMenu] = React.useState<UserMoreMenuState | undefined>();
   const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
-  const { id: orgId, name: orgName } = useSelector<AppState, UserState>(state => state.user).activeRole?.org ?? {};
+  const [selectRoleDialogProps, setSelectRoleDialogProps] = useState<Partial<SelectRoleDialogProps> | undefined>();
+  const { id: orgId, name: orgName } = useSelector(UserSelector.org) ?? {};
 
   const initializeTable = React.useCallback(async () => {
-    try {
-      dispatch(AppFrame.setPageLoading(true));
-      const [users, requests, roles] = await Promise.all([
-        axios.get(`api/user/${orgId}`),
-        axios.get(`api/access-request/${orgId}`),
-        axios.get(`api/role/${orgId}`),
-      ]);
-      setUserRows(users.data as ApiUser[]);
-      setAccessRequests(requests.data as AccessRequestRow[]);
-      setAvailableRoles(roles.data as ApiRole[]);
-    } catch (_) {
-      // Error handling? This should probably retry
+    if (orgId) {
+      try {
+        dispatch(AppFrame.setPageLoading(true));
+        const [users, requests] = await Promise.all([
+          UserClient.fetchAll(orgId!),
+          AccessRequestClient.fetchAll(orgId!),
+        ]);
+        setUserRows(users as ApiUser[]);
+        setAccessRequests(requests as AccessRequestRow[]);
+        setSelectRoleDialogProps(undefined);
+      } catch (_) {
+      // Error handling? This should probably just retry?
+      }
+      dispatch(AppFrame.setPageLoading(false));
     }
-    dispatch(AppFrame.setPageLoading(false));
   }, [orgId, dispatch]);
 
-  const showAlertDialog = (error: AxiosError | Error, title: string, message: string) => {
-    let errorMessage = 'Internal Server Error';
-    const axiosError = error as AxiosError;
-    if (axiosError?.response?.data?.errors && axiosError?.response.data.errors.length > 0) {
-      errorMessage = axiosError?.response.data.errors[0].message;
-    }
+  const showAlertDialog = (error: Error, title: string, message: string) => {
     setAlertDialogProps({
       open: true,
       title,
-      message: `${message}${errorMessage ? `: ${errorMessage}` : ''}`,
+      message: formatMessage(error, message),
       onClose: () => { setAlertDialogProps({ open: false }); },
     });
   };
@@ -236,7 +103,7 @@ export const UsersPage = () => {
     });
   };
 
-  const handleUserMoreClose = () => setUserMenu(null);
+  const handleUserMoreClose = () => setUserMenu(undefined);
   const patchMoreMenuState = (patch: Partial<UserMoreMenuState>) => setUserMenu(state => ({ ...state, ...patch } as UserMoreMenuState));
 
   const handleRemoveFromGroup = () => patchMoreMenuState({ showRemoveUserFromGroup: true, element: undefined });
@@ -244,7 +111,7 @@ export const UsersPage = () => {
   const acceptRemoveFromGroup = async () => {
     try {
       patchMoreMenuState({ loading: true });
-      await axios.delete(`api/user/${orgId}/${userMoreMenu!.user.edipi}`);
+      await client.delete(`user/${orgId}/${userMoreMenu!.user.edipi}`);
     } catch (error) {
       showAlertDialog(error, 'Remove User from Group', 'Unable to remove user from group');
     }
@@ -252,86 +119,82 @@ export const UsersPage = () => {
     await initializeTable();
   };
 
-  const handleChangeRole = () => patchMoreMenuState({ element: undefined, showChangeUserRole: true });
-  const cancelChangeRole = () => patchMoreMenuState({ showChangeUserRole: false });
-  const acceptChangeRole = async (role: ApiRole) => {
-    try {
-      patchMoreMenuState({ loading: true });
-      await axios.post(`api/user/${orgId}`, {
-        firstName: userMoreMenu!.user.firstName,
-        lastName: userMoreMenu!.user.lastName,
-        edipi: userMoreMenu!.user.edipi,
-        role: role.id,
-      });
-    } catch (error) {
-      showAlertDialog(error, 'Change User Role', 'Unable to change role');
-    }
-    patchMoreMenuState({ loading: false, showChangeUserRole: false });
-    await initializeTable();
+  const handleChangeRole = () => {
+    patchMoreMenuState({ element: undefined, showChangeUserRole: true });
+    setSelectRoleDialogProps({
+      confirmButtonText: 'Confirm Role Change',
+      loading: Boolean(userMoreMenu?.loading),
+      onCancel: () => {
+        patchMoreMenuState({ showChangeUserRole: false });
+        setSelectRoleDialogProps(undefined);
+      },
+      onChange: async (role: ApiRole) => {
+        try {
+          patchMoreMenuState({ loading: true });
+          await client.post(`user/${orgId}`, {
+            firstName: userMoreMenu!.user.firstName,
+            lastName: userMoreMenu!.user.lastName,
+            edipi: userMoreMenu!.user.edipi,
+            role: role.id,
+          });
+        } catch (error) {
+          showAlertDialog(error, 'Change User Role', 'Unable to change role');
+        }
+        patchMoreMenuState({ loading: false, showChangeUserRole: false });
+        await initializeTable();
+      },
+      open: true,
+      user: userMoreMenu?.user,
+    });
   };
 
-  function updateDenyRequestLoading(rowId: number, isLoading: boolean) {
-    setDenyRequestsLoading({
-      ...denyRequestsLoading,
-      [rowId]: isLoading,
-    });
-    setAccessRequestWaiting(rowId, isLoading);
-  }
-
-  function setAccessRequestWaiting(rowId: number | undefined, isLoading: boolean) {
-    let result: AccessRequestRow | undefined;
-    setAccessRequests(requests => {
-      return requests.map(request => {
-        if (request.id === rowId) {
-          request.waiting = isLoading;
-          result = request;
-        }
-        return request;
-      });
-    });
-    return result;
-  }
-
-  function cancelRoleSelection() {
-    setAccessRequestWaiting(activeAccessRequest?.id, false);
-    setActiveAccessRequest(undefined);
-  }
-
-  async function acceptRoleSelection(role: ApiRole) {
-    try {
-      setFinalizeApprovalLoading(true);
-      if (activeAccessRequest) {
-        await axios.post(`api/access-request/${orgId}/approve`, {
-          requestId: activeAccessRequest.id,
-          roleId: role.id,
-        });
+  function setAccessRequestState({ id }: AccessRequestRow, state: AccessRequestState | undefined) {
+    setAccessRequests(requests => requests.map(request => {
+      if (request.id === id) {
+        request.state = state;
       }
-    } catch (error) {
-      showAlertDialog(error, 'Approve Access Request', 'Error while approving accessing request');
-    }
-    await initializeTable();
-    setFinalizeApprovalLoading(false);
-    setActiveAccessRequest(undefined);
+      return request;
+    }));
   }
 
-  function acceptRequest(id: number) {
-    setActiveAccessRequest(setAccessRequestWaiting(id, true));
+  function handleSelectRequest(request: AccessRequestRow) {
+    setAccessRequestState(request, AccessRequestState.Selected);
+    setSelectRoleDialogProps({
+      confirmButtonText: 'Finalize Approval',
+      onCancel: () => {
+        setAccessRequestState(request, undefined);
+        setSelectRoleDialogProps(undefined);
+      },
+      onChange: async (role: ApiRole) => {
+        try {
+          setAccessRequestState(request, AccessRequestState.ApprovePending);
+          await client.post(`access-request/${orgId}/approve`, {
+            requestId: request.id,
+            roleId: role.id,
+          });
+        } catch (error) {
+          showAlertDialog(error, 'Approve Access Request', 'Error while approving accessing request');
+        }
+        await initializeTable();
+      },
+      open: true,
+      user: request.user,
+    });
   }
 
-  async function denyRequest(id: number) {
+  async function denyRequest(request: AccessRequestRow) {
     try {
-      updateDenyRequestLoading(id, true);
-      await axios.post(`api/access-request/${orgId}/deny`, {
-        requestId: id,
+      setAccessRequestState(request, AccessRequestState.DenyPending);
+      await client.post(`access-request/${orgId}/deny`, {
+        requestId: request.id,
       });
     } catch (error) {
       showAlertDialog(error, 'Deny Access Request', 'Error while denying accessing request');
     }
     await initializeTable();
-    updateDenyRequestLoading(id, false);
   }
 
-  useEffect(() => { initializeTable(); }, [initializeTable]);
+  useEffect(() => { initializeTable().then(); }, [initializeTable]);
 
   return (
     <main className={classes.root}>
@@ -372,18 +235,18 @@ export const UsersPage = () => {
                     <TableCell className={classes.accessRequestButtons}>
                       <Button
                         variant="contained"
-                        disabled={row.waiting}
+                        disabled={row.state !== undefined}
                         className={classes.accessRequestApproveButton}
-                        onClick={() => { acceptRequest(row.id); }}
+                        onClick={() => { handleSelectRequest(row); }}
                       >
                         Approve
                       </Button>
                       <ButtonWithSpinner
                         variant="contained"
-                        disabled={row.waiting}
+                        disabled={isWaiting(row)}
                         className={classes.accessRequestDenyButton}
-                        onClick={async () => { await denyRequest(row.id); }}
-                        loading={denyRequestsLoading[row.id]}
+                        onClick={async () => { await denyRequest(row); }}
+                        loading={isWaiting(row)}
                       >
                         Deny
                       </ButtonWithSpinner>
@@ -398,7 +261,7 @@ export const UsersPage = () => {
           <Table aria-label="simple table">
             <TableHead>
               <TableRow className={classes.tableHeader}>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={7}>
                   <h2>All Users</h2>
                 </TableCell>
               </TableRow>
@@ -477,24 +340,11 @@ export const UsersPage = () => {
           </DialogActions>
         </DialogContent>
       </Dialog>
-      <RoleSelectionDialog
-        availableRoles={availableRoles}
-        confirmButtonText="Finalize Approval"
-        loading={finalizeApprovalLoading}
-        onCancel={cancelRoleSelection}
-        onChange={acceptRoleSelection}
-        open={Boolean(activeAccessRequest)}
-        user={activeAccessRequest?.user}
-      />
-      <RoleSelectionDialog
-        availableRoles={availableRoles}
-        confirmButtonText="Confirm Role Change"
-        loading={Boolean(userMoreMenu?.loading)}
-        onCancel={cancelChangeRole}
-        onChange={acceptChangeRole}
-        open={Boolean(userMoreMenu?.showChangeUserRole)}
-        user={userMoreMenu?.user}
-      />
+      {Boolean(selectRoleDialogProps?.open) && (
+        <SelectRoleDialog
+          {...(selectRoleDialogProps as SelectRoleDialogProps)}
+        />
+      )}
       {alertDialogProps.open && (
         <AlertDialog
           open={alertDialogProps.open}

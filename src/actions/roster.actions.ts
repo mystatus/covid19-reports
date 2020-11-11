@@ -1,6 +1,8 @@
 import { Dispatch } from 'redux';
-import axios from 'axios';
 import { AppState } from '../store';
+import { ApiRosterColumnInfo } from '../models/api-response';
+import { RosterClient } from '../client';
+import { formatMessage } from '../utility/errors';
 
 export namespace Roster {
 
@@ -11,6 +13,26 @@ export namespace Roster {
       type = Upload.type;
     }
 
+
+    export class FetchColumns {
+      static type = 'FETCH_ROSTER_COLUMNS';
+      type = FetchColumns.type;
+    }
+
+    export class FetchColumnsSuccess {
+      static type = `${FetchColumns.type}_SUCCESS`;
+      type = FetchColumnsSuccess.type;
+      constructor(public payload: {
+        columns: ApiRosterColumnInfo[]
+      }) {}
+    }
+    export class FetchColumnsFailure {
+      static type = `${FetchColumns.type}_FAILURE`;
+      type = FetchColumnsFailure.type;
+      constructor(public payload: {
+        error: any
+      }) { }
+    }
   }
 
   export const upload = (file: File, onComplete: (count: number, message?: string) => void) => async (dispatch: Dispatch<Actions.Upload>, getState: () => AppState) => {
@@ -18,38 +40,34 @@ export namespace Roster {
     console.log('file', file);
 
     const appState = getState();
+    const orgId = appState.user.activeRole?.org?.id;
 
-    if (!appState.user.activeRole) {
-      console.log('User has no active role, cannot upload roster.');
+    if (!appState.user.activeRole || !orgId) {
+      console.log('User has no active role for orgId, cannot upload roster.');
       return;
     }
 
-    const formData = new FormData();
-    // var imagefile = document.querySelector('#file');
-    // formData.append("image", imagefile.files[0]);
-    formData.append('roster_csv', file);
-    // TODO: Don't hardcode role.
     try {
-      const response = await axios.post(`api/roster/${appState.user.activeRole.org?.id}/bulk`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      onComplete(response.data.count);
+      const count = await RosterClient.upload(orgId, file);
+      onComplete(count);
     } catch (error) {
-      let message: string | undefined;
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
+      const message = formatMessage(error, 'Failed to upload roster');
       onComplete(-1, message);
     }
 
     console.log('upload complete!');
 
-    dispatch({
-      ...new Actions.Upload(),
-    });
+    dispatch(new Actions.Upload());
+  };
+
+  export const fetchColumns = (orgId: number) => async (dispatch: Dispatch) => {
+    dispatch(new Actions.FetchColumns());
+    try {
+      const columns = await RosterClient.fetchColumns(orgId);
+      dispatch(new Actions.FetchColumnsSuccess({ columns }));
+    } catch (error) {
+      dispatch(new Actions.FetchColumnsFailure({ error }));
+    }
   };
 }
 
