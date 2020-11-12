@@ -20,6 +20,7 @@ import { UsersPage } from './pages/users-page/users-page';
 import { RoleManagementPage } from './pages/role-management-page/role-management-page';
 import { WorkspacesPage } from './pages/workspaces-page/workspaces-page';
 import { RosterColumnsPage } from './pages/roster-columns-page/roster-columns-page';
+import { SettingsPage } from './pages/settings-page/settings-page';
 
 export const App = () => {
   const user = useSelector<AppState, UserState>(state => state.user);
@@ -100,6 +101,9 @@ export const App = () => {
               </Route>
               <Route path="/groups">
                 <GroupsPage />
+              </Route>
+              <Route path="/settings">
+                <SettingsPage />
               </Route>
               <Route path="/*">
                 <Redirect to="/home" />

@@ -3,8 +3,8 @@ import { getConnection } from 'typeorm';
 import { ApiRequest, OrgParam, OrgRoleParams } from '../index';
 import { Role } from './role.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
-import { baseRosterColumns } from '../roster/roster.model';
 import { Workspace } from '../workspace/workspace.model';
+import { Notification } from '../notification/notification.model';
 import { getRosterColumns } from '../roster/roster.controller';
 
 class RoleController {
@@ -145,7 +145,6 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
     role.indexPrefix = body.indexPrefix;
   }
   if (body.workspaceId !== undefined) {
-    console.log('workspaceId', body.workspaceId);
     if (body.workspaceId == null) {
       role.workspace = null;
     } else {
@@ -196,7 +195,14 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
     role.allowedRosterColumns = body.allowedRosterColumns;
   }
   if (body.allowedNotificationEvents != null) {
-    // TODO: Validate notification events
+    if (!(body.allowedNotificationEvents.length === 1 && body.allowedNotificationEvents[0] === '*')) {
+      const notifications = await Notification.find();
+      for (const allowedNotification of body.allowedNotificationEvents) {
+        if (!notifications.some(notification => notification.id === allowedNotification)) {
+          throw new BadRequestError(`Unknown notification event: ${allowedNotification}`);
+        }
+      }
+    }
     role.allowedNotificationEvents = body.allowedNotificationEvents;
   }
 }

@@ -20,10 +20,9 @@ import CheckIcon from '@material-ui/icons/Check';
 import useStyles from './role-management-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
-import { ApiRole, ApiWorkspace, ApiRosterColumnInfo } from '../../../models/api-response';
 import {
-  allNotificationEvents,
-} from '../../../models/notification-events';
+  ApiRole, ApiWorkspace, ApiRosterColumnInfo, ApiNotification,
+} from '../../../models/api-response';
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditRoleDialog, EditRoleDialogProps } from './edit-role-dialog';
 import { parsePermissions, RolePermissions } from '../../../utility/permission-set';
@@ -45,6 +44,7 @@ export const RoleManagementPage = () => {
   const [roleData, setRoleData] = useState<ParsedRoleData[]>([]);
   const [rosterColumns, setRosterColumns] = useState<ApiRosterColumnInfo[]>([]);
   const [workspaces, setWorkspaces] = useState<ApiWorkspace[]>([]);
+  const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [deleteRoleDialogOpen, setDeleteRoleDialogOpen] = useState(false);
   const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
   const [editRoleDialogProps, setEditRoleDialogProps] = useState<EditRoleDialogProps>({ open: false });
@@ -57,16 +57,23 @@ export const RoleManagementPage = () => {
     const orgRoles = (await axios.get(`api/role/${orgId}`)).data as ApiRole[];
     const orgWorkspaces = (await axios.get(`api/workspace/${orgId}`)).data as ApiWorkspace[];
     const orgRosterColumns = (await axios.get(`api/roster/${orgId}/column`)).data as ApiRosterColumnInfo[];
+    const allNotifications = (await axios.get(`api/notification/${orgId}/all`)).data as ApiNotification[];
     const parsedRoleData = orgRoles.map(role => {
       return {
         allowedRosterColumns: parsePermissions(orgRosterColumns, role.allowedRosterColumns),
-        allowedNotificationEvents: parsePermissions(allNotificationEvents, role.allowedNotificationEvents),
+        allowedNotificationEvents: parsePermissions(allNotifications.map(notification => {
+          return {
+            name: notification.id,
+            displayName: notification.name,
+          };
+        }), role.allowedNotificationEvents),
       };
     });
     setRoleData(parsedRoleData);
     setWorkspaces(orgWorkspaces);
     setRosterColumns(orgRosterColumns);
     setRoles(orgRoles);
+    setNotifications(allNotifications);
     dispatch(AppFrame.setPageLoading(false));
   }, [orgId, dispatch]);
 
@@ -169,13 +176,13 @@ export const RoleManagementPage = () => {
       return <></>;
     }
     const allowedEvents = roleData[index].allowedNotificationEvents;
-    return allNotificationEvents.map(event => (
-      <TableRow key={event.name}>
+    return notifications.map(notification => (
+      <TableRow key={notification.id}>
         <TableCell className={classes.textCell}>
-          {event.displayName}
+          {notification.name}
         </TableCell>
         <TableCell className={classes.iconCell}>
-          {allowedEvents[event.name] && (
+          {allowedEvents[notification.id] && (
             <CheckIcon />
           )}
         </TableCell>
@@ -368,6 +375,7 @@ export const RoleManagementPage = () => {
           role={editRoleDialogProps.role}
           workspaces={workspaces}
           rosterColumns={rosterColumns}
+          notifications={notifications}
           onClose={editRoleDialogProps.onClose}
           onError={editRoleDialogProps.onError}
         />

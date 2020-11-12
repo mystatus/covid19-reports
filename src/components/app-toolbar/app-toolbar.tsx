@@ -1,9 +1,12 @@
 import {
-  AppBar, Button, Menu, MenuItem, Select, Toolbar,
+  AppBar, Avatar, Button, Divider, Menu, MenuItem, Toolbar,
 } from '@material-ui/core';
+import { ArrowDropDown, Settings } from '@material-ui/icons';
+
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { Md5 } from 'ts-md5/dist/md5';
 import { User } from '../../actions/user.actions';
 import { UserState } from '../../reducers/user.reducer';
 import { AppState } from '../../store';
@@ -15,10 +18,19 @@ export const AppToolbar = () => {
   const dispatch = useDispatch();
   const user = useSelector<AppState, UserState>(state => state.user);
   const [userMenuAnchor, setUserMenuAnchor] = React.useState<HTMLElement | null>(null);
+  const [orgMenuAnchor, setOrgMenuAnchor] = React.useState<HTMLElement | null>(null);
 
-  function handleOrgChanged(event: React.ChangeEvent<{ value: unknown }>) {
-    dispatch(User.changeOrg(event.target.value as number));
-  }
+  const handleOrgChanged = (id: number) => () => {
+    dispatch(User.changeOrg(id));
+    setOrgMenuAnchor(null);
+  };
+
+  const getAvatarURL = () => {
+    const md5 = new Md5();
+    md5.appendStr(user.email.trim().toLowerCase());
+    const hash = md5.end() as string;
+    return `https://www.gravatar.com/avatar/${hash}?d=404&s=64`;
+  };
 
   return (
     <>
@@ -29,31 +41,54 @@ export const AppToolbar = () => {
         <Toolbar className={classes.toolbar}>
           <img className={classes.logo} src={logoImage} alt="StatusEngine Logo" height="35" />
           <div className={classes.spacer} />
-          {user.activeRole && user.roles && user.roles.length > 1 && (
-            <Select
-              className={classes.orgSelect}
-              labelId="org-select-label"
-              id="org-select"
-              value={user.activeRole.org?.id}
-              onChange={handleOrgChanged}
-              inputProps={{
-                classes: {
-                  icon: classes.orgSelectIcon,
-                },
-              }}
-            >
-              {user.roles.map(role => (
-                <MenuItem value={role.org?.id} key={role.org?.id}>{role.org?.name}</MenuItem>
-              ))}
-            </Select>
+          {user.activeRole && user.roles && (
+            <>
+              <Button
+                className={classes.toolbarButton}
+                variant="text"
+                onClick={e => setOrgMenuAnchor(e.currentTarget)}
+                endIcon={<ArrowDropDown />}
+              >
+                {`${user.activeRole.org?.name}`}
+              </Button>
+              <Menu
+                open={Boolean(orgMenuAnchor)}
+                onClose={() => setOrgMenuAnchor(null)}
+                anchorEl={orgMenuAnchor}
+                getContentAnchorEl={null}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                className={classes.toolbarMenu}
+              >
+                {user.roles.map(role => (
+                  <MenuItem
+                    selected={user.activeRole!.org!.id === role.org!.id}
+                    onClick={handleOrgChanged(role.org!.id)}
+                  >
+                    {role.org!.name}
+                  </MenuItem>
+                ))}
+                <Divider />
+                <Link to="/groups" onClick={() => setOrgMenuAnchor(null)}>
+                  <MenuItem>
+                    Other Groups
+                  </MenuItem>
+                </Link>
+              </Menu>
+            </>
           )}
 
+          <Divider orientation="vertical" flexItem className={classes.toolbarDivider} />
+
           <Button
-            className={classes.userButton}
+            className={classes.toolbarButton}
             variant="text"
             onClick={e => setUserMenuAnchor(e.currentTarget)}
+            endIcon={<ArrowDropDown />}
           >
-            {`${user.firstName} ${user.lastName}`}
+            <Avatar alt={user.firstName} src={getAvatarURL()}>
+              {`${user.firstName.charAt(0)}${user.lastName.charAt(0)}`}
+            </Avatar> {`${user.firstName} ${user.lastName}`}
           </Button>
           <Menu
             open={Boolean(userMenuAnchor)}
@@ -62,12 +97,14 @@ export const AppToolbar = () => {
             getContentAnchorEl={null}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            className={classes.toolbarMenu}
           >
-            <MenuItem>
-              <Link to="/groups" onClick={() => setUserMenuAnchor(null)}>
-                My Groups
-              </Link>
-            </MenuItem>
+            <Link to="/settings" onClick={() => setUserMenuAnchor(null)}>
+              <MenuItem>
+                <Settings className={classes.userMenuIcon} />
+                Settings
+              </MenuItem>
+            </Link>
           </Menu>
         </Toolbar>
       </AppBar>

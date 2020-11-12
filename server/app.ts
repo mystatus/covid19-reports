@@ -7,7 +7,7 @@ import fs from 'fs';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import path from 'path';
-import apiRoutes from './api';
+import apiRoutes, { ApiRequest } from './api';
 import kibanaProxy from './kibana';
 import kibanaDashboard from './kibana/dashboard';
 import database from './sqldb';
@@ -36,7 +36,16 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(passport.initialize());
 if (process.env.NODE_ENV !== 'test') {
-  app.use(morgan('tiny'));
+  app.use(morgan((tokens, req: any, res: any) => {
+    return [
+      req.appUser.edipi,
+      tokens.method(req, res),
+      tokens.url(req, res),
+      tokens.status(req, res),
+      tokens.res(req, res, 'content-length'), '-',
+      tokens['response-time'](req, res), 'ms',
+    ].join(' ');
+  }));
 }
 
 //

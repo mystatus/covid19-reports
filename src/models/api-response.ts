@@ -74,8 +74,28 @@ export function rosterColumnTypeDisplayName(type: ApiRosterColumnType) {
     case ApiRosterColumnType.DateTime:
       return 'Date/Time';
     default:
-      break;
+      return 'Unknown';
   }
+}
+
+export interface ApiNotification {
+  id: string;
+  name: string;
+  description: string;
+  settingsTemplate: string;
+  defaultThreshold: number;
+  defaultMaxDailyCount: number;
+  defaultMinMinutesBetweenAlerts: number;
+}
+
+export interface ApiUserNotificationSetting {
+  id: number;
+  notificationId: string;
+  threshold: number;
+  minMinutesBetweenAlerts: number;
+  maxDailyCount: number;
+  smsEnabled: boolean;
+  emailEnabled: boolean;
 }
 
 export interface ApiRosterColumnInfo {
