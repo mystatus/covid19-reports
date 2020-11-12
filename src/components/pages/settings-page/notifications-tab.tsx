@@ -176,7 +176,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
     >
       {value === index && (
         <Paper elevation={3}>
-          <h2>
+          <h2 className={classes.alertsHeader}>
             Alerts
             <IconButton className={classes.infoIcon} aria-label="Alert Info" size="small" onClick={displayInfo}>
               <HelpOutline fontSize="inherit" />
@@ -211,7 +211,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
           {notifications.length === 0 && (
             <>
               <Divider />
-              <Typography>No alerts are available for this group.</Typography>
+              <Typography className={classes.noAlerts}>No alerts are available for this group.</Typography>
             </>
           )}
 

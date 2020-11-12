@@ -1,7 +1,7 @@
-import { createStyles } from '@material-ui/core';
+import { createStyles, Theme } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 
-export default makeStyles(() => createStyles({
+export default makeStyles((theme: Theme) => createStyles({
   root: {
     flexGrow: 1,
   },
@@ -10,6 +10,11 @@ export default makeStyles(() => createStyles({
     fontSize: '20px',
     marginLeft: '5px',
   },
+  alertsHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    flexFlow: 'row',
+  },
   alertsTable: {
     '& .MuiTableCell-root': {
       padding: '25px 16px 25px 0px',
@@ -17,6 +22,10 @@ export default makeStyles(() => createStyles({
       borderBottom: 0,
       verticalAlign: 'top',
     },
+  },
+  noAlerts: {
+    marginTop: theme.spacing(3),
+    marginBottom: theme.spacing(3),
   },
   alertName: {
     fontWeight: 'bold',
