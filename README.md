@@ -24,8 +24,8 @@ USER_EDIPI=1
 - Navigate to the project root and run the following.
 ```
 npm install
-./seed-dev.sh
-./run-dev.sh
+npm run seed-dev
+npm run dev
 ```
 
 ### Switching Users
@@ -49,11 +49,11 @@ to the schema.*
 
 #### Running
 
-Migrations will automatically be run on app startup, or they can be manually run with `./migration-run.sh`.
+Migrations will automatically be run on app startup, or they can be manually run with `npm run migration-run`.
 
 #### Generating
 
-The recommended way to create a new migration is to run `./migration-generate.sh {name}`, where `{name}` is the name of
+The recommended way to create a new migration is to run `npm run migration-generate {name}`, where `{name}` is the name of
 the migration you want to create. The generate script will automatically run migrations to make sure you're up to date,
 then it will generate a new migration for you in `/server/migrations` with the necessary changes to match your current
 models.
@@ -64,14 +64,14 @@ these unnecessary alterations before committing them (and also format the genera
 
 #### Creating
 
-If you want to write a migration from scratch, you can create a new blank migration with `./migration-create.sh {name}`,
+If you want to write a migration from scratch, you can create a new blank migration with `npm run migration-create {name}`,
 where `{name}` is the name of the migration you want to create. An empty template will be generated in
 `/server/migrations`.
 
 #### Restoring State Locally
 
 If your local database schema falls out of sync with migrations and you want to get back to a clean state, you can 
-run `./seed-dev.sh`. This will automatically recreate the database, apply the current migrations, and get the app back 
+run `npm run seed-dev`. This will automatically recreate the database, apply the current migrations, and get the app back 
 into a usable state.
 
 ### Testing
