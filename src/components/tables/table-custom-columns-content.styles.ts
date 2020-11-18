@@ -1,7 +1,7 @@
-import { createStyles } from '@material-ui/core';
+import { createStyles, Theme } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 
-export default makeStyles(() => createStyles({
+export default makeStyles((theme: Theme) => createStyles({
   tableButtons: {
     '& .MuiButtonBase-root': {
       padding: '6px 6px',
@@ -26,5 +26,10 @@ export default makeStyles(() => createStyles({
       color: '#B6001D',
       backgroundColor: 'white',
     },
+  },
+  noData: {
+    textAlign: 'center',
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1),
   },
 }));

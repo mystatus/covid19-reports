@@ -98,9 +98,12 @@ export interface ApiUserNotificationSetting {
   emailEnabled: boolean;
 }
 
-export interface ApiRosterColumnInfo {
-  name: string,
-  displayName: string,
+export interface ColumnInfo {
+  name: string
+  displayName: string
+}
+
+export interface ApiRosterColumnInfo extends ColumnInfo {
   type: ApiRosterColumnType,
   pii: boolean,
   phi: boolean,
@@ -131,3 +134,24 @@ export interface ApiWorkspace {
   pii: boolean,
   phi: boolean,
 }
+
+export interface ApiUnitStatsByDate {
+  [date: string]: {
+    [unitName: string]: {
+      nonMusterPercent: number
+      reportsCount: number
+      rosterCount: number
+    }
+  }
+}
+
+export interface ApiMusterIndividuals extends ApiArrayPaginated {
+  rows: ApiRosterEntry[]
+}
+
+export interface ApiMusterTrends {
+  weekly: ApiUnitStatsByDate
+  monthly: ApiUnitStatsByDate
+}
+
+export type ApiRosterUnits = string[];

@@ -1,6 +1,6 @@
 import {
   Button,
-  TableBody, TableCell, TableHead, TableProps, TableRow,
+  TableBody, TableCell, TableHead, TableProps, TableRow, Typography,
 } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
@@ -10,10 +10,7 @@ import useStyles from './table-custom-columns-content.styles';
 
 type TableCustomColumnsContentProps = OverrideType<TableProps, {
   rows: {[columnName: string]: any}[]
-  columns: {
-    name: string
-    displayName: string
-  }[]
+  columns: any[]
   rowOptions?: {
     showEditButton?: boolean
     showDeleteButton?: boolean
@@ -22,13 +19,14 @@ type TableCustomColumnsContentProps = OverrideType<TableProps, {
     renderCell?: (row: any, column: any) => void
   }
   idColumn: string
+  noDataText?: string
 }>;
 
 export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps) => {
   const classes = useStyles();
 
   const {
-    rows, columns, rowOptions, idColumn,
+    rows, columns, rowOptions, idColumn, noDataText,
   } = props;
 
   const showActions = () => {
@@ -78,6 +76,16 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
             )}
           </TableRow>
         ))}
+
+        {rows.length === 0 && (
+          <TableRow>
+            <TableCell>
+              <Typography className={classes.noData} variant="h6">
+                {noDataText ?? 'No Data'}
+              </Typography>
+            </TableCell>
+          </TableRow>
+        )}
       </TableBody>
     </>
   );

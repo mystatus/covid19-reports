@@ -40,6 +40,7 @@
     "max-len": "off",
     "no-await-in-loop": "off",
     "no-console": "off",
+    "no-continue": "off",
     "no-empty": ["error", { "allowEmptyCatch":  true }],
     "no-multiple-empty-lines": ["error", { "max": 2, "maxBOF": 0, "maxEOF": 1 }],
     "no-nested-ternary": "off",

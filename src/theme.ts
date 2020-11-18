@@ -11,6 +11,11 @@ const theme = createMuiTheme({
       main: '#005ea2',
       light: '#73B3E7',
     },
+    secondary: {
+      dark: '#09AFAD',
+      main: '#29E1CB',
+      light: '#E0F7F6',
+    },
     warning: {
       main: '#C25D00',
     },
@@ -40,7 +45,53 @@ const theme = createMuiTheme({
   },
 });
 
+// Let's keep these sorted by name so we can easily find overrides.
 theme.overrides = {
+  MuiAppBar: {
+    root: {
+      boxShadow: 'none',
+    },
+  },
+  MuiButtonBase: {
+    root: {
+      '&.MuiToggleButton-root': {
+        paddingTop: '4px',
+        paddingBottom: '4px',
+        borderColor: '#71767A',
+        color: theme.palette.text.primary,
+
+        '&.Mui-selected': {
+          backgroundColor: theme.palette.secondary.light,
+          borderColor: theme.palette.secondary.dark,
+          color: theme.palette.secondary.dark,
+
+          '&:hover': {
+            backgroundColor: theme.palette.secondary.light,
+          },
+        },
+      },
+    },
+  },
+  MuiCardActions: {
+    root: {
+      padding: theme.spacing(3),
+    },
+  },
+  MuiCardContent: {
+    root: {
+      padding: theme.spacing(4),
+
+      '& header > *:nth-child(1)': theme.typography.h2,
+      '& header p': theme.typography.subtitle1,
+    },
+  },
+  MuiChip: {
+    root: {
+      borderRadius: '4px',
+      fontWeight: 700,
+      textTransform: 'uppercase',
+    },
+  },
   MuiCssBaseline: {
     '@global': {
       body: {
@@ -49,11 +100,6 @@ theme.overrides = {
       a: {
         textDecoration: 'none',
       },
-    },
-  },
-  MuiAppBar: {
-    root: {
-      boxShadow: 'none',
     },
   },
   MuiDrawer: {
@@ -65,28 +111,48 @@ theme.overrides = {
       },
     },
   },
-  MuiTableCell: {
-    head: {
-      textTransform: 'uppercase',
-    },
-  },
-  MuiCardContent: {
-    root: {
-      padding: theme.spacing(4),
-
-      '& header > *:nth-child(1)': theme.typography.h2,
-      '& header p': theme.typography.subtitle1,
-    },
-  },
-  MuiCardActions: {
-    root: {
-      padding: theme.spacing(3),
-    },
-  },
   MuiInputBase: {
     root: {
       border: '1px solid #71767A',
       borderRadius: '4px',
+    },
+  },
+  MuiMenuItem: {
+    root: {
+      '& a': {
+        color: 'inherit',
+      },
+    },
+  },
+  MuiPaper: {
+    root: {
+      '& .MuiToolbar-root': {
+        paddingLeft: theme.spacing(2),
+        paddingRight: theme.spacing(2),
+      },
+    },
+  },
+  MuiSelect: {
+    root: {
+      padding: '8px 12px',
+    },
+  },
+  MuiTableRow: {
+    root: {
+      '&:last-child': {
+        '& .MuiTableCell-body': {
+          borderBottom: 'none',
+        },
+      },
+    },
+  },
+  MuiTableCell: {
+    head: {
+      textTransform: 'uppercase',
+    },
+    footer: {
+      borderTop: `solid 1px rgb(224, 224, 224)`,
+      borderBottom: 'none',
     },
   },
   MuiTextField: {
@@ -108,33 +174,6 @@ theme.overrides = {
       },
     },
   },
-  MuiSelect: {
-    root: {
-      padding: '8px 12px',
-    },
-  },
-  MuiPaper: {
-    root: {
-      '& .MuiToolbar-root': {
-        paddingLeft: theme.spacing(2),
-        paddingRight: theme.spacing(2),
-      },
-    },
-  },
-  MuiMenuItem: {
-    root: {
-      '& a': {
-        color: 'inherit',
-      },
-    },
-  },
-  MuiChip: {
-    root: {
-      borderRadius: '4px',
-      fontWeight: 700,
-      textTransform: 'uppercase',
-    },
-  },
 };
 
 theme.props = {
@@ -145,12 +184,12 @@ theme.props = {
   MuiIconButton: {
     color: 'primary',
   },
+  MuiInput: {
+    disableUnderline: true,
+  },
   MuiTextField: {
     InputLabelProps: {
       shrink: true,
-    },
-    InputProps: {
-      disableUnderline: true,
     },
   },
 };

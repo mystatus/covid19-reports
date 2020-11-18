@@ -27,18 +27,19 @@ export default (async function() {
   groupAdmin.isRegistered = true;
   await groupAdmin.save();
 
-  await generateOrg(1, groupAdmin, 'Test Group', 'First Test Group', 5, 20);
-  await generateOrg(2, groupAdmin, 'Test Group 2', 'Second Test Group', 5, 20);
+  await generateOrg(1, groupAdmin, 5, 20);
+  await generateOrg(2, groupAdmin, 5, 20);
 
   await connection.close();
   console.log('Finished!');
 }());
 
-async function generateOrg(orgNum: number, admin: User, name: string, description: string, numUsers: number, numRosterEntries: number) {
+async function generateOrg(orgNum: number, admin: User, numUsers: number, numRosterEntries: number) {
   const org = new Org();
-  org.name = name;
-  org.description = description;
+  org.name = `Test Group ${orgNum}`;
+  org.description = `Group ${orgNum} for testing.`;
   org.contact = admin;
+  org.indexPrefix = `testgroup${orgNum}`;
   await org.save();
 
   const customColumn = new CustomRosterColumn();

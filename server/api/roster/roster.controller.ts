@@ -3,7 +3,7 @@ import csv from 'csvtojson';
 import fs from 'fs';
 import { snakeCase } from 'typeorm/util/StringUtils';
 import {
-  ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams,
+  ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams, PagedQuery,
 } from '../index';
 import {
   baseRosterColumns, CustomColumnValue, Roster, RosterColumnInfo, RosterColumnType,
@@ -156,7 +156,7 @@ class RosterController {
     res.send(csvContents);
   }
 
-  async getRoster(req: ApiRequest<OrgParam, any, GetRosterQuery>, res: Response) {
+  async getRoster(req: ApiRequest<OrgParam, any, PagedQuery>, res: Response) {
     const limit = (req.query.limit != null) ? parseInt(req.query.limit) : 100;
     const page = (req.query.page != null) ? parseInt(req.query.page) : 0;
 
@@ -208,6 +208,15 @@ class RosterController {
     res.json({
       count: rosterEntries.length,
     });
+  }
+
+  async getUnits(req: ApiRequest<OrgParam>, res: Response) {
+    const rows = await Roster.createQueryBuilder()
+      .select(['unit'])
+      .distinctOn(['unit'])
+      .getRawMany<{ unit: string }>();
+
+    res.json(rows.map(row => row.unit));
   }
 
   async getFullRosterInfo(req: ApiRequest<OrgParam>, res: Response) {
@@ -386,7 +395,7 @@ async function queryAllowedRoster(org: Org, role: Role) {
     .andWhere('unit like :name', { name: role.indexPrefix.replace('*', '%') });
 }
 
-async function getAllowedRosterColumns(org: Org, role: Role) {
+export async function getAllowedRosterColumns(org: Org, role: Role) {
   const allColumns = await getRosterColumns(org.id);
   const fineGrained = !(role.allowedRosterColumns.length === 1 && role.allowedRosterColumns[0] === '*');
   return allColumns.filter(column => {
@@ -556,11 +565,6 @@ interface RosterInfo {
   columns: RosterColumnInfo[],
 }
 
-type GetRosterQuery = {
-  limit: string
-  page: string
-};
-
 type ReportDateQuery = {
   reportDate: string
 };
@@ -569,7 +573,7 @@ type RosterFileRow = {
   [key: string]: string
 };
 
-type RosterEntryData = {
+export type RosterEntryData = {
   [key: string]: CustomColumnValue
 };
 

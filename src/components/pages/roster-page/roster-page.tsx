@@ -20,8 +20,10 @@ import React, {
 } from 'react';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
+import _ from 'lodash';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { Roster } from '../../../actions/roster.actions';
+import { downloadFile } from '../../../utility/download';
 import { getNewPageIndex } from '../../../utility/table';
 import { TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
@@ -60,6 +62,7 @@ export const RosterPage = () => {
   const [rosterColumnInfos, setRosterColumnInfos] = useState<ApiRosterColumnInfo[]>([]);
 
   const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
+  const orgName = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.name;
 
   //
   // Effects
@@ -236,20 +239,15 @@ export const RosterPage = () => {
   const downloadCSVExport = async () => {
     try {
       setExportRosterLoading(true);
-      await axios({
+      const response = await axios({
         url: `api/roster/${orgId}/export`,
         method: 'GET',
         responseType: 'blob',
-      }).then(response => {
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        const date = new Date().toISOString();
-        const filename = `org_${orgId}_roster_export_${date}.csv`;
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
       });
+
+      const date = new Date().toISOString();
+      const filename = `${_.kebabCase(orgName)}_roster_export_${date}`;
+      downloadFile(response.data, filename, 'csv');
     } catch (error) {
       let message = 'Internal Server Error';
       if (error.response?.data?.errors && error.response.data.errors.length > 0) {
@@ -269,19 +267,13 @@ export const RosterPage = () => {
   const downloadCSVTemplate = async () => {
     try {
       setDownloadTemplateLoading(true);
-      await axios({
+      const response = await axios({
         url: `api/roster/${orgId}/template`,
         method: 'GET',
         responseType: 'blob',
-      }).then(response => {
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        const filename = `roster-template.csv`;
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
       });
+
+      downloadFile(response.data, 'roster-template', 'csv');
     } catch (error) {
       let message = 'Internal Server Error';
       if (error.response?.data?.errors && error.response.data.errors.length > 0) {
