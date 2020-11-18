@@ -1,5 +1,4 @@
 import { Dispatch } from 'redux';
-import axios, { AxiosResponse } from 'axios';
 import { ApiUser } from '../models/api-response';
 import { UserClient } from '../client';
 

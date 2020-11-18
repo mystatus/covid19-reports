@@ -9,6 +9,10 @@ export default makeStyles((theme: Theme) => createStyles({
       height: '32px',
     },
   },
+  tableScroll: {
+    maxHeight: '225px',
+    overflowY: 'auto',
+  },
   textCell: {
     width: '70%',
     backgroundColor: '#F0F1F1',

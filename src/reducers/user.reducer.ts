@@ -1,6 +1,11 @@
 import { User } from '../actions/user.actions';
 import { ApiRole, ApiUser } from '../models/api-response';
 
+export interface UserState extends ApiUser {
+  activeRole: ApiRole | undefined
+  isLoggedIn: boolean
+}
+
 export const userInitialState: UserState = {
   edipi: '',
   firstName: '',
@@ -62,9 +67,4 @@ function loggedInState(user: ApiUser): Partial<UserState> {
 
 function getDefaultActiveRole(roles: ApiRole[]) {
   return roles.length > 0 ? roles[0] : undefined;
-}
-
-export interface UserState extends ApiUser {
-  activeRole: ApiRole | undefined
-  isLoggedIn: boolean
 }

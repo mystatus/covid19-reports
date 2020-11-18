@@ -29,15 +29,17 @@ export const RoleTableRow = (props: TableRowProps & { text: string }) => {
 };
 
 export const RoleTable = (props: TableProps) => {
-  const { roleTable } = useStyles();
+  const { roleTable, tableScroll } = useStyles();
   const { children, className, ...rest } = props;
 
   return (
-    <Table {...rest} className={clsx(roleTable, className)}>
-      <TableBody>
-        {children}
-      </TableBody>
-    </Table>
+    <div className={tableScroll}>
+      <Table {...rest} className={clsx(roleTable, className)}>
+        <TableBody>
+          {children}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

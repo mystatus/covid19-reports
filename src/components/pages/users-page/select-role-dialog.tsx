@@ -95,7 +95,7 @@ const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props:
             ))}
           </Select>
         </FormControl>
-        <RoleInfoPanel role={selectedRole} />
+        <RoleInfoPanel role={selectedRole} scrollFix />
       </DialogContent>
       <DialogActions className={classes.roleDialogActions}>
         <Button disabled={loading} variant="outlined" onClick={onCancel} color="primary">
