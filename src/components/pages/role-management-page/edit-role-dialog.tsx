@@ -65,7 +65,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   const [saveRoleLoading, setSaveRoleLoading] = useState(false);
 
   if (!open) {
-    return <></>;
+    return null;
   }
 
   const onInputChanged = (func: (f: string) => any) => (event: React.ChangeEvent<HTMLInputElement>) => {

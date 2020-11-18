@@ -1,5 +1,4 @@
 import { Dispatch } from 'redux';
-import { AppState } from '../store';
 import { NotificationClient } from '../client';
 import { ApiNotification } from '../models/api-response';
 

@@ -31,19 +31,15 @@ export type SelectRoleDialogProps = {
   user: ApiUser
 };
 
-const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = ({
-  confirmButtonText,
-  loading,
-  onCancel,
-  onChange,
-  open,
-  user,
-}) => {
+const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props: SelectRoleDialogProps) => {
   const classes = useStyles();
   const dispatch = useDispatch();
   const orgId = useSelector(UserSelector.orgId);
   const availableRoles = useSelector(RoleSelector.all);
   const [selectedRoleIndex, setSelectedRoleIndex] = useState(-1);
+  const {
+    confirmButtonText, loading, onCancel, onChange, open, user,
+  } = props;
 
   useEffect(() => {
     if (availableRoles!.length > 0) {

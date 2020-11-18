@@ -34,6 +34,10 @@ export type OrgParam = {
   orgId: string
 };
 
+export type OrgPrefixParam = {
+  orgPrefix: string
+};
+
 export type RoleParam = {
   roleId: string
 };

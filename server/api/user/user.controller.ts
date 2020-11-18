@@ -81,6 +81,10 @@ class UserController {
       throw new NotFoundError('The role was not found in the organization.');
     }
 
+    if (edipi == req.appUser.edipi && req.appRole?.id !== roleId) {
+      throw new BadRequestError('You may not edit your own role.');
+    }
+
     let newUser = false;
     let user = await User.findOne({
       relations: ['roles'],

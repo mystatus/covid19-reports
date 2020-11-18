@@ -23,8 +23,6 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ReportProblemOutlinedIcon from '@material-ui/icons/ReportProblemOutlined';
 import client, { AccessRequestClient, UserClient } from '../../../client';
 import useStyles from './users-page.styles';
-import { UserState } from '../../../reducers/user.reducer';
-import { AppState } from '../../../store';
 import { ApiRole, ApiUser, ApiAccessRequest } from '../../../models/api-response';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
@@ -64,6 +62,7 @@ export const UsersPage = () => {
   const [userMoreMenu, setUserMenu] = React.useState<UserMoreMenuState | undefined>();
   const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
   const [selectRoleDialogProps, setSelectRoleDialogProps] = useState<Partial<SelectRoleDialogProps> | undefined>();
+  const { edipi: currentUserEdipi } = useSelector(UserSelector.current);
   const { id: orgId, name: orgName } = useSelector(UserSelector.org) ?? {};
 
   const initializeTable = React.useCallback(async () => {
@@ -103,8 +102,8 @@ export const UsersPage = () => {
     });
   };
 
-  const handleUserMoreClose = () => setUserMenu(undefined);
   const patchMoreMenuState = (patch: Partial<UserMoreMenuState>) => setUserMenu(state => ({ ...state, ...patch } as UserMoreMenuState));
+  const handleUserMoreClose = () => patchMoreMenuState({ element: undefined });
 
   const handleRemoveFromGroup = () => patchMoreMenuState({ showRemoveUserFromGroup: true, element: undefined });
   const cancelRemoveFromGroup = () => patchMoreMenuState({ showRemoveUserFromGroup: false });
@@ -306,6 +305,7 @@ export const UsersPage = () => {
                       aria-label="more"
                       aria-controls="user-more-menu"
                       aria-haspopup="true"
+                      disabled={row.edipi === currentUserEdipi}
                       onClick={makeHandleUserMoreClick(row)}
                     >
                       <MoreVertIcon />

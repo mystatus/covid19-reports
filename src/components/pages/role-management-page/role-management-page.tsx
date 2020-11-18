@@ -5,7 +5,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText, Accordion, AccordionSummary, AccordionDetails, Typography, Grid, Divider, AccordionActions,
+  DialogContentText, Accordion, AccordionSummary, AccordionDetails, Typography, Grid, AccordionActions,
 } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
@@ -21,7 +21,6 @@ import RoleInfoPanel from '../../role-info-panel/role-info-panel';
 import { UserSelector } from '../../../selectors/user.selector';
 import { RoleSelector } from '../../../selectors/role.selector';
 import { Role } from '../../../actions/role.actions';
-import { WorkspaceSelector } from '../../../selectors/workspace.selector';
 import { Workspace } from '../../../actions/workspace.actions';
 
 
@@ -154,9 +153,8 @@ export const RoleManagementPage = () => {
               <Typography>{row.workspace ? row.workspace.name : 'None'}</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <RoleInfoPanel role={roles[selectedRoleIndex]} />
+              <RoleInfoPanel role={row} hideUnitFilter hideWorkspaceName />
             </AccordionDetails>
-            <Divider />
             <AccordionActions className={classes.roleButtons}>
               <Button
                 color="primary"
@@ -201,12 +199,8 @@ export const RoleManagementPage = () => {
           </DialogActions>
         </Dialog>
       )}
-      {editRoleDialogProps.open && (
-        <EditRoleDialog {...editRoleDialogProps} />
-      )}
-      {alertDialogProps.open && (
-        <AlertDialog {...alertDialogProps} />
-      )}
+      {editRoleDialogProps.open && <EditRoleDialog {...editRoleDialogProps} />}
+      {alertDialogProps.open && <AlertDialog {...alertDialogProps} />}
     </main>
   );
 };
