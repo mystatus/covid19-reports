@@ -92,7 +92,7 @@ class MusterController {
     // Build elastcisearch multisearch queries.
     //
     const esBody = [] as any[];
-    const esIndex = `${req.appOrg!.indexPrefix}-*`;
+    const esIndex = `${req.appOrg!.indexPrefix}-*-phi-*`;
 
     // Weekly ES Query
     esBody.push({ index: esIndex });
@@ -207,6 +207,10 @@ class MusterController {
     };
 
     // Weekly
+    for (const date of weeklyDates) {
+      unitStats.weekly[date] = {};
+    }
+
     for (const unitName of unitNames) {
       const unitNameId = unitNameToId(unitName);
       const buckets = response.responses![0].aggregations[unitNameId].reportsHistogram.buckets as {
@@ -220,10 +224,6 @@ class MusterController {
         const reportsCount = bucket.doc_count;
         const rosterCount = unitRosterCounts.weekly[date][unitName];
 
-        if (!unitStats.weekly[date]) {
-          unitStats.weekly[date] = {};
-        }
-
         const nextWeek = moment.utc(date).add(1, 'week');
         const maxReportsCount = rosterCount * nextWeek.diff(date, 'days');
 
@@ -235,7 +235,24 @@ class MusterController {
       }
     }
 
+    // Any units that weren't found must not have any reports. Add them manually.
+    for (const date of weeklyDates) {
+      for (const unitName of unitNames) {
+        if (!unitStats.weekly[date][unitName]) {
+          unitStats.weekly[date][unitName] = {
+            nonMusterPercent: 100,
+            rosterCount: unitRosterCounts.weekly[date][unitName],
+            reportsCount: 0,
+          };
+        }
+      }
+    }
+
     // Monthly
+    for (const date of monthlyDates) {
+      unitStats.monthly[date] = {};
+    }
+
     for (const unitName of unitNames) {
       const unitNameId = unitNameToId(unitName);
       const buckets = response.responses![1].aggregations[unitNameId].reportsHistogram.buckets as {
@@ -261,6 +278,19 @@ class MusterController {
           rosterCount,
           reportsCount,
         };
+      }
+    }
+
+    // Any units that weren't found must not have any reports. Add them manually.
+    for (const date of monthlyDates) {
+      for (const unitName of unitNames) {
+        if (!unitStats.monthly[date][unitName]) {
+          unitStats.monthly[date][unitName] = {
+            nonMusterPercent: 100,
+            rosterCount: unitRosterCounts.monthly[date][unitName],
+            reportsCount: 0,
+          };
+        }
       }
     }
 
@@ -333,7 +363,7 @@ async function getIndividualsData(org: Org, role: Role, intervalCount: number, u
   let response: SearchResponse<unknown>;
   try {
     response = await elasticsearch.search({
-      index: `${org.indexPrefix}-*`,
+      index: `${org.indexPrefix}-*-phi-*`,
       body: {
         size: 0,
         query: {
