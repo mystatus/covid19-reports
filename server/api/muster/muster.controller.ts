@@ -92,10 +92,12 @@ class MusterController {
     // Build elastcisearch multisearch queries.
     //
     const esBody = [] as any[];
-    const esIndex = `${req.appOrg!.indexPrefix}-*-phi-*`;
 
     // Weekly ES Query
-    esBody.push({ index: esIndex });
+    esBody.push({
+      index: req.appRole!.getKibanaIndexForMuster(),
+    });
+
     const esWeeklyBody = {
       size: 0,
       query: {
@@ -138,7 +140,10 @@ class MusterController {
     esBody.push(esWeeklyBody);
 
     // Montly ES Query
-    esBody.push({ index: esIndex });
+    esBody.push({
+      index: req.appRole!.getKibanaIndexForMuster(),
+    });
+
     const esMonthlyBody = {
       size: 0,
       query: {
@@ -307,11 +312,16 @@ async function getIndividualsData(org: Org, role: Role, intervalCount: number, u
   if (unit) {
     rosterEntries = await Roster.find({
       where: {
+        org,
         unit,
       },
     });
   } else {
-    rosterEntries = await Roster.find();
+    rosterEntries = await Roster.find({
+      where: {
+        org,
+      },
+    });
   }
 
   const allowedRosterColumns = await getAllowedRosterColumns(org, role);
@@ -359,7 +369,7 @@ async function getIndividualsData(org: Org, role: Role, intervalCount: number, u
   let response: SearchResponse<unknown>;
   try {
     response = await elasticsearch.search({
-      index: `${org.indexPrefix}-*-phi-*`,
+      index: role.getKibanaIndexForMuster(),
       body: {
         size: 0,
         query: {
@@ -427,7 +437,7 @@ async function getIndividualsData(org: Org, role: Role, intervalCount: number, u
   return individuals.map(individual => {
     const individualCleaned = {} as MusterIndividual;
     for (const columnInfo of allowedRosterColumns) {
-      const columnValue = Reflect.get(individual, columnInfo.name);
+      const columnValue = individual.getColumnValue(columnInfo);
       Reflect.set(individualCleaned, columnInfo.name, columnValue);
     }
     individualCleaned.id = individual.id;

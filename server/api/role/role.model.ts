@@ -101,10 +101,17 @@ export class Role extends BaseEntity {
     return true;
   }
 
+  getUnitFilter() {
+    return this.indexPrefix.replace(new RegExp(escapeRegExp('-'), 'g'), '_');
+  }
+
   getKibanaIndex() {
     const suffix = this.canViewPHI ? 'phi' : (this.canViewPII ? 'pii' : 'base');
-    const unitFilter = this.indexPrefix.replace(new RegExp(escapeRegExp('-'), 'g'), '_');
-    return `${this.org!.indexPrefix}-${unitFilter}-${suffix}-*`;
+    return `${this.org!.indexPrefix}-${this.getUnitFilter()}-${suffix}-*`;
+  }
+
+  getKibanaIndexForMuster() {
+    return `${this.org!.indexPrefix}-${this.getUnitFilter()}-phi-*`;
   }
 
   getKibanaRoles() {

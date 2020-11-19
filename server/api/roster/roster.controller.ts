@@ -213,6 +213,9 @@ class RosterController {
   async getUnits(req: ApiRequest<OrgParam>, res: Response) {
     const rows = await Roster.createQueryBuilder()
       .select(['unit'])
+      .where({
+        org: req.appOrg,
+      })
       .distinct()
       .getRawMany<{ unit: string }>();
 
@@ -247,22 +250,10 @@ class RosterController {
 
     const responseData: RosterInfo[] = [];
     for (const roster of entries) {
-      const columns = (await getRosterColumns(roster.org!.id)).map(column => {
-        let value: CustomColumnValue;
-        if (column.custom) {
-          value = roster.customColumns[column.name] || null;
-        } else if (column.type === RosterColumnType.Date || column.type === RosterColumnType.DateTime) {
-          const dateValue: Date = Reflect.get(roster, column.name);
-          value = dateValue ? dateValue.toISOString() : null;
-        } else {
-          value = Reflect.get(roster, column.name) || null;
-        }
-        const columnValue: RosterColumnWithValue = {
-          ...column,
-          value,
-        };
-        return columnValue;
-      });
+      const columns = (await getRosterColumns(roster.org!.id)).map(column => ({
+        ...column,
+        value: roster.getColumnValue(column),
+      } as RosterColumnWithValue));
 
       const rosterInfo: RosterInfo = {
         org: roster.org!,
