@@ -13,6 +13,12 @@ const baseConfig = {
     basePath: process.env.KIBANA_BASEPATH || '/_plugin/kibana',
     uri: process.env.KIBANA_URI || 'http://localhost:5601',
   },
+
+  elasticsearch: {
+    host: process.env.ELASTICSEARCH_URI || 'localhost:9200',
+    httpAuth: (process.env.ELASTICSEARCH_USER && process.env.ELASTICSEARCH_PASSWORD) ? `${process.env.ELASTICSEARCH_USER}:${process.env.ELASTICSEARCH_PASSWORD}` : 'kibana:kibana',
+    apiVersion: process.env.ELASTICSEARCH_API_VERSION || '6.4',
+  },
 };
 
 // Merge current environment config.

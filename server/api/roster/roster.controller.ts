@@ -3,7 +3,7 @@ import csv from 'csvtojson';
 import fs from 'fs';
 import { snakeCase } from 'typeorm/util/StringUtils';
 import {
-  ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams,
+  ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams, PagedQuery,
 } from '../index';
 import {
   baseRosterColumns, CustomColumnValue, Roster, RosterColumnInfo, RosterColumnType,
@@ -156,7 +156,7 @@ class RosterController {
     res.send(csvContents);
   }
 
-  async getRoster(req: ApiRequest<OrgParam, any, GetRosterQuery>, res: Response) {
+  async getRoster(req: ApiRequest<OrgParam, any, PagedQuery>, res: Response) {
     const limit = (req.query.limit != null) ? parseInt(req.query.limit) : 100;
     const page = (req.query.page != null) ? parseInt(req.query.page) : 0;
 
@@ -210,6 +210,22 @@ class RosterController {
     });
   }
 
+  async getUnits(req: ApiRequest<OrgParam>, res: Response) {
+    const rows = await Roster.createQueryBuilder()
+      .select(['unit'])
+      .where({
+        org: req.appOrg,
+      })
+      .distinct()
+      .getRawMany<{ unit: string }>();
+
+    const units = rows
+      .map(row => row.unit)
+      .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+
+    res.json(units);
+  }
+
   async getFullRosterInfo(req: ApiRequest<OrgParam>, res: Response) {
     const columns = await getRosterColumns(req.appOrg!.id);
     res.json(columns);
@@ -234,22 +250,10 @@ class RosterController {
 
     const responseData: RosterInfo[] = [];
     for (const roster of entries) {
-      const columns = (await getRosterColumns(roster.org!.id)).map(column => {
-        let value: CustomColumnValue;
-        if (column.custom) {
-          value = roster.customColumns[column.name] || null;
-        } else if (column.type === RosterColumnType.Date || column.type === RosterColumnType.DateTime) {
-          const dateValue: Date = Reflect.get(roster, column.name);
-          value = dateValue ? dateValue.toISOString() : null;
-        } else {
-          value = Reflect.get(roster, column.name) || null;
-        }
-        const columnValue: RosterColumnWithValue = {
-          ...column,
-          value,
-        };
-        return columnValue;
-      });
+      const columns = (await getRosterColumns(roster.org!.id)).map(column => ({
+        ...column,
+        value: roster.getColumnValue(column),
+      } as RosterColumnWithValue));
 
       const rosterInfo: RosterInfo = {
         org: roster.org!,
@@ -386,7 +390,7 @@ async function queryAllowedRoster(org: Org, role: Role) {
     .andWhere('unit like :name', { name: role.indexPrefix.replace('*', '%') });
 }
 
-async function getAllowedRosterColumns(org: Org, role: Role) {
+export async function getAllowedRosterColumns(org: Org, role: Role) {
   const allColumns = await getRosterColumns(org.id);
   const fineGrained = !(role.allowedRosterColumns.length === 1 && role.allowedRosterColumns[0] === '*');
   return allColumns.filter(column => {
@@ -556,11 +560,6 @@ interface RosterInfo {
   columns: RosterColumnInfo[],
 }
 
-type GetRosterQuery = {
-  limit: string
-  page: string
-};
-
 type ReportDateQuery = {
   reportDate: string
 };
@@ -569,7 +568,7 @@ type RosterFileRow = {
   [key: string]: string
 };
 
-type RosterEntryData = {
+export type RosterEntryData = {
   [key: string]: CustomColumnValue
 };
 

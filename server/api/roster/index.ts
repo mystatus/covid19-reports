@@ -100,6 +100,13 @@ router.post(
 );
 
 router.get(
+  '/:orgId/units',
+  requireOrgAccess,
+  requireRolePermission(role => role.canViewRoster),
+  controller.getUnits,
+);
+
+router.get(
   '/:orgId/:rosterId',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),

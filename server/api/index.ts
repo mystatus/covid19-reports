@@ -7,6 +7,7 @@ import rosterRoutes from './roster';
 import accessRequestRoutes from './access-request';
 import workspaceRoutes from './workspace';
 import notificationRoutes from './notification';
+import musterRoutes from './muster';
 import { User } from './user/user.model';
 import { Org } from './org/org.model';
 import { Role } from './role/role.model';
@@ -21,6 +22,7 @@ router.use('/roster', rosterRoutes);
 router.use('/access-request', accessRequestRoutes);
 router.use('/workspace', workspaceRoutes);
 router.use('/notification', notificationRoutes);
+router.use('/muster', musterRoutes);
 
 export interface ApiRequest<ReqParams = object, ReqBody = object, ReqQuery = object, ResBody = object> extends Request<ReqParams, ResBody, ReqBody, ReqQuery> {
   appUser: User,
@@ -68,5 +70,10 @@ export type OrgRosterParams = OrgParam & RosterParam;
 export type OrgWorkspaceParams = OrgParam & WorkspaceParam;
 export type OrgSettingParams = OrgParam & SettingParam;
 export type OrgColumnNameParams = OrgParam & ColumnNameParam;
+
+export type PagedQuery = {
+  limit: string
+  page: string
+};
 
 export default router;

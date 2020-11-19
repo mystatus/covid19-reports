@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom';
 import { AppFrameState } from '../../reducers/app-frame.reducer';
 import { UserState } from '../../reducers/user.reducer';
 import { AppState } from '../../store';
+import { PersonCheckIcon } from '../icons/person-check-icon';
 import useStyles from './app-sidenav.styles';
 
 export const AppSidenav = () => {
@@ -44,6 +45,14 @@ export const AppSidenav = () => {
               <ListItemText primary="Home" />
             </ListItem>
           </Link>
+          {user.activeRole?.canViewMuster && (
+            <Link to="/muster">
+              <ListItem button key="Muster">
+                <ListItemIcon><PersonCheckIcon /></ListItemIcon>
+                <ListItemText primary="Muster" />
+              </ListItem>
+            </Link>
+          )}
           {user.activeRole?.workspace && (
             <a href={`/dashboard?orgId=${user.activeRole?.org?.id}`}>
               <ListItem button key="Analytics">

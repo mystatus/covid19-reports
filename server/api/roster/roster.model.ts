@@ -1,6 +1,7 @@
 import {
   Entity, Column, BaseEntity, JoinColumn, ManyToOne, CreateDateColumn, PrimaryGeneratedColumn,
 } from 'typeorm';
+import { ColumnInfo } from '../../../src/models/api-response';
 import { Org } from '../org/org.model';
 
 @Entity()
@@ -62,6 +63,19 @@ export class Roster extends BaseEntity {
     default: '{}',
   })
   customColumns: CustomColumns;
+
+  getColumnValue(column: RosterColumnInfo) {
+    if (column.custom) {
+      return this.customColumns[column.name] || null;
+    }
+
+    if (column.type === RosterColumnType.Date || column.type === RosterColumnType.DateTime) {
+      const dateValue: Date = Reflect.get(this, column.name);
+      return dateValue ? dateValue.toISOString() : null;
+    }
+
+    return Reflect.get(this, column.name) || null;
+  }
 }
 
 export interface CustomColumns {
