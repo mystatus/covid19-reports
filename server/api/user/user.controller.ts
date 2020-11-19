@@ -171,16 +171,9 @@ class UserController {
     }
 
     const user = await User.findOne({
-      relations: ['roles'],
+      relations: ['roles', 'roles.org'],
       where: {
         edipi: userEDIPI,
-      },
-      join: {
-        alias: 'user',
-        leftJoinAndSelect: {
-          roles: 'user.roles',
-          org: 'roles.org',
-        },
       },
     });
 

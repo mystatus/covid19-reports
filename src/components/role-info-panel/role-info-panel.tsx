@@ -58,7 +58,7 @@ export type RoleInfoPanelProps = {
   scrollFix?: boolean
 };
 
-const RoleInfoPanel: React.FunctionComponent<RoleInfoPanelProps> = (props: RoleInfoPanelProps) => {
+const RoleInfoPanel = (props: RoleInfoPanelProps) => {
   const dispatch = useDispatch();
   const orgId = useSelector(UserSelector.orgId);
   const availableNotifications = useSelector(NotificationSelector.all);
