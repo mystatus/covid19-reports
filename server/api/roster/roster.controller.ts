@@ -213,10 +213,14 @@ class RosterController {
   async getUnits(req: ApiRequest<OrgParam>, res: Response) {
     const rows = await Roster.createQueryBuilder()
       .select(['unit'])
-      .distinctOn(['unit'])
+      .distinct()
       .getRawMany<{ unit: string }>();
 
-    res.json(rows.map(row => row.unit));
+    const units = rows
+      .map(row => row.unit)
+      .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+
+    res.json(units);
   }
 
   async getFullRosterInfo(req: ApiRequest<OrgParam>, res: Response) {

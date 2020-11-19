@@ -49,8 +49,10 @@ const stringToTimeRange = (str: string) => {
 export const MusterPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
+  const user = useSelector((state: AppState) => state.user);
 
   const maxNumColumnsToShow = 5;
+  const maxTopUnitsCount = 5;
   const trendChart = {
     layout: {
       height: 320,
@@ -114,7 +116,6 @@ export const MusterPage = () => {
 
   const getUnits = useCallback(async () => {
     const unitsNew = (await axios.get(`api/roster/${orgId}/units`)).data as ApiRosterUnits;
-    console.log('units', unitsNew);
     setUnits(unitsNew);
   }, [orgId]);
 
@@ -173,35 +174,41 @@ export const MusterPage = () => {
 
   const initialize = useCallback(async () => {
     dispatch(AppFrame.setPageLoading(true));
-    // await Promise.all([
-    await initializeRosterColumnInfo();
-    await getUnits();
-    await reloadTable();
-    await reloadTrendData();
-    // ]);
+    await Promise.all([
+      initializeRosterColumnInfo(),
+      getUnits(),
+    ]);
+    await Promise.all([
+      reloadTable(),
+      reloadTrendData(),
+    ]);
     dispatch(AppFrame.setPageLoading(false));
   }, [dispatch, initializeRosterColumnInfo, reloadTable, reloadTrendData, getUnits]);
 
   const getTrendData = useCallback((unitStatsByDate: ApiUnitStatsByDate, topUnitCount: number) => {
-    const nonMusterRatioSumByUnit = {} as {[unit: string]: number};
+    // Sum up each unit's non-muster percent to figure out who's performing worst overall.
+    const nonMusterPercentSumByUnit = {} as {[unit: string]: number};
     for (const date of Object.keys(unitStatsByDate)) {
       for (const unit of Object.keys(unitStatsByDate[date])) {
-        if (nonMusterRatioSumByUnit[unit] == null) {
-          nonMusterRatioSumByUnit[unit] = 0;
+        if (nonMusterPercentSumByUnit[unit] == null) {
+          nonMusterPercentSumByUnit[unit] = 0;
         }
-        nonMusterRatioSumByUnit[unit] += unitStatsByDate[date][unit].nonMusterPercent;
+        nonMusterPercentSumByUnit[unit] += unitStatsByDate[date][unit].nonMusterPercent;
       }
     }
 
-    const unitsSorted = Object.keys(nonMusterRatioSumByUnit)
-      .sort(unit => nonMusterRatioSumByUnit[unit])
+    // Exclude compliant units and sort with worst performing units first.
+    const unitsSorted = Object.keys(nonMusterPercentSumByUnit)
+      .filter(unit => nonMusterPercentSumByUnit[unit] > 0)
+      .sort(unit => nonMusterPercentSumByUnit[unit])
       .reverse()
       .slice(0, topUnitCount);
 
+    // Build chart data.
     const datesSorted = Object.keys(unitStatsByDate).sort();
-    const trendData = [] as Plotly.Data[];
+    const trendChartData = [] as Plotly.Data[];
     for (const unitName of unitsSorted) {
-      const unitTrendData = {
+      const chartData = {
         type: 'bar',
         x: datesSorted,
         y: [] as number[],
@@ -211,13 +218,13 @@ export const MusterPage = () => {
 
       for (const date of datesSorted) {
         const nonMusterPercent = unitStatsByDate[date][unitName]?.nonMusterPercent ?? 0;
-        unitTrendData.y.push(nonMusterPercent);
+        chartData.y.push(nonMusterPercent);
       }
 
-      trendData.push(unitTrendData as Plotly.Data);
+      trendChartData.push(chartData as Plotly.Data);
     }
 
-    return trendData;
+    return trendChartData;
   }, []);
 
   useEffect(() => {
@@ -365,83 +372,85 @@ export const MusterPage = () => {
 
         <Grid container spacing={3}>
           {/* Table */}
-          <Grid item xs={12}>
-            <Paper>
-              <TableContainer>
-                <div className={classes.tableOptions}>
-                  <ToggleButtonGroup
-                    value={individualsTimeRangeString}
-                    exclusive
-                    onChange={handleIndividualsTimeRangeChange}
-                    aria-label="table time range"
-                  >
-                    {timeRangeToggleButton({ intervalCount: 1, interval: 'day' })}
-                    {timeRangeToggleButton({ intervalCount: 2, interval: 'day' })}
-                    {timeRangeToggleButton({ intervalCount: 3, interval: 'day' })}
-                    {timeRangeToggleButton({ intervalCount: 4, interval: 'day' })}
-                    {timeRangeToggleButton({ intervalCount: 5, interval: 'day' })}
-                  </ToggleButtonGroup>
+          {user.activeRole?.canViewPII && (
+            <Grid item xs={12}>
+              <Paper>
+                <TableContainer>
+                  <div className={classes.tableOptions}>
+                    <ToggleButtonGroup
+                      value={individualsTimeRangeString}
+                      exclusive
+                      onChange={handleIndividualsTimeRangeChange}
+                      aria-label="table time range"
+                    >
+                      {timeRangeToggleButton({ intervalCount: 1, interval: 'day' })}
+                      {timeRangeToggleButton({ intervalCount: 2, interval: 'day' })}
+                      {timeRangeToggleButton({ intervalCount: 3, interval: 'day' })}
+                      {timeRangeToggleButton({ intervalCount: 4, interval: 'day' })}
+                      {timeRangeToggleButton({ intervalCount: 5, interval: 'day' })}
+                    </ToggleButtonGroup>
 
-                  <Select
-                    value={individualsUnit}
-                    displayEmpty
-                    onChange={handleIndividualsUnitChange}
-                  >
-                    <MenuItem value="">
-                      <em>All Units</em>
-                    </MenuItem>
-
-                    {units.map(unitName => (
-                      <MenuItem key={unitName} value={unitName}>
-                        {unitName}
+                    <Select
+                      value={individualsUnit}
+                      displayEmpty
+                      onChange={handleIndividualsUnitChange}
+                    >
+                      <MenuItem value="">
+                        <em>All Units</em>
                       </MenuItem>
-                    ))}
-                  </Select>
 
-                  <Box flex={1} />
+                      {units.map(unitName => (
+                        <MenuItem key={unitName} value={unitName}>
+                          {unitName}
+                        </MenuItem>
+                      ))}
+                    </Select>
 
-                  <ButtonWithSpinner
-                    startIcon={<GetAppIcon />}
-                    onClick={() => downloadCSVExport()}
-                    loading={exportLoading}
-                  >
-                    Export to CSV
-                  </ButtonWithSpinner>
-                </div>
+                    <Box flex={1} />
 
-                <Table aria-label="muster table">
-                  <TableCustomColumnsContent
-                    rows={individualsData.rows}
-                    columns={getVisibleColumns()}
-                    idColumn="id"
-                    noDataText={isPageLoading ? 'Loading...' : 'All Individuals Compliant'}
-                    rowOptions={{
-                      renderCell: (row, column) => {
-                        if (column.name === 'lastReported') {
-                          return moment(row[column.name]).format('YYYY-MM-DD, HH:mm');
-                        }
+                    <ButtonWithSpinner
+                      startIcon={<GetAppIcon />}
+                      onClick={() => downloadCSVExport()}
+                      loading={exportLoading}
+                    >
+                      Export to CSV
+                    </ButtonWithSpinner>
+                  </div>
 
-                        return row[column.name];
-                      },
-                    }}
-                  />
+                  <Table aria-label="muster table">
+                    <TableCustomColumnsContent
+                      rows={individualsData.rows}
+                      columns={getVisibleColumns()}
+                      idColumn="id"
+                      noDataText={isPageLoading ? 'Loading...' : 'All Individuals Compliant'}
+                      rowOptions={{
+                        renderCell: (row, column) => {
+                          if (column.name === 'lastReported') {
+                            return moment(row[column.name]).format('YYYY-MM-DD, HH:mm');
+                          }
 
-                  <TableFooter>
-                    <TableRow>
-                      <TablePagination
-                        count={individualsData.totalRowsCount}
-                        page={individualsPage}
-                        rowsPerPage={individualsRowsPerPage}
-                        rowsPerPageOptions={[10, 25, 50]}
-                        onChangePage={handleIndividualsChangePage}
-                        onChangeRowsPerPage={handleIndividualsChangeRowsPerPage}
-                      />
-                    </TableRow>
-                  </TableFooter>
-                </Table>
-              </TableContainer>
-            </Paper>
-          </Grid>
+                          return row[column.name];
+                        },
+                      }}
+                    />
+
+                    <TableFooter>
+                      <TableRow>
+                        <TablePagination
+                          count={individualsData.totalRowsCount}
+                          page={individualsPage}
+                          rowsPerPage={individualsRowsPerPage}
+                          rowsPerPageOptions={[10, 25, 50]}
+                          onChangePage={handleIndividualsChangePage}
+                          onChangeRowsPerPage={handleIndividualsChangeRowsPerPage}
+                        />
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </TableContainer>
+              </Paper>
+            </Grid>
+          )}
 
           {/* Weekly Trend */}
           <Grid item xs={6}>
@@ -458,11 +467,9 @@ export const MusterPage = () => {
                     value={weeklyTrendTopUnitCount}
                     onChange={e => setWeeklyTrendTopUnitCount(parseInt(e.target.value as string))}
                   >
-                    <MenuItem value={1}>1</MenuItem>
-                    <MenuItem value={2}>2</MenuItem>
-                    <MenuItem value={3}>3</MenuItem>
-                    <MenuItem value={4}>4</MenuItem>
-                    <MenuItem value={5}>5</MenuItem>
+                    {Array.from(Array(maxTopUnitsCount).keys()).map(value => (
+                      <MenuItem key={value} value={value + 1}>{value + 1}</MenuItem>
+                    ))}
                   </Select>
                   <span> offending units.</span>
                 </div>
@@ -492,11 +499,9 @@ export const MusterPage = () => {
                     value={monthlyTrendTopUnitCount}
                     onChange={e => setMonthlyTrendTopUnitCount(parseInt(e.target.value as string))}
                   >
-                    <MenuItem value={1}>1</MenuItem>
-                    <MenuItem value={2}>2</MenuItem>
-                    <MenuItem value={3}>3</MenuItem>
-                    <MenuItem value={4}>4</MenuItem>
-                    <MenuItem value={5}>5</MenuItem>
+                    {Array.from(Array(maxTopUnitsCount).keys()).map(value => (
+                      <MenuItem key={value} value={value + 1}>{value + 1}</MenuItem>
+                    ))}
                   </Select>
                   <span> offending units.</span>
                 </div>

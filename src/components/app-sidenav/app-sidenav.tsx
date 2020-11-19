@@ -45,12 +45,14 @@ export const AppSidenav = () => {
               <ListItemText primary="Home" />
             </ListItem>
           </Link>
-          <Link to="/muster">
-            <ListItem button key="Muster">
-              <ListItemIcon><PersonCheckIcon /></ListItemIcon>
-              <ListItemText primary="Muster" />
-            </ListItem>
-          </Link>
+          {user.activeRole?.canViewMuster && (
+            <Link to="/muster">
+              <ListItem button key="Muster">
+                <ListItemIcon><PersonCheckIcon /></ListItemIcon>
+                <ListItemText primary="Muster" />
+              </ListItem>
+            </Link>
+          )}
           {user.activeRole?.workspace && (
             <a href={`/dashboard?orgId=${user.activeRole?.org?.id}`}>
               <ListItem button key="Analytics">

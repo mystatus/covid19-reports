@@ -11,7 +11,7 @@ import {
 } from '../index';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
-import { getAllowedRosterColumns } from '../roster/roster.controller';
+import { getAllowedRosterColumns, RosterEntryData } from '../roster/roster.controller';
 import { Roster } from '../roster/roster.model';
 
 const dateFormat = 'YYYY-MM-DD';
@@ -266,10 +266,6 @@ class MusterController {
         const reportsCount = bucket.doc_count;
         const rosterCount = unitRosterCounts.monthly[date][unitName];
 
-        if (!unitStats.monthly[date]) {
-          unitStats.monthly[date] = {};
-        }
-
         const nextMonth = moment.utc(date).add(1, 'month');
         const maxReportsCount = rosterCount * nextMonth.diff(date, 'days');
 
@@ -402,16 +398,8 @@ async function getIndividualsData(org: Org, role: Role, intervalCount: number, u
     const maxReports = maxReportsByEdipi[rosterEntry.edipi];
     const nonMusterPercent = calcNonMusterPercent(reports, maxReports);
     if (nonMusterPercent > 0) {
-      // Only send back data the user has permissions for.
-      const individual = {} as MusterIndividual;
-      for (const columnInfo of allowedRosterColumns) {
-        const columnValue = Reflect.get(rosterEntry, columnInfo.name);
-        Reflect.set(individual, columnInfo.name, columnValue);
-      }
-
-      individual.id = rosterEntry.id;
+      const individual = rosterEntry as MusterIndividual;
       individual.nonMusterPercent = nonMusterPercent;
-
       individuals.push(individual);
     }
   }
@@ -435,7 +423,17 @@ async function getIndividualsData(org: Org, role: Role, intervalCount: number, u
     return a.firstName.localeCompare(b.firstName);
   });
 
-  return individuals;
+  // Only return data the user has permissions for.
+  return individuals.map(individual => {
+    const individualCleaned = {} as MusterIndividual;
+    for (const columnInfo of allowedRosterColumns) {
+      const columnValue = Reflect.get(individual, columnInfo.name);
+      Reflect.set(individualCleaned, columnInfo.name, columnValue);
+    }
+    individualCleaned.id = individual.id;
+    individualCleaned.nonMusterPercent = individual.nonMusterPercent;
+    return individualCleaned;
+  });
 }
 
 async function getUnitRosterCounts(interval: 'week' | 'month', intervalCount: number) {
