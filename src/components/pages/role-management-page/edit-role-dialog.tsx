@@ -10,33 +10,37 @@ import {
   TableRow, TextField, Typography,
 } from '@material-ui/core';
 import axios from 'axios';
+import { useSelector } from 'react-redux';
 import useStyles from './edit-role-dialog.styles';
 import {
-  ApiNotification, ApiRole, ApiRosterColumnInfo, ApiWorkspace,
+  ApiRole, ApiRosterColumnInfo,
 } from '../../../models/api-response';
 import {
   RolePermissions, parsePermissions, permissionsToArray,
 } from '../../../utility/permission-set';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
+import { RosterSelector } from '../../../selectors/roster.selector';
+import { NotificationSelector } from '../../../selectors/notification.selector';
+import { WorkspaceSelector } from '../../../selectors/workspace.selector';
 
 export interface EditRoleDialogProps {
   open: boolean,
   orgId?: number,
   role?: ApiRole,
-  rosterColumns?: ApiRosterColumnInfo[],
-  workspaces?: ApiWorkspace[],
-  notifications?: ApiNotification[],
   onClose?: () => void,
   onError?: (error: string) => void,
 }
 
 export const EditRoleDialog = (props: EditRoleDialogProps) => {
   const classes = useStyles();
+  const notifications = useSelector(NotificationSelector.all);
+  const rosterColumns = useSelector(RosterSelector.columns);
+  const workspaces = useSelector(WorkspaceSelector.all);
 
   const [formDisabled, setFormDisabled] = useState(false);
   const {
-    open, orgId, role, workspaces, rosterColumns, notifications, onClose, onError,
+    open, orgId, role, onClose, onError,
   } = props;
 
   const existingRole: boolean = !!role;
@@ -61,7 +65,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   const [saveRoleLoading, setSaveRoleLoading] = useState(false);
 
   if (!open) {
-    return <></>;
+    return null;
   }
 
   const onInputChanged = (func: (f: string) => any) => (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -55,12 +55,8 @@ class UserController {
     await res.status(201).json(updatedUser);
   }
 
-  async addUser(req: ApiRequest<OrgParam, AddUserBody>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
-    const org = req.appOrg;
+  async upsertUser(req: ApiRequest<OrgParam, UpsertUserBody>, res: Response) {
+    const org = req.appOrg!;
     const roleId = (req.body.role != null) ? parseInt(req.body.role) : undefined;
     const edipi = req.body.edipi;
     const firstName = req.body.firstName;
@@ -83,6 +79,10 @@ class UserController {
 
     if (!role) {
       throw new NotFoundError('The role was not found in the organization.');
+    }
+
+    if (edipi == req.appUser.edipi && req.appRole?.id !== roleId) {
+      throw new BadRequestError('You may not edit your own role.');
     }
 
     let newUser = false;
@@ -110,9 +110,10 @@ class UserController {
       user.roles = [];
     }
 
-    const orgRole = user.roles.find(userRole => userRole.org!.id === org.id);
-    if (orgRole) {
-      throw new BadRequestError('The user already has a role in the organization.');
+    const orgRoleIndex = user.roles.findIndex(userRole => userRole.org!.id === org.id);
+
+    if (orgRoleIndex >= 0) {
+      user.roles.splice(orgRoleIndex, 1)
     }
 
     user.roles.push(role);
@@ -140,13 +141,9 @@ class UserController {
     //   ON user_roles."user" = "user"."EDIPI"
     // WHERE role.org_id=1
 
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
     const roles = await Role.find({
       where: {
-        org: req.appOrg.id,
+        org: req.appOrg!.id,
       },
     });
 
@@ -166,27 +163,28 @@ class UserController {
     res.json(users);
   }
 
-  async deleteUser(req: ApiRequest<OrgEdipiParams>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
+  async removeUserFromGroup(req: ApiRequest<OrgEdipiParams>, res: Response) {
     const userEDIPI = req.params.edipi;
 
+    if (req.appUser.edipi === userEDIPI) {
+      throw new Error("Unable to remove yourself from the group.")
+    }
+
     const user = await User.findOne({
+      relations: ['roles', 'roles.org'],
       where: {
         edipi: userEDIPI,
-        org: req.appOrg.id,
       },
     });
 
-    if (!user) {
-      throw new NotFoundError('User could not be found.');
+    const roleIndex = (user?.roles ?? []).findIndex((userRole) => userRole.org!.id === req.appOrg!.id);
+
+    if (roleIndex !== -1) {
+      user!.roles!.splice(roleIndex, 1);
+      res.json(await user!.save())
+    } else {
+      res.json({})
     }
-
-    const removedUser = await user.remove();
-
-    res.json(removedUser);
   }
 
   async getAccessRequests(req: ApiRequest, res: Response) {
@@ -206,7 +204,7 @@ class UserController {
 
 }
 
-type AddUserBody = {
+type UpsertUserBody = {
   edipi: string
   role: string
   firstName: string

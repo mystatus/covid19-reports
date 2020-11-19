@@ -1,80 +1,47 @@
 import {
   Button,
   Container,
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
   DialogActions,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText, Accordion, AccordionSummary, AccordionDetails, Typography, Grid, Divider, AccordionActions,
+  DialogContentText, Accordion, AccordionSummary, AccordionDetails, Typography, Grid, AccordionActions,
 } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
-import CheckIcon from '@material-ui/icons/Check';
 import useStyles from './role-management-page.styles';
-import { UserState } from '../../../reducers/user.reducer';
-import { AppState } from '../../../store';
-import {
-  ApiRole, ApiWorkspace, ApiRosterColumnInfo, ApiNotification,
-} from '../../../models/api-response';
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditRoleDialog, EditRoleDialogProps } from './edit-role-dialog';
-import { parsePermissions, RolePermissions } from '../../../utility/permission-set';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
-
-interface ParsedRoleData {
-  allowedRosterColumns: RolePermissions,
-  allowedNotificationEvents: RolePermissions,
-}
+import RoleInfoPanel from '../../role-info-panel/role-info-panel';
+import { UserSelector } from '../../../selectors/user.selector';
+import { RoleSelector } from '../../../selectors/role.selector';
+import { Role } from '../../../actions/role.actions';
+import { Workspace } from '../../../actions/workspace.actions';
 
 
 export const RoleManagementPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
-
   const [selectedRoleIndex, setSelectedRoleIndex] = useState(-1);
-  const [roles, setRoles] = useState<ApiRole[]>([]);
-  const [roleData, setRoleData] = useState<ParsedRoleData[]>([]);
-  const [rosterColumns, setRosterColumns] = useState<ApiRosterColumnInfo[]>([]);
-  const [workspaces, setWorkspaces] = useState<ApiWorkspace[]>([]);
-  const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [deleteRoleDialogOpen, setDeleteRoleDialogOpen] = useState(false);
   const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
   const [editRoleDialogProps, setEditRoleDialogProps] = useState<EditRoleDialogProps>({ open: false });
   const [deleteRoleLoading, setDeleteRoleLoading] = useState(false);
-
-  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
+  const roles = useSelector(RoleSelector.all);
+  const orgId = useSelector(UserSelector.orgId);
 
   const initializeTable = React.useCallback(async () => {
-    dispatch(AppFrame.setPageLoading(true));
-    const orgRoles = (await axios.get(`api/role/${orgId}`)).data as ApiRole[];
-    const orgWorkspaces = (await axios.get(`api/workspace/${orgId}`)).data as ApiWorkspace[];
-    const orgRosterColumns = (await axios.get(`api/roster/${orgId}/column`)).data as ApiRosterColumnInfo[];
-    const allNotifications = (await axios.get(`api/notification/${orgId}/all`)).data as ApiNotification[];
-    const parsedRoleData = orgRoles.map(role => {
-      return {
-        allowedRosterColumns: parsePermissions(orgRosterColumns, role.allowedRosterColumns),
-        allowedNotificationEvents: parsePermissions(allNotifications.map(notification => {
-          return {
-            name: notification.id,
-            displayName: notification.name,
-          };
-        }), role.allowedNotificationEvents),
-      };
-    });
-    setRoleData(parsedRoleData);
-    setWorkspaces(orgWorkspaces);
-    setRosterColumns(orgRosterColumns);
-    setRoles(orgRoles);
-    setNotifications(allNotifications);
-    dispatch(AppFrame.setPageLoading(false));
+    if (orgId) {
+      dispatch(AppFrame.setPageLoading(true));
+      await dispatch(Role.fetch(orgId));
+      await dispatch(Workspace.fetch(orgId));
+      dispatch(AppFrame.setPageLoading(false));
+    }
   }, [orgId, dispatch]);
 
   const cancelDeleteRoleDialog = () => {
@@ -146,50 +113,6 @@ export const RoleManagementPage = () => {
     setSelectedRoleIndex(isExpanded ? index : -1);
   };
 
-  const columnAllowed = (column: ApiRosterColumnInfo, permissions: RolePermissions, role: ApiRole) => {
-    return permissions[column.name]
-      && (!column.pii || role.canViewPII || role.canViewPHI)
-      && (!column.phi || role.canViewPHI);
-  };
-
-  const buildRosterColumnRows = (index: number) => {
-    if (index >= roleData.length) {
-      return <></>;
-    }
-    const viewableColumns = roleData[index].allowedRosterColumns;
-    return rosterColumns.map(column => (
-      <TableRow key={column.name}>
-        <TableCell className={classes.textCell}>
-          {column.displayName}
-        </TableCell>
-        <TableCell className={classes.iconCell}>
-          {columnAllowed(column, viewableColumns, roles[index]) && (
-            <CheckIcon />
-          )}
-        </TableCell>
-      </TableRow>
-    ));
-  };
-
-  const buildNotificationEventRows = (index: number) => {
-    if (index >= roleData.length) {
-      return <></>;
-    }
-    const allowedEvents = roleData[index].allowedNotificationEvents;
-    return notifications.map(notification => (
-      <TableRow key={notification.id}>
-        <TableCell className={classes.textCell}>
-          {notification.name}
-        </TableCell>
-        <TableCell className={classes.iconCell}>
-          {allowedEvents[notification.id] && (
-            <CheckIcon />
-          )}
-        </TableCell>
-      </TableRow>
-    ));
-  };
-
   useEffect(() => { initializeTable().then(); }, [initializeTable]);
 
   return (
@@ -230,100 +153,8 @@ export const RoleManagementPage = () => {
               <Typography>{row.workspace ? row.workspace.name : 'None'}</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Grid container spacing={3}>
-                <Grid item xs={6}>
-                  <Typography className={classes.roleHeader}>Description:</Typography>
-                  <Typography>{row.description}</Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography className={classes.roleHeader}>Allowed Notifications:</Typography>
-                  <div className={classes.tableScroll}>
-                    <Table aria-label="Notifications" className={classes.roleTable}>
-                      <TableBody>
-                        {buildNotificationEventRows(index)}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography className={classes.roleHeader}>Viewable Roster Columns:</Typography>
-                  <div className={classes.tableScroll}>
-                    <Table aria-label="Roster Columns" className={classes.roleTable}>
-                      <TableBody>
-                        {buildRosterColumnRows(index)}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography className={classes.roleHeader}>Permissions:</Typography>
-                  <div className={classes.tableScroll}>
-                    <Table aria-label="Permissions" className={classes.roleTable}>
-                      <TableBody>
-                        <TableRow>
-                          <TableCell className={classes.textCell}>Manage Group</TableCell>
-                          <TableCell className={classes.iconCell}>
-                            {row.canManageGroup && (
-                              <CheckIcon />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className={classes.textCell}>Manage Roster</TableCell>
-                          <TableCell className={classes.iconCell}>
-                            {row.canManageRoster && (
-                              <CheckIcon />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className={classes.textCell}>Manage Workspace</TableCell>
-                          <TableCell className={classes.iconCell}>
-                            {row.canManageWorkspace && (
-                              <CheckIcon />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className={classes.textCell}>View Roster</TableCell>
-                          <TableCell className={classes.iconCell}>
-                            {row.canViewRoster && (
-                              <CheckIcon />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className={classes.textCell}>View Muster Reports</TableCell>
-                          <TableCell className={classes.iconCell}>
-                            {row.canViewMuster && (
-                              <CheckIcon />
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        <TableRow>
-                          <TableCell className={classes.textCell}>View PII</TableCell>
-                          <TableCell className={classes.iconCell}>
-                            {row.canViewPII && (
-                              <CheckIcon />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className={classes.textCell}>View PHI</TableCell>
-                          <TableCell className={classes.iconCell}>
-                            {row.canViewPHI && (
-                              <CheckIcon />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </div>
-                </Grid>
-              </Grid>
+              <RoleInfoPanel role={row} hideUnitFilter hideWorkspaceName />
             </AccordionDetails>
-            <Divider />
             <AccordionActions className={classes.roleButtons}>
               <Button
                 color="primary"
@@ -368,26 +199,8 @@ export const RoleManagementPage = () => {
           </DialogActions>
         </Dialog>
       )}
-      {editRoleDialogProps.open && (
-        <EditRoleDialog
-          open={editRoleDialogProps.open}
-          orgId={editRoleDialogProps.orgId}
-          role={editRoleDialogProps.role}
-          workspaces={workspaces}
-          rosterColumns={rosterColumns}
-          notifications={notifications}
-          onClose={editRoleDialogProps.onClose}
-          onError={editRoleDialogProps.onError}
-        />
-      )}
-      {alertDialogProps.open && (
-        <AlertDialog
-          open={alertDialogProps.open}
-          title={alertDialogProps.title}
-          message={alertDialogProps.message}
-          onClose={alertDialogProps.onClose}
-        />
-      )}
+      {editRoleDialogProps.open && <EditRoleDialog {...editRoleDialogProps} />}
+      {alertDialogProps.open && <AlertDialog {...alertDialogProps} />}
     </main>
   );
 };

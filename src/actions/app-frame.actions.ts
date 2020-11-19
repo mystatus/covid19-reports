@@ -20,15 +20,11 @@ export namespace AppFrame {
   }
 
   export const toggleSidenavExpanded = () => (dispatch: Dispatch<Actions.ToggleSidenavExpand>) => {
-    dispatch({
-      ...new Actions.ToggleSidenavExpand(),
-    });
+    dispatch(new Actions.ToggleSidenavExpand());
   };
 
   export const setPageLoading = (isPageLoading: boolean) => (dispatch: Dispatch<Actions.SetPageLoading>) => {
-    dispatch({
-      ...new Actions.SetPageLoading({ isPageLoading }),
-    });
+    dispatch(new Actions.SetPageLoading({ isPageLoading }));
   };
 
 }
