@@ -18,6 +18,20 @@ import { Role } from '../role/role.model';
 import { Unit } from '../unit/unit.model';
 
 class RosterController {
+  static getColumnSelect(column: RosterColumnInfo) {
+    // Make sure custom columns are converted to appropriate types
+    if (column.custom) {
+      switch (column.type) {
+        case RosterColumnType.Boolean:
+          return `(roster.custom_columns ->> '${column.name}')::BOOLEAN`;
+        case RosterColumnType.Number:
+          return `(roster.custom_columns ->> '${column.name}')::DOUBLE PRECISION`;
+        default:
+          return `roster.custom_columns ->> '${column.name}'`;
+      }
+    }
+    return `roster.${snakeCase(column.name)}`;
+  }
 
   async addCustomColumn(req: ApiRequest<OrgParam, CustomColumnData>, res: Response) {
     if (!req.body.name) {
@@ -173,6 +187,94 @@ class RosterController {
       .getRawMany<RosterEntryData>();
 
     const totalRowsCount = await (await queryAllowedRoster(req.appOrg!, req.appRole!)).getCount();
+
+    res.json({
+      rows: roster,
+      totalRowsCount,
+    });
+  }
+
+  async searchRoster(req: ApiRequest<OrgParam, SearchRosterBody, GetRosterQuery>, res: Response) {
+    const limit = (req.query.limit != null) ? parseInt(req.query.limit) : 100;
+    const page = (req.query.page != null) ? parseInt(req.query.page) : 0;
+    const rosterColumns = await getAllowedRosterColumns(req.appOrg!, req.appRole!);
+
+    const columns: RosterColumnInfo[] = [{
+      name: 'unit',
+      displayName: 'Unit',
+      custom: false,
+      phi: false,
+      pii: false,
+      type: RosterColumnType.String,
+      updatable: false,
+      required: false,
+    }, ...rosterColumns];
+
+    async function makeQueryBuilder() {
+      return Object.keys(req.body)
+        .reduce((queryBuilder, key) => {
+          const column = columns.find(col => col.name === key);
+          if (!column) {
+            throw new BadRequestError('Malformed search query. Unexpected column name.');
+          }
+
+          const { op, value } = req.body[key];
+          const needsQuotedValue = column.type === RosterColumnType.Date || column.type === RosterColumnType.DateTime;
+          const maybeQuote = (v: CustomColumnValue) => (v !== null && needsQuotedValue ? `'${v}'` : v);
+          const columnName = RosterController.getColumnSelect(column);
+
+          if (op === 'between' || op === 'in') {
+            if (!Array.isArray(value)) {
+              throw new BadRequestError('Malformed search query. Expected array for value.');
+            }
+
+            if (op === 'in') {
+              return queryBuilder.andWhere(`${columnName} ${op} (:...${key})`, {
+                [key]: value,
+              });
+            }
+
+            if (op === 'between') {
+              return queryBuilder.andWhere(`${columnName} >= (:${key}Min) and ${columnName} <= (:${key}Max)`, {
+                [`${key}Min`]: maybeQuote(value[0]),
+                [`${key}Max`]: maybeQuote(value[1]),
+              });
+            }
+          }
+
+          if (Array.isArray(value)) {
+            throw new BadRequestError('Malformed search query. Expected scalar value.');
+          }
+
+          if (op === '=' || op === '<>' || op === '>' || op === '<') {
+            return queryBuilder.andWhere(`${columnName} ${op} :${key}`, {
+              [key]: maybeQuote(value),
+            });
+          }
+
+          if (op === '~' || op === 'startsWith' || op === 'endsWith') {
+            const prefix = op !== 'startsWith' ? '%' : '';
+            const suffix = op !== 'endsWith' ? '%' : '';
+            return queryBuilder.andWhere(`${columnName} like :${key}`, {
+              [key]: `${prefix}${value}${suffix}`,
+            });
+          }
+
+          throw new BadRequestError('Malformed search query. Received unexpected value for "op".');
+        }, await queryAllowedRoster(req.appOrg!, req.appRole!));
+    }
+
+    const queryBuilder = await makeQueryBuilder();
+
+    const roster = await queryBuilder.clone()
+      .skip(page * limit)
+      .take(limit)
+      .orderBy({
+        edipi: 'ASC',
+      })
+      .getRawMany<RosterEntryData>();
+
+    const totalRowsCount = await queryBuilder.getCount();
 
     res.json({
       rows: roster,
@@ -393,31 +495,14 @@ async function queryAllowedRoster(org: Org, role: Role) {
 
   // Add all columns that are allowed by the user's role
   columns.forEach(column => {
-    if (column.custom) {
-      // Make sure custom columns are converted to appropriate types
-      let selection: string;
-      switch (column.type) {
-        case RosterColumnType.Boolean:
-          selection = `(roster.custom_columns ->> '${column.name}')::BOOLEAN`;
-          break;
-        case RosterColumnType.Number:
-          selection = `(roster.custom_columns ->> '${column.name}')::DOUBLE PRECISION`;
-          break;
-        default:
-          selection = `roster.custom_columns ->> '${column.name}'`;
-          break;
-      }
-      queryBuilder.addSelect(selection, column.name);
-    } else {
-      queryBuilder.addSelect(`roster.${snakeCase(column.name)}`, column.name);
-    }
+    queryBuilder.addSelect(RosterController.getColumnSelect(column), column.name);
   });
 
   // Filter out roster entries that are not on the active roster or are not allowed by the role's index prefix.
   return queryBuilder
     .where('u.org_id = :orgId', { orgId: org.id })
-    .andWhere('(roster.end_date IS NULL OR roster.end_date > now())')
-    .andWhere('(roster.start_date IS NULL OR roster.start_date < now())')
+    .andWhere('(roster.end_date IS NULL OR roster.end_date >= CURRENT_DATE)')
+    .andWhere('(roster.start_date IS NULL OR roster.start_date <= CURRENT_DATE)')
     .andWhere('u.id like :name', { name: role.indexPrefix.replace('*', '%') });
 }
 
@@ -591,6 +676,20 @@ interface RosterInfo {
   id: number,
   columns: RosterColumnInfo[],
 }
+
+type GetRosterQuery = {
+  limit: string
+  page: string
+};
+
+type QueryOp = '=' | '<>' | '~' | '>' | '<' | 'startsWith' | 'endsWith' | 'in' | 'between';
+
+type SearchRosterBody = {
+  [column: string]: {
+    op: QueryOp
+    value: CustomColumnValue | CustomColumnValue[]
+  }
+};
 
 type ReportDateQuery = {
   reportDate: string
