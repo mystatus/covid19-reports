@@ -2,6 +2,7 @@ import {
   Container, Tab, Tabs,
 } from '@material-ui/core';
 import React, { useState } from 'react';
+import PageHeader from '../../page-header/page-header';
 import useStyles from './settings-page.styles';
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { NotificationsTab } from './notifications-tab';
@@ -39,7 +40,8 @@ export const SettingsPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <h1>Settings</h1>
+        <PageHeader title="Settings" />
+
         <div className={classes.tabsRoot}>
           <Tabs
             value={value}

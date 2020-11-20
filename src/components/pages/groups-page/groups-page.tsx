@@ -9,6 +9,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
+import PageHeader from '../../page-header/page-header';
 import { StatusChip } from '../../status-chip/status-chip';
 import useStyles from './groups-page.styles';
 import { ApiAccessRequest, ApiOrg } from '../../../models/api-response';
@@ -188,9 +189,7 @@ export const GroupsPage = () => {
   return (
     <>
       <Container maxWidth="md">
-        <header>
-          <h1>Groups</h1>
-        </header>
+        <PageHeader title="Groups" />
 
         {/* My Groups */}
         {(myOrgs.length > 0) && (

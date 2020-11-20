@@ -12,6 +12,7 @@ import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
+import PageHeader from '../../page-header/page-header';
 import useStyles from './role-management-page.styles';
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditRoleDialog, EditRoleDialogProps } from './edit-role-dialog';
@@ -120,7 +121,7 @@ export const RoleManagementPage = () => {
       <Container maxWidth="md">
         <Grid container>
           <Grid item xs={6}>
-            <h1>Group Roles</h1>
+            <PageHeader title="Group Roles" />
           </Grid>
           <Grid className={classes.newRole} item xs={6}>
             <Button

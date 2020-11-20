@@ -18,6 +18,7 @@ import { AppFrame } from '../../../actions/app-frame.actions';
 import { isAxiosError } from '../../../utility/axios';
 import { downloadFile } from '../../../utility/download';
 import { getMaxPageIndex, getNewPageIndex, columnInfosOrdered } from '../../../utility/table';
+import PageHeader from '../../page-header/page-header';
 import { TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
 import useStyles from './muster-page.styles';
@@ -368,7 +369,7 @@ export const MusterPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <h1>Muster Non-Compliance</h1>
+        <PageHeader title="Muster Non-Compliance" />
 
         <Grid container spacing={3}>
           {/* Table */}

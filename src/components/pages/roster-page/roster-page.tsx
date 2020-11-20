@@ -25,6 +25,7 @@ import { AppFrame } from '../../../actions/app-frame.actions';
 import { Roster } from '../../../actions/roster.actions';
 import { downloadFile } from '../../../utility/download';
 import { getNewPageIndex } from '../../../utility/table';
+import PageHeader from '../../page-header/page-header';
 import { TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
 import useStyles from './roster-page.styles';
@@ -301,7 +302,7 @@ export const RosterPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <h1>Roster</h1>
+        <PageHeader title="Roster" />
 
         <div className={classes.buttons}>
           <input
