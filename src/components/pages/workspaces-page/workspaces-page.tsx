@@ -15,6 +15,7 @@ import axios from 'axios';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import CheckIcon from '@material-ui/icons/Check';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
+import PageHeader from '../../page-header/page-header';
 import useStyles from './workspaces-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
@@ -137,7 +138,7 @@ export const WorkspacesPage = () => {
       <Container maxWidth="md">
         <Grid container>
           <Grid item xs={6}>
-            <h1>Workspaces</h1>
+            <PageHeader title="Workspaces" />
           </Grid>
           <Grid className={classes.newWorkspace} item xs={6}>
             <Button

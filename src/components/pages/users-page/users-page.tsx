@@ -22,6 +22,7 @@ import MailOutlineIcon from '@material-ui/icons/MailOutline';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ReportProblemOutlinedIcon from '@material-ui/icons/ReportProblemOutlined';
 import client, { AccessRequestClient, UserClient } from '../../../client';
+import PageHeader from '../../page-header/page-header';
 import useStyles from './users-page.styles';
 import { ApiRole, ApiUser, ApiAccessRequest } from '../../../models/api-response';
 import { AppFrame } from '../../../actions/app-frame.actions';
@@ -198,7 +199,8 @@ export const UsersPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <h1>Users</h1>
+        <PageHeader title="Users" />
+
         {accessRequests.length > 0 && (
           <TableContainer className={classes.table} component={Paper}>
             <Table aria-label="simple table">

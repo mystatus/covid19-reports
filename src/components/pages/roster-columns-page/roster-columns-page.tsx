@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
+import PageHeader from '../../page-header/page-header';
 import useStyles from './roster-columns-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
@@ -139,7 +140,7 @@ export const RosterColumnsPage = () => {
       <Container maxWidth="md">
         <Grid container>
           <Grid item xs={6}>
-            <h1>Custom Roster Columns</h1>
+            <PageHeader title="Custom Roster Columns" />
           </Grid>
           <Grid className={classes.newColumn} item xs={6}>
             <Button
