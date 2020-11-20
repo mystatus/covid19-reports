@@ -31,5 +31,6 @@ RUN chmod +x /covid19-reports/run-prod.sh
 COPY migration-run.sh /covid19-reports
 RUN chmod +x /covid19-reports/migration-run.sh
 ENV NODE_ENV=prod
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 EXPOSE 4000
 CMD [ "npm", "start" ]
