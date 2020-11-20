@@ -1,7 +1,6 @@
 import {
   Entity, Column, BaseEntity, JoinColumn, ManyToOne, CreateDateColumn, PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ColumnInfo } from '../../../src/models/api-response';
 import { Org } from '../org/org.model';
 
 @Entity()
