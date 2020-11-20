@@ -9,4 +9,10 @@ export default makeStyles((theme: Theme) => createStyles({
   card: {
     height: '100%',
   },
+  li: {
+    paddingBottom: theme.spacing(3),
+  },
+  colorPrimary: {
+    color: theme.palette.primary.main,
+  },
 }));
