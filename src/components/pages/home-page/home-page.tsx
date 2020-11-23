@@ -28,28 +28,28 @@ export const HomePage = () => {
                     </Typography>
 
                     <Typography gutterBottom>
-                      With Status Engine you can easily monitor COVID-19 cases across your entire organization. If you have any questions, comments or concerns please reach out to us by email at <a href="mailto:covid19feedback@dds.mil" className={classes.colorPrimary}>covid19feedback@dds.mil</a>.
+                      With Status Engine you can easily monitor COVID-19 cases across your entire organization. If you have any questions, comments or concerns please reach out to us by email at <a href="mailto:covid19feedback@dds.mil">covid19feedback@dds.mil</a>.
                     </Typography>
 
                     <ul>
-                      <li className={classes.li}>
+                      <li>
                         <Typography>
-                          <strong><Link to="/roster" className={classes.colorPrimary}>Roster Management</Link><br /></strong> Manage your organization’s roster with the built-in suite of tools designed to allow for quick and easy modifications.
+                          <strong><Link to="/roster">Roster Management</Link><br /></strong> Manage your organization’s roster with the built-in suite of tools designed to allow for quick and easy modifications.
                         </Typography>
                       </li>
-                      <li className={classes.li}>
+                      <li>
                         <Typography>
-                          <strong><Link to="/muster" className={classes.colorPrimary}>Muster Snapshot</Link><br /></strong> Track your group's daily muster compliance, view weekly and monthly trends, as well as export data.
+                          <strong><Link to="/muster">Muster Snapshot</Link><br /></strong> Track your group's daily muster compliance, view weekly and monthly trends, as well as export data.
                         </Typography>
                       </li>
-                      <li className={classes.li}>
+                      <li>
                         <Typography>
-                          <strong><Link to="/dashboard" className={classes.colorPrimary}>Customizeable Dashboards</Link><br /></strong>  Protect sensitive data by creating and assigning role-based permissions across the entire organization.
+                          <strong><Link to="/dashboard">Customizeable Dashboards</Link><br /></strong>  Protect sensitive data by creating and assigning role-based permissions across the entire organization.
                         </Typography>
                       </li>
-                      <li className={classes.li}>
+                      <li>
                         <Typography>
-                          <strong><Link to="/settings" className={classes.colorPrimary}>Alerts &amp; Notifications</Link><br /></strong> Stay up-to-date on organization activity without overburdening your inbox or mobile device with fully customizeable alerts.
+                          <strong><Link to="/settings">Alerts &amp; Notifications</Link><br /></strong> Stay up-to-date on organization activity without overburdening your inbox or mobile device with fully customizeable alerts.
                         </Typography>
                       </li>
                     </ul>
