@@ -24,40 +24,32 @@ export const HomePage = () => {
                 <Grid container direction="row">
                   <Grid item xs={8}>
                     <Typography variant="h5" gutterBottom>
-                      Welcome to Status Engine
+                      Welcome to Status Engine!
                     </Typography>
 
-                    <Typography>
-                      With Status Engine you can easily monitor COVID-19 cases across your entire organization. Easily
-                      setup
-                      daily symptom reports, monitor quarantine and non-outbreak scenarios, analyze long-term trends and
-                      more!
+                    <Typography gutterBottom>
+                      With Status Engine you can easily monitor COVID-19 cases across your entire organization. If you have any questions, comments or concerns please reach out to us by email at <a href="mailto:covid19feedback@dds.mil">covid19feedback@dds.mil</a>.
                     </Typography>
 
                     <ul>
                       <li>
                         <Typography>
-                          <strong>Save time</strong> over manual report generation and monitoring
+                          <strong><Link to="/roster">Roster Management</Link><br /></strong> Manage your organization’s roster with the built-in suite of tools designed to allow for quick and easy modifications.
                         </Typography>
                       </li>
                       <li>
                         <Typography>
-                          Keep a pulse on your <strong>force’s health and wellness</strong>
+                          <strong><Link to="/muster">Muster Snapshot</Link><br /></strong> Track your group's daily muster compliance, view weekly and monthly trends, as well as export data.
                         </Typography>
                       </li>
                       <li>
                         <Typography>
-                          <strong>Track individuals&apos symptoms</strong> before, during and after their illness
+                          <strong><Link to="/dashboard">Customizeable Dashboards</Link><br /></strong>  Protect sensitive data by creating and assigning role-based permissions across the entire organization.
                         </Typography>
                       </li>
                       <li>
                         <Typography>
-                          Easily monitor <strong>symptom checking compliance</strong>
-                        </Typography>
-                      </li>
-                      <li>
-                        <Typography>
-                          Access valuable data insights to make <strong>fact-based decisions</strong>
+                          <strong><Link to="/settings">Alerts &amp; Notifications</Link><br /></strong> Stay up-to-date on organization activity without overburdening your inbox or mobile device with fully customizeable alerts.
                         </Typography>
                       </li>
                     </ul>
@@ -70,58 +62,6 @@ export const HomePage = () => {
               </CardContent>
             </Card>
           </Grid>
-
-          {/* Analytics & Reporting */}
-          {user.activeRole?.workspace && (
-            <Grid item xs={6}>
-              <Card className={classes.card}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    Analytics & Reporting
-                  </Typography>
-
-                  <Typography>
-                    Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odque volutpat mm malesuada erat ut
-                    tupendisse nibh, viverra non, semper suscipit, posuere a, pede.
-                  </Typography>
-                </CardContent>
-
-                <CardActions>
-                  <a href={`/dashboard?orgId=${user.activeRole.org?.id}`}>
-                    <Button>
-                      View Analytics
-                    </Button>
-                  </a>
-                </CardActions>
-              </Card>
-            </Grid>
-          )}
-
-          {/* Roster Management */}
-          {user.activeRole && user.activeRole.canManageRoster && (
-            <Grid item xs={6}>
-              <Card className={classes.card}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    Roster Management
-                  </Typography>
-
-                  <Typography>
-                    Morbi in sem quis dui placerat ornare ellentesque odio nisi, euismod in, pharetra a, ultricies in,
-                    diad arcuras consequ. Uguae, eu vulputate magna eroiquam erat volutptincidunt quirt.
-                  </Typography>
-                </CardContent>
-
-                <CardActions>
-                  <Link to="/roster">
-                    <Button>
-                      View Roster
-                    </Button>
-                  </Link>
-                </CardActions>
-              </Card>
-            </Grid>
-          )}
         </Grid>
       </Container>
     </main>
