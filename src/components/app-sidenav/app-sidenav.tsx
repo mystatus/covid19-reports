@@ -6,6 +6,7 @@ import BarChartIcon from '@material-ui/icons/BarChart';
 import HomeIcon from '@material-ui/icons/Home';
 import ListAltIcon from '@material-ui/icons/ListAlt';
 import PeopleIcon from '@material-ui/icons/People';
+import GroupWorkIcon from '@material-ui/icons/GroupWork';
 import SecurityIcon from '@material-ui/icons/Security';
 import AssessmentOutlinedIcon from '@material-ui/icons/AssessmentOutlined';
 import clsx from 'clsx';
@@ -87,6 +88,15 @@ export const AppSidenav = () => {
               <ListItem button key="Users">
                 <ListItemIcon><PeopleIcon /></ListItemIcon>
                 <ListItemText primary="Users" />
+              </ListItem>
+            </Link>
+          )}
+
+          {user.activeRole?.canManageGroup && (
+            <Link to="/units">
+              <ListItem button key="Units">
+                <ListItemIcon><GroupWorkIcon /></ListItemIcon>
+                <ListItemText primary="Units" />
               </ListItem>
             </Link>
           )}

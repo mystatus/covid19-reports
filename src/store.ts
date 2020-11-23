@@ -8,11 +8,13 @@ import { RoleState, roleInitialState, roleReducer } from './reducers/role.reduce
 import { RosterState, rosterInitialState, rosterReducer } from './reducers/roster.reducer';
 import { UserState, userInitialState, userReducer } from './reducers/user.reducer';
 import { WorkspaceState, workspaceInitialState, workspaceReducer } from './reducers/workspace.reducer';
+import { unitInitialState, unitReducer, UnitState } from './reducers/unit.reducer';
 
 export interface AppState {
   appFrame: AppFrameState
   notification: NotificationState
   role: RoleState
+  unit: UnitState
   roster: RosterState
   user: UserState
   workspace: WorkspaceState
@@ -22,6 +24,7 @@ export const initialState: AppState = {
   appFrame: appFrameInitialState,
   notification: notificationInitialState,
   role: roleInitialState,
+  unit: unitInitialState,
   roster: rosterInitialState,
   user: userInitialState,
   workspace: workspaceInitialState,
@@ -70,6 +73,7 @@ export default createStore(
     appFrame: appFrameReducer,
     notification: notificationReducer,
     role: roleReducer,
+    unit: unitReducer,
     roster: rosterReducer,
     user: userReducer,
     workspace: workspaceReducer,

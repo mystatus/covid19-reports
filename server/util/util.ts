@@ -24,6 +24,15 @@ export function escapeRegExp(value: string) {
   return value.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
+export function sanitizeIndexPrefix(prefix: string) {
+  return prefix.replace(/\s*$/g, '').replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+}
+
+export function matchWildcardString(str: string, pattern: string) {
+  const escapeRegex = (part: string) => part.replace(/([.*+?^=!:${}()|[]\/\\])/g, '\\$1');
+  return new RegExp(`^${pattern.split('*').map(escapeRegex).join('.*')}$`).test(str);
+}
+
 export type BaseType = (
   'string' |
   'number' |

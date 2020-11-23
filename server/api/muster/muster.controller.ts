@@ -1,5 +1,4 @@
 import moment, { unitOfTime } from 'moment';
-import _ from 'lodash';
 import { MSearchResponse, SearchResponse } from 'elasticsearch';
 import { Response } from 'express';
 import { getConnection } from 'typeorm';
@@ -11,14 +10,10 @@ import {
 } from '../index';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
-import { getAllowedRosterColumns, RosterEntryData } from '../roster/roster.controller';
+import { getAllowedRosterColumns } from '../roster/roster.controller';
 import { Roster } from '../roster/roster.model';
 
 const dateFormat = 'YYYY-MM-DD';
-
-function unitNameToId(unitName: string) {
-  return _.camelCase(unitName);
-}
 
 class MusterController {
 
@@ -28,7 +23,7 @@ class MusterController {
     const limit = parseInt(req.query.limit ?? '10');
     const page = parseInt(req.query.page ?? '0');
 
-    const individuals = await getIndividualsData(req.appOrg!, req.appRole!, intervalCount, req.query.unit);
+    const individuals = await getIndividualsData(req.appOrg!, req.appRole!, intervalCount, req.query.unitId);
 
     const offset = page * limit;
 
@@ -41,7 +36,7 @@ class MusterController {
   async exportIndividuals(req: ApiRequest<OrgParam, null, GetIndividualsQuery>, res: Response) {
     const intervalCount = parseInt(req.query.intervalCount ?? '1');
 
-    const individuals = await getIndividualsData(req.appOrg!, req.appRole!, intervalCount, req.query.unit);
+    const individuals = await getIndividualsData(req.appOrg!, req.appRole!, intervalCount, req.query.unitId);
 
     // Delete roster ids since they're meaningless to the user.
     for (const individual of individuals) {
@@ -67,24 +62,21 @@ class MusterController {
     // Get unique dates and unit names.
     const weeklyDates = new Set<string>();
     const monthlyDates = new Set<string>();
-    const unitNames = new Set<string>();
-    const unitNameIds = new Set<string>();
+    const unitIds = new Set<string>();
 
     for (const date of Object.keys(unitRosterCounts.weekly)) {
       weeklyDates.add(date);
 
-      for (const unitName of Object.keys(unitRosterCounts.weekly[date])) {
-        unitNames.add(unitName);
-        unitNameIds.add(unitNameToId(unitName));
+      for (const unitId of Object.keys(unitRosterCounts.weekly[date])) {
+        unitIds.add(unitId);
       }
     }
 
     for (const date of Object.keys(unitRosterCounts.monthly)) {
       monthlyDates.add(date);
 
-      for (const unitName of Object.keys(unitRosterCounts.monthly[date])) {
-        unitNames.add(unitName);
-        unitNameIds.add(unitNameToId(unitName));
+      for (const unitId of Object.keys(unitRosterCounts.monthly[date])) {
+        unitIds.add(unitId);
       }
     }
 
@@ -93,37 +85,23 @@ class MusterController {
     //
     const esBody = [] as any[];
 
-    // Weekly ES Query
-    esBody.push({
-      index: req.appRole!.getKibanaIndexForMuster(),
-    });
-
-    const esWeeklyBody = {
-      size: 0,
-      query: {
-        bool: {
-          must: [{
-            range: {
-              Timestamp: {
-                gte: `now-${weeksCount}w/w`,
-                lt: 'now/w',
+    // Weekly ES Queries
+    for (const unitId of unitIds) {
+      esBody.push({
+        index: req.appRole!.getKibanaIndexForMuster(unitId),
+      });
+      esBody.push({
+        size: 0,
+        query: {
+          bool: {
+            must: [{
+              range: {
+                Timestamp: {
+                  gte: `now-${weeksCount}w/w`,
+                  lt: 'now/w',
+                },
               },
-            },
-          }],
-        },
-      },
-      aggs: {},
-    } as any;
-
-    const unitWeeklyAggNameList = [];
-    for (const unitName of unitNames) {
-      const unitNameId = unitNameToId(unitName);
-      unitWeeklyAggNameList.push(unitNameId);
-
-      esWeeklyBody.aggs[unitNameId] = {
-        filter: {
-          term: {
-            'Roster.unit.keyword': unitName,
+            }],
           },
         },
         aggs: {
@@ -134,42 +112,26 @@ class MusterController {
             },
           },
         },
-      };
+      });
     }
 
-    esBody.push(esWeeklyBody);
-
-    // Montly ES Query
-    esBody.push({
-      index: req.appRole!.getKibanaIndexForMuster(),
-    });
-
-    const esMonthlyBody = {
-      size: 0,
-      query: {
-        bool: {
-          must: [{
-            range: {
-              Timestamp: {
-                gte: `now-${monthsCount}M/M`,
-                lt: 'now/M',
+    // Monthly ES Queries
+    for (const unitId of unitIds) {
+      esBody.push({
+        index: req.appRole!.getKibanaIndexForMuster(unitId),
+      });
+      esBody.push({
+        size: 0,
+        query: {
+          bool: {
+            must: [{
+              range: {
+                Timestamp: {
+                  gte: `now-${monthsCount}M/M`,
+                  lt: 'now/M',
+                },
               },
-            },
-          }],
-        },
-      },
-      aggs: {},
-    } as any;
-
-    const unitMonthlyAggNameList = [];
-    for (const unitName of unitNames) {
-      const unitNameId = unitNameToId(unitName);
-      unitMonthlyAggNameList.push(unitNameId);
-
-      esMonthlyBody.aggs[unitNameId] = {
-        filter: {
-          term: {
-            'Roster.unit.keyword': unitName,
+            }],
           },
         },
         aggs: {
@@ -180,10 +142,8 @@ class MusterController {
             },
           },
         },
-      };
+      });
     }
-
-    esBody.push(esMonthlyBody);
 
     // Send request.
     let response: MSearchResponse<unknown>;
@@ -198,7 +158,7 @@ class MusterController {
     //
     type UnitStatsByDate = {
       [date: string]: {
-        [unitName: string]: {
+        [unitId: string]: {
           nonMusterPercent: number,
           reportsCount: number
           rosterCount: number
@@ -216,37 +176,47 @@ class MusterController {
       unitStats.weekly[date] = {};
     }
 
-    for (const unitName of unitNames) {
-      const unitNameId = unitNameToId(unitName);
-      const buckets = response.responses![0].aggregations[unitNameId].reportsHistogram.buckets as {
+    let responseIndex = 0;
+    for (const unitId of unitIds) {
+      let buckets: {
         key_as_string: string
         key: number
         doc_count: number
       }[];
+      if (!response.responses![responseIndex].aggregations) {
+        buckets = [];
+      } else {
+        buckets = response.responses![responseIndex].aggregations.reportsHistogram.buckets as {
+          key_as_string: string
+          key: number
+          doc_count: number
+        }[];
+      }
 
       for (const bucket of buckets) {
         const date = moment.utc(bucket.key).format(dateFormat);
         const reportsCount = bucket.doc_count;
-        const rosterCount = unitRosterCounts.weekly[date][unitName];
+        const rosterCount = unitRosterCounts.weekly[date][unitId];
 
         const nextWeek = moment.utc(date).add(1, 'week');
         const maxReportsCount = rosterCount * nextWeek.diff(date, 'days');
 
-        unitStats.weekly[date][unitName] = {
+        unitStats.weekly[date][unitId] = {
           nonMusterPercent: calcNonMusterPercent(reportsCount, maxReportsCount),
           rosterCount,
           reportsCount,
         };
       }
+      responseIndex += 1;
     }
 
     // Any units that weren't found must not have any reports. Add them manually.
     for (const date of weeklyDates) {
-      for (const unitName of unitNames) {
-        if (!unitStats.weekly[date][unitName]) {
-          unitStats.weekly[date][unitName] = {
+      for (const unitId of unitIds) {
+        if (!unitStats.weekly[date][unitId]) {
+          unitStats.weekly[date][unitId] = {
             nonMusterPercent: 100,
-            rosterCount: unitRosterCounts.weekly[date][unitName],
+            rosterCount: unitRosterCounts.weekly[date][unitId],
             reportsCount: 0,
           };
         }
@@ -258,37 +228,46 @@ class MusterController {
       unitStats.monthly[date] = {};
     }
 
-    for (const unitName of unitNames) {
-      const unitNameId = unitNameToId(unitName);
-      const buckets = response.responses![1].aggregations[unitNameId].reportsHistogram.buckets as {
+    for (const unitId of unitIds) {
+      let buckets: {
         key_as_string: string
         key: number
         doc_count: number
       }[];
+      if (!response.responses![responseIndex].aggregations) {
+        buckets = [];
+      } else {
+        buckets = response.responses![responseIndex].aggregations.reportsHistogram.buckets as {
+          key_as_string: string
+          key: number
+          doc_count: number
+        }[];
+      }
 
       for (const bucket of buckets) {
         const date = moment.utc(bucket.key).format(dateFormat);
         const reportsCount = bucket.doc_count;
-        const rosterCount = unitRosterCounts.monthly[date][unitName];
+        const rosterCount = unitRosterCounts.monthly[date][unitId];
 
         const nextMonth = moment.utc(date).add(1, 'month');
         const maxReportsCount = rosterCount * nextMonth.diff(date, 'days');
 
-        unitStats.monthly[date][unitName] = {
+        unitStats.monthly[date][unitId] = {
           nonMusterPercent: calcNonMusterPercent(reportsCount, maxReportsCount),
           rosterCount,
           reportsCount,
         };
       }
+      responseIndex += 1;
     }
 
     // Any units that weren't found must not have any reports. Add them manually.
     for (const date of monthlyDates) {
-      for (const unitName of unitNames) {
-        if (!unitStats.monthly[date][unitName]) {
-          unitStats.monthly[date][unitName] = {
+      for (const unitId of unitIds) {
+        if (!unitStats.monthly[date][unitId]) {
+          unitStats.monthly[date][unitId] = {
             nonMusterPercent: 100,
-            rosterCount: unitRosterCounts.monthly[date][unitName],
+            rosterCount: unitRosterCounts.monthly[date][unitId],
             reportsCount: 0,
           };
         }
@@ -304,22 +283,24 @@ class MusterController {
 // Helpers
 //
 
-async function getIndividualsData(org: Org, role: Role, intervalCount: number, unit?: string) {
+async function getIndividualsData(org: Org, role: Role, intervalCount: number, unitId?: string) {
   // HACK: The database queries in this function are extremely inefficient for large rosters, and need to be revised
   // once the new elasticsearch muster data architecture is put in place.
 
   let rosterEntries: Roster[];
-  if (unit) {
+  if (unitId) {
     rosterEntries = await Roster.find({
-      where: {
-        org,
-        unit,
+      relations: ['unit', 'unit.org'],
+      where: (qb: any) => {
+        qb.where('unit_id = :unitId', { unitId })
+          .andWhere('unit_org = :orgId', { orgId: org.id });
       },
     });
   } else {
     rosterEntries = await Roster.find({
-      where: {
-        org,
+      relations: ['unit', 'unit.org'],
+      where: (qb: any) => {
+        qb.where('unit_org = :orgId', { orgId: org.id });
       },
     });
   }
@@ -347,34 +328,23 @@ async function getIndividualsData(org: Org, role: Role, intervalCount: number, u
     maxReportsByEdipi[entry.edipi] = endDate.diff(startDate, 'days');
   }
 
-  // Aggregate all existing reports within this time interval.
-  const filter = [{
-    range: {
-      Timestamp: {
-        gte: timeRange.startDate.format(dateFormat),
-        lt: timeRange.endDate.format(dateFormat),
-      },
-    },
-  }] as any[];
-
-  if (unit) {
-    filter.push({
-      term: {
-        'Roster.unit.keyword': unit,
-      },
-    });
-  }
-
   // Send request.
   let response: SearchResponse<unknown>;
   try {
     response = await elasticsearch.search({
-      index: role.getKibanaIndexForMuster(),
+      index: role.getKibanaIndexForMuster(unitId),
       body: {
         size: 0,
         query: {
           bool: {
-            filter,
+            filter: [{
+              range: {
+                Timestamp: {
+                  gte: timeRange.startDate.format(dateFormat),
+                  lt: timeRange.endDate.format(dateFormat),
+                },
+              },
+            }],
           },
         },
         aggs: {
@@ -391,7 +361,7 @@ async function getIndividualsData(org: Org, role: Role, intervalCount: number, u
     throw new InternalServerError(`Elasticsearch: ${err.message}`);
   }
 
-  const reportsByPersonBuckets = response.aggregations.reportsByPerson.buckets as {
+  const reportsByPersonBuckets = (response.aggregations ? response.aggregations.reportsByPerson.buckets : []) as {
     key: string
     doc_count: number
   }[];
@@ -420,7 +390,7 @@ async function getIndividualsData(org: Org, role: Role, intervalCount: number, u
       return diff;
     }
 
-    diff = a.unit.localeCompare(b.unit);
+    diff = a.unit.name.localeCompare(b.unit.name);
     if (diff !== 0) {
       return diff;
     }
@@ -441,6 +411,7 @@ async function getIndividualsData(org: Org, role: Role, intervalCount: number, u
       Reflect.set(individualCleaned, columnInfo.name, columnValue);
     }
     individualCleaned.id = individual.id;
+    individualCleaned.unitId = individual.unit.id;
     individualCleaned.nonMusterPercent = individual.nonMusterPercent;
     return individualCleaned;
   });
@@ -461,26 +432,26 @@ async function getUnitRosterCounts(interval: 'week' | 'month', intervalCount: nu
     const startDate = moment.utc().subtract(i + 1, interval).startOf(momentUnitOfTime).format(dateFormat);
     const endDate = moment.utc(startDate).add(1, interval).format(dateFormat);
     queries.push(`
-      SELECT unit, count(id), '${startDate}' as date
+      SELECT unit_id as "unitId", count(id), '${startDate}' as date
       FROM roster
       WHERE
         (start_date IS null AND (end_date IS null OR end_date > '${endDate}'))
         OR (start_date <= '${startDate}' AND (end_date IS null OR end_date > '${endDate}'))
-      GROUP BY unit
+      GROUP BY "unitId"
     `);
 
     dates.add(startDate);
   }
 
   const rows = await getConnection().query(queries.join(`UNION`)) as {
-    unit: string
+    unitId: string
     date: string
     count: string
   }[];
 
   const unitRosterCountByDate = {} as {
     [date: string]: {
-      [unitName: string]: number
+      [unitId: string]: number
     }
   };
 
@@ -493,13 +464,13 @@ async function getUnitRosterCounts(interval: 'week' | 'month', intervalCount: nu
 
   for (const row of rows) {
     const date = row.date;
-    const unit = row.unit;
+    const unitId = row.unitId;
 
-    if (!unitRosterCountByDate[date][unit]) {
-      unitRosterCountByDate[date][unit] = 0;
+    if (!unitRosterCountByDate[date][unitId]) {
+      unitRosterCountByDate[date][unitId] = 0;
     }
 
-    unitRosterCountByDate[date][unit] += parseInt(row.count);
+    unitRosterCountByDate[date][unitId] += parseInt(row.count);
   }
 
   return unitRosterCountByDate;
@@ -516,7 +487,7 @@ function calcNonMusterPercent(reports: number, maxReports: number) {
 
 type GetIndividualsQuery = {
   intervalCount: string
-  unit: string
+  unitId: string
 } & PagedQuery;
 
 type GetTrendsQuery = {
@@ -526,6 +497,7 @@ type GetTrendsQuery = {
 
 type MusterIndividual = {
   nonMusterPercent: number
+  unitId: string
 } & Roster;
 
 export default new MusterController();

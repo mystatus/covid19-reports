@@ -4,6 +4,7 @@ import orgRoutes from './org';
 import userRoutes from './user';
 import roleRoutes from './role';
 import rosterRoutes from './roster';
+import unitRoutes from './unit';
 import accessRequestRoutes from './access-request';
 import workspaceRoutes from './workspace';
 import notificationRoutes from './notification';
@@ -19,6 +20,7 @@ router.use('/org', orgRoutes);
 router.use('/user', userRoutes);
 router.use('/role', roleRoutes);
 router.use('/roster', rosterRoutes);
+router.use('/unit', unitRoutes);
 router.use('/access-request', accessRequestRoutes);
 router.use('/workspace', workspaceRoutes);
 router.use('/notification', notificationRoutes);
@@ -56,6 +58,10 @@ export type WorkspaceParam = {
   workspaceId: string
 };
 
+export type UnitParam = {
+  unitId: string
+};
+
 export type SettingParam = {
   settingId: string
 };
@@ -68,6 +74,7 @@ export type OrgRoleParams = OrgParam & RoleParam;
 export type OrgEdipiParams = OrgParam & EdipiParam;
 export type OrgRosterParams = OrgParam & RosterParam;
 export type OrgWorkspaceParams = OrgParam & WorkspaceParam;
+export type OrgUnitParams = OrgParam & UnitParam;
 export type OrgSettingParams = OrgParam & SettingParam;
 export type OrgColumnNameParams = OrgParam & ColumnNameParam;
 

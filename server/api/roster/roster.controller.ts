@@ -15,6 +15,7 @@ import { BaseType, getOptionalParam, getRequiredParam } from '../../util/util';
 import { Org } from '../org/org.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { Role } from '../role/role.model';
+import { Unit } from '../unit/unit.model';
 
 class RosterController {
 
@@ -37,7 +38,9 @@ class RosterController {
       },
     });
 
-    if (baseRosterColumns.find(column => column.name === columnName) || existingColumn) {
+    if (existingColumn
+      || columnName.toLowerCase() === 'unit'
+      || baseRosterColumns.find(column => column.name.toLowerCase() === columnName.toLowerCase())) {
       throw new BadRequestError('There is already a column with that name.');
     }
 
@@ -121,8 +124,8 @@ class RosterController {
 
   async getRosterTemplate(req: ApiRequest, res: Response) {
     const columns = await getAllowedRosterColumns(req.appOrg!, req.appRole!);
-    const headers: string[] = [];
-    const example: string[] = [];
+    const headers: string[] = ['unit'];
+    const example: string[] = ['unit1'];
     columns.forEach(column => {
       headers.push(column.name);
       if (column.name === 'edipi') {
@@ -194,10 +197,24 @@ class RosterController {
       fs.unlinkSync(req.file.path);
     }
 
-    const columns = await getAllowedRosterColumns(req.appOrg!, req.appRole!);
+    const orgUnits = await Unit.find({
+      relations: ['org'],
+      where: {
+        org: org.id,
+      },
+    });
+
+    const columns = await getAllowedRosterColumns(org, req.appRole!);
     roster.forEach(row => {
+      if (!row.unit) {
+        throw new BadRequestError('Unable to add roster entries without a unit ID.');
+      }
+      const unit = orgUnits.find(u => row.unit === u.id);
+      if (!unit) {
+        throw new NotFoundError(`Unit with ID ${row.unit} could not be found in the group.`);
+      }
       const entry = new Roster();
-      entry.org = org;
+      entry.unit = unit;
       for (const column of columns) {
         getColumnFromCSV(entry, row, column);
       }
@@ -208,22 +225,6 @@ class RosterController {
     res.json({
       count: rosterEntries.length,
     });
-  }
-
-  async getUnits(req: ApiRequest<OrgParam>, res: Response) {
-    const rows = await Roster.createQueryBuilder()
-      .select(['unit'])
-      .where({
-        org: req.appOrg,
-      })
-      .distinct()
-      .getRawMany<{ unit: string }>();
-
-    const units = rows
-      .map(row => row.unit)
-      .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-
-    res.json(units);
   }
 
   async getFullRosterInfo(req: ApiRequest<OrgParam>, res: Response) {
@@ -242,7 +243,7 @@ class RosterController {
       throw new BadRequestError('Missing reportDate.');
     }
     const entries = (await Roster.find({
-      relations: ['org'],
+      relations: ['unit', 'unit.org'],
       where: {
         edipi: req.params.edipi,
       },
@@ -250,13 +251,14 @@ class RosterController {
 
     const responseData: RosterInfo[] = [];
     for (const roster of entries) {
-      const columns = (await getRosterColumns(roster.org!.id)).map(column => ({
+      const columns = (await getRosterColumns(roster.unit.org!.id)).map(column => ({
         ...column,
         value: roster.getColumnValue(column),
       } as RosterColumnWithValue));
 
       const rosterInfo: RosterInfo = {
-        org: roster.org!,
+        unit: roster.unit,
+        id: roster.id,
         columns,
       };
       responseData.push(rosterInfo);
@@ -270,9 +272,10 @@ class RosterController {
   async addRosterEntry(req: ApiRequest<OrgParam, RosterEntryData>, res: Response) {
     const edipi = req.body.edipi as string;
     const rosterEntries = await Roster.find({
-      where: {
-        edipi,
-        org: req.appOrg!.id,
+      relations: ['unit'],
+      where: (qb: any) => {
+        qb.where({ edipi })
+          .andWhere('unit_org = :orgId', { orgId: req.appOrg!.id });
       },
     });
 
@@ -281,11 +284,25 @@ class RosterController {
     if (rosterEntries.some(roster => isActiveOnRoster(roster, now))) {
       throw new BadRequestError('The individual is already in the roster.');
     }
+    if (!req.body.unit) {
+      throw new BadRequestError('A unit must be supplied when adding a roster entry.');
+    }
+
+    const unit = await Unit.findOne({
+      relations: ['org'],
+      where: {
+        org: req.appOrg?.id,
+        id: req.body.unit,
+      },
+    });
+    if (!unit) {
+      throw new NotFoundError(`Unit with ID ${req.body.unit} could not be found.`);
+    }
 
     const entry = new Roster();
-    entry.org = req.appOrg;
+    entry.unit = unit;
     const columns = await getAllowedRosterColumns(req.appOrg!, req.appRole!);
-    setRosterParamsFromBody(entry, req.body, columns, true);
+    await setRosterParamsFromBody(req.appOrg!, entry, req.body, columns, true);
     const newRosterEntry = await entry.save();
 
     res.status(201).json(newRosterEntry);
@@ -296,7 +313,7 @@ class RosterController {
 
     const queryBuilder = await queryAllowedRoster(req.appOrg!, req.appRole!);
     const rosterEntry = await queryBuilder
-      .andWhere('id=\':id\'', {
+      .andWhere('roster.id=\':id\'', {
         id: rosterId,
       })
       .getRawOne<RosterEntryData>();
@@ -312,7 +329,7 @@ class RosterController {
     const rosterId = req.params.rosterId;
 
     const rosterEntry = await Roster.findOne({
-      relations: ['org'],
+      relations: ['unit'],
       where: {
         id: rosterId,
       },
@@ -331,7 +348,7 @@ class RosterController {
     const rosterId = req.params.rosterId;
 
     const entry = await Roster.findOne({
-      relations: ['org'],
+      relations: ['unit'],
       where: {
         id: rosterId,
       },
@@ -340,8 +357,22 @@ class RosterController {
     if (!entry) {
       throw new NotFoundError('User could not be found.');
     }
+
+    if (req.body.unit) {
+      const unit = await Unit.findOne({
+        relations: ['org'],
+        where: {
+          org: req.appOrg?.id,
+          id: req.body.unit,
+        },
+      });
+      if (!unit) {
+        throw new NotFoundError(`Unit with ID ${req.body.unit} could not be found.`);
+      }
+      entry.unit = unit;
+    }
     const columns = await getAllowedRosterColumns(req.appOrg!, req.appRole!);
-    setRosterParamsFromBody(entry, req.body, columns);
+    await setRosterParamsFromBody(req.appOrg!, entry, req.body, columns);
     const updatedRosterEntry = await entry.save();
 
     res.json(updatedRosterEntry);
@@ -354,9 +385,11 @@ class RosterController {
  */
 async function queryAllowedRoster(org: Org, role: Role) {
   const columns = await getAllowedRosterColumns(org, role);
-  const queryBuilder = Roster.createQueryBuilder().select([]);
+  const queryBuilder = Roster.createQueryBuilder('roster').select([]);
+  queryBuilder.leftJoin('roster.unit', 'u');
   // Always select the id column
-  queryBuilder.addSelect('id');
+  queryBuilder.addSelect('roster.id', 'id');
+  queryBuilder.addSelect('u.id', 'unit');
 
   // Add all columns that are allowed by the user's role
   columns.forEach(column => {
@@ -365,29 +398,27 @@ async function queryAllowedRoster(org: Org, role: Role) {
       let selection: string;
       switch (column.type) {
         case RosterColumnType.Boolean:
-          selection = `(custom_columns ->> '${column.name}')::BOOLEAN`;
+          selection = `(roster.custom_columns ->> '${column.name}')::BOOLEAN`;
           break;
         case RosterColumnType.Number:
-          selection = `(custom_columns ->> '${column.name}')::DOUBLE PRECISION`;
+          selection = `(roster.custom_columns ->> '${column.name}')::DOUBLE PRECISION`;
           break;
         default:
-          selection = `custom_columns ->> '${column.name}'`;
+          selection = `roster.custom_columns ->> '${column.name}'`;
           break;
       }
       queryBuilder.addSelect(selection, column.name);
     } else {
-      queryBuilder.addSelect(snakeCase(column.name), column.name);
+      queryBuilder.addSelect(`roster.${snakeCase(column.name)}`, column.name);
     }
   });
 
   // Filter out roster entries that are not on the active roster or are not allowed by the role's index prefix.
   return queryBuilder
-    .where({
-      org: org.id,
-    })
-    .andWhere('(end_date IS NULL OR end_date > now())')
-    .andWhere('(start_date IS NULL OR start_date < now())')
-    .andWhere('unit like :name', { name: role.indexPrefix.replace('*', '%') });
+    .where('u.org_id = :orgId', { orgId: org.id })
+    .andWhere('(roster.end_date IS NULL OR roster.end_date > now())')
+    .andWhere('(roster.start_date IS NULL OR roster.start_date < now())')
+    .andWhere('u.id like :name', { name: role.indexPrefix.replace('*', '%') });
 }
 
 export async function getAllowedRosterColumns(org: Org, role: Role) {
@@ -449,15 +480,15 @@ function isActiveOnRoster(entry: Roster, date: Date) {
     && (!entry.endDate || entry.endDate.getTime() >= date.getTime());
 }
 
-function setRosterParamsFromBody(entry: Roster, body: RosterEntryData, columns: RosterColumnInfo[], newEntry: boolean = false) {
-  columns.forEach(column => {
+async function setRosterParamsFromBody(org: Org, entry: Roster, body: RosterEntryData, columns: RosterColumnInfo[], newEntry: boolean = false) {
+  for (const column of columns) {
     if (newEntry || column.updatable) {
-      getColumnFromBody(entry, body, column, newEntry);
+      await getColumnFromBody(org, entry, body, column, newEntry);
     }
-  });
+  }
 }
 
-function getColumnFromBody(roster: Roster, row: RosterEntryData, column: RosterColumnInfo, newEntry: boolean) {
+async function getColumnFromBody(org: Org, roster: Roster, row: RosterEntryData, column: RosterColumnInfo, newEntry: boolean) {
   let objectValue: Date | CustomColumnValue | undefined;
   let paramType: BaseType;
   switch (column.type) {
@@ -556,7 +587,8 @@ interface RosterColumnWithValue extends RosterColumnInfo {
 }
 
 interface RosterInfo {
-  org: Org,
+  unit: Unit,
+  id: number,
   columns: RosterColumnInfo[],
 }
 

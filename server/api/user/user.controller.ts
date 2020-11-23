@@ -113,7 +113,7 @@ class UserController {
     const orgRoleIndex = user.roles.findIndex(userRole => userRole.org!.id === org.id);
 
     if (orgRoleIndex >= 0) {
-      user.roles.splice(orgRoleIndex, 1)
+      user.roles.splice(orgRoleIndex, 1);
     }
 
     user.roles.push(role);
@@ -167,7 +167,7 @@ class UserController {
     const userEDIPI = req.params.edipi;
 
     if (req.appUser.edipi === userEDIPI) {
-      throw new Error("Unable to remove yourself from the group.")
+      throw new Error('Unable to remove yourself from the group.');
     }
 
     const user = await User.findOne({
@@ -177,13 +177,13 @@ class UserController {
       },
     });
 
-    const roleIndex = (user?.roles ?? []).findIndex((userRole) => userRole.org!.id === req.appOrg!.id);
+    const roleIndex = (user?.roles ?? []).findIndex(userRole => userRole.org!.id === req.appOrg!.id);
 
     if (roleIndex !== -1) {
       user!.roles!.splice(roleIndex, 1);
-      res.json(await user!.save())
+      res.json(await user!.save());
     } else {
-      res.json({})
+      res.json({});
     }
   }
 

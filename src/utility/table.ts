@@ -5,7 +5,7 @@ export function getNewPageIndex(rowsPerPage: number, pageIndex: number, rowsPerP
 }
 
 export function getMaxPageIndex(rowsPerPage: number, totalRowsCount: number) {
-  return Math.floor(totalRowsCount / rowsPerPage);
+  return Math.floor(Math.max(0, totalRowsCount - 1) / rowsPerPage);
 }
 
 export function columnInfosOrdered(columnInfos: ColumnInfo[], columnOrder: string[]) {

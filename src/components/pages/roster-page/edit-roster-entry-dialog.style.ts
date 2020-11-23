@@ -7,6 +7,18 @@ export default makeStyles(() => createStyles({
       margin: '0px -12px',
     },
   },
+  selectField: {
+    width: '100%',
+    '& .MuiFormLabel-root': {
+      color: '#3D4551',
+      fontSize: '16px',
+      fontWeight: '600',
+    },
+    '& .MuiInputBase-root': {
+      width: '100%',
+      marginTop: '18px !important',
+    },
+  },
   textField: {
     width: '100%',
     margin: 0,

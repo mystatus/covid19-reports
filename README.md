@@ -16,9 +16,9 @@ Ensure the following packages are installed.
 ### Development
 
 - Create a file named `.env` at project root with the following in it. You can change the `USER_EDIPI` value to any
-number greater than 1 to create a new user.
+10 digit number greater than 1 to create a new user.
 ```
-USER_EDIPI=1
+USER_EDIPI=0000000001
 ```
 
 - Navigate to the project root and run the following.
@@ -70,8 +70,8 @@ where `{name}` is the name of the migration you want to create. An empty templat
 
 #### Restoring State Locally
 
-If your local database schema falls out of sync with migrations and you want to get back to a clean state, you can 
-run `npm run seed-dev`. This will automatically recreate the database, apply the current migrations, and get the app back 
+If your local database schema falls out of sync with migrations and you want to get back to a clean state, you can
+run `npm run seed-dev`. This will automatically recreate the database, apply the current migrations, and get the app back
 into a usable state.
 
 ### Testing

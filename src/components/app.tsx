@@ -22,6 +22,7 @@ import { RoleManagementPage } from './pages/role-management-page/role-management
 import { WorkspacesPage } from './pages/workspaces-page/workspaces-page';
 import { RosterColumnsPage } from './pages/roster-columns-page/roster-columns-page';
 import { SettingsPage } from './pages/settings-page/settings-page';
+import { UnitsPage } from './pages/units-page/units-page';
 
 export const App = () => {
   const user = useSelector<AppState, UserState>(state => state.user);
@@ -84,6 +85,9 @@ export const App = () => {
             <Switch>
               <Route path="/home">
                 <HomePage />
+              </Route>
+              <Route path="/units">
+                <UnitsPage />
               </Route>
               <Route path="/roster">
                 <RosterPage />
