@@ -34,22 +34,22 @@ export const HomePage = () => {
                     <ul>
                       <li className={classes.li}>
                         <Typography>
-                          <strong><a href="/roster" className={classes.colorPrimary}>Roster Management</a><br /></strong> Manage your organization’s roster with the built-in suite of tools designed to allow for quick and easy modifications.
+                          <strong><Link to="/roster" className={classes.colorPrimary}>Roster Management</Link><br /></strong> Manage your organization’s roster with the built-in suite of tools designed to allow for quick and easy modifications.
                         </Typography>
                       </li>
                       <li className={classes.li}>
                         <Typography>
-                          <strong><a href="/muster" className={classes.colorPrimary}>Muster Snapshot</a><br /></strong> Track your group's daily muster compliance, view weekly and monthly trends, as well as export data.
+                          <strong><Link to="/muster" className={classes.colorPrimary}>Muster Snapshot</Link><br /></strong> Track your group's daily muster compliance, view weekly and monthly trends, as well as export data.
                         </Typography>
                       </li>
                       <li className={classes.li}>
                         <Typography>
-                          <strong><a href="/dashboard" className={classes.colorPrimary}>Customizeable Dashboards</a><br /></strong>  Protect sensitive data by creating and assigning role-based permissions across the entire organization.
+                          <strong><Link to="/dashboard" className={classes.colorPrimary}>Customizeable Dashboards</Link><br /></strong>  Protect sensitive data by creating and assigning role-based permissions across the entire organization.
                         </Typography>
                       </li>
                       <li className={classes.li}>
                         <Typography>
-                          <strong><a href="/settings" className={classes.colorPrimary}>Alerts &amp; Notifications</a><br /></strong> Stay up-to-date on organization activity without overburdening your inbox or mobile device with fully customizeable alerts.
+                          <strong><Link to="/settings" className={classes.colorPrimary}>Alerts &amp; Notifications</Link><br /></strong> Stay up-to-date on organization activity without overburdening your inbox or mobile device with fully customizeable alerts.
                         </Typography>
                       </li>
                     </ul>
@@ -62,58 +62,6 @@ export const HomePage = () => {
               </CardContent>
             </Card>
           </Grid>
-
-          {/* Analytics & Reporting */}
-
-            {/* <Grid item xs={6}>
-              <Card className={classes.card}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    Analytics & Reporting
-                  </Typography>
-
-                  <Typography>
-                    Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odque volutpat mm malesuada erat ut
-                    tupendisse nibh, viverra non, semper suscipit, posuere a, pede.
-                  </Typography>
-                </CardContent>
-
-                <CardActions>
-                  <a>
-                    <Button>
-                      View Analytics
-                    </Button>
-                  </a>
-                </CardActions>
-              </Card>
-            </Grid> */}
-
-
-          {/* Roster Management */}
-          {/* {user.activeRole && user.activeRole.canManageRoster && (
-            <Grid item xs={6}>
-              <Card className={classes.card}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    Roster Management
-                  </Typography>
-
-                  <Typography>
-                    Morbi in sem quis dui placerat ornare ellentesque odio nisi, euismod in, pharetra a, ultricies in,
-                    diad arcuras consequ. Uguae, eu vulputate magna eroiquam erat volutptincidunt quirt.
-                  </Typography>
-                </CardContent>
-
-                <CardActions>
-                  <Link to="/roster">
-                    <Button>
-                      View Roster
-                    </Button>
-                  </Link>
-                </CardActions>
-              </Card>
-            </Grid>
-          )} */}
         </Grid>
       </Container>
     </main>
