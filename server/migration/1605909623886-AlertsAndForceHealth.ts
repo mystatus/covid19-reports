@@ -10,54 +10,27 @@ export class AlertsAndForceHealth1605909623886 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     const workspaceTemplateRepo = queryRunner.manager.getRepository(WorkspaceTemplate);
-
-    const nonPii = await workspaceTemplateRepo.findOne({
-      where: { name: 'Symptom Tracking (Non-PII)' }
-    });
-
-    if (!nonPii) {
-      throw new NotFoundError('Non-PII workspace template was not found.');
-    }
-
-    const pii = await workspaceTemplateRepo.findOne({
-      where: { name: 'Symptom Tracking (PII)' }
-    });
-
-    if (!pii) {
-      throw new NotFoundError('PII workspace template was not found.');
-    }
-
-    const phi = await workspaceTemplateRepo.findOne({
-      where: { name: 'Symptom Tracking (PHI)' }
-    });
-
-    if (!phi) {
-      throw new NotFoundError('PHI workspace template was not found.');
-    }
-
-    await workspaceTemplateRepo.update(nonPii.id, {
+    const existingTemplates = await workspaceTemplateRepo.find();
+    await workspaceTemplateRepo.remove(existingTemplates);
+    await workspaceTemplateRepo.insert([{
       name: 'Symptom Tracking (Non-PII)',
-      description: 'Symptom tracker without PII data',
+      description: 'A symptom tracking workspace that does not include Personally Identifiable Information (PII).',
       pii: false,
       phi: false,
       kibanaSavedObjects: kibanaSavedObjectsMock.nonPii,
-    });
-
-    await workspaceTemplateRepo.update(pii.id, {
+    }, {
       name: 'Symptom Tracking (PII)',
-      description: 'Symptom tracker with PII data',
+      description: 'A symptom tracking workspace that includes Personally Identifiable Information (PII).',
       pii: true,
       phi: false,
       kibanaSavedObjects: kibanaSavedObjectsMock.pii,
-    });
-
-    await workspaceTemplateRepo.update(phi.id, {
+    }, {
       name: 'Symptom Tracking (PHI)',
-      description: 'Symptom tracker with PHI data',
+      description: 'A symptom tracking workspace that includes Protected Health Information (PHI).',
       pii: true,
       phi: true,
       kibanaSavedObjects: kibanaSavedObjectsMock.phi,
-    });
+    }]);
 
     const notificationRepo = queryRunner.manager.getRepository(Notification);
     await notificationRepo.save(defaultNotifications);
