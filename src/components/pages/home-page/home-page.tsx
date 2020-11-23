@@ -32,21 +32,27 @@ export const HomePage = () => {
                     </Typography>
 
                     <ul>
-                      <li>
-                        <Typography>
-                          <strong><Link to="/roster">Roster Management</Link><br /></strong> Manage your organization’s roster with the built-in suite of tools designed to allow for quick and easy modifications.
-                        </Typography>
-                      </li>
-                      <li>
-                        <Typography>
-                          <strong><Link to="/muster">Muster Snapshot</Link><br /></strong> Track your group's daily muster compliance, view weekly and monthly trends, as well as export data.
-                        </Typography>
-                      </li>
-                      <li>
-                        <Typography>
-                          <strong><Link to="/dashboard">Customizeable Dashboards</Link><br /></strong>  Protect sensitive data by creating and assigning role-based permissions across the entire organization.
-                        </Typography>
-                      </li>
+                      {user.activeRole?.canViewRoster && (
+                        <li>
+                          <Typography>
+                            <strong><Link to="/roster">Roster Management</Link><br /></strong> Manage your organization’s roster with the built-in suite of tools designed to allow for quick and easy modifications.
+                          </Typography>
+                        </li>
+                      )}
+                      {user.activeRole?.canViewMuster && (
+                        <li>
+                          <Typography>
+                            <strong><Link to="/muster">Muster Snapshot</Link><br /></strong> Track your group's daily muster compliance, view weekly and monthly trends, as well as export data.
+                          </Typography>
+                        </li>
+                      )}
+                      {user.activeRole?.workspace && (
+                        <li>
+                          <Typography>
+                            <strong><Link to={`/dashboard?orgId=${user.activeRole?.org?.id}`}>Customizeable Dashboards</Link><br /></strong>  Protect sensitive data by creating and assigning role-based permissions across the entire organization.
+                          </Typography>
+                        </li>
+                      )}
                       <li>
                         <Typography>
                           <strong><Link to="/settings">Alerts &amp; Notifications</Link><br /></strong> Stay up-to-date on organization activity without overburdening your inbox or mobile device with fully customizeable alerts.
