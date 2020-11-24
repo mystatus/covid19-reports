@@ -3,8 +3,8 @@ import { Unit } from '../api/unit/unit.model';
 import { Org } from '../api/org/org.model';
 import { sanitizeIndexPrefix } from '../util/util';
 
-export class Units1605641172821 implements MigrationInterface {
-  name = 'Units1605641172821'
+export class Units1606230125211 implements MigrationInterface {
+  name = 'Units1606230125211'
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`CREATE TABLE "unit" ("id" character varying NOT NULL, "name" character varying NOT NULL, "muster_configuration" json NOT NULL DEFAULT '[]', "org_id" integer NOT NULL, CONSTRAINT "PK_a01b525274c7f20afb31a742d47" PRIMARY KEY ("id", "org_id"))`);
