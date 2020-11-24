@@ -40,11 +40,14 @@ import {
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditRosterEntryDialog, EditRosterEntryDialogProps } from './edit-roster-entry-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
+import { Unit } from '../../../actions/unit.actions';
+import { UnitSelector } from '../../../selectors/unit.selector';
 
 export const RosterPage = () => {
   const classes = useStyles();
-
   const dispatch = useDispatch();
+
+  const units = useSelector(UnitSelector.all);
   const fileInputRef = React.createRef<HTMLInputElement>();
 
   const maxNumColumnsToShow = 5;
@@ -53,6 +56,7 @@ export const RosterPage = () => {
   const [page, setPage] = useState(0);
   const [totalRowsCount, setTotalRowsCount] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [unitNameMap, setUnitNameMap] = useState<{[key: string]: string}>({});
   const [selectedRosterEntry, setSelectedRosterEntry] = useState<ApiRosterEntry>();
   const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
   const [deleteRosterEntryDialogOpen, setDeleteRosterEntryDialogOpen] = useState(false);
@@ -96,10 +100,21 @@ export const RosterPage = () => {
 
   const initializeTable = useCallback(async () => {
     dispatch(AppFrame.setPageLoading(true));
+    if (orgId) {
+      await dispatch(Unit.fetch(orgId));
+    }
     await initializeRosterColumnInfo();
     await reloadTable();
     dispatch(AppFrame.setPageLoading(false));
-  }, [dispatch, initializeRosterColumnInfo, reloadTable]);
+  }, [dispatch, orgId, initializeRosterColumnInfo, reloadTable]);
+
+  useEffect(() => {
+    const unitNames: { [key: string]: string } = {};
+    for (const unit of units) {
+      unitNames[unit.id] = unit.name;
+    }
+    setUnitNameMap(unitNames);
+  }, [units]);
 
   useEffect(() => {
     initializeTable().then();
@@ -150,6 +165,9 @@ export const RosterPage = () => {
     const value = rosterEntry[column.name];
     if (value == null) {
       return '';
+    }
+    if (column.name === 'unit') {
+      return unitNameMap[value as string];
     }
     switch (column.type) {
       case ApiRosterColumnType.Date:
@@ -292,7 +310,11 @@ export const RosterPage = () => {
   };
 
   const getVisibleColumns = () => {
-    return rosterColumnInfos.slice(0, maxNumColumnsToShow);
+    const unitColumn = {
+      name: 'unit',
+      displayName: 'Unit',
+    };
+    return [unitColumn, ...rosterColumnInfos.slice(0, maxNumColumnsToShow)];
   };
 
   //

@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosResponse } from 'axios';
 import axiosRetry from 'axios-retry';
 import { UserRegisterData } from '../actions/user.actions';
 import {
-  ApiAccessRequest, ApiNotification, ApiRole, ApiRosterColumnInfo, ApiUser, ApiWorkspace,
+  ApiAccessRequest, ApiNotification, ApiRole, ApiRosterColumnInfo, ApiUnit, ApiUser, ApiWorkspace,
 } from '../models/api-response';
 
 const client = axios.create({
@@ -52,6 +52,12 @@ export namespace RoleClient {
   };
 }
 
+export namespace UnitClient {
+  export const fetchAll = (orgId: number): Promise<ApiUnit[]> => {
+    return client.get(`unit/${orgId}`);
+  };
+}
+
 export namespace RosterClient {
   export const fetchColumns = (orgId: number): Promise<ApiRosterColumnInfo[]> => {
     return client.get(`roster/${orgId}/column`);
@@ -59,7 +65,7 @@ export namespace RosterClient {
   export const upload = (orgId: number, file: File): Promise<number> => {
     const formData = new FormData();
     formData.append('roster_csv', file);
-    return client.post(`api/roster/${orgId}/bulk`, formData, {
+    return client.post(`roster/${orgId}/bulk`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -83,7 +89,7 @@ export namespace UserClient {
 
 export namespace WorkspaceClient {
   export const fetchAll = (orgId: number): Promise<ApiWorkspace[]> => {
-    return client.get(`workspaces/${orgId}`);
+    return client.get(`workspace/${orgId}`);
   };
 }
 

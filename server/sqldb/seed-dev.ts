@@ -6,6 +6,7 @@ import { User } from '../api/user/user.model';
 import { Workspace } from '../api/workspace/workspace.model';
 import { Roster, RosterColumnType } from '../api/roster/roster.model';
 import { CustomRosterColumn } from '../api/roster/custom-roster-column.model';
+import { Unit } from '../api/unit/unit.model';
 
 export default (async function() {
   if (process.env.NODE_ENV !== 'development') {
@@ -18,7 +19,7 @@ export default (async function() {
 
   // Create users
   const groupAdmin = new User();
-  groupAdmin.edipi = '1';
+  groupAdmin.edipi = '0000000001';
   groupAdmin.firstName = 'Group';
   groupAdmin.lastName = 'Admin';
   groupAdmin.phone = '123-456-7890';
@@ -77,14 +78,23 @@ async function generateOrg(orgNum: number, admin: User, numUsers: number, numRos
     await user.save();
   }
 
+  const units: Unit[] = [];
+  for (let i = 1; i <= 5; i++) {
+    const unit = new Unit();
+    unit.org = org;
+    unit.name = `Unit ${i}`;
+    unit.id = `unit${i}`;
+    unit.musterConfiguration = [];
+    units.push(await unit.save());
+  }
+
   for (let i = 0; i < numRosterEntries; i++) {
     const rosterEntry = new Roster();
-    rosterEntry.org = org;
     rosterEntry.edipi = `${orgNum}${`${i}`.padStart(9, '0')}`;
     rosterEntry.firstName = 'Roster';
     rosterEntry.lastName = `Entry${i}`;
     // Ensure at least some roster entries are in unit 1.
-    rosterEntry.unit = (i % 2 === 0) ? 'unit1' : `unit${randomNumber(2, 5)}`;
+    rosterEntry.unit = (i % 2 === 0) ? units[0] : units[randomNumber(1, 4)];
     rosterEntry.lastReported = new Date();
     const customColumns: any = {};
     customColumns[customColumn.name] = `custom column value`;

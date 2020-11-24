@@ -5,8 +5,8 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
-  Grid,
+  DialogTitle, FormControl,
+  Grid, InputLabel, Select,
   TableCell,
   TableRow,
   TextField,
@@ -15,10 +15,12 @@ import { DatePicker, DateTimePicker, MuiPickersUtilsProvider } from '@material-u
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import MomentUtils from '@date-io/moment';
 import axios from 'axios';
+import { useSelector } from 'react-redux';
 import useStyles from './edit-roster-entry-dialog.style';
 import { ApiRosterColumnInfo, ApiRosterColumnType, ApiRosterEntry } from '../../../models/api-response';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
+import { UnitSelector } from '../../../selectors/unit.selector';
 
 export interface EditRosterEntryDialogProps {
   open: boolean,
@@ -31,16 +33,16 @@ export interface EditRosterEntryDialogProps {
 
 export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   const classes = useStyles();
-  const [formDisabled, setFormDisabled] = useState(false);
+  const units = useSelector(UnitSelector.all);
   const {
     open, orgId, rosterColumnInfos, onClose, onError,
   } = props;
 
   const hiddenEditFields = ['lastReported'];
 
-  const [saveRosterEntryLoading, setSaveRosterEntryLoading] = useState(false);
-
   const existingRosterEntry: boolean = !!props.rosterEntry;
+  const [formDisabled, setFormDisabled] = useState(false);
+  const [saveRosterEntryLoading, setSaveRosterEntryLoading] = useState(false);
   const [rosterEntry, setRosterEntryProperties] = useState(existingRosterEntry ? props.rosterEntry as ApiRosterEntry : {} as ApiRosterEntry);
 
   if (!open) {
@@ -71,14 +73,24 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     updateRosterEntryProperty(columnName, date?.toISOString());
   };
 
+  const onUnitChanged = (event: React.ChangeEvent<{ value: unknown }>) => {
+    updateRosterEntryProperty('unit', event.target.value);
+  };
+
   const onSave = async () => {
     setFormDisabled(true);
     try {
       setSaveRosterEntryLoading(true);
+      const data = {
+        ...rosterEntry,
+      };
+      if (!data.unit) {
+        data.unit = units[0].id;
+      }
       if (existingRosterEntry) {
-        await axios.put(`api/roster/${orgId}/${rosterEntry!.id}`, rosterEntry);
+        await axios.put(`api/roster/${orgId}/${rosterEntry!.id}`, data);
       } else {
-        await axios.post(`api/roster/${orgId}`, rosterEntry);
+        await axios.post(`api/roster/${orgId}`, data);
       }
     } catch (error) {
       if (onError) {
@@ -136,22 +148,32 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     const columns = rosterColumnInfos?.filter(columnInfo => {
       return columnInfo.type === 'boolean' && hiddenEditFields.indexOf(columnInfo.name) < 0;
     });
-    return columns?.map(columnInfo => (
-      <TableRow key={columnInfo.name}>
-        <TableCell>
-          {columnInfo.displayName}
-        </TableCell>
-        <TableCell>
-          <Checkbox
-            color="primary"
-            id={columnInfo.name}
-            disabled={formDisabled || (existingRosterEntry && !columnInfo.updatable)}
-            checked={rosterEntry[columnInfo.name] as boolean || false}
-            onChange={onCheckboxChanged(columnInfo.name)}
-          />
-        </TableCell>
-      </TableRow>
-    ));
+    if (!columns || columns.length === 0) {
+      return <></>;
+    }
+    return (
+      <>
+        <label className={classes.booleanTableLabel}>Other:</label>
+        <EditableBooleanTable aria-label="Other Fields">
+          {columns?.map(columnInfo => (
+            <TableRow key={columnInfo.name}>
+              <TableCell>
+                {columnInfo.displayName}
+              </TableCell>
+              <TableCell>
+                <Checkbox
+                  color="primary"
+                  id={columnInfo.name}
+                  disabled={formDisabled || (existingRosterEntry && !columnInfo.updatable)}
+                  checked={rosterEntry[columnInfo.name] as boolean || false}
+                  onChange={onCheckboxChanged(columnInfo.name)}
+                />
+              </TableCell>
+            </TableRow>
+          ))}
+        </EditableBooleanTable>
+      </>
+    );
   };
 
   const buildTextInput = (columnInfo: ApiRosterColumnInfo) => {
@@ -237,12 +259,29 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
       <DialogTitle id="alert-dialog-title">{existingRosterEntry ? 'Edit Roster Entry' : 'New Roster Entry'}</DialogTitle>
       <DialogContent>
         <Grid container spacing={3}>
+          <Grid item xs={6}>
+            <FormControl required className={classes.selectField}>
+              <InputLabel id="unit-label">Unit</InputLabel>
+              <Select
+                labelId="unit-label"
+                native
+                disabled={formDisabled}
+                value={rosterEntry.unit}
+                onChange={onUnitChanged}
+                inputProps={{
+                  name: 'unit',
+                  id: 'unit-select',
+                }}
+              >
+                {units && units.map(unit => (
+                  <option key={unit.id} value={unit.id}>{unit.name}</option>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
           {buildInputFields()}
         </Grid>
-        <label className={classes.booleanTableLabel}>Other:</label>
-        <EditableBooleanTable aria-label="Other Fields">
-          {buildCheckboxFields()}
-        </EditableBooleanTable>
+        {buildCheckboxFields()}
       </DialogContent>
       <DialogActions className={classes.editRosterEntryDialogActions}>
         <Button disabled={formDisabled} variant="outlined" onClick={onClose} color="primary">

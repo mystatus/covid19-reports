@@ -1,7 +1,7 @@
 import {
-  Entity, Column, BaseEntity, JoinColumn, ManyToOne, CreateDateColumn, PrimaryGeneratedColumn,
+  Entity, Column, BaseEntity, ManyToOne, CreateDateColumn, PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Org } from '../org/org.model';
+import { Unit } from '../unit/unit.model';
 
 @Entity()
 export class Roster extends BaseEntity {
@@ -9,15 +9,11 @@ export class Roster extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Org, org => org.id, {
+  @ManyToOne(() => Unit, unit => unit.id, {
     nullable: false,
-    cascade: true,
-    onDelete: 'CASCADE',
+    onDelete: 'RESTRICT',
   })
-  @JoinColumn({
-    name: 'org_id',
-  })
-  org?: Org;
+  unit!: Unit;
 
   @Column({
     length: 10,
@@ -33,11 +29,6 @@ export class Roster extends BaseEntity {
     length: 100,
   })
   lastName!: string;
-
-  @Column({
-    length: 50,
-  })
-  unit!: string;
 
   @Column({
     nullable: true,
@@ -126,15 +117,6 @@ export const baseRosterColumns: RosterColumnInfo[] = [
     displayName: 'Last Name',
     type: RosterColumnType.String,
     pii: true,
-    phi: false,
-    custom: false,
-    required: true,
-    updatable: true,
-  }, {
-    name: 'unit',
-    displayName: 'Unit',
-    type: RosterColumnType.String,
-    pii: false,
     phi: false,
     custom: false,
     required: true,

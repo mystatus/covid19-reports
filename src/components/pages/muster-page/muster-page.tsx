@@ -1,6 +1,17 @@
 import {
-  Container, Paper, Table, TableContainer, TableRow, TableFooter, Select, MenuItem, Grid, Card, CardContent, Typography,
   Box,
+  Card,
+  CardContent,
+  Container,
+  Grid,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableContainer,
+  TableFooter,
+  TableRow,
+  Typography,
 } from '@material-ui/core';
 import GetAppIcon from '@material-ui/icons/GetApp';
 import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
@@ -25,10 +36,16 @@ import useStyles from './muster-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
 import {
-  ApiRosterColumnInfo, ApiMusterTrends, ApiUnitStatsByDate, ApiRosterColumnType, ApiMusterIndividuals, ApiRosterUnits,
+  ApiMusterIndividuals,
+  ApiMusterTrends,
+  ApiRosterColumnInfo,
+  ApiRosterColumnType,
+  ApiUnitStatsByDate,
 } from '../../../models/api-response';
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
+import { UnitSelector } from '../../../selectors/unit.selector';
+import { Unit } from '../../../actions/unit.actions';
 
 interface TimeRange {
   interval: 'day' | 'hour'
@@ -50,9 +67,10 @@ const stringToTimeRange = (str: string) => {
 export const MusterPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
+  const units = useSelector(UnitSelector.all);
   const user = useSelector((state: AppState) => state.user);
 
-  const maxNumColumnsToShow = 5;
+  const maxNumColumnsToShow = 6;
   const maxTopUnitsCount = 5;
   const trendChart = {
     layout: {
@@ -93,8 +111,7 @@ export const MusterPage = () => {
   };
 
   const [individualsTimeRangeString, setIndividualsTimeRangeString] = useState(timeRangeToString({ interval: 'day', intervalCount: 1 }));
-  const [individualsUnit, setIndividualsUnit] = useState('');
-  const [units, setUnits] = useState<string[]>([]);
+  const [individualsUnitId, setIndividualsUnitId] = useState('');
   const [individualsPage, setIndividualsPage] = useState(0);
   const [individualsRowsPerPage, setIndividualsRowsPerPage] = useState(10);
   const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
@@ -116,9 +133,10 @@ export const MusterPage = () => {
   //
 
   const getUnits = useCallback(async () => {
-    const unitsNew = (await axios.get(`api/roster/${orgId}/units`)).data as ApiRosterUnits;
-    setUnits(unitsNew);
-  }, [orgId]);
+    if (orgId) {
+      await dispatch(Unit.fetch(orgId));
+    }
+  }, [orgId, dispatch]);
 
   const reloadTable = useCallback(async () => {
     const { interval, intervalCount } = stringToTimeRange(individualsTimeRangeString);
@@ -128,7 +146,7 @@ export const MusterPage = () => {
         params: {
           interval,
           intervalCount,
-          unit: individualsUnit,
+          unitId: individualsUnitId,
           page: individualsPage,
           limit: individualsRowsPerPage,
         },
@@ -153,7 +171,7 @@ export const MusterPage = () => {
     } else {
       setIndividualsData(data);
     }
-  }, [individualsTimeRangeString, individualsPage, individualsRowsPerPage, orgId, individualsUnit]);
+  }, [individualsTimeRangeString, individualsPage, individualsRowsPerPage, orgId, individualsUnitId]);
 
   const reloadTrendData = useCallback(async () => {
     try {
@@ -188,37 +206,38 @@ export const MusterPage = () => {
 
   const getTrendData = useCallback((unitStatsByDate: ApiUnitStatsByDate, topUnitCount: number) => {
     // Sum up each unit's non-muster percent to figure out who's performing worst overall.
-    const nonMusterPercentSumByUnit = {} as {[unit: string]: number};
+    const nonMusterPercentSumByUnit = {} as {[unitId: string]: number};
     for (const date of Object.keys(unitStatsByDate)) {
-      for (const unit of Object.keys(unitStatsByDate[date])) {
-        if (nonMusterPercentSumByUnit[unit] == null) {
-          nonMusterPercentSumByUnit[unit] = 0;
+      for (const unitId of Object.keys(unitStatsByDate[date])) {
+        if (nonMusterPercentSumByUnit[unitId] == null) {
+          nonMusterPercentSumByUnit[unitId] = 0;
         }
-        nonMusterPercentSumByUnit[unit] += unitStatsByDate[date][unit].nonMusterPercent;
+        nonMusterPercentSumByUnit[unitId] += unitStatsByDate[date][unitId].nonMusterPercent;
       }
     }
 
     // Exclude compliant units and sort with worst performing units first.
     const unitsSorted = Object.keys(nonMusterPercentSumByUnit)
-      .filter(unit => nonMusterPercentSumByUnit[unit] > 0)
-      .sort(unit => nonMusterPercentSumByUnit[unit])
+      .filter(unitId => nonMusterPercentSumByUnit[unitId] > 0)
+      .sort(unitId => nonMusterPercentSumByUnit[unitId])
       .reverse()
       .slice(0, topUnitCount);
 
     // Build chart data.
     const datesSorted = Object.keys(unitStatsByDate).sort();
     const trendChartData = [] as Plotly.Data[];
-    for (const unitName of unitsSorted) {
+    for (const unitId of unitsSorted) {
+      const name = units.find(unit => unit.id === unitId)?.name;
       const chartData = {
         type: 'bar',
         x: datesSorted,
         y: [] as number[],
-        name: unitName,
+        name: name || unitId,
         hovertemplate: `%{y:.2f}%`,
       };
 
       for (const date of datesSorted) {
-        const nonMusterPercent = unitStatsByDate[date][unitName]?.nonMusterPercent ?? 0;
+        const nonMusterPercent = unitStatsByDate[date][unitId]?.nonMusterPercent ?? 0;
         chartData.y.push(nonMusterPercent);
       }
 
@@ -226,7 +245,7 @@ export const MusterPage = () => {
     }
 
     return trendChartData;
-  }, []);
+  }, [units]);
 
   useEffect(() => {
     initialize().then();
@@ -289,7 +308,7 @@ export const MusterPage = () => {
         params: {
           interval,
           intervalCount,
-          unit: individualsUnit,
+          unitId: individualsUnitId,
         },
         method: 'GET',
         responseType: 'blob',
@@ -297,8 +316,8 @@ export const MusterPage = () => {
 
       const startDate = moment().startOf('day').subtract(intervalCount, 'days').format('YYYY-MM-DD');
       const endDate = moment().startOf('day').format('YYYY-MM-DD');
-      const unitName = individualsUnit || 'all-units';
-      const filename = `${_.kebabCase(orgName)}_${_.kebabCase(unitName)}_muster-noncompliance_${startDate}_to_${endDate}`;
+      const unitId = individualsUnitId || 'all-units';
+      const filename = `${_.kebabCase(orgName)}_${_.kebabCase(unitId)}_muster-noncompliance_${startDate}_to_${endDate}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
       let message = 'Internal Server Error';
@@ -320,6 +339,16 @@ export const MusterPage = () => {
     const customRosterColumnInfos = [
       ...rosterColumnInfos,
       {
+        name: 'unitId',
+        displayName: 'Unit',
+        type: ApiRosterColumnType.String,
+        pii: false,
+        phi: false,
+        custom: false,
+        required: false,
+        updatable: false,
+      },
+      {
         name: 'nonMusterPercent',
         displayName: 'Non-Muster Rate',
         type: ApiRosterColumnType.String,
@@ -335,7 +364,8 @@ export const MusterPage = () => {
       'edipi',
       'firstName',
       'lastName',
-      'unit',
+      'unitId',
+      'lastReported',
       'nonMusterPercent',
     ]).slice(0, maxNumColumnsToShow);
   };
@@ -349,7 +379,7 @@ export const MusterPage = () => {
   };
 
   const handleIndividualsUnitChange = (event: ChangeEvent<{ name?: string, value: unknown }>) => {
-    setIndividualsUnit(event.target.value as string);
+    setIndividualsUnitId(event.target.value as string);
   };
 
   const timeRangeToggleButton = (timeRange: TimeRange) => {
@@ -392,7 +422,7 @@ export const MusterPage = () => {
                     </ToggleButtonGroup>
 
                     <Select
-                      value={individualsUnit}
+                      value={individualsUnitId}
                       displayEmpty
                       onChange={handleIndividualsUnitChange}
                     >
@@ -400,9 +430,9 @@ export const MusterPage = () => {
                         <em>All Units</em>
                       </MenuItem>
 
-                      {units.map(unitName => (
-                        <MenuItem key={unitName} value={unitName}>
-                          {unitName}
+                      {units.map(unit => (
+                        <MenuItem key={unit.id} value={unit.id}>
+                          {unit.name}
                         </MenuItem>
                       ))}
                     </Select>
@@ -429,8 +459,11 @@ export const MusterPage = () => {
                           if (column.name === 'lastReported') {
                             return moment(row[column.name]).format('YYYY-MM-DD, HH:mm');
                           }
-
-                          return row[column.name];
+                          const value = row[column.name];
+                          if (column.name === 'unitId') {
+                            return units.find(unit => unit.id === value)?.name || value;
+                          }
+                          return value;
                         },
                       }}
                     />

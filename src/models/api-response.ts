@@ -114,6 +114,7 @@ export interface ApiRosterColumnInfo extends ColumnInfo {
 
 export interface ApiRosterEntry {
   id: number,
+  unit: string,
   [key: string]: string | boolean | number | null,
 }
 
@@ -154,4 +155,27 @@ export interface ApiMusterTrends {
   monthly: ApiUnitStatsByDate
 }
 
-export type ApiRosterUnits = string[];
+export enum DaysOfTheWeek {
+  None = 0,
+  Sunday = 1,
+  Monday = 2,
+  Tuesday = 4,
+  Wednesday = 8,
+  Thursday = 16,
+  Friday = 32,
+  Saturday = 64,
+}
+
+export interface MusterConfiguration {
+  days: DaysOfTheWeek,
+  startTime: string,
+  timezone: string,
+  durationMinutes: number,
+}
+
+export interface ApiUnit {
+  id: string,
+  name: string,
+  org?: ApiOrg,
+  musterConfiguration: MusterConfiguration[],
+}

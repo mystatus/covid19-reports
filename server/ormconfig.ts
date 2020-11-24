@@ -5,6 +5,7 @@ import { Org } from './api/org/org.model';
 import { Role } from './api/role/role.model';
 import { Roster } from './api/roster/roster.model';
 import { User } from './api/user/user.model';
+import { Unit } from './api/unit/unit.model';
 import { Workspace } from './api/workspace/workspace.model';
 import { WorkspaceTemplate } from './api/workspace/workspace-template.model';
 import { CustomRosterColumn } from './api/roster/custom-roster-column.model';
@@ -24,6 +25,7 @@ export const ormConfig: PostgresConnectionOptions = {
     Org,
     Roster,
     AccessRequest,
+    Unit,
     Workspace,
     WorkspaceTemplate,
     CustomRosterColumn,

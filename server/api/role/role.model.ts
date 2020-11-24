@@ -110,8 +110,8 @@ export class Role extends BaseEntity {
     return `${this.org!.indexPrefix}-${this.getUnitFilter()}-${suffix}-*`;
   }
 
-  getKibanaIndexForMuster() {
-    return `${this.org!.indexPrefix}-${this.getUnitFilter()}-phi-*`;
+  getKibanaIndexForMuster(unitId?: string) {
+    return `${this.org!.indexPrefix}-${unitId || this.getUnitFilter()}-phi-*`;
   }
 
   getKibanaRoles() {
