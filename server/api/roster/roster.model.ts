@@ -31,12 +31,14 @@ export class Roster extends BaseEntity {
   lastName!: string;
 
   @Column({
+    type: 'date',
     nullable: true,
     default: () => 'null',
   })
   startDate?: Date;
 
   @Column({
+    type: 'date',
     nullable: true,
     default: () => 'null',
   })

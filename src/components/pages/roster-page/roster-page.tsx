@@ -1,11 +1,15 @@
 import {
   Button,
+  Checkbox,
   Container,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
+  FormControlLabel,
+  Menu,
+  MenuItem,
   Paper,
   Table,
   TableContainer,
@@ -13,10 +17,12 @@ import {
   TableRow,
 } from '@material-ui/core';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
+import FilterListIcon from '@material-ui/icons/FilterList';
 import PublishIcon from '@material-ui/icons/Publish';
 import GetAppIcon from '@material-ui/icons/GetApp';
+import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import React, {
-  ChangeEvent, MouseEvent, useCallback, useEffect, useState,
+  ChangeEvent, MouseEvent, useCallback, useEffect, useRef, useState,
 } from 'react';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
@@ -42,6 +48,19 @@ import { EditRosterEntryDialog, EditRosterEntryDialogProps } from './edit-roster
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { Unit } from '../../../actions/unit.actions';
 import { UnitSelector } from '../../../selectors/unit.selector';
+import { QueryBuilder, QueryFieldType, QueryFilterState } from '../../query-builder/query-builder';
+import { formatMessage } from '../../../utility/errors';
+
+const unitColumn: ApiRosterColumnInfo = {
+  name: 'unit',
+  displayName: 'Unit',
+  custom: false,
+  phi: false,
+  pii: false,
+  type: ApiRosterColumnType.String,
+  updatable: false,
+  required: false,
+};
 
 export const RosterPage = () => {
   const classes = useStyles();
@@ -54,6 +73,7 @@ export const RosterPage = () => {
 
   const [rows, setRows] = useState<ApiRosterEntry[]>([]);
   const [page, setPage] = useState(0);
+  const initialLoad = useRef(true);
   const [totalRowsCount, setTotalRowsCount] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [unitNameMap, setUnitNameMap] = useState<{[key: string]: string}>({});
@@ -64,8 +84,13 @@ export const RosterPage = () => {
   const [deleteRosterEntryLoading, setDeleteRosterEntryLoading] = useState(false);
   const [downloadTemplateLoading, setDownloadTemplateLoading] = useState(false);
   const [exportRosterLoading, setExportRosterLoading] = useState(false);
+  const [queryFilterState, setQueryFilterState] = useState<QueryFilterState>();
   const [rosterColumnInfos, setRosterColumnInfos] = useState<ApiRosterColumnInfo[]>([]);
-
+  const [visibleColumns, setVisibleColumns] = useState<ApiRosterColumnInfo[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
+  const [applyingFilters, setApplyingFilters] = useState(false);
+  const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
   const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
   const orgName = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.name;
 
@@ -74,16 +99,42 @@ export const RosterPage = () => {
   //
 
   const reloadTable = useCallback(async () => {
-    const response = await axios.get(`api/roster/${orgId}/?limit=${rowsPerPage}&page=${page}`);
-    const data = response.data as ApiRosterPaginated;
-    setRows(data.rows);
-    setTotalRowsCount(data.totalRowsCount);
-  }, [page, rowsPerPage, orgId]);
+    try {
+
+      if (queryFilterState) {
+        setApplyingFilters(true);
+        setRows([]);
+        setTotalRowsCount(0);
+        const response = await axios.post(`api/roster/${orgId}/search/?limit=${rowsPerPage}&page=${page}`, queryFilterState);
+        const data = response.data as ApiRosterPaginated;
+        setRows(data.rows);
+        setTotalRowsCount(data.totalRowsCount);
+        setApplyingFilters(false);
+      } else {
+        const response = await axios.get(`api/roster/${orgId}/?limit=${rowsPerPage}&page=${page}`);
+        const data = response.data as ApiRosterPaginated;
+        setRows(data.rows);
+        setTotalRowsCount(data.totalRowsCount);
+      }
+
+    } catch (e) {
+      setAlertDialogProps({
+        open: true,
+        title: 'Error',
+        message: formatMessage(e, 'Error Applying Filters'),
+        onClose: () => { setAlertDialogProps({ open: false }); },
+      });
+    }
+  }, [page, rowsPerPage, orgId, queryFilterState]);
 
   const initializeRosterColumnInfo = useCallback(async () => {
     try {
       const infos = (await axios.get(`api/roster/${orgId}/info`)).data as ApiRosterColumnInfo[];
-      setRosterColumnInfos(infos);
+      const unitColumnWithInfos = [unitColumn, ...infos];
+      setRosterColumnInfos(unitColumnWithInfos);
+      if (initialLoad.current) {
+        setVisibleColumns(unitColumnWithInfos.slice(0, maxNumColumnsToShow));
+      }
     } catch (error) {
       let message = 'Internal Server Error';
       if (error.response?.data?.errors && error.response.data.errors.length > 0) {
@@ -99,13 +150,14 @@ export const RosterPage = () => {
   }, [orgId]);
 
   const initializeTable = useCallback(async () => {
-    dispatch(AppFrame.setPageLoading(true));
+    dispatch(AppFrame.setPageLoading(initialLoad.current));
     if (orgId) {
       await dispatch(Unit.fetch(orgId));
     }
     await initializeRosterColumnInfo();
     await reloadTable();
     dispatch(AppFrame.setPageLoading(false));
+    initialLoad.current = false;
   }, [dispatch, orgId, initializeRosterColumnInfo, reloadTable]);
 
   useEffect(() => {
@@ -309,14 +361,6 @@ export const RosterPage = () => {
     }
   };
 
-  const getVisibleColumns = () => {
-    const unitColumn = {
-      name: 'unit',
-      displayName: 'Unit',
-    };
-    return [unitColumn, ...rosterColumnInfos.slice(0, maxNumColumnsToShow)];
-  };
-
   //
   // Render
   //
@@ -376,32 +420,101 @@ export const RosterPage = () => {
         </div>
 
         <TableContainer component={Paper}>
-          <Table aria-label="simple table">
-            <TableCustomColumnsContent
-              rows={rows}
-              columns={getVisibleColumns()}
-              idColumn="id"
-              rowOptions={{
-                showEditButton: true,
-                showDeleteButton: true,
-                onEditButtonClick: editButtonClicked,
-                onDeleteButtonClick: deleteButtonClicked,
-                renderCell: getCellDisplayValue,
-              }}
-            />
-            <TableFooter>
-              <TableRow>
-                <TablePagination
-                  count={totalRowsCount}
-                  page={page}
-                  rowsPerPage={rowsPerPage}
-                  rowsPerPageOptions={[10, 25, 50]}
-                  onChangePage={handleChangePage}
-                  onChangeRowsPerPage={handleChangeRowsPerPage}
+          <div className={classes.secondaryButtons}>
+            <Button
+              aria-label="Filters"
+              className={classes.secondaryButton}
+              onClick={() => setFiltersOpen(!filtersOpen)}
+              size="small"
+              startIcon={queryFilterState ? <div className={classes.secondaryButtonCount}>{Object.keys(queryFilterState).length}</div> : <FilterListIcon />}
+              variant="outlined"
+            >
+              Filters
+            </Button>
+            <Button
+              aria-label="Visible columns"
+              className={classes.secondaryButton}
+              onClick={() => setVisibleColumnsMenuOpen(!visibleColumnsMenuOpen)}
+              size="small"
+              startIcon={<ViewWeekIcon />}
+              variant="outlined"
+            >
+              <span ref={visibleColumnsButtonRef}>
+                Columns
+              </span>
+            </Button>
+          </div>
+          <Menu
+            id="user-more-menu"
+            anchorEl={visibleColumnsButtonRef.current}
+            keepMounted
+            open={Boolean(visibleColumnsMenuOpen)}
+            onClose={() => setVisibleColumnsMenuOpen(false)}
+          >
+            {rosterColumnInfos.map(column => (
+              <MenuItem key={column.name} className={classes.columnItem}>
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      color="primary"
+                      checked={visibleColumns.some(col => col.name === column.name)}
+                      onChange={event => {
+                        const { checked } = event.target;
+                        if (checked) {
+                          setVisibleColumns(rosterColumnInfos.filter(col => col.name === column.name || visibleColumns.some(({ name }) => name === col.name)));
+                        } else {
+                          setVisibleColumns([...visibleColumns.filter(col => col.name !== column.name)]);
+                        }
+                      }}
+                    />
+                  )}
+                  label={column.displayName}
                 />
-              </TableRow>
-            </TableFooter>
-          </Table>
+              </MenuItem>
+            ))}
+          </Menu>
+          <QueryBuilder
+            fields={rosterColumnInfos
+              .map(column => {
+                return {
+                  items: column.name === 'unit' ? units.map(({ id, name }) => ({ label: name, value: id })) : undefined,
+                  displayName: column.displayName,
+                  name: column.name,
+                  type: column.type as unknown as QueryFieldType,
+                };
+              })}
+            onChange={setQueryFilterState}
+            open={filtersOpen}
+          />
+          <div className={classes.tableWrapper}>
+            <Table aria-label="simple table">
+              <TableCustomColumnsContent
+                rows={rows}
+                columns={visibleColumns}
+                idColumn="id"
+                noDataText={applyingFilters ? 'Searching...' : 'No Data'}
+                rowOptions={{
+                  showEditButton: true,
+                  showDeleteButton: true,
+                  onEditButtonClick: editButtonClicked,
+                  onDeleteButtonClick: deleteButtonClicked,
+                  renderCell: getCellDisplayValue,
+                }}
+              />
+              <TableFooter>
+                <TableRow>
+                  <TablePagination
+                    count={totalRowsCount}
+                    page={page}
+                    rowsPerPage={rowsPerPage}
+                    rowsPerPageOptions={[10, 25, 50]}
+                    onChangePage={handleChangePage}
+                    onChangeRowsPerPage={handleChangeRowsPerPage}
+                  />
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </div>
         </TableContainer>
       </Container>
       {deleteRosterEntryDialogOpen && (
@@ -428,10 +541,10 @@ export const RosterPage = () => {
         </Dialog>
       )}
       {editRosterEntryDialogProps.open && (
-        <EditRosterEntryDialog open={editRosterEntryDialogProps.open} orgId={editRosterEntryDialogProps.orgId} rosterColumnInfos={editRosterEntryDialogProps.rosterColumnInfos} rosterEntry={editRosterEntryDialogProps.rosterEntry} onClose={editRosterEntryDialogProps.onClose} onError={editRosterEntryDialogProps.onError} />
+        <EditRosterEntryDialog {...editRosterEntryDialogProps} />
       )}
       {alertDialogProps.open && (
-        <AlertDialog open={alertDialogProps.open} title={alertDialogProps.title} message={alertDialogProps.message} onClose={alertDialogProps.onClose} />
+        <AlertDialog {...alertDialogProps} />
       )}
     </main>
   );

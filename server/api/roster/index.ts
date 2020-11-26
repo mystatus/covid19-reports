@@ -76,11 +76,20 @@ router.get(
   requireRolePermission(role => role.canManageRoster),
   controller.getRosterInfo,
 );
+
 router.get(
   '/:orgId',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),
   controller.getRoster,
+);
+
+router.post(
+  '/:orgId/search',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageRoster),
+  bodyParser.json(),
+  controller.searchRoster,
 );
 
 router.post(
