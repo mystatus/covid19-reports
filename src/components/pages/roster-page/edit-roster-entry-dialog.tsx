@@ -128,11 +128,13 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
         switch (column.type) {
           case ApiRosterColumnType.String:
           case ApiRosterColumnType.Date:
-          case ApiRosterColumnType.DateTime:
-            if ((rosterEntry[column.name] as string).length === 0) {
+          case ApiRosterColumnType.DateTime: {
+            const value = rosterEntry[column.name] as string;
+            if (value.length === 0 || value.trim().length === 0) {
               result = false;
             }
             break;
+          }
           default:
             break;
         }
