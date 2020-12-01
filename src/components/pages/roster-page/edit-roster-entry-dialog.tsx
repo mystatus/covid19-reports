@@ -134,11 +134,8 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
             if (value.length === 0 || value.trim().length === 0) {
               result = false;
             } else if (column.name === 'edipi') {
-              const chars = value.split('');
-              const isInt = chars.every(ch => {
-                return !Number.isNaN(Number.parseInt(ch));
-              });
-              if (chars.length !== 10 || !isInt) {
+              const regex = RegExp(/^[0-9]{10}$/g);
+              if (!regex.test(value)) {
                 result = false;
               }
             }
