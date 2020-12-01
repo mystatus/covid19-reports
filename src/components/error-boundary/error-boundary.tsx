@@ -3,19 +3,19 @@ import { formatMessage } from '../../utility/errors';
 import { AlertDialog, AlertDialogProps } from '../alert-dialog/alert-dialog';
 
 
-export interface BoundaryHookErrorProps {
+export interface AlertErrorProps {
   message?: string,
   alertTitle?: string,
   error?: Error,
   info?: ErrorInfo,
 }
 
-export class BoundaryHookError extends Error {
+export class AlertError extends Error {
   readonly alertTitle?: string;
   readonly error?: Error;
   readonly info?: ErrorInfo;
 
-  constructor(props: BoundaryHookErrorProps) {
+  constructor(props: AlertErrorProps) {
     super(props.message);
     this.alertTitle = props.alertTitle;
     this.error = props.error;
@@ -34,7 +34,7 @@ export interface ErrorBoundaryProps {
 
 export interface ErrorBoundaryState {
   hasError: boolean,
-  error?: BoundaryHookError,
+  error?: AlertError,
 }
 
 const initialState: ErrorBoundaryState = { hasError: false };
@@ -51,9 +51,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     const { errorMessage, alertTitle } = this.props;
     const message = error.message ?? formatMessage(error, errorMessage ?? '');
 
-    let err = error as BoundaryHookError;
+    let err = error as AlertError;
     if (!err) {
-      err = new BoundaryHookError({
+      err = new AlertError({
         error,
         info,
         message,
