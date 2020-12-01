@@ -1,25 +1,43 @@
-import React, { ReactNode, ErrorInfo, useState } from 'react';
+import React, { ReactNode, ErrorInfo } from 'react';
 import { formatMessage } from '../../utility/errors';
 import { AlertDialog, AlertDialogProps } from '../alert-dialog/alert-dialog';
+
+
+export interface BoundaryHookErrorProps {
+  message?: string,
+  alertTitle?: string,
+  error?: Error,
+  info?: ErrorInfo,
+}
+
+export class BoundaryHookError extends Error {
+  readonly alertTitle?: string;
+  readonly error?: Error;
+  readonly info?: ErrorInfo;
+
+  constructor(props: BoundaryHookErrorProps) {
+    super(props.message);
+    this.alertTitle = props.alertTitle;
+    this.error = props.error;
+    this.info = props.info;
+  }
+}
 
 
 export interface ErrorBoundaryProps {
   children?: ReactNode,
   alertTitle?: string,
   errorMessage?: string,
+  alertDialogProps: AlertDialogProps,
+  setAlertDialogProps: (props: AlertDialogProps) => void,
 }
 
 export interface ErrorBoundaryState {
   hasError: boolean,
-  error?: Error,
-  info?: ErrorInfo,
-  message?: string,
+  error?: BoundaryHookError,
 }
 
 const initialState: ErrorBoundaryState = { hasError: false };
-
-
-const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
 
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -30,20 +48,40 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    const { errorMessage } = this.props;
-    const message = formatMessage(error, errorMessage ?? '');
-    console.error('Uncaught error:', error, info);
-    this.setState({ hasError: true });
-    setAlertDialogProps({
+    const { errorMessage, alertTitle } = this.props;
+    const message = error.message ?? formatMessage(error, errorMessage ?? '');
+
+    let err = error as BoundaryHookError;
+    if (!err) {
+      err = new BoundaryHookError({
+        error,
+        info,
+        message,
+        alertTitle: alertTitle ?? 'Error',
+      });
+    }
+
+    this.setState({
+      hasError: true,
+      error: err,
+    });
+
+    this.props.setAlertDialogProps({
       open: true,
-      title: this.props.alertTitle,
+      title: this.state.error?.alertTitle ?? 'Error',
       message,
+      onClose: () => { this.props.setAlertDialogProps({ open: false }); },
     });
   }
 
   render() {
     if (this.state.hasError) {
-      return <AlertDialog {...alertDialogProps} />;
+      return (
+        <>
+          {this.props.children}
+          <AlertDialog {...this.props.alertDialogProps} />
+        </>
+      );
     }
     return this.props.children;
   }

@@ -43,13 +43,14 @@ import {
   ApiRosterEntry,
   ApiRosterPaginated,
 } from '../../../models/api-response';
-import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
+import { AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditRosterEntryDialog, EditRosterEntryDialogProps } from './edit-roster-entry-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { Unit } from '../../../actions/unit.actions';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { QueryBuilder, QueryFieldType, QueryFilterState } from '../../query-builder/query-builder';
-import { formatMessage } from '../../../utility/errors';
+import { BoundaryHookError } from '../../error-boundary/error-boundary';
+import { useErrorHandler } from '../../../hooks/use-error-handler';
 
 const unitColumn: ApiRosterColumnInfo = {
   name: 'unit',
@@ -65,6 +66,7 @@ const unitColumn: ApiRosterColumnInfo = {
 export const RosterPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
+  const handleError = useErrorHandler();
 
   const units = useSelector(UnitSelector.all);
   const fileInputRef = React.createRef<HTMLInputElement>();
@@ -78,7 +80,10 @@ export const RosterPage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [unitNameMap, setUnitNameMap] = useState<{[key: string]: string}>({});
   const [selectedRosterEntry, setSelectedRosterEntry] = useState<ApiRosterEntry>();
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
+
   const [deleteRosterEntryDialogOpen, setDeleteRosterEntryDialogOpen] = useState(false);
   const [editRosterEntryDialogProps, setEditRosterEntryDialogProps] = useState<EditRosterEntryDialogProps>({ open: false });
   const [deleteRosterEntryLoading, setDeleteRosterEntryLoading] = useState(false);
@@ -117,15 +122,10 @@ export const RosterPage = () => {
         setTotalRowsCount(data.totalRowsCount);
       }
 
-    } catch (e) {
-      setAlertDialogProps({
-        open: true,
-        title: 'Error',
-        message: formatMessage(e, 'Error Applying Filters'),
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+    } catch (error) {
+      handleError(error);
     }
-  }, [page, rowsPerPage, orgId, queryFilterState]);
+  }, [page, rowsPerPage, orgId, queryFilterState, handleError]);
 
   const initializeRosterColumnInfo = useCallback(async () => {
     try {
@@ -136,18 +136,13 @@ export const RosterPage = () => {
         setVisibleColumns(unitColumnWithInfos.slice(0, maxNumColumnsToShow));
       }
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'Get Roster Column Info',
-        message: `Failed to get roster column info: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      handleError(new BoundaryHookError({
+        error,
+        alertTitle: 'Get Roster Column Info',
+        message: 'Failed to get roster column info',
+      }));
     }
-  }, [orgId]);
+  }, [orgId, handleError]);
 
   const initializeTable = useCallback(async () => {
     dispatch(AppFrame.setPageLoading(initialLoad.current));
@@ -194,13 +189,10 @@ export const RosterPage = () => {
 
     dispatch(Roster.upload(e.target.files[0], async (count, message) => {
       if (count < 0) {
-        const msg = `An error occurred while uploading the roster: ${message || 'Please verify the roster data.'}`;
-        setAlertDialogProps({
-          open: true,
-          title: 'Upload Error',
-          message: msg,
-          onClose: () => { setAlertDialogProps({ open: false }); },
-        });
+        handleError(new BoundaryHookError({
+          alertTitle: 'Upload Error',
+          message: `${message}. Please verify the roster data.`,
+        }));
       } else {
         setAlertDialogProps({
           open: true,
@@ -284,16 +276,11 @@ export const RosterPage = () => {
       setDeleteRosterEntryLoading(true);
       await axios.delete(`api/roster/${orgId}/${selectedRosterEntry!.id}`);
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'Delete Roster Entry',
-        message: `Unable to delete roster entry: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      handleError(new BoundaryHookError({
+        error,
+        alertTitle: 'Delete Roster Entry',
+        message: 'Unable to delete roster entry',
+      }));
     } finally {
       setDeleteRosterEntryLoading(false);
       setDeleteRosterEntryDialogOpen(false);
@@ -320,16 +307,11 @@ export const RosterPage = () => {
       const filename = `${_.kebabCase(orgName)}_roster_export_${date}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'Roster CSV Export',
-        message: `Unable to export roster to CSV: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      handleError(new BoundaryHookError({
+        error,
+        alertTitle: 'Roster CSV Export',
+        message: 'Unable to export roster to CSV',
+      }));
     } finally {
       setExportRosterLoading(false);
     }
@@ -346,16 +328,11 @@ export const RosterPage = () => {
 
       downloadFile(response.data, 'roster-template', 'csv');
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'CSV Template Download',
-        message: `Unable to download CSV template: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      handleError(new BoundaryHookError({
+        error,
+        alertTitle: 'CSV Template Download',
+        message: 'Unable to download CSV template',
+      }));
     } finally {
       setDownloadTemplateLoading(false);
     }
@@ -542,9 +519,6 @@ export const RosterPage = () => {
       )}
       {editRosterEntryDialogProps.open && (
         <EditRosterEntryDialog {...editRosterEntryDialogProps} />
-      )}
-      {alertDialogProps.open && (
-        <AlertDialog {...alertDialogProps} />
       )}
     </main>
   );
