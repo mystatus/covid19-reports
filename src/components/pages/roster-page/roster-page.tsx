@@ -49,7 +49,7 @@ import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { Unit } from '../../../actions/unit.actions';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { QueryBuilder, QueryFieldType, QueryFilterState } from '../../query-builder/query-builder';
-import { BoundaryHookError } from '../../error-boundary/error-boundary';
+import { AlertError } from '../../error-boundary/error-boundary';
 import { useErrorHandler } from '../../../hooks/use-error-handler';
 
 const unitColumn: ApiRosterColumnInfo = {
@@ -136,7 +136,7 @@ export const RosterPage = () => {
         setVisibleColumns(unitColumnWithInfos.slice(0, maxNumColumnsToShow));
       }
     } catch (error) {
-      handleError(new BoundaryHookError({
+      handleError(new AlertError({
         error,
         alertTitle: 'Get Roster Column Info',
         message: 'Failed to get roster column info',
@@ -189,7 +189,7 @@ export const RosterPage = () => {
 
     dispatch(Roster.upload(e.target.files[0], async (count, message) => {
       if (count < 0) {
-        handleError(new BoundaryHookError({
+        handleError(new AlertError({
           alertTitle: 'Upload Error',
           message: `${message}. Please verify the roster data.`,
         }));
@@ -276,7 +276,7 @@ export const RosterPage = () => {
       setDeleteRosterEntryLoading(true);
       await axios.delete(`api/roster/${orgId}/${selectedRosterEntry!.id}`);
     } catch (error) {
-      handleError(new BoundaryHookError({
+      handleError(new AlertError({
         error,
         alertTitle: 'Delete Roster Entry',
         message: 'Unable to delete roster entry',
@@ -307,7 +307,7 @@ export const RosterPage = () => {
       const filename = `${_.kebabCase(orgName)}_roster_export_${date}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
-      handleError(new BoundaryHookError({
+      handleError(new AlertError({
         error,
         alertTitle: 'Roster CSV Export',
         message: 'Unable to export roster to CSV',
@@ -328,7 +328,7 @@ export const RosterPage = () => {
 
       downloadFile(response.data, 'roster-template', 'csv');
     } catch (error) {
-      handleError(new BoundaryHookError({
+      handleError(new AlertError({
         error,
         alertTitle: 'CSV Template Download',
         message: 'Unable to download CSV template',
