@@ -86,46 +86,41 @@ export const App = () => {
               [classes.contentFaded]: appFrame.isPageLoading,
             })}
           >
-            <ErrorBoundary
-              alertDialogProps={alertDialogProps}
-              setAlertDialogProps={setAlertDialogProps}
-            >
-              <Switch>
-                <Route path="/home">
-                  <HomePage />
-                </Route>
-                <Route path="/units">
-                  <UnitsPage />
-                </Route>
-                <Route path="/roster">
-                  <RosterPage />
-                </Route>
-                <Route path="/roster-columns">
-                  <RosterColumnsPage />
-                </Route>
-                <Route path="/workspaces">
-                  <WorkspacesPage />
-                </Route>
-                <Route path="/roles">
-                  <RoleManagementPage />
-                </Route>
-                <Route path="/users">
-                  <UsersPage />
-                </Route>
-                <Route path="/groups">
-                  <GroupsPage />
-                </Route>
-                <Route path="/settings">
-                  <SettingsPage />
-                </Route>
-                <Route path="/muster">
-                  <MusterPage />
-                </Route>
-                <Route path="/*">
-                  <Redirect to="/home" />
-                </Route>
-              </Switch>
-            </ErrorBoundary>
+            <Switch>
+              <Route path="/home">
+                <HomePage />
+              </Route>
+              <Route path="/units">
+                <UnitsPage />
+              </Route>
+              <Route path="/roster">
+                <RosterPage />
+              </Route>
+              <Route path="/roster-columns">
+                <RosterColumnsPage />
+              </Route>
+              <Route path="/workspaces">
+                <WorkspacesPage />
+              </Route>
+              <Route path="/roles">
+                <RoleManagementPage />
+              </Route>
+              <Route path="/users">
+                <UsersPage />
+              </Route>
+              <Route path="/groups">
+                <GroupsPage />
+              </Route>
+              <Route path="/settings">
+                <SettingsPage />
+              </Route>
+              <Route path="/muster">
+                <MusterPage />
+              </Route>
+              <Route path="/*">
+                <Redirect to="/home" />
+              </Route>
+            </Switch>
           </div>
 
           <div
@@ -144,8 +139,11 @@ export const App = () => {
   }
 
   return (
-    <>
+    <ErrorBoundary
+      alertDialogProps={alertDialogProps}
+      setAlertDialogProps={setAlertDialogProps}
+    >
       {routes()}
-    </>
+    </ErrorBoundary>
   );
 };
