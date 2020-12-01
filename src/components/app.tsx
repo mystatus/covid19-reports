@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Switch, Route, Redirect,
@@ -23,12 +23,16 @@ import { WorkspacesPage } from './pages/workspaces-page/workspaces-page';
 import { RosterColumnsPage } from './pages/roster-columns-page/roster-columns-page';
 import { SettingsPage } from './pages/settings-page/settings-page';
 import { UnitsPage } from './pages/units-page/units-page';
+import { ErrorBoundary } from './error-boundary/error-boundary';
+import { AlertDialogProps } from './alert-dialog/alert-dialog';
 
 export const App = () => {
   const user = useSelector<AppState, UserState>(state => state.user);
   const appFrame = useSelector<AppState, AppFrameState>(state => state.appFrame);
   const dispatch = useDispatch();
   const classes = useStyles();
+
+  const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
 
   useEffect(() => {
     dispatch(User.login());
@@ -82,41 +86,46 @@ export const App = () => {
               [classes.contentFaded]: appFrame.isPageLoading,
             })}
           >
-            <Switch>
-              <Route path="/home">
-                <HomePage />
-              </Route>
-              <Route path="/units">
-                <UnitsPage />
-              </Route>
-              <Route path="/roster">
-                <RosterPage />
-              </Route>
-              <Route path="/roster-columns">
-                <RosterColumnsPage />
-              </Route>
-              <Route path="/workspaces">
-                <WorkspacesPage />
-              </Route>
-              <Route path="/roles">
-                <RoleManagementPage />
-              </Route>
-              <Route path="/users">
-                <UsersPage />
-              </Route>
-              <Route path="/groups">
-                <GroupsPage />
-              </Route>
-              <Route path="/settings">
-                <SettingsPage />
-              </Route>
-              <Route path="/muster">
-                <MusterPage />
-              </Route>
-              <Route path="/*">
-                <Redirect to="/home" />
-              </Route>
-            </Switch>
+            <ErrorBoundary
+              alertDialogProps={alertDialogProps}
+              setAlertDialogProps={setAlertDialogProps}
+            >
+              <Switch>
+                <Route path="/home">
+                  <HomePage />
+                </Route>
+                <Route path="/units">
+                  <UnitsPage />
+                </Route>
+                <Route path="/roster">
+                  <RosterPage />
+                </Route>
+                <Route path="/roster-columns">
+                  <RosterColumnsPage />
+                </Route>
+                <Route path="/workspaces">
+                  <WorkspacesPage />
+                </Route>
+                <Route path="/roles">
+                  <RoleManagementPage />
+                </Route>
+                <Route path="/users">
+                  <UsersPage />
+                </Route>
+                <Route path="/groups">
+                  <GroupsPage />
+                </Route>
+                <Route path="/settings">
+                  <SettingsPage />
+                </Route>
+                <Route path="/muster">
+                  <MusterPage />
+                </Route>
+                <Route path="/*">
+                  <Redirect to="/home" />
+                </Route>
+              </Switch>
+            </ErrorBoundary>
           </div>
 
           <div
