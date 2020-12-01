@@ -120,6 +120,20 @@ class UnitController {
     const deletedUnit = await existingUnit.remove();
     res.json(deletedUnit);
   }
+
+  async getUnitRoster(req: ApiRequest<OrgUnitParams, null, GetUnitRosterQuery>, res: Response) {
+    const timestamp = parseInt(req.query.timestamp);
+    const roster = await Roster.createQueryBuilder('roster')
+      .leftJoin('roster.unit', 'u')
+      .select('roster.edipi', 'edipi')
+      .where('u.org_id = :orgId', { orgId: req.appOrg!.id })
+      .andWhere('u.id = :unitId', { unitId: req.params.unitId })
+      .andWhere('(roster.end_date IS NULL OR roster.end_date >= to_timestamp(:timestamp))', { timestamp })
+      .andWhere('(roster.start_date IS NULL OR roster.start_date <= to_timestamp(:timestamp))', { timestamp })
+      .getRawMany() as { edipi: string }[];
+
+    res.json(roster.map(entry => entry.edipi));
+  }
 }
 
 
@@ -141,5 +155,9 @@ export interface UnitData {
   name?: string,
   musterConfiguration?: MusterConfiguration[],
 }
+
+type GetUnitRosterQuery = {
+  timestamp: string
+};
 
 export default new UnitController();

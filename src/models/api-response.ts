@@ -1,3 +1,5 @@
+import { DaysOfTheWeek } from '../utility/days';
+
 export interface ApiArrayPaginated {
   rows: any[],
   totalRowsCount: number,
@@ -153,17 +155,6 @@ export interface ApiMusterIndividuals extends ApiArrayPaginated {
 export interface ApiMusterTrends {
   weekly: ApiUnitStatsByDate
   monthly: ApiUnitStatsByDate
-}
-
-export enum DaysOfTheWeek {
-  None = 0,
-  Sunday = 1,
-  Monday = 2,
-  Tuesday = 4,
-  Wednesday = 8,
-  Thursday = 16,
-  Friday = 32,
-  Saturday = 64,
 }
 
 export interface MusterConfiguration {
