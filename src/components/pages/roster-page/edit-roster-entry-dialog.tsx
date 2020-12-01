@@ -125,13 +125,22 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
           return false;
         }
 
+        const value = rosterEntry[column.name] as string;
+
         switch (column.type) {
           case ApiRosterColumnType.String:
           case ApiRosterColumnType.Date:
           case ApiRosterColumnType.DateTime: {
-            const value = rosterEntry[column.name] as string;
             if (value.length === 0 || value.trim().length === 0) {
               result = false;
+            } else if (column.name === 'edipi') {
+              const chars = value.split('');
+              const isInt = chars.every(ch => {
+                return !Number.isNaN(Number.parseInt(ch));
+              });
+              if (chars.length !== 10 || !isInt) {
+                result = false;
+              }
             }
             break;
           }
