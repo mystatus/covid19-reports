@@ -100,6 +100,12 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
     setMusterConfiguration(configuration);
   };
 
+  const resetErrorMessage = () => {
+    if (errorMessage) {
+      setErrorMessage(null);
+    }
+  };
+
   const setMusterTimezone = (rowKey: string) => (_: any, timezone: string) => {
     const configuration = [...musterConfiguration];
     const index = configuration.findIndex(muster => muster.rowKey === rowKey);
@@ -107,9 +113,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
       configuration[index].timezone = timezone;
     }
     setMusterConfiguration(configuration);
-    if (errorMessage) {
-      setErrorMessage(null);
-    }
+    resetErrorMessage();
   };
 
   const setMusterDuration = (rowKey: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,9 +128,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
       configuration[index].durationMinutes = value * 60;
     }
     setMusterConfiguration(configuration);
-    if (errorMessage) {
-      setErrorMessage(null);
-    }
+    resetErrorMessage();
   };
 
   const setMusterStartTime = (rowKey: string) => (date: MaterialUiPickersDate) => {
@@ -140,9 +142,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
       configuration[index].startTime = date.format('H:mm');
     }
     setMusterConfiguration(configuration);
-    if (errorMessage) {
-      setErrorMessage(null);
-    }
+    resetErrorMessage();
   };
 
   const toggleMusterDay = (rowKey: string, day: DaysOfTheWeek) => () => {
@@ -153,7 +153,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
       configuration[index].days ^= day;
     }
     if (!configuration.find(muster => muster.days === DaysOfTheWeek.None)) {
-      setErrorMessage(null);
+      resetErrorMessage();
     }
     setMusterConfiguration(configuration);
   };

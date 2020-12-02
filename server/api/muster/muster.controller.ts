@@ -297,14 +297,7 @@ class MusterController {
       for (const muster of unit.musterConfiguration) {
         // Get the unix timestamp of the earliest possible muster window, it could be in the previous week if the
         // muster window spans the week boundary.
-        const musterTime = moment(muster.startTime, 'HH:mm');
-        let current = moment
-          .unix(since - muster.durationMinutes * 60)
-          .tz(muster.timezone)
-          .startOf('week')
-          .add(musterTime.hour(), 'hours')
-          .add(musterTime.minutes(), 'minutes')
-          .unix();
+        let current = getEarliestMusterWindowTime(muster, since - muster.durationMinutes * 60);
         const durationSeconds = muster.durationMinutes * 60;
         // Loop through each week
         while (current < until) {
@@ -349,14 +342,7 @@ class MusterController {
         continue;
       }
       // Get the unix timestamp of the earliest possible muster window in the week of the timestamp
-      const musterTime = moment(muster.startTime, 'HH:mm');
-      let current = moment
-        .unix(timestamp)
-        .tz(muster.timezone)
-        .startOf('week')
-        .add(musterTime.hour(), 'hours')
-        .add(musterTime.minutes(), 'minutes')
-        .unix();
+      let current = getEarliestMusterWindowTime(muster, timestamp);
       const durationSeconds = muster.durationMinutes * 60;
       // Loop through each day of the week
       let firstWindowStart: number = 0;
@@ -368,7 +354,7 @@ class MusterController {
             firstWindowStart = current;
           }
           lastWindowStart = current;
-          const distanceToWindow = timestamp > end ? timestamp - end : (timestamp < current ? timestamp - current : 0);
+          const distanceToWindow = getDistanceToWindow(current, end, timestamp);
           // Pick the closest window, if one window ends and another starts on the same second as the timestamp, prefer
           // the window that is starting
           if (minDistance == null || timestamp === current || Math.abs(minDistance) > Math.abs(distanceToWindow)) {
@@ -385,7 +371,7 @@ class MusterController {
         // nearest window in the adjacent week
         const windowStart = firstWindowStart > timestamp ? lastWindowStart - oneDaySeconds * 7 : firstWindowStart + oneDaySeconds * 7;
         const windowEnd = windowStart + durationSeconds;
-        const distanceToWindow = timestamp > windowEnd ? timestamp - windowEnd : (timestamp < windowStart ? timestamp - windowStart : 0);
+        const distanceToWindow = getDistanceToWindow(windowStart, windowEnd, timestamp);
         if (Math.abs(minDistance!) > Math.abs(distanceToWindow)) {
           closestMuster = muster;
           closestStart = windowStart;
@@ -399,6 +385,17 @@ class MusterController {
 
 }
 
+function getEarliestMusterWindowTime(muster: MusterConfiguration, referenceTime: number) {
+  const musterTime = moment(muster.startTime, 'HH:mm');
+  return moment
+    .unix(referenceTime)
+    .tz(muster.timezone)
+    .startOf('week')
+    .add(musterTime.hour(), 'hours')
+    .add(musterTime.minutes(), 'minutes')
+    .unix();
+}
+
 function buildMusterWindow(unit: Unit, startTimestamp: number, endTimestamp: number, muster: MusterConfiguration): MusterWindow {
   return {
     id: `${unit.org!.id}-${unit.id}-${moment.unix(startTimestamp).utc().format('Y-M-D-HH-mm')}`,
@@ -410,6 +407,16 @@ function buildMusterWindow(unit: Unit, startTimestamp: number, endTimestamp: num
     timezone: muster.timezone,
     durationMinutes: muster.durationMinutes,
   };
+}
+
+function getDistanceToWindow(start: number, end: number, time: number) {
+  if (time > end) {
+    return time - end;
+  }
+  if (time < start) {
+    return time - start;
+  }
+  return 0;
 }
 
 //
