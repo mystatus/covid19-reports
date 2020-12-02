@@ -1,7 +1,10 @@
 import bodyParser from 'body-parser';
 import express from 'express';
 import controller from './org.controller';
-import { requireOrgAccess, requireRootAdmin } from '../../auth';
+import {
+  requireOrgAccess,
+  requireRootAdmin,
+} from '../../auth';
 
 const router = express.Router() as any;
 
@@ -37,6 +40,12 @@ router.post(
   bodyParser.json(),
   requireRootAdmin,
   controller.addOrg,
+);
+
+router.get(
+  '/:orgId/export',
+  requireOrgAccess,
+  controller.export,
 );
 
 export default router;
