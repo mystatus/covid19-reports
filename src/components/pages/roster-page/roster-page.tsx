@@ -43,13 +43,13 @@ import {
   ApiRosterEntry,
   ApiRosterPaginated,
 } from '../../../models/api-response';
-import { AlertDialogProps } from '../../alert-dialog/alert-dialog';
+import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditRosterEntryDialog, EditRosterEntryDialogProps } from './edit-roster-entry-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { Unit } from '../../../actions/unit.actions';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { QueryBuilder, QueryFieldType, QueryFilterState } from '../../query-builder/query-builder';
-import { AlertError } from '../../error-boundary/error-boundary';
+import { AlertError } from '../../../utility/errors';
 import { useErrorHandler } from '../../../hooks/use-error-handler';
 
 const unitColumn: ApiRosterColumnInfo = {
@@ -80,10 +80,7 @@ export const RosterPage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [unitNameMap, setUnitNameMap] = useState<{[key: string]: string}>({});
   const [selectedRosterEntry, setSelectedRosterEntry] = useState<ApiRosterEntry>();
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
-
   const [deleteRosterEntryDialogOpen, setDeleteRosterEntryDialogOpen] = useState(false);
   const [editRosterEntryDialogProps, setEditRosterEntryDialogProps] = useState<EditRosterEntryDialogProps>({ open: false });
   const [deleteRosterEntryLoading, setDeleteRosterEntryLoading] = useState(false);
@@ -136,11 +133,10 @@ export const RosterPage = () => {
         setVisibleColumns(unitColumnWithInfos.slice(0, maxNumColumnsToShow));
       }
     } catch (error) {
-      handleError(new AlertError({
-        error,
-        alertTitle: 'Get Roster Column Info',
-        message: 'Failed to get roster column info',
-      }));
+      handleError(new AlertError(
+        'Failed to get roster column info',
+        'Get Roster Column Info',
+      ));
     }
   }, [orgId, handleError]);
 
@@ -189,10 +185,11 @@ export const RosterPage = () => {
 
     dispatch(Roster.upload(e.target.files[0], async (count, message) => {
       if (count < 0) {
-        handleError(new AlertError({
-          alertTitle: 'Upload Error',
-          message: `${message}. Please verify the roster data.`,
-        }));
+        handleError(new AlertError(
+          `${message ? `${message}. ` : 'Unable to upload roster file. '}`
+            .concat('Please verify the roster data.'),
+          'Upload Error',
+        ));
       } else {
         setAlertDialogProps({
           open: true,
@@ -276,11 +273,10 @@ export const RosterPage = () => {
       setDeleteRosterEntryLoading(true);
       await axios.delete(`api/roster/${orgId}/${selectedRosterEntry!.id}`);
     } catch (error) {
-      handleError(new AlertError({
-        error,
-        alertTitle: 'Delete Roster Entry',
-        message: 'Unable to delete roster entry',
-      }));
+      handleError(new AlertError(
+        'Unable to delete roster entry',
+        'Delete Roster Entry',
+      ));
     } finally {
       setDeleteRosterEntryLoading(false);
       setDeleteRosterEntryDialogOpen(false);
@@ -307,11 +303,10 @@ export const RosterPage = () => {
       const filename = `${_.kebabCase(orgName)}_roster_export_${date}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
-      handleError(new AlertError({
-        error,
-        alertTitle: 'Roster CSV Export',
-        message: 'Unable to export roster to CSV',
-      }));
+      handleError(new AlertError(
+        'Unable to export roster to CSV',
+        'Roster CSV Export',
+      ));
     } finally {
       setExportRosterLoading(false);
     }
@@ -328,11 +323,10 @@ export const RosterPage = () => {
 
       downloadFile(response.data, 'roster-template', 'csv');
     } catch (error) {
-      handleError(new AlertError({
-        error,
-        alertTitle: 'CSV Template Download',
-        message: 'Unable to download CSV template',
-      }));
+      handleError(new AlertError(
+        'Unable to download CSV template',
+        'CSV Template Download',
+      ));
     } finally {
       setDownloadTemplateLoading(false);
     }
@@ -519,6 +513,9 @@ export const RosterPage = () => {
       )}
       {editRosterEntryDialogProps.open && (
         <EditRosterEntryDialog {...editRosterEntryDialogProps} />
+      )}
+      {alertDialogProps.open && (
+        <AlertDialog {...alertDialogProps} />
       )}
     </main>
   );

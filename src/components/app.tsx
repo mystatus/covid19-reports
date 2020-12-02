@@ -23,8 +23,7 @@ import { WorkspacesPage } from './pages/workspaces-page/workspaces-page';
 import { RosterColumnsPage } from './pages/roster-columns-page/roster-columns-page';
 import { SettingsPage } from './pages/settings-page/settings-page';
 import { UnitsPage } from './pages/units-page/units-page';
-import { ErrorBoundary } from './error-boundary/error-boundary';
-import { AlertDialogProps } from './alert-dialog/alert-dialog';
+import { ErrorBoundary, ErrorDialogProps } from './error-boundary/error-boundary';
 
 export const App = () => {
   const user = useSelector<AppState, UserState>(state => state.user);
@@ -32,7 +31,7 @@ export const App = () => {
   const dispatch = useDispatch();
   const classes = useStyles();
 
-  const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
+  const [errorDialogProps, setErrorDialogProps] = useState<ErrorDialogProps>({ open: false });
 
   useEffect(() => {
     dispatch(User.login());
@@ -140,8 +139,8 @@ export const App = () => {
 
   return (
     <ErrorBoundary
-      alertDialogProps={alertDialogProps}
-      setAlertDialogProps={setAlertDialogProps}
+      errorDialogProps={errorDialogProps}
+      setErrorDialogProps={setErrorDialogProps}
     >
       {routes()}
     </ErrorBoundary>

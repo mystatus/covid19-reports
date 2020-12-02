@@ -1,43 +1,34 @@
 import React, { ReactNode, ErrorInfo } from 'react';
-import { formatMessage } from '../../utility/errors';
+import { AlertError, formatMessage } from '../../utility/errors';
 import { AlertDialog, AlertDialogProps } from '../alert-dialog/alert-dialog';
 
 
-export interface AlertErrorProps {
-  message?: string,
-  alertTitle?: string,
-  error?: Error,
-  info?: ErrorInfo,
+export interface ErrorDialogProps extends AlertDialogProps {
+  errorInfo?: ErrorInfo | null,
 }
 
-export class AlertError extends Error {
-  readonly alertTitle?: string;
-  readonly error?: Error;
-  readonly info?: ErrorInfo;
-
-  constructor(props: AlertErrorProps) {
-    super(props.message);
-    this.alertTitle = props.alertTitle;
-    this.error = props.error;
-    this.info = props.info;
-  }
-}
+export const ErrorDialog = (props: ErrorDialogProps) => {
+  return AlertDialog(props);
+};
 
 
 export interface ErrorBoundaryProps {
   children?: ReactNode,
-  alertTitle?: string,
+  errorTitle?: string,
   errorMessage?: string,
-  alertDialogProps: AlertDialogProps,
-  setAlertDialogProps: (props: AlertDialogProps) => void,
+  errorDialogProps: ErrorDialogProps,
+  setErrorDialogProps: (props: ErrorDialogProps) => void,
 }
 
 export interface ErrorBoundaryState {
-  hasError: boolean,
-  error?: AlertError,
+  error?: AlertError | null,
+  errorInfo?: ErrorInfo | null,
 }
 
-const initialState: ErrorBoundaryState = { hasError: false };
+const initialState: ErrorBoundaryState = {
+  error: null,
+  errorInfo: null,
+};
 
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -47,42 +38,43 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     this.state = initialState;
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    const { errorMessage, alertTitle } = this.props;
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    const { errorMessage } = this.props;
     const message = error.message ?? formatMessage(error, errorMessage ?? '');
 
-    let err = error as AlertError;
-    if (!err) {
-      err = new AlertError({
+    if (error instanceof AlertError) {
+      this.setState({
         error,
-        info,
-        message,
-        alertTitle: alertTitle ?? 'Error',
+        errorInfo,
       });
+
+      this.props.setErrorDialogProps({
+        open: true,
+        title: this.state.error?.title ?? 'Error',
+        message,
+        errorInfo: this.state.errorInfo,
+
+        onClose: () => {
+          this.props.setErrorDialogProps({ open: false });
+          this.setState(initialState);
+        },
+      });
+
+    } else {
+      // TODO: send exceptions to logstash?
+      this.setState(initialState);
+      console.exception(message, error, errorInfo);
     }
-
-    this.setState({
-      hasError: true,
-      error: err,
-    });
-
-    this.props.setAlertDialogProps({
-      open: true,
-      title: this.state.error?.alertTitle ?? 'Error',
-      message,
-      onClose: () => { this.props.setAlertDialogProps({ open: false }); },
-    });
   }
 
   render() {
-    if (this.state.hasError) {
-      return (
-        <>
-          {this.props.children}
-          <AlertDialog {...this.props.alertDialogProps} />
-        </>
-      );
-    }
-    return this.props.children;
+    return (
+      <>
+        {this.props.children}
+        {this.state.error && (
+        <ErrorDialog {...this.props.errorDialogProps} />
+        )}
+      </>
+    );
   }
 }
