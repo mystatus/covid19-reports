@@ -62,6 +62,7 @@ export const AppToolbar = () => {
               >
                 {user.roles.map(role => (
                   <MenuItem
+                    key={role.id}
                     selected={user.activeRole!.org!.id === role.org!.id}
                     onClick={handleOrgChanged(role.org!.id)}
                   >
