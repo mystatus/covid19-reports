@@ -1,7 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import controller from './unit.controller';
-import { requireOrgAccess, requireRolePermission } from '../../auth';
+import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth';
 
 
 const router = express.Router() as any;
@@ -33,6 +33,13 @@ router.delete(
   requireOrgAccess,
   requireRolePermission(role => role.canManageGroup),
   controller.deleteUnit,
+);
+
+router.get(
+  '/:orgId/:unitId/roster',
+  requireInternalUser,
+  requireOrgAccess,
+  controller.getUnitRoster,
 );
 
 export default router;

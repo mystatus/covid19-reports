@@ -1,17 +1,21 @@
-import moment, { unitOfTime } from 'moment';
+import moment, { unitOfTime } from 'moment-timezone';
 import { MSearchResponse, SearchResponse } from 'elasticsearch';
 import { Response } from 'express';
 import { getConnection } from 'typeorm';
 import { json2csvAsync } from 'json-2-csv';
 import elasticsearch from '../../elasticsearch/elasticsearch';
-import { InternalServerError } from '../../util/error-types';
+import { InternalServerError, NotFoundError } from '../../util/error-types';
 import {
-  ApiRequest, OrgParam, OrgRoleParams, PagedQuery,
+  ApiRequest, OrgParam, OrgRoleParams, OrgUnitParams, PagedQuery,
 } from '../index';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { getAllowedRosterColumns } from '../roster/roster.controller';
 import { Roster } from '../roster/roster.model';
+import { MusterConfiguration, Unit } from '../unit/unit.model';
+import {
+  dayIsIn, DaysOfTheWeek, nextDay, oneDaySeconds,
+} from '../../util/util';
 
 const dateFormat = 'YYYY-MM-DD';
 
@@ -277,6 +281,142 @@ class MusterController {
     res.json(unitStats);
   }
 
+  async getClosedMusterWindows(req: ApiRequest<null, null, GetClosedMusterWindowsQuery>, res: Response) {
+    const since = parseInt(req.query.since);
+    const until = parseInt(req.query.until);
+    // Get all units with muster configurations
+    const unitsWithMusterConfigs = await Unit
+      .createQueryBuilder('unit')
+      .leftJoinAndSelect('unit.org', 'org')
+      .where('json_array_length(unit.muster_configuration) > 0')
+      .getMany();
+
+    const musterWindows: MusterWindow[] = [];
+
+    for (const unit of unitsWithMusterConfigs) {
+      for (const muster of unit.musterConfiguration) {
+        // Get the unix timestamp of the earliest possible muster window, it could be in the previous week if the
+        // muster window spans the week boundary.
+        let current = getEarliestMusterWindowTime(muster, since - muster.durationMinutes * 60);
+        const durationSeconds = muster.durationMinutes * 60;
+        // Loop through each week
+        while (current < until) {
+          // Loop through each day of week to see if any of the windows ended in the query window
+          for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday && current < until; day = nextDay(day)) {
+            const end = current + durationSeconds;
+            // If the window ended in the query window, add it to the list
+            if (end > since && end <= until && dayIsIn(day, muster.days)) {
+              musterWindows.push(buildMusterWindow(unit, current, end, muster));
+            }
+            current += oneDaySeconds;
+          }
+        }
+      }
+    }
+
+    res.json(musterWindows);
+  }
+
+  async getNearestMusterWindow(req: ApiRequest<OrgUnitParams, null, GetNearestMusterWindowQuery>, res: Response) {
+    const timestamp = parseInt(req.query.timestamp);
+
+    const unit = await Unit.findOne({
+      relations: ['org'],
+      where: {
+        id: req.params.unitId,
+        org: req.appOrg!.id,
+      },
+    });
+
+    if (!unit) {
+      throw new NotFoundError('The unit could not be found.');
+    }
+
+    let minDistance: number | null = null;
+    let closestMuster: MusterConfiguration | undefined;
+    let closestStart = 0;
+    let closestEnd = 0;
+
+    for (const muster of unit.musterConfiguration) {
+      if (muster.days === DaysOfTheWeek.None) {
+        continue;
+      }
+      // Get the unix timestamp of the earliest possible muster window in the week of the timestamp
+      let current = getEarliestMusterWindowTime(muster, timestamp);
+      const durationSeconds = muster.durationMinutes * 60;
+      // Loop through each day of the week
+      let firstWindowStart: number = 0;
+      let lastWindowStart: number = 0;
+      for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday; day = nextDay(day)) {
+        const end = current + durationSeconds;
+        if (dayIsIn(day, muster.days)) {
+          if (firstWindowStart === 0) {
+            firstWindowStart = current;
+          }
+          lastWindowStart = current;
+          const distanceToWindow = getDistanceToWindow(current, end, timestamp);
+          // Pick the closest window, if one window ends and another starts on the same second as the timestamp, prefer
+          // the window that is starting
+          if (minDistance == null || timestamp === current || Math.abs(minDistance) > Math.abs(distanceToWindow)) {
+            minDistance = distanceToWindow;
+            closestMuster = muster;
+            closestStart = current;
+            closestEnd = end;
+          }
+        }
+        current += oneDaySeconds;
+      }
+      if (firstWindowStart > timestamp || lastWindowStart! + durationSeconds < timestamp) {
+        // If the timestamp is before the first window or after the last window, we need to compare with the
+        // nearest window in the adjacent week
+        const windowStart = firstWindowStart > timestamp ? lastWindowStart - oneDaySeconds * 7 : firstWindowStart + oneDaySeconds * 7;
+        const windowEnd = windowStart + durationSeconds;
+        const distanceToWindow = getDistanceToWindow(windowStart, windowEnd, timestamp);
+        if (Math.abs(minDistance!) > Math.abs(distanceToWindow)) {
+          closestMuster = muster;
+          closestStart = windowStart;
+          closestEnd = windowEnd;
+        }
+      }
+    }
+
+    res.json(closestMuster ? buildMusterWindow(unit, closestStart, closestEnd, closestMuster) : null);
+  }
+
+}
+
+function getEarliestMusterWindowTime(muster: MusterConfiguration, referenceTime: number) {
+  const musterTime = moment(muster.startTime, 'HH:mm');
+  return moment
+    .unix(referenceTime)
+    .tz(muster.timezone)
+    .startOf('week')
+    .add(musterTime.hour(), 'hours')
+    .add(musterTime.minutes(), 'minutes')
+    .unix();
+}
+
+function buildMusterWindow(unit: Unit, startTimestamp: number, endTimestamp: number, muster: MusterConfiguration): MusterWindow {
+  return {
+    id: `${unit.org!.id}-${unit.id}-${moment.unix(startTimestamp).utc().format('Y-M-D-HH-mm')}`,
+    orgId: unit.org!.id,
+    unitId: unit.id,
+    startTimestamp,
+    endTimestamp,
+    startTime: muster.startTime,
+    timezone: muster.timezone,
+    durationMinutes: muster.durationMinutes,
+  };
+}
+
+function getDistanceToWindow(start: number, end: number, time: number) {
+  if (time > end) {
+    return time - end;
+  }
+  if (time < start) {
+    return time - start;
+  }
+  return 0;
 }
 
 //
@@ -495,9 +635,29 @@ type GetTrendsQuery = {
   monthsCount?: string
 };
 
+type GetClosedMusterWindowsQuery = {
+  since: string
+  until: string
+};
+
+type GetNearestMusterWindowQuery = {
+  timestamp: string
+};
+
 type MusterIndividual = {
   nonMusterPercent: number
   unitId: string
 } & Roster;
+
+interface MusterWindow {
+  id: string,
+  unitId: string,
+  orgId: number,
+  startTimestamp: number,
+  endTimestamp: number,
+  startTime: string,
+  timezone: string,
+  durationMinutes: number,
+}
 
 export default new MusterController();

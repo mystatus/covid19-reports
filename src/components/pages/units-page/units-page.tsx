@@ -27,12 +27,13 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import useStyles from './units-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
-import { ApiUnit, DaysOfTheWeek, MusterConfiguration } from '../../../models/api-response';
+import { ApiUnit, MusterConfiguration } from '../../../models/api-response';
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditUnitDialog, EditUnitDialogProps } from './edit-unit-dialog';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { Unit } from '../../../actions/unit.actions';
 import PageHeader from '../../page-header/page-header';
+import { daysToString } from '../../../utility/days';
 
 interface UnitMenuState {
   anchor: HTMLElement | null,
@@ -128,40 +129,10 @@ export const UnitsPage = () => {
   };
 
   const musterConfigurationToString = (muster: MusterConfiguration) => {
-    const days: string[] = [];
-    /* eslint-disable no-bitwise */
-    if (muster.days & DaysOfTheWeek.Sunday) {
-      days.push('Sun');
-    }
-    if (muster.days & DaysOfTheWeek.Monday) {
-      days.push('Mon');
-    }
-    if (muster.days & DaysOfTheWeek.Tuesday) {
-      days.push('Tue');
-    }
-    if (muster.days & DaysOfTheWeek.Wednesday) {
-      days.push('Wed');
-    }
-    if (muster.days & DaysOfTheWeek.Thursday) {
-      days.push('Thu');
-    }
-    if (muster.days & DaysOfTheWeek.Friday) {
-      days.push('Fri');
-    }
-    if (muster.days & DaysOfTheWeek.Saturday) {
-      days.push('Sat');
-    }
-    /* eslint-enable no-bitwise */
-    let dayStr = days.join(', ');
-    if (dayStr === 'Sun, Mon, Tue, Wed, Thu, Fri, Sat') {
-      dayStr = 'Every day';
-    } else if (dayStr === 'Mon, Tue, Wed, Thu, Fri') {
-      dayStr = 'Every weekday';
-    }
     const today = moment().format('Y-M-D');
     const time = moment.tz(`${today} ${muster.startTime}`, 'Y-M-D h:mm', muster.timezone).format('h:mm A z');
     const duration = muster.durationMinutes / 60;
-    return `${dayStr} at ${time} for ${duration} hours`;
+    return `${daysToString(muster.days)} at ${time} for ${duration} hours`;
   };
 
   const cancelDeleteUnitDialog = () => {
