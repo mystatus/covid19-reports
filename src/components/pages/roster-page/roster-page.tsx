@@ -368,14 +368,14 @@ export const RosterPage = () => {
   //
 
   return (
-    <ErrorBoundary
-      errorDialogProps={errorDialogProps}
-      setErrorDialogProps={setErrorDialogProps}
-    >
-      <main className={classes.root}>
-        <Container maxWidth="md">
-          <PageHeader title="Roster" />
+    <main className={classes.root}>
+      <Container maxWidth="md">
+        <PageHeader title="Roster" />
 
+        <ErrorBoundary
+          errorDialogProps={errorDialogProps}
+          setErrorDialogProps={setErrorDialogProps}
+        >
           <div className={classes.buttons}>
             <input
               accept="text/csv"
@@ -522,8 +522,9 @@ export const RosterPage = () => {
               </Table>
             </div>
           </TableContainer>
-        </Container>
-        {deleteRosterEntryDialogOpen && (
+        </ErrorBoundary>
+      </Container>
+      {deleteRosterEntryDialogOpen && (
         <Dialog
           open={deleteRosterEntryDialogOpen}
           onClose={cancelDeleteRosterEntryDialog}
@@ -545,14 +546,13 @@ export const RosterPage = () => {
             </Button>
           </DialogActions>
         </Dialog>
-        )}
-        {editRosterEntryDialogProps.open && (
+      )}
+      {editRosterEntryDialogProps.open && (
         <EditRosterEntryDialog {...editRosterEntryDialogProps} />
-        )}
-        {alertDialogProps.open && (
+      )}
+      {alertDialogProps.open && (
         <AlertDialog {...alertDialogProps} />
-        )}
-      </main>
-    </ErrorBoundary>
+      )}
+    </main>
   );
 };
