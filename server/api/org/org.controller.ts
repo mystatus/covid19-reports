@@ -15,7 +15,7 @@ import {
   InternalServerError,
   NotFoundError,
 } from '../../util/error-types';
-import elasticsearch, { EsReportSource } from '../../elasticsearch/elasticsearch';
+import elasticsearch from '../../elasticsearch/elasticsearch';
 
 class OrgController {
 
@@ -104,7 +104,7 @@ class OrgController {
     // Get ES data and stream to client.
     //
     const index = req.appRole!.getKibanaIndex();
-    const scrollQueue = [] as SearchResponse<EsReportSource>[];
+    const scrollQueue = [] as SearchResponse<any>[];
     try {
       scrollQueue.push(await elasticsearch.search({
         index,

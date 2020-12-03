@@ -72,6 +72,10 @@ export const DataExportPage = () => {
     }
 
     const totalHits = parseInt(response.headers.get('total-hits')!);
+    const maxHits = 1000000;
+    if (totalHits >= maxHits) {
+      throw new Error(`Document count (${totalHits.toLocaleString()}) is greater than the maximum allowed (${maxHits.toLocaleString()}). Please reduce the time range and try again.`);
+    }
 
     const reader = response.body!.getReader();
     const textDecoder = new TextDecoder();
@@ -91,21 +95,21 @@ export const DataExportPage = () => {
     downloadFile(dataStr, 'export', 'csv');
   }, [orgId, startDate, endDate]);
 
-  const handleExportButtonClick = () => {
+  const handleExportButtonClick = async () => {
     setIsExportLoading(true);
 
-    runExport()
-      .catch(err => {
-        setAlertDialogProps({
-          open: true,
-          title: 'Export Failed',
-          message: err.message,
-          onClose: () => setAlertDialogProps({ open: false }),
-        });
-      })
-      .then(() => {
-        setIsExportLoading(false);
+    try {
+      await runExport();
+    } catch (err) {
+      setAlertDialogProps({
+        open: true,
+        title: 'Export Failed',
+        message: err.message,
+        onClose: () => setAlertDialogProps({ open: false }),
       });
+    } finally {
+      setIsExportLoading(false);
+    }
   };
 
   return (
