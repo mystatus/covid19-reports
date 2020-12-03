@@ -116,38 +116,36 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     }
 
     let result = true;
-    const regex = RegExp(/^[0-9]{10}$/g);
-    const utils = new MomentUtils();
 
-    for (const column of rosterColumnInfos) {
-      const name = column.name;
-      const value = rosterEntry[name] as string;
+    const requiredColumns = rosterColumnInfos.filter(columnInfo => columnInfo.required);
+    if (requiredColumns) {
+      const regex = RegExp(/^[0-9]{10}$/g);
 
-      if (column.required) {
-        if (value == null
-          || value.length === 0
-          || value.trim().length === 0
+      for (const column of requiredColumns) {
+        const type = column.type;
+        const name = column.name;
+        const value = rosterEntry[name] as string;
+
+        if (value == null) {
+          result = false;
+          break;
+        }
+
+        if ((type === ApiRosterColumnType.String
+          || type === ApiRosterColumnType.Date
+          || type === ApiRosterColumnType.DateTime)
+          && (value.length === 0 || value.trim().length === 0)
         ) {
           result = false;
           break;
         }
-      }
 
-      if (name.toLowerCase() === 'edipi'
-        && regex.test(value) === false
-      ) {
-        result = false;
-        break;
-      }
+        if (name === 'edipi' && !regex.test(value)) {
+          result = false;
+          break;
+        }
 
-      if ((column.type === ApiRosterColumnType.DateTime
-          || column.type === ApiRosterColumnType.Date)
-          && utils.isValid(value) === false
-      ) {
-        result = false;
-        break;
       }
-
     }
 
     return result;
