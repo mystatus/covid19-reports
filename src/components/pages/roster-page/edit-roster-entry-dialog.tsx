@@ -115,40 +115,35 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
       return false;
     }
 
-    let result = true;
-
     const requiredColumns = rosterColumnInfos.filter(columnInfo => columnInfo.required);
     if (requiredColumns) {
       const regex = RegExp(/^[0-9]{10}$/g);
 
       for (const column of requiredColumns) {
-        const type = column.type;
-        const name = column.name;
-        const value = rosterEntry[name] as string;
+        const value = rosterEntry[column.name] as string;
 
         if (value == null) {
-          result = false;
-          break;
+          return false;
         }
 
-        if ((type === ApiRosterColumnType.String
-          || type === ApiRosterColumnType.Date
-          || type === ApiRosterColumnType.DateTime)
-          && (value.length === 0 || value.trim().length === 0)
-        ) {
-          result = false;
-          break;
+        switch (column.type) {
+          case ApiRosterColumnType.String:
+          case ApiRosterColumnType.Date:
+          case ApiRosterColumnType.DateTime: {
+            if (value.length === 0 || value.trim().length === 0) {
+              return false;
+            }
+            if (column.name === 'edipi' && !regex.test(value)) {
+              return false;
+            }
+            break;
+          }
+          default:
+            break;
         }
-
-        if (name === 'edipi' && !regex.test(value)) {
-          result = false;
-          break;
-        }
-
       }
     }
-
-    return result;
+    return true;
   };
 
 
