@@ -50,7 +50,6 @@ import { Unit } from '../../../actions/unit.actions';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { QueryBuilder, QueryFieldType, QueryFilterState } from '../../query-builder/query-builder';
 import { formatMessage } from '../../../utility/errors';
-import { ErrorBoundary, ErrorDialogProps } from '../../error-boundary/error-boundary';
 
 const unitColumn: ApiRosterColumnInfo = {
   name: 'unit',
@@ -91,7 +90,6 @@ export const RosterPage = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
   const [applyingFilters, setApplyingFilters] = useState(false);
-  const [errorDialogProps, setErrorDialogProps] = useState<ErrorDialogProps>({ open: false });
   const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
   const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
   const orgName = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.name;
@@ -371,158 +369,152 @@ export const RosterPage = () => {
     <main className={classes.root}>
       <Container maxWidth="md">
         <PageHeader title="Roster" />
-
-        <ErrorBoundary
-          errorDialogProps={errorDialogProps}
-          setErrorDialogProps={setErrorDialogProps}
-        >
-          <div className={classes.buttons}>
-            <input
-              accept="text/csv"
-              id="raised-button-file"
-              type="file"
-              style={{ display: 'none' }}
-              ref={fileInputRef}
-              onChange={handleFileInputChange}
-            />
-            <label htmlFor="raised-button-file">
-              <Button
-                size="large"
-                startIcon={<PublishIcon />}
-                component="span"
-              >
-                Upload CSV
-              </Button>
-            </label>
-
-            <ButtonWithSpinner
-              type="button"
-              size="large"
-              startIcon={<GetAppIcon />}
-              onClick={() => downloadCSVTemplate()}
-              loading={downloadTemplateLoading}
-            >
-              Download CSV Template
-            </ButtonWithSpinner>
-
-            <ButtonWithSpinner
-              type="button"
-              size="large"
-              startIcon={<GetAppIcon />}
-              onClick={() => downloadCSVExport()}
-              loading={exportRosterLoading}
-            >
-              Export to CSV
-            </ButtonWithSpinner>
-
+        <div className={classes.buttons}>
+          <input
+            accept="text/csv"
+            id="raised-button-file"
+            type="file"
+            style={{ display: 'none' }}
+            ref={fileInputRef}
+            onChange={handleFileInputChange}
+          />
+          <label htmlFor="raised-button-file">
             <Button
-              color="primary"
               size="large"
-              startIcon={<AddCircleOutlineIcon />}
-              onClick={addButtonClicked}
+              startIcon={<PublishIcon />}
+              component="span"
             >
-              Add
+              Upload CSV
+            </Button>
+          </label>
+
+          <ButtonWithSpinner
+            type="button"
+            size="large"
+            startIcon={<GetAppIcon />}
+            onClick={() => downloadCSVTemplate()}
+            loading={downloadTemplateLoading}
+          >
+            Download CSV Template
+          </ButtonWithSpinner>
+
+          <ButtonWithSpinner
+            type="button"
+            size="large"
+            startIcon={<GetAppIcon />}
+            onClick={() => downloadCSVExport()}
+            loading={exportRosterLoading}
+          >
+            Export to CSV
+          </ButtonWithSpinner>
+
+          <Button
+            color="primary"
+            size="large"
+            startIcon={<AddCircleOutlineIcon />}
+            onClick={addButtonClicked}
+          >
+            Add
+          </Button>
+        </div>
+
+        <TableContainer component={Paper}>
+          <div className={classes.secondaryButtons}>
+            <Button
+              aria-label="Filters"
+              className={classes.secondaryButton}
+              onClick={() => setFiltersOpen(!filtersOpen)}
+              size="small"
+              startIcon={queryFilterState ? <div className={classes.secondaryButtonCount}>{Object.keys(queryFilterState).length}</div> : <FilterListIcon />}
+              variant="outlined"
+            >
+              Filters
+            </Button>
+            <Button
+              aria-label="Visible columns"
+              className={classes.secondaryButton}
+              onClick={() => setVisibleColumnsMenuOpen(!visibleColumnsMenuOpen)}
+              size="small"
+              startIcon={<ViewWeekIcon />}
+              variant="outlined"
+            >
+              <span ref={visibleColumnsButtonRef}>
+                Columns
+              </span>
             </Button>
           </div>
-
-          <TableContainer component={Paper}>
-            <div className={classes.secondaryButtons}>
-              <Button
-                aria-label="Filters"
-                className={classes.secondaryButton}
-                onClick={() => setFiltersOpen(!filtersOpen)}
-                size="small"
-                startIcon={queryFilterState ? <div className={classes.secondaryButtonCount}>{Object.keys(queryFilterState).length}</div> : <FilterListIcon />}
-                variant="outlined"
-              >
-                Filters
-              </Button>
-              <Button
-                aria-label="Visible columns"
-                className={classes.secondaryButton}
-                onClick={() => setVisibleColumnsMenuOpen(!visibleColumnsMenuOpen)}
-                size="small"
-                startIcon={<ViewWeekIcon />}
-                variant="outlined"
-              >
-                <span ref={visibleColumnsButtonRef}>
-                  Columns
-                </span>
-              </Button>
-            </div>
-            <Menu
-              id="user-more-menu"
-              anchorEl={visibleColumnsButtonRef.current}
-              keepMounted
-              open={Boolean(visibleColumnsMenuOpen)}
-              onClose={() => setVisibleColumnsMenuOpen(false)}
-            >
-              {rosterColumnInfos.map(column => (
-                <MenuItem key={column.name} className={classes.columnItem}>
-                  <FormControlLabel
-                    control={(
-                      <Checkbox
-                        color="primary"
-                        checked={visibleColumns.some(col => col.name === column.name)}
-                        onChange={event => {
-                          const { checked } = event.target;
-                          if (checked) {
-                            setVisibleColumns(rosterColumnInfos.filter(col => col.name === column.name || visibleColumns.some(({ name }) => name === col.name)));
-                          } else {
-                            setVisibleColumns([...visibleColumns.filter(col => col.name !== column.name)]);
-                          }
-                        }}
-                      />
-                  )}
-                    label={column.displayName}
-                  />
-                </MenuItem>
-              ))}
-            </Menu>
-            <QueryBuilder
-              fields={rosterColumnInfos
-                .map(column => {
-                  return {
-                    items: column.name === 'unit' ? units.map(({ id, name }) => ({ label: name, value: id })) : undefined,
-                    displayName: column.displayName,
-                    name: column.name,
-                    type: column.type as unknown as QueryFieldType,
-                  };
-                })}
-              onChange={setQueryFilterState}
-              open={filtersOpen}
-            />
-            <div className={classes.tableWrapper}>
-              <Table aria-label="simple table">
-                <TableCustomColumnsContent
-                  rows={rows}
-                  columns={visibleColumns}
-                  idColumn="id"
-                  noDataText={applyingFilters ? 'Searching...' : 'No Data'}
-                  rowOptions={{
-                    showEditButton: true,
-                    showDeleteButton: true,
-                    onEditButtonClick: editButtonClicked,
-                    onDeleteButtonClick: deleteButtonClicked,
-                    renderCell: getCellDisplayValue,
-                  }}
-                />
-                <TableFooter>
-                  <TableRow>
-                    <TablePagination
-                      count={totalRowsCount}
-                      page={page}
-                      rowsPerPage={rowsPerPage}
-                      rowsPerPageOptions={[10, 25, 50]}
-                      onChangePage={handleChangePage}
-                      onChangeRowsPerPage={handleChangeRowsPerPage}
+          <Menu
+            id="user-more-menu"
+            anchorEl={visibleColumnsButtonRef.current}
+            keepMounted
+            open={Boolean(visibleColumnsMenuOpen)}
+            onClose={() => setVisibleColumnsMenuOpen(false)}
+          >
+            {rosterColumnInfos.map(column => (
+              <MenuItem key={column.name} className={classes.columnItem}>
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      color="primary"
+                      checked={visibleColumns.some(col => col.name === column.name)}
+                      onChange={event => {
+                        const { checked } = event.target;
+                        if (checked) {
+                          setVisibleColumns(rosterColumnInfos.filter(col => col.name === column.name || visibleColumns.some(({ name }) => name === col.name)));
+                        } else {
+                          setVisibleColumns([...visibleColumns.filter(col => col.name !== column.name)]);
+                        }
+                      }}
                     />
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            </div>
-          </TableContainer>
-        </ErrorBoundary>
+                  )}
+                  label={column.displayName}
+                />
+              </MenuItem>
+            ))}
+          </Menu>
+          <QueryBuilder
+            fields={rosterColumnInfos
+              .map(column => {
+                return {
+                  items: column.name === 'unit' ? units.map(({ id, name }) => ({ label: name, value: id })) : undefined,
+                  displayName: column.displayName,
+                  name: column.name,
+                  type: column.type as unknown as QueryFieldType,
+                };
+              })}
+            onChange={setQueryFilterState}
+            open={filtersOpen}
+          />
+          <div className={classes.tableWrapper}>
+            <Table aria-label="simple table">
+              <TableCustomColumnsContent
+                rows={rows}
+                columns={visibleColumns}
+                idColumn="id"
+                noDataText={applyingFilters ? 'Searching...' : 'No Data'}
+                rowOptions={{
+                  showEditButton: true,
+                  showDeleteButton: true,
+                  onEditButtonClick: editButtonClicked,
+                  onDeleteButtonClick: deleteButtonClicked,
+                  renderCell: getCellDisplayValue,
+                }}
+              />
+              <TableFooter>
+                <TableRow>
+                  <TablePagination
+                    count={totalRowsCount}
+                    page={page}
+                    rowsPerPage={rowsPerPage}
+                    rowsPerPageOptions={[10, 25, 50]}
+                    onChangePage={handleChangePage}
+                    onChangeRowsPerPage={handleChangeRowsPerPage}
+                  />
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </div>
+        </TableContainer>
       </Container>
       {deleteRosterEntryDialogOpen && (
         <Dialog
