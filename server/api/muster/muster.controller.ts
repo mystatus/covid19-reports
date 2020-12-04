@@ -1,23 +1,19 @@
-import moment, { unitOfTime } from 'moment-timezone';
-import { MSearchResponse, SearchResponse } from 'elasticsearch';
+import moment from 'moment-timezone';
+import { MSearchResponse } from 'elasticsearch';
 import { Response } from 'express';
-import { getConnection } from 'typeorm';
-import { json2csvAsync } from 'json-2-csv';
 import elasticsearch from '../../elasticsearch/elasticsearch';
 import { InternalServerError, NotFoundError } from '../../util/error-types';
 import {
+  musterUtils,
+  MusterWindow,
+} from '../../util/muster-utils';
+import {
   ApiRequest, OrgParam, OrgRoleParams, OrgUnitParams, PagedQuery,
 } from '../index';
-import { Org } from '../org/org.model';
-import { Role } from '../role/role.model';
-import { getAllowedRosterColumns } from '../roster/roster.controller';
-import { Roster } from '../roster/roster.model';
 import { MusterConfiguration, Unit } from '../unit/unit.model';
 import {
   dayIsIn, DaysOfTheWeek, nextDay, oneDaySeconds,
 } from '../../util/util';
-
-const dateFormat = 'YYYY-MM-DD';
 
 class MusterController {
 
@@ -27,7 +23,7 @@ class MusterController {
     const limit = parseInt(req.query.limit ?? '10');
     const page = parseInt(req.query.page ?? '0');
 
-    const individuals = await getIndividualsData(req.appOrg!, req.appRole!, intervalCount, req.query.unitId);
+    const individuals = await musterUtils.getIndividualsData(req.appOrg!, req.appRole!, intervalCount, req.query.unitId);
 
     const offset = page * limit;
 
@@ -37,30 +33,13 @@ class MusterController {
     });
   }
 
-  async exportIndividuals(req: ApiRequest<OrgParam, null, GetIndividualsQuery>, res: Response) {
-    const intervalCount = parseInt(req.query.intervalCount ?? '1');
-
-    const individuals = await getIndividualsData(req.appOrg!, req.appRole!, intervalCount, req.query.unitId);
-
-    // Delete roster ids since they're meaningless to the user.
-    for (const individual of individuals) {
-      delete (individual as any).id;
-    }
-
-    const csv = await json2csvAsync(individuals);
-
-    res.header('Content-Type', 'text/csv');
-    res.attachment('muster-noncompliance.csv');
-    res.send(csv);
-  }
-
   async getTrends(req: ApiRequest<OrgParam, null, GetTrendsQuery>, res: Response) {
     const weeksCount = parseInt(req.query.weeksCount ?? '6');
     const monthsCount = parseInt(req.query.monthsCount ?? '6');
 
     const unitRosterCounts = {
-      weekly: await getUnitRosterCounts('week', weeksCount),
-      monthly: await getUnitRosterCounts('month', monthsCount),
+      weekly: await musterUtils.getUnitRosterCounts('week', weeksCount),
+      monthly: await musterUtils.getUnitRosterCounts('month', monthsCount),
     };
 
     // Get unique dates and unit names.
@@ -198,7 +177,7 @@ class MusterController {
       }
 
       for (const bucket of buckets) {
-        const date = moment.utc(bucket.key).format(dateFormat);
+        const date = moment.utc(bucket.key).format(musterUtils.dateFormat);
         const reportsCount = bucket.doc_count;
         const rosterCount = unitRosterCounts.weekly[date][unitId];
 
@@ -206,7 +185,7 @@ class MusterController {
         const maxReportsCount = rosterCount * nextWeek.diff(date, 'days');
 
         unitStats.weekly[date][unitId] = {
-          nonMusterPercent: calcNonMusterPercent(reportsCount, maxReportsCount),
+          nonMusterPercent: musterUtils.calcNonMusterPercent(reportsCount, maxReportsCount),
           rosterCount,
           reportsCount,
         };
@@ -249,7 +228,7 @@ class MusterController {
       }
 
       for (const bucket of buckets) {
-        const date = moment.utc(bucket.key).format(dateFormat);
+        const date = moment.utc(bucket.key).format(musterUtils.dateFormat);
         const reportsCount = bucket.doc_count;
         const rosterCount = unitRosterCounts.monthly[date][unitId];
 
@@ -257,7 +236,7 @@ class MusterController {
         const maxReportsCount = rosterCount * nextMonth.diff(date, 'days');
 
         unitStats.monthly[date][unitId] = {
-          nonMusterPercent: calcNonMusterPercent(reportsCount, maxReportsCount),
+          nonMusterPercent: musterUtils.calcNonMusterPercent(reportsCount, maxReportsCount),
           rosterCount,
           reportsCount,
         };
@@ -297,7 +276,7 @@ class MusterController {
       for (const muster of unit.musterConfiguration) {
         // Get the unix timestamp of the earliest possible muster window, it could be in the previous week if the
         // muster window spans the week boundary.
-        let current = getEarliestMusterWindowTime(muster, since - muster.durationMinutes * 60);
+        let current = musterUtils.getEarliestMusterWindowTime(muster, since - muster.durationMinutes * 60);
         const durationSeconds = muster.durationMinutes * 60;
         // Loop through each week
         while (current < until) {
@@ -306,7 +285,7 @@ class MusterController {
             const end = current + durationSeconds;
             // If the window ended in the query window, add it to the list
             if (end > since && end <= until && dayIsIn(day, muster.days)) {
-              musterWindows.push(buildMusterWindow(unit, current, end, muster));
+              musterWindows.push(musterUtils.buildMusterWindow(unit, current, end, muster));
             }
             current += oneDaySeconds;
           }
@@ -342,7 +321,7 @@ class MusterController {
         continue;
       }
       // Get the unix timestamp of the earliest possible muster window in the week of the timestamp
-      let current = getEarliestMusterWindowTime(muster, timestamp);
+      let current = musterUtils.getEarliestMusterWindowTime(muster, timestamp);
       const durationSeconds = muster.durationMinutes * 60;
       // Loop through each day of the week
       let firstWindowStart: number = 0;
@@ -354,7 +333,7 @@ class MusterController {
             firstWindowStart = current;
           }
           lastWindowStart = current;
-          const distanceToWindow = getDistanceToWindow(current, end, timestamp);
+          const distanceToWindow = musterUtils.getDistanceToWindow(current, end, timestamp);
           // Pick the closest window, if one window ends and another starts on the same second as the timestamp, prefer
           // the window that is starting
           if (minDistance == null || timestamp === current || Math.abs(minDistance) > Math.abs(distanceToWindow)) {
@@ -371,7 +350,7 @@ class MusterController {
         // nearest window in the adjacent week
         const windowStart = firstWindowStart > timestamp ? lastWindowStart - oneDaySeconds * 7 : firstWindowStart + oneDaySeconds * 7;
         const windowEnd = windowStart + durationSeconds;
-        const distanceToWindow = getDistanceToWindow(windowStart, windowEnd, timestamp);
+        const distanceToWindow = musterUtils.getDistanceToWindow(windowStart, windowEnd, timestamp);
         if (Math.abs(minDistance!) > Math.abs(distanceToWindow)) {
           closestMuster = muster;
           closestStart = windowStart;
@@ -380,249 +359,9 @@ class MusterController {
       }
     }
 
-    res.json(closestMuster ? buildMusterWindow(unit, closestStart, closestEnd, closestMuster) : null);
+    res.json(closestMuster ? musterUtils.buildMusterWindow(unit, closestStart, closestEnd, closestMuster) : null);
   }
 
-}
-
-function getEarliestMusterWindowTime(muster: MusterConfiguration, referenceTime: number) {
-  const musterTime = moment(muster.startTime, 'HH:mm');
-  return moment
-    .unix(referenceTime)
-    .tz(muster.timezone)
-    .startOf('week')
-    .add(musterTime.hour(), 'hours')
-    .add(musterTime.minutes(), 'minutes')
-    .unix();
-}
-
-function buildMusterWindow(unit: Unit, startTimestamp: number, endTimestamp: number, muster: MusterConfiguration): MusterWindow {
-  return {
-    id: `${unit.org!.id}-${unit.id}-${moment.unix(startTimestamp).utc().format('Y-M-D-HH-mm')}`,
-    orgId: unit.org!.id,
-    unitId: unit.id,
-    startTimestamp,
-    endTimestamp,
-    startTime: muster.startTime,
-    timezone: muster.timezone,
-    durationMinutes: muster.durationMinutes,
-  };
-}
-
-function getDistanceToWindow(start: number, end: number, time: number) {
-  if (time > end) {
-    return time - end;
-  }
-  if (time < start) {
-    return time - start;
-  }
-  return 0;
-}
-
-//
-// Helpers
-//
-
-async function getIndividualsData(org: Org, role: Role, intervalCount: number, unitId?: string) {
-  // HACK: The database queries in this function are extremely inefficient for large rosters, and need to be revised
-  // once the new elasticsearch muster data architecture is put in place.
-
-  let rosterEntries: Roster[];
-  if (unitId) {
-    rosterEntries = await Roster.find({
-      relations: ['unit', 'unit.org'],
-      where: (qb: any) => {
-        qb.where('unit_id = :unitId', { unitId })
-          .andWhere('unit_org = :orgId', { orgId: org.id });
-      },
-    });
-  } else {
-    rosterEntries = await Roster.find({
-      relations: ['unit', 'unit.org'],
-      where: (qb: any) => {
-        qb.where('unit_org = :orgId', { orgId: org.id });
-      },
-    });
-  }
-
-  const allowedRosterColumns = await getAllowedRosterColumns(org, role);
-
-  // Calculate each individual's max reports for this time range.
-  const maxReportsByEdipi = {} as { [edipi: string]: number };
-  const timeRange = {
-    startDate: moment().startOf('day').subtract(intervalCount, 'days'),
-    endDate: moment().startOf('day'),
-  };
-
-  for (const entry of rosterEntries) {
-    let startDate = moment(entry.startDate ?? timeRange.startDate).startOf('day');
-    if (startDate < timeRange.startDate) {
-      startDate = timeRange.startDate;
-    }
-
-    let endDate = moment(entry.endDate ?? timeRange.endDate).startOf('day');
-    if (endDate > timeRange.endDate) {
-      endDate = timeRange.endDate;
-    }
-
-    maxReportsByEdipi[entry.edipi] = endDate.diff(startDate, 'days');
-  }
-
-  // Send request.
-  let response: SearchResponse<unknown>;
-  try {
-    response = await elasticsearch.search({
-      index: role.getKibanaIndexForMuster(unitId),
-      body: {
-        size: 0,
-        query: {
-          bool: {
-            filter: [{
-              range: {
-                Timestamp: {
-                  gte: timeRange.startDate.format(dateFormat),
-                  lt: timeRange.endDate.format(dateFormat),
-                },
-              },
-            }],
-          },
-        },
-        aggs: {
-          reportsByPerson: {
-            terms: {
-              size: 10000,
-              field: 'Roster.edipi.keyword',
-            },
-          },
-        },
-      },
-    });
-  } catch (err) {
-    throw new InternalServerError(`Elasticsearch: ${err.message}`);
-  }
-
-  const reportsByPersonBuckets = (response.aggregations ? response.aggregations.reportsByPerson.buckets : []) as {
-    key: string
-    doc_count: number
-  }[];
-
-  const esReportsByEdipi = {} as {[edipi: string]: number};
-  for (const bucket of reportsByPersonBuckets) {
-    esReportsByEdipi[bucket.key] = bucket.doc_count;
-  }
-
-  // Calculate non-muster percents.
-  const individuals = [] as MusterIndividual[];
-  for (const rosterEntry of (rosterEntries as MusterIndividual[])) {
-    const reports = esReportsByEdipi[rosterEntry.edipi] ?? 0;
-    const maxReports = maxReportsByEdipi[rosterEntry.edipi];
-    const nonMusterPercent = calcNonMusterPercent(reports, maxReports);
-    if (nonMusterPercent > 0) {
-      const individual = rosterEntry as MusterIndividual;
-      individual.nonMusterPercent = nonMusterPercent;
-      individuals.push(individual);
-    }
-  }
-
-  individuals.sort((a, b) => {
-    let diff = b.nonMusterPercent - a.nonMusterPercent;
-    if (diff !== 0) {
-      return diff;
-    }
-
-    diff = a.unit.name.localeCompare(b.unit.name);
-    if (diff !== 0) {
-      return diff;
-    }
-
-    diff = a.lastName.localeCompare(b.lastName);
-    if (diff !== 0) {
-      return diff;
-    }
-
-    return a.firstName.localeCompare(b.firstName);
-  });
-
-  // Only return data the user has permissions for.
-  return individuals.map(individual => {
-    const individualCleaned = {} as MusterIndividual;
-    for (const columnInfo of allowedRosterColumns) {
-      const columnValue = individual.getColumnValue(columnInfo);
-      Reflect.set(individualCleaned, columnInfo.name, columnValue);
-    }
-    individualCleaned.id = individual.id;
-    individualCleaned.unitId = individual.unit.id;
-    individualCleaned.nonMusterPercent = individual.nonMusterPercent;
-    return individualCleaned;
-  });
-}
-
-async function getUnitRosterCounts(interval: 'week' | 'month', intervalCount: number) {
-  const momentUnitOfTime = {
-    week: 'isoWeek',
-    month: 'month',
-  }[interval] as unitOfTime.StartOf;
-
-  // Query the number of individuals grouped by unit who were active between the start/end dates.
-  // NOTE: There may be a more efficient way of doing this where we don't require a union of multiple queries, but this
-  // should work well enough as long as the interval count isn't too high.
-  const queries = [] as string[];
-  const dates = new Set<string>();
-  for (let i = 0; i < intervalCount; i++) {
-    const startDate = moment.utc().subtract(i + 1, interval).startOf(momentUnitOfTime).format(dateFormat);
-    const endDate = moment.utc(startDate).add(1, interval).format(dateFormat);
-    queries.push(`
-      SELECT unit_id as "unitId", count(id), '${startDate}' as date
-      FROM roster
-      WHERE
-        (start_date IS null AND (end_date IS null OR end_date > '${endDate}'))
-        OR (start_date <= '${startDate}' AND (end_date IS null OR end_date > '${endDate}'))
-      GROUP BY "unitId"
-    `);
-
-    dates.add(startDate);
-  }
-
-  const rows = await getConnection().query(queries.join(`UNION`)) as {
-    unitId: string
-    date: string
-    count: string
-  }[];
-
-  const unitRosterCountByDate = {} as {
-    [date: string]: {
-      [unitId: string]: number
-    }
-  };
-
-  // Make sure all of the dates have entries, even if the query didn't return any data for some.
-  for (const date of dates) {
-    if (!unitRosterCountByDate[date]) {
-      unitRosterCountByDate[date] = {};
-    }
-  }
-
-  for (const row of rows) {
-    const date = row.date;
-    const unitId = row.unitId;
-
-    if (!unitRosterCountByDate[date][unitId]) {
-      unitRosterCountByDate[date][unitId] = 0;
-    }
-
-    unitRosterCountByDate[date][unitId] += parseInt(row.count);
-  }
-
-  return unitRosterCountByDate;
-}
-
-function calcNonMusterPercent(reports: number, maxReports: number) {
-  if (maxReports === 0) {
-    return 0;
-  }
-
-  const nonMusterRatio = 1 - (reports / maxReports);
-  return Math.min(Math.max(nonMusterRatio, 0), 1) * 100;
 }
 
 type GetIndividualsQuery = {
@@ -643,21 +382,5 @@ type GetClosedMusterWindowsQuery = {
 type GetNearestMusterWindowQuery = {
   timestamp: string
 };
-
-type MusterIndividual = {
-  nonMusterPercent: number
-  unitId: string
-} & Roster;
-
-interface MusterWindow {
-  id: string,
-  unitId: string,
-  orgId: number,
-  startTimestamp: number,
-  endTimestamp: number,
-  startTime: string,
-  timezone: string,
-  durationMinutes: number,
-}
 
 export default new MusterController();

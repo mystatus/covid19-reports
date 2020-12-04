@@ -42,10 +42,4 @@ router.post(
   controller.addOrg,
 );
 
-router.get(
-  '/:orgId/export',
-  requireOrgAccess,
-  controller.export,
-);
-
 export default router;

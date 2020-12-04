@@ -2,9 +2,10 @@ import process from 'process';
 import database from '.';
 import { Org } from '../api/org/org.model';
 import { Role } from '../api/role/role.model';
+import { RosterColumnType } from '../api/roster/roster.types';
 import { User } from '../api/user/user.model';
 import { Workspace } from '../api/workspace/workspace.model';
-import { Roster, RosterColumnType } from '../api/roster/roster.model';
+import { Roster } from '../api/roster/roster.model';
 import { CustomRosterColumn } from '../api/roster/custom-roster-column.model';
 import { Unit } from '../api/unit/unit.model';
 

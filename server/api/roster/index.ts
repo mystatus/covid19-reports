@@ -64,13 +64,6 @@ router.get(
 );
 
 router.get(
-  '/:orgId/export',
-  requireOrgAccess,
-  requireRolePermission(role => role.canManageRoster),
-  controller.exportRosterToCSV,
-);
-
-router.get(
   '/:orgId/info',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),

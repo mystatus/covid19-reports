@@ -51,7 +51,7 @@ export const DataExportPage = () => {
     if (endDate) {
       queryParams.push(`endDate=${endDate.toISOString()}`);
     }
-    const response = await fetch(new Request(`api/org/${orgId}/export?${queryParams.join('&')}`, {
+    const response = await fetch(new Request(`api/export/${orgId}?${queryParams.join('&')}`, {
       headers: {
         'Content-Type': 'application/octet-stream',
       },

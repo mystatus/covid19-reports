@@ -9,6 +9,7 @@ import accessRequestRoutes from './access-request';
 import workspaceRoutes from './workspace';
 import notificationRoutes from './notification';
 import musterRoutes from './muster';
+import exportRoutes from './export';
 import { User } from './user/user.model';
 import { Org } from './org/org.model';
 import { Role } from './role/role.model';
@@ -25,6 +26,7 @@ router.use('/access-request', accessRequestRoutes);
 router.use('/workspace', workspaceRoutes);
 router.use('/notification', notificationRoutes);
 router.use('/muster', musterRoutes);
+router.use('/export', exportRoutes);
 
 export interface ApiRequest<ReqParams = object, ReqBody = object, ReqQuery = object, ResBody = object> extends Request<ReqParams, ResBody, ReqBody, ReqQuery> {
   appUser: User,

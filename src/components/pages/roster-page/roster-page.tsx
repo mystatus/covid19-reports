@@ -311,7 +311,7 @@ export const RosterPage = () => {
     try {
       setExportRosterLoading(true);
       const response = await axios({
-        url: `api/roster/${orgId}/export`,
+        url: `api/export/${orgId}/roster`,
         method: 'GET',
         responseType: 'blob',
       });
