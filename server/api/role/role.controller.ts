@@ -1,11 +1,11 @@
 import { Response } from 'express';
 import { getConnection } from 'typeorm';
 import { ApiRequest, OrgParam, OrgRoleParams } from '../index';
+import { Roster } from '../roster/roster.model';
 import { Role } from './role.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
 import { Workspace } from '../workspace/workspace.model';
 import { Notification } from '../notification/notification.model';
-import { getRosterColumns } from '../roster/roster.controller';
 
 class RoleController {
 
@@ -185,7 +185,7 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
   }
   if (body.allowedRosterColumns != null) {
     if (!(body.allowedRosterColumns.length === 1 && body.allowedRosterColumns[0] === '*')) {
-      const orgRosterColumns = await getRosterColumns(orgId);
+      const orgRosterColumns = await Roster.getColumns(orgId);
       for (const column of body.allowedRosterColumns) {
         if (!orgRosterColumns.some(rosterColumn => rosterColumn.name === column)) {
           throw new BadRequestError(`Unknown roster column: ${column}`);

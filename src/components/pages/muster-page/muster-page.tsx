@@ -304,7 +304,7 @@ export const MusterPage = () => {
     try {
       setExportLoading(true);
       const response = await axios({
-        url: `api/muster/${orgId}/individuals/export`,
+        url: `api/export/${orgId}/muster/individuals`,
         params: {
           interval,
           intervalCount,

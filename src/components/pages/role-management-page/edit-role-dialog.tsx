@@ -84,12 +84,8 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
       rosterColumns.forEach(column => {
         allowedColumns[column.name] = (!column.pii || selectedWorkspace.pii) && (!column.phi || selectedWorkspace.phi);
       });
-      if (selectedWorkspace.pii) {
-        setCanViewPII(true);
-      }
-      if (selectedWorkspace.phi) {
-        setCanViewPHI(true);
-      }
+      setCanViewPII(selectedWorkspace.pii);
+      setCanViewPHI(selectedWorkspace.phi);
       setAllowedRosterColumns(allowedColumns);
     }
     setWorkspaceId(newWorkspaceId);

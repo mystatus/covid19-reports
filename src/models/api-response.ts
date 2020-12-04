@@ -170,3 +170,10 @@ export interface ApiUnit {
   org?: ApiOrg,
   musterConfiguration: MusterConfiguration[],
 }
+
+export interface ApiError {
+  errors: {
+    message: string
+    type: string
+  }[]
+}

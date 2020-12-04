@@ -1,8 +1,15 @@
 import { Response } from 'express';
-import { ApiRequest, OrgParam, OrgPrefixParam } from '../index';
-import { Org } from './org.model';
-import { BadRequestError, NotFoundError } from '../../util/error-types';
 import { Like } from 'typeorm';
+import {
+  ApiRequest,
+  OrgParam,
+  OrgPrefixParam,
+} from '../index';
+import { Org } from './org.model';
+import {
+  BadRequestError,
+  NotFoundError,
+} from '../../util/error-types';
 
 class OrgController {
 
@@ -17,7 +24,7 @@ class OrgController {
         where: {
           name: Like(`${req.params.orgPrefix}%`),
         },
-      })
+      }),
     });
 
     res.json(orgs);
@@ -78,6 +85,7 @@ class OrgController {
 
     res.json(updatedOrg);
   }
+
 }
 
 type AddOrgBody = {

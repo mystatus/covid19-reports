@@ -8,6 +8,7 @@ import ListAltIcon from '@material-ui/icons/ListAlt';
 import PeopleIcon from '@material-ui/icons/People';
 import GroupWorkIcon from '@material-ui/icons/GroupWork';
 import SecurityIcon from '@material-ui/icons/Security';
+import ReplyAllIcon from '@material-ui/icons/ReplyAll';
 import AssessmentOutlinedIcon from '@material-ui/icons/AssessmentOutlined';
 import clsx from 'clsx';
 import { useSelector } from 'react-redux';
@@ -39,6 +40,7 @@ export const AppSidenav = () => {
         }}
       >
         <Divider />
+
         <List>
           <Link to="/home">
             <ListItem button key="Home">
@@ -62,8 +64,18 @@ export const AppSidenav = () => {
               </ListItem>
             </a>
           )}
+          {user.activeRole?.workspace && (
+            <Link to="/data-export">
+              <ListItem button key="DataExport">
+                <ListItemIcon><ReplyAllIcon className={classes.dataExportIcon} /></ListItemIcon>
+                <ListItemText primary="Data Export" />
+              </ListItem>
+            </Link>
+          )}
         </List>
+
         <Divider />
+
         <List>
           {user.activeRole?.canManageGroup && (
             <Link to="/workspaces">

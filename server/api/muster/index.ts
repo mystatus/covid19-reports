@@ -25,13 +25,6 @@ router.get(
 );
 
 router.get(
-  '/:orgId/individuals/export',
-  requireOrgAccess,
-  requireRolePermission(role => role.canViewMuster),
-  controller.exportIndividuals,
-);
-
-router.get(
   '/:orgId/trends',
   requireOrgAccess,
   requireRolePermission(role => role.canViewMuster),

@@ -11,6 +11,7 @@ import { UserState } from '../reducers/user.reducer';
 import { AppState } from '../store';
 import { AppSidenav } from './app-sidenav/app-sidenav';
 import { AppToolbar } from './app-toolbar/app-toolbar';
+import { DataExportPage } from './pages/data-export-page/data-export-page';
 import { HomePage } from './pages/home-page/home-page';
 import useStyles from './app.styles';
 import { GroupsPage } from './pages/groups-page/groups-page';
@@ -112,6 +113,9 @@ export const App = () => {
               </Route>
               <Route path="/muster">
                 <MusterPage />
+              </Route>
+              <Route path="/data-export">
+                <DataExportPage />
               </Route>
               <Route path="/*">
                 <Redirect to="/home" />

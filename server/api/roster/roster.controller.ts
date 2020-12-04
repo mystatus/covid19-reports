@@ -1,37 +1,27 @@
 import { Response } from 'express';
 import csv from 'csvtojson';
 import fs from 'fs';
-import { snakeCase } from 'typeorm/util/StringUtils';
 import {
   ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams, PagedQuery,
 } from '../index';
 import {
-  baseRosterColumns, CustomColumnValue, Roster, RosterColumnInfo, RosterColumnType,
+  baseRosterColumns,
+  Roster,
 } from './roster.model';
 import {
-  BadRequestError, InternalServerError, NotFoundError, UnprocessableEntity,
+  BadRequestError, NotFoundError, UnprocessableEntity,
 } from '../../util/error-types';
 import { BaseType, getOptionalParam, getRequiredParam } from '../../util/util';
 import { Org } from '../org/org.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
-import { Role } from '../role/role.model';
 import { Unit } from '../unit/unit.model';
+import {
+  CustomColumnValue,
+  RosterColumnInfo,
+  RosterColumnType,
+} from './roster.types';
 
 class RosterController {
-  static getColumnSelect(column: RosterColumnInfo) {
-    // Make sure custom columns are converted to appropriate types
-    if (column.custom) {
-      switch (column.type) {
-        case RosterColumnType.Boolean:
-          return `(roster.custom_columns ->> '${column.name}')::BOOLEAN`;
-        case RosterColumnType.Number:
-          return `(roster.custom_columns ->> '${column.name}')::DOUBLE PRECISION`;
-        default:
-          return `roster.custom_columns ->> '${column.name}'`;
-      }
-    }
-    return `roster.${snakeCase(column.name)}`;
-  }
 
   async addCustomColumn(req: ApiRequest<OrgParam, CustomColumnData>, res: Response) {
     if (!req.body.name) {
@@ -106,38 +96,8 @@ class RosterController {
     res.json(deletedColumn);
   }
 
-  async exportRosterToCSV(req: ApiRequest, res: Response) {
-
-    const orgId = req.appOrg!.id;
-
-    const queryBuilder = await queryAllowedRoster(req.appOrg!, req.appRole!);
-    const rosterData = await queryBuilder
-      .orderBy({
-        edipi: 'ASC',
-      })
-      .getRawMany<RosterEntryData>();
-
-    // convert data to csv format and download
-    const jsonToCsvConverter = require('json-2-csv');
-    jsonToCsvConverter.json2csv(rosterData, (err: Error, csvString: String) => {
-      // on failure
-      if (err) {
-        console.error('Failed to convert roster json data to CSV string.');
-        throw new InternalServerError('Failed to export Roster data to CSV.');
-      } else {
-        // on success
-        const date = new Date().toISOString();
-        const filename = `org_${orgId}_roster_export_${date}.csv`;
-        res.header('Content-Type', 'text/csv');
-        res.attachment(filename);
-        res.send(csvString);
-      }
-    });
-
-  }
-
   async getRosterTemplate(req: ApiRequest, res: Response) {
-    const columns = await getAllowedRosterColumns(req.appOrg!, req.appRole!);
+    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
     const headers: string[] = ['unit'];
     const example: string[] = ['unit1'];
     columns.forEach(column => {
@@ -177,7 +137,7 @@ class RosterController {
     const limit = (req.query.limit != null) ? parseInt(req.query.limit) : 100;
     const page = (req.query.page != null) ? parseInt(req.query.page) : 0;
 
-    const queryBuilder = await queryAllowedRoster(req.appOrg!, req.appRole!);
+    const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appRole!);
     const roster = await queryBuilder
       .skip(page * limit)
       .take(limit)
@@ -186,7 +146,7 @@ class RosterController {
       })
       .getRawMany<RosterEntryData>();
 
-    const totalRowsCount = await (await queryAllowedRoster(req.appOrg!, req.appRole!)).getCount();
+    const totalRowsCount = await (await Roster.queryAllowedRoster(req.appOrg!, req.appRole!)).getCount();
 
     res.json({
       rows: roster,
@@ -197,7 +157,7 @@ class RosterController {
   async searchRoster(req: ApiRequest<OrgParam, SearchRosterBody, GetRosterQuery>, res: Response) {
     const limit = (req.query.limit != null) ? parseInt(req.query.limit) : 100;
     const page = (req.query.page != null) ? parseInt(req.query.page) : 0;
-    const rosterColumns = await getAllowedRosterColumns(req.appOrg!, req.appRole!);
+    const rosterColumns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
 
     const columns: RosterColumnInfo[] = [{
       name: 'unit',
@@ -221,7 +181,7 @@ class RosterController {
           const { op, value } = req.body[key];
           const needsQuotedValue = column.type === RosterColumnType.Date || column.type === RosterColumnType.DateTime;
           const maybeQuote = (v: CustomColumnValue) => (v !== null && needsQuotedValue ? `'${v}'` : v);
-          const columnName = RosterController.getColumnSelect(column);
+          const columnName = Roster.getColumnSelect(column);
 
           if (op === 'between' || op === 'in') {
             if (!Array.isArray(value)) {
@@ -261,7 +221,7 @@ class RosterController {
           }
 
           throw new BadRequestError('Malformed search query. Received unexpected value for "op".');
-        }, await queryAllowedRoster(req.appOrg!, req.appRole!));
+        }, await Roster.queryAllowedRoster(req.appOrg!, req.appRole!));
     }
 
     const queryBuilder = await makeQueryBuilder();
@@ -306,7 +266,7 @@ class RosterController {
       },
     });
 
-    const columns = await getAllowedRosterColumns(org, req.appRole!);
+    const columns = await Roster.getAllowedColumns(org, req.appRole!);
     roster.forEach(row => {
       if (!row.unit) {
         throw new BadRequestError('Unable to add roster entries without a unit ID.');
@@ -330,12 +290,12 @@ class RosterController {
   }
 
   async getFullRosterInfo(req: ApiRequest<OrgParam>, res: Response) {
-    const columns = await getRosterColumns(req.appOrg!.id);
+    const columns = await Roster.getColumns(req.appOrg!.id);
     res.json(columns);
   }
 
   async getRosterInfo(req: ApiRequest<OrgParam>, res: Response) {
-    const columns = await getAllowedRosterColumns(req.appOrg!, req.appRole!);
+    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
     res.json(columns);
   }
 
@@ -353,7 +313,7 @@ class RosterController {
 
     const responseData: RosterInfo[] = [];
     for (const roster of entries) {
-      const columns = (await getRosterColumns(roster.unit.org!.id)).map(column => ({
+      const columns = (await Roster.getColumns(roster.unit.org!.id)).map(column => ({
         ...column,
         value: roster.getColumnValue(column),
       } as RosterColumnWithValue));
@@ -403,7 +363,7 @@ class RosterController {
 
     const entry = new Roster();
     entry.unit = unit;
-    const columns = await getAllowedRosterColumns(req.appOrg!, req.appRole!);
+    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
     await setRosterParamsFromBody(req.appOrg!, entry, req.body, columns, true);
     const newRosterEntry = await entry.save();
 
@@ -413,7 +373,7 @@ class RosterController {
   async getRosterEntry(req: ApiRequest<OrgRosterParams>, res: Response) {
     const rosterId = req.params.rosterId;
 
-    const queryBuilder = await queryAllowedRoster(req.appOrg!, req.appRole!);
+    const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appRole!);
     const rosterEntry = await queryBuilder
       .andWhere('roster.id=\':id\'', {
         id: rosterId,
@@ -473,70 +433,13 @@ class RosterController {
       }
       entry.unit = unit;
     }
-    const columns = await getAllowedRosterColumns(req.appOrg!, req.appRole!);
+    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
     await setRosterParamsFromBody(req.appOrg!, entry, req.body, columns);
     const updatedRosterEntry = await entry.save();
 
     res.json(updatedRosterEntry);
   }
 
-}
-
-/**
- * This function queries the roster, returning only columns and rows that are allowed by the role of the requester.
- */
-async function queryAllowedRoster(org: Org, role: Role) {
-  const columns = await getAllowedRosterColumns(org, role);
-  const queryBuilder = Roster.createQueryBuilder('roster').select([]);
-  queryBuilder.leftJoin('roster.unit', 'u');
-  // Always select the id column
-  queryBuilder.addSelect('roster.id', 'id');
-  queryBuilder.addSelect('u.id', 'unit');
-
-  // Add all columns that are allowed by the user's role
-  columns.forEach(column => {
-    queryBuilder.addSelect(RosterController.getColumnSelect(column), column.name);
-  });
-
-  // Filter out roster entries that are not on the active roster or are not allowed by the role's index prefix.
-  return queryBuilder
-    .where('u.org_id = :orgId', { orgId: org.id })
-    .andWhere('(roster.end_date IS NULL OR roster.end_date >= CURRENT_DATE)')
-    .andWhere('(roster.start_date IS NULL OR roster.start_date <= CURRENT_DATE)')
-    .andWhere('u.id like :name', { name: role.indexPrefix.replace('*', '%') });
-}
-
-export async function getAllowedRosterColumns(org: Org, role: Role) {
-  const allColumns = await getRosterColumns(org.id);
-  const fineGrained = !(role.allowedRosterColumns.length === 1 && role.allowedRosterColumns[0] === '*');
-  return allColumns.filter(column => {
-    let allowed = true;
-    if (fineGrained && role.allowedRosterColumns.indexOf(column.name) < 0) {
-      allowed = false;
-    } else if (!role.canViewPII && column.pii) {
-      allowed = false;
-    } else if (!role.canViewPHI && column.phi) {
-      allowed = false;
-    }
-    return allowed;
-  });
-}
-
-export async function getRosterColumns(orgId: number) {
-  const customColumns = (await CustomRosterColumn.find({
-    where: {
-      org: orgId,
-    },
-  })).map(customColumn => {
-    const columnInfo: RosterColumnInfo = {
-      ...customColumn,
-      displayName: customColumn.display,
-      custom: true,
-      updatable: true,
-    };
-    return columnInfo;
-  });
-  return [...baseRosterColumns, ...customColumns];
 }
 
 function setCustomColumnFromBody(column: CustomRosterColumn, body: CustomColumnData) {
