@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   Switch, Route, Redirect,
 } from 'react-router-dom';
-import { Button, CircularProgress } from '@material-ui/core';
+import { CircularProgress } from '@material-ui/core';
 import { User } from '../actions/user.actions';
 import { AppFrameState } from '../reducers/app-frame.reducer';
 import { UserState } from '../reducers/user.reducer';
@@ -142,12 +142,6 @@ export const App = () => {
   return (
     <ErrorBoundary>
       {routes()}
-      <Button onClick={() => {
-        throw new Error('Testing error boundary');
-      }}
-      >
-        Test Error Boundary
-      </Button>
     </ErrorBoundary>
   );
 };
