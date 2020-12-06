@@ -1,10 +1,10 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Switch, Route, Redirect,
 } from 'react-router-dom';
-import { CircularProgress } from '@material-ui/core';
+import { Button, CircularProgress } from '@material-ui/core';
 import { User } from '../actions/user.actions';
 import { AppFrameState } from '../reducers/app-frame.reducer';
 import { UserState } from '../reducers/user.reducer';
@@ -24,15 +24,13 @@ import { WorkspacesPage } from './pages/workspaces-page/workspaces-page';
 import { RosterColumnsPage } from './pages/roster-columns-page/roster-columns-page';
 import { SettingsPage } from './pages/settings-page/settings-page';
 import { UnitsPage } from './pages/units-page/units-page';
-import { ErrorBoundary, ErrorDialogProps } from './error-boundary/error-boundary';
+import { ErrorBoundary } from './error-boundary/error-boundary';
 
 export const App = () => {
   const user = useSelector<AppState, UserState>(state => state.user);
   const appFrame = useSelector<AppState, AppFrameState>(state => state.appFrame);
   const dispatch = useDispatch();
   const classes = useStyles();
-
-  const [errorDialogProps, setErrorDialogProps] = useState<ErrorDialogProps>({ open: false });
 
   useEffect(() => {
     dispatch(User.login());
@@ -142,11 +140,14 @@ export const App = () => {
   }
 
   return (
-    <ErrorBoundary
-      errorDialogProps={errorDialogProps}
-      setErrorDialogProps={setErrorDialogProps}
-    >
+    <ErrorBoundary>
       {routes()}
+      <Button onClick={() => {
+        throw new Error('Testing error boundary');
+      }}
+      >
+        Test Error Boundary
+      </Button>
     </ErrorBoundary>
   );
 };

@@ -1,28 +1,21 @@
+import {
+  Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+} from '@material-ui/core';
 import React, { ReactNode, ErrorInfo } from 'react';
 import { formatMessage } from '../../utility/errors';
-import { AlertDialog, AlertDialogProps } from '../alert-dialog/alert-dialog';
-
-
-export interface ErrorDialogProps extends AlertDialogProps {
-  errorInfo?: ErrorInfo | null,
-}
-
-export const ErrorDialog = (props: ErrorDialogProps) => {
-  return AlertDialog(props);
-};
 
 
 export interface ErrorBoundaryProps {
   children?: ReactNode,
   errorTitle?: string,
   errorMessage?: string,
-  errorDialogProps: ErrorDialogProps,
-  setErrorDialogProps: (props: ErrorDialogProps) => void,
 }
 
 export interface ErrorBoundaryState {
   error?: Error | null,
   errorInfo?: ErrorInfo | null,
+  alertTitle?: string,
+  alertMessage?: string,
 }
 
 const initialState: ErrorBoundaryState = {
@@ -45,28 +38,45 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     this.setState({
       error,
       errorInfo,
+      alertTitle: this.props?.errorTitle ?? 'Error',
+      alertMessage: message,
     });
-
-    this.props.setErrorDialogProps({
-      open: true,
-      title: this.props?.errorTitle ?? 'Error',
-      message,
-      errorInfo: this.state.errorInfo,
-
-      onClose: () => {
-        this.props.setErrorDialogProps({ open: false });
-        this.setState(initialState);
-      },
-    });
-
   }
 
   render() {
+
     return (
       <>
         {this.props.children}
         {this.state.error && (
-        <ErrorDialog {...this.props.errorDialogProps} />
+        <Dialog
+          open
+          onClose={() => {
+            this.setState(initialState);
+          }}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogTitle id="alert-dialog-title">{this.state.alertTitle || 'Alert'}</DialogTitle>
+          <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+              {this.state.alertMessage}
+            </DialogContentText>
+            {this.state.errorInfo && (
+            <DialogContentText>
+              {this.state.errorInfo}
+            </DialogContentText>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => {
+              this.setState(initialState);
+            }}
+            >
+              OK
+            </Button>
+          </DialogActions>
+        </Dialog>
         )}
       </>
     );
