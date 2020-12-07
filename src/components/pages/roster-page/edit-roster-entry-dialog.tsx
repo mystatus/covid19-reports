@@ -129,7 +129,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
         switch (column.type) {
           case ApiRosterColumnType.String:
           case ApiRosterColumnType.Date:
-          case ApiRosterColumnType.DateTime: {
+          case ApiRosterColumnType.DateTime:
             if (value.length === 0 || value.trim().length === 0) {
               return false;
             }
@@ -137,7 +137,6 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
               return false;
             }
             break;
-          }
           default:
             break;
         }
