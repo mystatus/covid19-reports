@@ -3,6 +3,7 @@ import { Workspace } from '../api/workspace/workspace.model';
 import { KibanaApi } from './kibana-api';
 import elasticsearch from '../elasticsearch/elasticsearch';
 import { InternalServerError } from '../util/error-types';
+import { WorkspaceTemplate } from '../api/workspace/workspace-template.model';
 
 export async function setupKibanaWorkspace(workspace: Workspace, role: Role, kibanaApi: KibanaApi) {
   if (!workspace.workspaceTemplate) {
@@ -11,7 +12,13 @@ export async function setupKibanaWorkspace(workspace: Workspace, role: Role, kib
 
   const savedObjects = [] as KibanaSavedObject[];
   let defaultIndex: string | undefined;
-  for (const savedObjectRaw of workspace.workspaceTemplate.kibanaSavedObjects) {
+  const templateSavedObjects = (await WorkspaceTemplate.findOne({
+    select: ['kibanaSavedObjects'],
+    where: {
+      id: workspace.workspaceTemplate.id,
+    },
+  }))?.kibanaSavedObjects;
+  for (const savedObjectRaw of templateSavedObjects) {
     savedObjects.push({
       id: savedObjectRaw._id,
       type: savedObjectRaw._type,

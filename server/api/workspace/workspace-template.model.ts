@@ -20,7 +20,9 @@ export class WorkspaceTemplate extends BaseEntity {
   @Column()
   phi!: boolean;
 
-  @Column('simple-json')
+  @Column('simple-json', {
+    select: false,
+  })
   kibanaSavedObjects?: any;
 
 }

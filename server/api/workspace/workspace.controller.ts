@@ -27,7 +27,7 @@ class WorkspaceController {
       },
     });
 
-    res.json(workspaces.map(sanitizeWorkspace));
+    res.json(workspaces);
   }
 
   async getOrgWorkspaceTemplates(req: ApiRequest, res: Response) {
@@ -95,7 +95,7 @@ class WorkspaceController {
       await setupKibanaWorkspace(newWorkspace, req.appRole!, req.kibanaApi!);
     });
 
-    await res.status(201).json(sanitizeWorkspace(newWorkspace!));
+    await res.status(201).json(newWorkspace);
   }
 
   async getWorkspace(req: ApiRequest<OrgWorkspaceParams>, res: Response) {
@@ -148,7 +148,7 @@ class WorkspaceController {
     }
 
     const removedWorkspace = await workspace.remove();
-    res.json(sanitizeWorkspace(removedWorkspace));
+    res.json(removedWorkspace);
   }
 
   async updateWorkspace(req: ApiRequest<OrgWorkspaceParams, WorkspaceBody>, res: Response) {
@@ -172,17 +172,9 @@ class WorkspaceController {
 
     const updatedWorkspace = await workspace.save();
 
-    res.json(sanitizeWorkspace(updatedWorkspace));
+    res.json(updatedWorkspace);
   }
 
-}
-
-// Don't return kibana saved objects from workspace endpoints
-function sanitizeWorkspace(workspace: Workspace) {
-  if (workspace.workspaceTemplate) {
-    workspace.workspaceTemplate.kibanaSavedObjects = undefined;
-  }
-  return workspace;
 }
 
 async function setWorkspaceFromBody(workspace: Workspace, body: WorkspaceBody) {
