@@ -1,13 +1,15 @@
 import { Response } from 'express';
+import { getConnection } from 'typeorm';
 import {
   ApiRequest, OrgParam, OrgUnitParams,
 } from '../index';
 import { MusterConfiguration, Unit } from './unit.model';
 import {
-  BadRequestError, NotFoundError,
+  BadRequestError, InternalServerError, NotFoundError,
 } from '../../util/error-types';
 import { Roster } from '../roster/roster.model';
 import { matchWildcardString, sanitizeIndexPrefix } from '../../util/util';
+import elasticsearch from '../../elasticsearch/elasticsearch';
 
 class UnitController {
 
@@ -84,8 +86,29 @@ class UnitController {
       throw new BadRequestError('Unable to change the ID of a unit.');
     }
 
+    const rename = req.body.name && (req.body.name !== existingUnit.name);
+
     setUnitFromBody(existingUnit, req.body);
-    const updatedUnit = await existingUnit.save();
+    const updatedUnit: Unit = await existingUnit.save();
+
+    // Rename elasticsearch documents
+    if (rename) {
+      try {
+        await elasticsearch.updateByQuery({
+          index: `${req.appOrg!.indexPrefix}-${req.params.unitId}-*`,
+          type: '_doc',
+          body: {
+            script: {
+              source: `ctx._source.Roster.unit = '${updatedUnit.name}'`,
+              lang: 'painless',
+            },
+          },
+        });
+      } catch (err) {
+        console.log(err);
+        throw new InternalServerError('Unit was updated, but there was an error updating elasticsearch documents.');
+      }
+    }
 
     res.json(updatedUnit);
   }
