@@ -24,6 +24,7 @@ import { WorkspacesPage } from './pages/workspaces-page/workspaces-page';
 import { RosterColumnsPage } from './pages/roster-columns-page/roster-columns-page';
 import { SettingsPage } from './pages/settings-page/settings-page';
 import { UnitsPage } from './pages/units-page/units-page';
+import { ErrorBoundary } from './error-boundary/error-boundary';
 
 export const App = () => {
   const user = useSelector<AppState, UserState>(state => state.user);
@@ -139,8 +140,8 @@ export const App = () => {
   }
 
   return (
-    <>
+    <ErrorBoundary>
       {routes()}
-    </>
+    </ErrorBoundary>
   );
 };
