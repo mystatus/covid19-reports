@@ -129,7 +129,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
           case ApiRosterColumnType.String:
           case ApiRosterColumnType.Date:
           case ApiRosterColumnType.DateTime:
-            if (value.length === 0 || value.trim().length === 0) {
+            if (value.trim().length === 0) {
               return false;
             }
             if (column.name === 'edipi' && !regex.test(value)) {
