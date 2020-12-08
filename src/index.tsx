@@ -8,6 +8,7 @@ import { App } from './components/app';
 import * as serviceWorker from './service-worker';
 import store from './store';
 import theme from './theme';
+import { ErrorBoundary } from './components/error-boundary/error-boundary';
 
 ReactDOM.render(
   <React.StrictMode>
@@ -15,7 +16,9 @@ ReactDOM.render(
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Router>
-          <App />
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
         </Router>
       </ThemeProvider>
     </Provider>
