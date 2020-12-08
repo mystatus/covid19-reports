@@ -8,7 +8,7 @@ import {
   MusterWindow,
 } from '../../util/muster-utils';
 import {
-  ApiRequest, OrgParam, OrgRoleParams, OrgUnitParams, PagedQuery,
+  ApiRequest, OrgRoleParams, OrgUnitParams, PagedQuery,
 } from '../index';
 import { MusterConfiguration, Unit } from '../unit/unit.model';
 import {
@@ -33,13 +33,13 @@ class MusterController {
     });
   }
 
-  async getTrends(req: ApiRequest<OrgParam, null, GetTrendsQuery>, res: Response) {
+  async getTrends(req: ApiRequest<null, null, GetTrendsQuery>, res: Response) {
     const weeksCount = parseInt(req.query.weeksCount ?? '6');
     const monthsCount = parseInt(req.query.monthsCount ?? '6');
 
     const unitRosterCounts = {
-      weekly: await musterUtils.getUnitRosterCounts('week', weeksCount),
-      monthly: await musterUtils.getUnitRosterCounts('month', monthsCount),
+      weekly: await musterUtils.getUnitRosterCounts(req.appOrg!, 'week', weeksCount),
+      monthly: await musterUtils.getUnitRosterCounts(req.appOrg!, 'month', monthsCount),
     };
 
     // Get unique dates and unit names.
