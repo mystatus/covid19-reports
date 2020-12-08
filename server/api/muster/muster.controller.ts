@@ -38,8 +38,8 @@ class MusterController {
     const monthsCount = parseInt(req.query.monthsCount ?? '6');
 
     const unitRosterCounts = {
-      weekly: await musterUtils.getUnitRosterCounts(req.appOrg!, 'week', weeksCount),
-      monthly: await musterUtils.getUnitRosterCounts(req.appOrg!, 'month', monthsCount),
+      weekly: await musterUtils.getUnitRosterCounts(req.appRole!, 'week', weeksCount),
+      monthly: await musterUtils.getUnitRosterCounts(req.appRole!, 'month', monthsCount),
     };
 
     // Get unique dates and unit names.

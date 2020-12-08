@@ -151,14 +151,16 @@ export const musterUtils = {
     });
   },
 
-  async getUnitRosterCounts(org: Org, interval: 'week' | 'month', intervalCount: number) {
+  async getUnitRosterCounts(role: Role, interval: 'week' | 'month', intervalCount: number) {
     const momentUnitOfTime = {
       week: 'isoWeek',
       month: 'month',
     }[interval] as unitOfTime.StartOf;
 
     const params = [] as any[];
-    const orgIdParamIndex = addParam(params, org.id);
+    const orgIdParamIndex = addParam(params, role.org!.id);
+    const unitFilter = role.getUnitFilter().replace('*', '%');
+    const unitFilterParamIndex = addParam(params, unitFilter);
 
     // Query the number of individuals grouped by unit who were active between the start/end dates.
     // NOTE: There may be a more efficient way of doing this where we don't require a union of multiple queries, but this
@@ -175,6 +177,7 @@ export const musterUtils = {
         FROM roster
         WHERE
           unit_org = $${orgIdParamIndex} AND
+          unit_id LIKE $${unitFilterParamIndex} AND
           (start_date IS null AND (end_date IS null OR end_date > $${endDateParamIndex}::date))
           OR (start_date <= $${startDateParamIndex}::date AND (end_date IS null OR end_date > $${endDateParamIndex}::date))
         GROUP BY "unitId"
