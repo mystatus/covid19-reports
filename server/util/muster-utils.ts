@@ -151,11 +151,16 @@ export const musterUtils = {
     });
   },
 
-  async getUnitRosterCounts(interval: 'week' | 'month', intervalCount: number) {
+  async getUnitRosterCounts(role: Role, interval: 'week' | 'month', intervalCount: number) {
     const momentUnitOfTime = {
       week: 'isoWeek',
       month: 'month',
     }[interval] as unitOfTime.StartOf;
+
+    const params = [] as any[];
+    const orgIdParamIndex = addParam(params, role.org!.id);
+    const unitFilter = role.getUnitFilter().replace('*', '%');
+    const unitFilterParamIndex = addParam(params, unitFilter);
 
     // Query the number of individuals grouped by unit who were active between the start/end dates.
     // NOTE: There may be a more efficient way of doing this where we don't require a union of multiple queries, but this
@@ -165,19 +170,23 @@ export const musterUtils = {
     for (let i = 0; i < intervalCount; i++) {
       const startDate = moment.utc().subtract(i + 1, interval).startOf(momentUnitOfTime).format(musterUtils.dateFormat);
       const endDate = moment.utc(startDate).add(1, interval).format(musterUtils.dateFormat);
+      const startDateParamIndex = addParam(params, startDate);
+      const endDateParamIndex = addParam(params, endDate);
       queries.push(`
-        SELECT unit_id as "unitId", count(id), '${startDate}' as date
+        SELECT unit_id as "unitId", count(id), $${startDateParamIndex}::varchar as date
         FROM roster
         WHERE
-          (start_date IS null AND (end_date IS null OR end_date > '${endDate}'))
-          OR (start_date <= '${startDate}' AND (end_date IS null OR end_date > '${endDate}'))
+          unit_org = $${orgIdParamIndex} AND
+          unit_id LIKE $${unitFilterParamIndex} AND
+          (start_date IS null AND (end_date IS null OR end_date > $${endDateParamIndex}::date))
+          OR (start_date <= $${startDateParamIndex}::date AND (end_date IS null OR end_date > $${endDateParamIndex}::date))
         GROUP BY "unitId"
       `);
 
       dates.add(startDate);
     }
 
-    const rows = await getConnection().query(queries.join(`UNION`)) as {
+    const rows = await getConnection().query(queries.join(`UNION`), params) as {
       unitId: string
       date: string
       count: string
@@ -254,6 +263,11 @@ export const musterUtils = {
   },
 
 };
+
+function addParam(params: any[], data: any) {
+  params.push(data);
+  return params.length;
+}
 
 export type MusterIndividual = {
   nonMusterPercent: number
