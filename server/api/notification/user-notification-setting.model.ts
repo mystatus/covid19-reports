@@ -7,6 +7,7 @@ import {
 import { User } from '../user/user.model';
 import { Org } from '../org/org.model';
 import { Notification } from './notification.model';
+import { timestampColumnTransformer } from '../../util/util';
 
 @Entity()
 export class UserNotificationSetting extends BaseEntity {
@@ -77,6 +78,7 @@ export class UserNotificationSetting extends BaseEntity {
 
   @CreateDateColumn({
     type: 'timestamp',
+    transformer: timestampColumnTransformer,
     nullable: true,
     default: () => 'null',
   })

@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Org } from '../org/org.model';
 import { User } from '../user/user.model';
+import { timestampColumnTransformer } from '../../util/util';
 
 export enum AccessRequestStatus {
   Pending = 'pending',
@@ -38,6 +39,7 @@ export class AccessRequest extends BaseEntity {
 
   @CreateDateColumn({
     type: 'timestamp',
+    transformer: timestampColumnTransformer,
   })
   requestDate!: Date;
 

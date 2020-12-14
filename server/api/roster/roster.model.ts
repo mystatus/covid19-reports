@@ -16,6 +16,7 @@ import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { Unit } from '../unit/unit.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
+import { dateColumnTransformer, dateTimeColumnTransformer } from '../../util/util';
 
 @Entity()
 export class Roster extends BaseEntity {
@@ -47,6 +48,7 @@ export class Roster extends BaseEntity {
   @Column({
     type: 'date',
     nullable: true,
+    transformer: dateColumnTransformer,
     default: () => 'null',
   })
   startDate?: Date;
@@ -54,12 +56,14 @@ export class Roster extends BaseEntity {
   @Column({
     type: 'date',
     nullable: true,
+    transformer: dateColumnTransformer,
     default: () => 'null',
   })
   endDate?: Date;
 
   @CreateDateColumn({
     nullable: true,
+    transformer: dateTimeColumnTransformer,
     default: () => 'null',
   })
   lastReported?: Date;

@@ -1,4 +1,6 @@
 import { BadRequestError } from './error-types';
+import { ValueTransformer } from 'typeorm';
+import moment from 'moment';
 
 export function getOptionalParam<T extends object, K extends keyof T>(param: K, params: T, type: BaseType = 'string'): T[K] | undefined {
   if (!params.hasOwnProperty(param)) {
@@ -62,6 +64,33 @@ export function nextDay(day: DaysOfTheWeek) {
 export function dayIsIn(day: DaysOfTheWeek, set: DaysOfTheWeek) {
   // eslint-disable-next-line no-bitwise
   return (set & day) === day;
+}
+
+export const dateColumnTransformer: ValueTransformer = {
+  from: value => {
+    return value ? moment(value, 'Y-M-D').toDate() : value;
+  },
+  to: value => {
+    return value ? moment(value).format('Y-M-D') : value;
+  }
+}
+
+export const dateTimeColumnTransformer: ValueTransformer = {
+  from: value => {
+    return value ? moment(value).toDate() : value;
+  },
+  to: value => {
+    return value ? moment(value).toISOString() : value;
+  }
+}
+
+export const timestampColumnTransformer: ValueTransformer = {
+  from: value => {
+    return value ? moment.utc(value).toDate() : value;
+  },
+  to: value => {
+    return value ? moment(value).toISOString() : value;
+  }
 }
 
 export const oneDaySeconds = 24 * 60 * 60;
