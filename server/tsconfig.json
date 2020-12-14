@@ -23,12 +23,4 @@
     "strictPropertyInitialization": false,
     "outDir": "./build"
   },
-  "include": [
-    "./**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "nodemon.json",
-    "migration"
-  ]
 }

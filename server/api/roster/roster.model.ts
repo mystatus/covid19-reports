@@ -21,7 +21,7 @@ import { CustomRosterColumn } from './custom-roster-column.model';
 export class Roster extends BaseEntity {
 
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => Unit, unit => unit.id, {
     nullable: false,
@@ -68,7 +68,7 @@ export class Roster extends BaseEntity {
     nullable: false,
     default: '{}',
   })
-  customColumns: CustomColumns;
+  customColumns!: CustomColumns;
 
   getColumnValue(column: RosterColumnInfo) {
     if (column.custom) {
