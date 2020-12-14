@@ -8,6 +8,7 @@
 
 # build output
 /build
+/server/build
 
 # certs
 /server/certs
