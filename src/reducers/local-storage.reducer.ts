@@ -1,7 +1,7 @@
 import { User } from '../actions/user.actions';
 import { getLoggedInState } from '../utility/user-utils';
 
-// We need to be careful about what goes into local localStorage due to security concerns. So make sure not to add anything
+// We need to be careful about what goes into local storage due to security concerns. So make sure not to add anything
 // that is clearly identifying, such as PII/PHI data, group name, etc.
 
 export interface LocalStorageState {
