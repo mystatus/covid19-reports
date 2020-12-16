@@ -125,6 +125,10 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     }
   };
 
+  const cancelUnitChangedDialog = () => {
+    setUnitChangedPromptOpen(false);
+  };
+
   const canSave = () => {
     if (formDisabled || !rosterColumnInfos) {
       return false;
@@ -352,10 +356,10 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
           </ButtonWithSpinner>
         </DialogActions>
       </Dialog>
-      <Dialog open={unitChangedPromptOpen}>
+      <Dialog maxWidth="md" open={unitChangedPromptOpen}>
         <DialogTitle id="unit-changed">Unit Changed</DialogTitle>
         <DialogContent>
-          Is this unit change a correction, or has the individual moved to the new Unit?
+          Is this unit change a correction, or has the individual moved to the new unit?
         </DialogContent>
         <DialogActions className={classes.unitChangedDialogActions}>
           <Button onClick={() => onSave(false)} color="primary">
@@ -363,6 +367,9 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
           </Button>
           <Button onClick={() => onSave(true)} color="primary">
             Individual Moved to New Unit
+          </Button>
+          <Button variant="outlined" onClick={cancelUnitChangedDialog} color="primary">
+            Cancel
           </Button>
         </DialogActions>
       </Dialog>
