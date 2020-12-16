@@ -6,11 +6,6 @@ export default makeStyles((theme: Theme) => createStyles({
     flexGrow: 1,
     padding: theme.spacing(3),
   },
-  newColumn: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
   table: {
     marginBottom: '39px',
   },

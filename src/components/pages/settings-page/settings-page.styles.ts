@@ -30,7 +30,7 @@ export default makeStyles((theme: Theme) => createStyles({
 
       '&.Mui-selected': {
         fontWeight: 'bold',
-        color: '#005EA2',
+        color: theme.palette.primary.main,
       },
     },
     '& .MuiTabs-indicator': {

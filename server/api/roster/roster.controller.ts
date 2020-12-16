@@ -1,6 +1,8 @@
 import { Response } from 'express';
 import csv from 'csvtojson';
 import fs from 'fs';
+import moment, { Moment } from 'moment';
+import { getConnection, OrderByCondition } from 'typeorm';
 import {
   ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams, PagedQuery,
 } from '../index';
@@ -20,6 +22,7 @@ import {
   RosterColumnInfo,
   RosterColumnType,
 } from './roster.types';
+import { Role } from '../role/role.model';
 
 class RosterController {
 
@@ -133,113 +136,12 @@ class RosterController {
     res.send(csvContents);
   }
 
-  async getRoster(req: ApiRequest<OrgParam, any, PagedQuery>, res: Response) {
-    const limit = (req.query.limit != null) ? parseInt(req.query.limit) : 100;
-    const page = (req.query.page != null) ? parseInt(req.query.page) : 0;
-
-    const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appRole!);
-    const roster = await queryBuilder
-      .skip(page * limit)
-      .take(limit)
-      .orderBy({
-        edipi: 'ASC',
-      })
-      .getRawMany<RosterEntryData>();
-
-    const totalRowsCount = await (await Roster.queryAllowedRoster(req.appOrg!, req.appRole!)).getCount();
-
-    res.json({
-      rows: roster,
-      totalRowsCount,
-    });
+  async getRoster(req: ApiRequest<OrgParam, any, GetRosterQuery>, res: Response) {
+    res.json(await internalSearchRoster(req.query, req.appOrg!, req.appRole!));
   }
 
   async searchRoster(req: ApiRequest<OrgParam, SearchRosterBody, GetRosterQuery>, res: Response) {
-    const limit = (req.query.limit != null) ? parseInt(req.query.limit) : 100;
-    const page = (req.query.page != null) ? parseInt(req.query.page) : 0;
-    const rosterColumns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
-
-    const columns: RosterColumnInfo[] = [{
-      name: 'unit',
-      displayName: 'Unit',
-      custom: false,
-      phi: false,
-      pii: false,
-      type: RosterColumnType.String,
-      updatable: false,
-      required: false,
-    }, ...rosterColumns];
-
-    async function makeQueryBuilder() {
-      return Object.keys(req.body)
-        .reduce((queryBuilder, key) => {
-          const column = columns.find(col => col.name === key);
-          if (!column) {
-            throw new BadRequestError('Malformed search query. Unexpected column name.');
-          }
-
-          const { op, value } = req.body[key];
-          const needsQuotedValue = column.type === RosterColumnType.Date || column.type === RosterColumnType.DateTime;
-          const maybeQuote = (v: CustomColumnValue) => (v !== null && needsQuotedValue ? `'${v}'` : v);
-          const columnName = Roster.getColumnSelect(column);
-
-          if (op === 'between' || op === 'in') {
-            if (!Array.isArray(value)) {
-              throw new BadRequestError('Malformed search query. Expected array for value.');
-            }
-
-            if (op === 'in') {
-              return queryBuilder.andWhere(`${columnName} ${op} (:...${key})`, {
-                [key]: value,
-              });
-            }
-
-            if (op === 'between') {
-              return queryBuilder.andWhere(`${columnName} >= (:${key}Min) and ${columnName} <= (:${key}Max)`, {
-                [`${key}Min`]: maybeQuote(value[0]),
-                [`${key}Max`]: maybeQuote(value[1]),
-              });
-            }
-          }
-
-          if (Array.isArray(value)) {
-            throw new BadRequestError('Malformed search query. Expected scalar value.');
-          }
-
-          if (op === '=' || op === '<>' || op === '>' || op === '<') {
-            return queryBuilder.andWhere(`${columnName} ${op} :${key}`, {
-              [key]: maybeQuote(value),
-            });
-          }
-
-          if (op === '~' || op === 'startsWith' || op === 'endsWith') {
-            const prefix = op !== 'startsWith' ? '%' : '';
-            const suffix = op !== 'endsWith' ? '%' : '';
-            return queryBuilder.andWhere(`${columnName} like :${key}`, {
-              [key]: `${prefix}${value}${suffix}`,
-            });
-          }
-
-          throw new BadRequestError('Malformed search query. Received unexpected value for "op".');
-        }, await Roster.queryAllowedRoster(req.appOrg!, req.appRole!));
-    }
-
-    const queryBuilder = await makeQueryBuilder();
-
-    const roster = await queryBuilder.clone()
-      .skip(page * limit)
-      .take(limit)
-      .orderBy({
-        edipi: 'ASC',
-      })
-      .getRawMany<RosterEntryData>();
-
-    const totalRowsCount = await queryBuilder.getCount();
-
-    res.json({
-      rows: roster,
-      totalRowsCount,
-    });
+    res.json(await internalSearchRoster(req.query, req.appOrg!, req.appRole!, req.body));
   }
 
   async uploadRosterEntries(req: ApiRequest<OrgParam>, res: Response) {
@@ -409,37 +311,176 @@ class RosterController {
   async updateRosterEntry(req: ApiRequest<OrgRosterParams, RosterEntryData>, res: Response) {
     const rosterId = req.params.rosterId;
 
-    const entry = await Roster.findOne({
+    let entry = await Roster.findOne({
       relations: ['unit'],
       where: {
         id: rosterId,
       },
     });
 
-    if (!entry) {
-      throw new NotFoundError('User could not be found.');
-    }
-
-    if (req.body.unit) {
-      const unit = await Unit.findOne({
-        relations: ['org'],
-        where: {
-          org: req.appOrg?.id,
-          id: req.body.unit,
-        },
-      });
-      if (!unit) {
-        throw new NotFoundError(`Unit with ID ${req.body.unit} could not be found.`);
+    await getConnection().transaction(async manager => {
+      if (!entry) {
+        throw new NotFoundError('User could not be found.');
       }
-      entry.unit = unit;
-    }
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
-    await setRosterParamsFromBody(req.appOrg!, entry, req.body, columns);
-    const updatedRosterEntry = await entry.save();
 
-    res.json(updatedRosterEntry);
+      let startDateOverride: Date | undefined;
+      if (req.body.unit) {
+        const unit = await Unit.findOne({
+          relations: ['org'],
+          where: {
+            org: req.appOrg?.id,
+            id: req.body.unit,
+          },
+        });
+        if (!unit) {
+          throw new NotFoundError(`Unit with ID ${req.body.unit} could not be found.`);
+        }
+        if (req.body.movedUnit) {
+          const newEntry = copyRosterEntry(entry);
+          const value = getOptionalParam('startDate', req.body, 'string') as string;
+          let startDate: Moment | undefined;
+          if (value) {
+            startDate = moment(dateFromString(value)).startOf('day');
+          }
+          if (!startDate || startDate.isSame(moment(entry.startDate).startOf('day'))) {
+            // Start date wasn't updated, use today as the new unit start date
+            startDate = moment();
+            startDateOverride = startDate.toDate();
+          }
+          entry.endDate = startDate.subtract(1, 'day').toDate();
+          if (entry.startDate && entry.endDate.getTime() <= entry.startDate.getTime()) {
+            throw new BadRequestError('Invalid start and end date for previous unit.');
+          }
+          await manager.save(entry);
+          entry = newEntry;
+        }
+        entry.unit = unit;
+      }
+
+      const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
+      await setRosterParamsFromBody(req.appOrg!, entry, req.body, columns);
+      if (startDateOverride) {
+        entry.startDate = startDateOverride;
+      }
+      const updatedRosterEntry = await manager.save(entry);
+      res.json(updatedRosterEntry);
+    });
   }
 
+}
+
+async function internalSearchRoster(query: GetRosterQuery, org: Org, role: Role, searchParams?: SearchRosterBody) {
+  const limit = (query.limit != null) ? parseInt(query.limit) : 100;
+  const page = (query.page != null) ? parseInt(query.page) : 0;
+  const orderBy = query.orderBy || 'edipi';
+  const sortDirection = query.sortDirection || 'ASC';
+  const rosterColumns = await Roster.getAllowedColumns(org, role);
+
+  const columns: RosterColumnInfo[] = [{
+    name: 'unit',
+    displayName: 'Unit',
+    custom: false,
+    phi: false,
+    pii: false,
+    type: RosterColumnType.String,
+    updatable: false,
+    required: false,
+  }, ...rosterColumns];
+
+  async function makeQueryBuilder() {
+    if (!searchParams) {
+      return Roster.queryAllowedRoster(org, role);
+    }
+    return Object.keys(searchParams)
+      .reduce((queryBuilder, key) => {
+        const column = columns.find(col => col.name === key);
+        if (!column) {
+          throw new BadRequestError('Malformed search query. Unexpected column name.');
+        }
+
+        const { op, value } = searchParams[key];
+        const needsQuotedValue = column.type === RosterColumnType.Date || column.type === RosterColumnType.DateTime;
+        const maybeQuote = (v: CustomColumnValue) => (v !== null && needsQuotedValue ? `'${v}'` : v);
+        const columnName = Roster.getColumnSelect(column);
+
+        if (op === 'between' || op === 'in') {
+          if (!Array.isArray(value)) {
+            throw new BadRequestError('Malformed search query. Expected array for value.');
+          }
+
+          if (op === 'in') {
+            return queryBuilder.andWhere(`${columnName} ${op} (:...${key})`, {
+              [key]: value,
+            });
+          }
+
+          if (op === 'between') {
+            return queryBuilder.andWhere(`${columnName} >= (:${key}Min) and ${columnName} <= (:${key}Max)`, {
+              [`${key}Min`]: maybeQuote(value[0]),
+              [`${key}Max`]: maybeQuote(value[1]),
+            });
+          }
+        }
+
+        if (Array.isArray(value)) {
+          throw new BadRequestError('Malformed search query. Expected scalar value.');
+        }
+
+        if (op === '=' || op === '<>' || op === '>' || op === '<') {
+          return queryBuilder.andWhere(`${columnName} ${op} :${key}`, {
+            [key]: maybeQuote(value),
+          });
+        }
+
+        if (op === '~' || op === 'startsWith' || op === 'endsWith') {
+          const prefix = op !== 'startsWith' ? '%' : '';
+          const suffix = op !== 'endsWith' ? '%' : '';
+          return queryBuilder.andWhere(`${columnName} like :${key}`, {
+            [key]: `${prefix}${value}${suffix}`,
+          });
+        }
+
+        throw new BadRequestError('Malformed search query. Received unexpected value for "op".');
+      }, await Roster.queryAllowedRoster(org, role));
+  }
+
+  const queryBuilder = await makeQueryBuilder();
+
+  const rosterQuery = queryBuilder
+    .clone()
+    .offset(page * limit)
+    .limit(limit);
+  const sortColumn = rosterColumns.find(column => column.name === orderBy);
+  if (sortColumn) {
+    const order: OrderByCondition = {};
+    order[Roster.getColumnSelect(sortColumn)] = sortDirection;
+    rosterQuery.orderBy(order);
+  } else if (orderBy === 'unit') {
+    const order: OrderByCondition = {};
+    order['u.name'] = sortDirection;
+    rosterQuery.orderBy(order);
+  }
+  const roster = await rosterQuery.getRawMany<RosterEntryData>();
+
+  const totalRowsCount = await queryBuilder.getCount();
+
+  return {
+    rows: roster,
+    totalRowsCount,
+  };
+}
+
+function copyRosterEntry(roster: Roster) {
+  const newEntry = new Roster();
+  newEntry.edipi = roster.edipi;
+  newEntry.unit = roster.unit;
+  newEntry.firstName = roster.firstName;
+  newEntry.lastName = roster.lastName;
+  newEntry.startDate = roster.startDate;
+  newEntry.endDate = roster.endDate;
+  newEntry.lastReported = roster.lastReported;
+  newEntry.customColumns = roster.customColumns;
+  return newEntry;
 }
 
 function setCustomColumnFromBody(column: CustomRosterColumn, body: CustomColumnData) {
@@ -586,9 +627,9 @@ interface RosterInfo {
 }
 
 type GetRosterQuery = {
-  limit: string
-  page: string
-};
+  orderBy?: string
+  sortDirection?: 'ASC' | 'DESC'
+} & PagedQuery;
 
 type QueryOp = '=' | '<>' | '~' | '>' | '<' | 'startsWith' | 'endsWith' | 'in' | 'between';
 
@@ -608,7 +649,8 @@ type RosterFileRow = {
 };
 
 export type RosterEntryData = {
-  [key: string]: CustomColumnValue
+  movedUnit?: boolean,
+  [key: string]: CustomColumnValue | undefined
 };
 
 type CustomColumnData = {

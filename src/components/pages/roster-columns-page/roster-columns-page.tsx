@@ -12,7 +12,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
-import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
+import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PageHeader from '../../page-header/page-header';
 import useStyles from './roster-columns-page.styles';
@@ -22,6 +22,7 @@ import { ApiRosterColumnInfo, rosterColumnTypeDisplayName } from '../../../model
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditColumnDialog, EditColumnDialogProps } from './edit-column-dialog';
 import { AppFrame } from '../../../actions/app-frame.actions';
+import { ButtonSet } from '../../buttons/button-set';
 
 interface ColumnMenuState {
   anchor: HTMLElement | null,
@@ -138,20 +139,18 @@ export const RosterColumnsPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <Grid container>
-          <Grid item xs={6}>
-            <PageHeader title="Custom Roster Columns" />
-          </Grid>
-          <Grid className={classes.newColumn} item xs={6}>
-            <Button
-              color="primary"
-              onClick={newColumn}
-              startIcon={<AddCircleOutlineIcon />}
-            >
-              Add Column
-            </Button>
-          </Grid>
-        </Grid>
+        <PageHeader title="Custom Roster Columns" />
+        <ButtonSet>
+          <Button
+            size="large"
+            variant="text"
+            color="primary"
+            onClick={newColumn}
+            startIcon={<AddCircleIcon />}
+          >
+            Add New Column
+          </Button>
+        </ButtonSet>
         <TableContainer className={classes.table} component={Paper}>
           <Table aria-label="column table">
             <TableHead>

@@ -4,6 +4,9 @@ import { unstable_createMuiStrictModeTheme as createMuiTheme } from '@material-u
 
 const theme = createMuiTheme({
   palette: {
+    background: {
+      default: 'rgb(240, 240,240)',
+    },
     text: {
       primary: '#3D4551',
       hint: '#71767A',
@@ -55,10 +58,17 @@ theme.overrides = {
   },
   MuiButtonBase: {
     root: {
+      '&.MuiButton-text.MuiButton-textSizeLarge': {
+        color: theme.palette.text.primary,
+        textTransform: 'none',
+        '& svg': {
+          color: theme.palette.primary.main,
+        },
+      },
       '&.MuiToggleButton-root': {
         paddingTop: '4px',
         paddingBottom: '4px',
-        borderColor: '#71767A',
+        borderColor: theme.palette.text.hint,
         color: theme.palette.text.primary,
 
         '&.Mui-selected': {
@@ -96,7 +106,7 @@ theme.overrides = {
   MuiCssBaseline: {
     '@global': {
       body: {
-        backgroundColor: 'rgb(240, 240, 240)',
+        backgroundColor: theme.palette.background.default,
       },
       a: {
         textDecoration: 'none',
@@ -114,7 +124,7 @@ theme.overrides = {
   },
   MuiInputBase: {
     root: {
-      border: '1px solid #71767A',
+      border: `1px solid ${theme.palette.text.hint}`,
       borderRadius: '4px',
     },
   },
@@ -147,6 +157,11 @@ theme.overrides = {
       },
     },
   },
+  MuiTableContainer: {
+    root: {
+      overflowY: 'hidden',
+    },
+  },
   MuiTableCell: {
     head: {
       textTransform: 'uppercase',
@@ -167,7 +182,7 @@ theme.overrides = {
       '& label': {
         fontSize: '16px',
         fontWeight: 600,
-        color: '#3D4551',
+        color: theme.palette.text.primary,
       },
 
       '& label + .MuiInput-formControl': {

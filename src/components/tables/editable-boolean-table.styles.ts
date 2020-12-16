@@ -1,13 +1,13 @@
-import { createStyles, makeStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 
-export default makeStyles(() => createStyles({
+export default makeStyles((theme: Theme) => createStyles({
   rootNoScroll: {
-    border: '1px solid #71767a',
+    border: `1px solid ${theme.palette.text.hint}`,
     borderRadius: '4px',
     maxHeight: '227px',
   },
   rootScroll: {
-    border: '1px solid #71767a',
+    border: `1px solid ${theme.palette.text.hint}`,
     borderRadius: '4px 0px 0px 4px',
     maxHeight: '227px',
     overflowY: 'auto',

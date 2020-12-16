@@ -5,10 +5,10 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText, Accordion, AccordionSummary, AccordionDetails, Typography, Grid, AccordionActions,
+  DialogContentText, Accordion, AccordionSummary, AccordionDetails, Typography, AccordionActions,
 } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
+import AddCircleIcon from '@material-ui/icons/AddCircle';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
@@ -23,6 +23,7 @@ import { UserSelector } from '../../../selectors/user.selector';
 import { RoleSelector } from '../../../selectors/role.selector';
 import { Role } from '../../../actions/role.actions';
 import { Workspace } from '../../../actions/workspace.actions';
+import { ButtonSet } from '../../buttons/button-set';
 
 
 export const RoleManagementPage = () => {
@@ -119,20 +120,18 @@ export const RoleManagementPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <Grid container>
-          <Grid item xs={6}>
-            <PageHeader title="Group Roles" />
-          </Grid>
-          <Grid className={classes.newRole} item xs={6}>
-            <Button
-              color="primary"
-              onClick={newRole}
-              startIcon={<AddCircleOutlineIcon />}
-            >
-              New Role
-            </Button>
-          </Grid>
-        </Grid>
+        <PageHeader title="Group Roles" />
+        <ButtonSet>
+          <Button
+            size="large"
+            variant="text"
+            color="primary"
+            onClick={newRole}
+            startIcon={<AddCircleIcon />}
+          >
+            Add New Role
+          </Button>
+        </ButtonSet>
         <div className={classes.accordionHeader}>
           <Typography>Role Name</Typography>
           <Typography>Unit Filter</Typography>

@@ -40,12 +40,14 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     open, orgId, rosterColumnInfos, onClose, onError,
   } = props;
 
-  const hiddenEditFields = ['lastReported'];
+  const hiddenEditFields = ['unit', 'lastReported'];
 
   const existingRosterEntry: boolean = !!props.rosterEntry;
   const [formDisabled, setFormDisabled] = useState(false);
   const [saveRosterEntryLoading, setSaveRosterEntryLoading] = useState(false);
+  const [unitChangedPromptOpen, setUnitChangedPromptOpen] = useState(false);
   const [rosterEntry, setRosterEntryProperties] = useState(existingRosterEntry ? props.rosterEntry as ApiRosterEntry : {} as ApiRosterEntry);
+  const originalUnit = props.rosterEntry?.unit;
 
   if (!open) {
     return <></>;
@@ -79,7 +81,15 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     updateRosterEntryProperty('unit', event.target.value);
   };
 
-  const onSave = async () => {
+  const checkSave = async () => {
+    if (existingRosterEntry && rosterEntry.unit !== originalUnit) {
+      setUnitChangedPromptOpen(true);
+    } else {
+      await onSave(false);
+    }
+  };
+
+  const onSave = async (movedUnit: boolean) => {
     setFormDisabled(true);
     try {
       setSaveRosterEntryLoading(true);
@@ -90,6 +100,9 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
         data.unit = units[0].id;
       }
       if (existingRosterEntry) {
+        if (movedUnit) {
+          data.movedUnit = true;
+        }
         await axios.put(`api/roster/${orgId}/${rosterEntry!.id}`, data);
       } else {
         await axios.post(`api/roster/${orgId}`, data);
@@ -119,9 +132,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
 
     const requiredColumns = rosterColumnInfos.filter(columnInfo => columnInfo.required);
     if (requiredColumns) {
-      const regex = RegExp(/^[0-9]{10}$/g);
       for (const column of requiredColumns) {
-
         const value = rosterEntry[column.name] as string;
         if (value == null) {
           return false;
@@ -134,7 +145,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
             if (value.trim().length === 0) {
               return false;
             }
-            if (column.name === 'edipi' && !regex.test(value)) {
+            if (column.name === 'edipi' && !/^[0-9]{10}$/g.test(value)) {
               return false;
             }
             break;
@@ -303,42 +314,58 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   };
 
   return (
-    <Dialog className={classes.root} maxWidth="md" onClose={onClose} open={open}>
-      <DialogTitle id="alert-dialog-title">{existingRosterEntry ? 'Edit Roster Entry' : 'New Roster Entry'}</DialogTitle>
-      <DialogContent>
-        <Grid container spacing={3}>
-          <Grid item xs={6}>
-            <FormControl required className={classes.selectField}>
-              <InputLabel id="unit-label">Unit</InputLabel>
-              <Select
-                labelId="unit-label"
-                native
-                disabled={formDisabled}
-                value={rosterEntry.unit}
-                onChange={onUnitChanged}
-                inputProps={{
-                  name: 'unit',
-                  id: 'unit-select',
-                }}
-              >
-                {units && units.map(unit => (
-                  <option key={unit.id} value={unit.id}>{unit.name}</option>
-                ))}
-              </Select>
-            </FormControl>
+    <>
+      <Dialog className={classes.root} maxWidth="md" onClose={onClose} open={open}>
+        <DialogTitle id="alert-dialog-title">{existingRosterEntry ? 'Edit Roster Entry' : 'New Roster Entry'}</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={3}>
+            <Grid item xs={6}>
+              <FormControl required className={classes.selectField}>
+                <InputLabel id="unit-label">Unit</InputLabel>
+                <Select
+                  labelId="unit-label"
+                  native
+                  disabled={formDisabled}
+                  value={rosterEntry.unit}
+                  onChange={onUnitChanged}
+                  inputProps={{
+                    name: 'unit',
+                    id: 'unit-select',
+                  }}
+                >
+                  {units && units.map(unit => (
+                    <option key={unit.id} value={unit.id}>{unit.name}</option>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            {buildInputFields()}
           </Grid>
-          {buildInputFields()}
-        </Grid>
-        {buildCheckboxFields()}
-      </DialogContent>
-      <DialogActions className={classes.editRosterEntryDialogActions}>
-        <Button disabled={formDisabled} variant="outlined" onClick={onClose} color="primary">
-          Cancel
-        </Button>
-        <ButtonWithSpinner disabled={!canSave()} onClick={onSave} color="primary" loading={saveRosterEntryLoading}>
-          Save
-        </ButtonWithSpinner>
-      </DialogActions>
-    </Dialog>
+          {buildCheckboxFields()}
+        </DialogContent>
+        <DialogActions className={classes.editRosterEntryDialogActions}>
+          <Button disabled={formDisabled} variant="outlined" onClick={onClose} color="primary">
+            Cancel
+          </Button>
+          <ButtonWithSpinner disabled={!canSave()} onClick={checkSave} color="primary" loading={saveRosterEntryLoading}>
+            Save
+          </ButtonWithSpinner>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={unitChangedPromptOpen}>
+        <DialogTitle id="unit-changed">Unit Changed</DialogTitle>
+        <DialogContent>
+          Is this unit change a correction, or has the individual moved to the new Unit?
+        </DialogContent>
+        <DialogActions className={classes.unitChangedDialogActions}>
+          <Button onClick={() => onSave(false)} color="primary">
+            This is a Correction
+          </Button>
+          <Button onClick={() => onSave(true)} color="primary">
+            Individual Moved to New Unit
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };

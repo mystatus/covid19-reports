@@ -31,7 +31,7 @@ export default makeStyles((theme: Theme) => createStyles({
     marginTop: theme.spacing(3),
   },
   flagTableBorder: {
-    border: '1px solid #71767a',
+    border: `1px solid ${theme.palette.text.hint}`,
     borderRadius: '4px',
   },
   typeSelect: {

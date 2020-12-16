@@ -102,11 +102,13 @@ export class Roster extends BaseEntity {
     return `roster.${snakeCase(column.name)}`;
   }
 
-  static async queryAllowedRoster(org: Org, role: Role) {
+  static async queryAllowedRoster(org: Org, role: Role, columns?: RosterColumnInfo[]) {
     //
     // Query the roster, returning only columns and rows that are allowed for the role of the requester.
     //
-    const columns = await Roster.getAllowedColumns(org, role);
+    if (!columns) {
+      columns = await Roster.getAllowedColumns(org, role);
+    }
     const queryBuilder = Roster.createQueryBuilder('roster').select([]);
     queryBuilder.leftJoin('roster.unit', 'u');
     // Always select the id column

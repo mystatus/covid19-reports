@@ -6,14 +6,6 @@ export default makeStyles((theme: Theme) => createStyles({
     flexGrow: 1,
     padding: theme.spacing(3),
   },
-  buttons: {
-    display: 'flex',
-    marginBottom: theme.spacing(3),
-
-    '& .MuiButtonBase-root': {
-      marginRight: theme.spacing(3),
-    },
-  },
   fillWidth: {
     width: '100%',
   },
@@ -30,7 +22,7 @@ export default makeStyles((theme: Theme) => createStyles({
     },
   },
   secondaryButtonCount: {
-    backgroundColor: '#005ea2',
+    backgroundColor: theme.palette.primary.main,
     borderRadius: '50%',
     color: '#fff',
     fontSize: '12px !important',
@@ -39,15 +31,23 @@ export default makeStyles((theme: Theme) => createStyles({
   },
   tableWrapper: {
     overflowY: 'auto',
+    width: '100%',
 
     '& tr > *': {
-      maxWidth: '220px',
-      textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
     },
+  },
+  pagination: {
+    float: 'right',
   },
   columnItem: {
     paddingBottom: 0,
     paddingTop: 0,
+  },
+  deleteDialogActions: {
+    justifyContent: 'center',
+    backgroundColor: '#F0F1F1',
+    padding: '15px 35px',
+    marginTop: '20px',
   },
 }));

@@ -244,6 +244,7 @@ export const musterUtils = {
       id: `${unit.org!.id}-${unit.id}-${moment.unix(startTimestamp).utc().format('Y-M-D-HH-mm')}`,
       orgId: unit.org!.id,
       unitId: unit.id,
+      unitName: unit.name,
       startTimestamp,
       endTimestamp,
       startTime: muster.startTime,
@@ -277,6 +278,7 @@ export type MusterIndividual = {
 export interface MusterWindow {
   id: string,
   unitId: string,
+  unitName: string,
   orgId: number,
   startTimestamp: number,
   endTimestamp: number,

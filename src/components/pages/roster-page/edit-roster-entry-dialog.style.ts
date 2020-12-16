@@ -1,7 +1,7 @@
-import { createStyles } from '@material-ui/core';
+import { createStyles, Theme } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 
-export default makeStyles(() => createStyles({
+export default makeStyles((theme: Theme) => createStyles({
   root: {
     '& .MuiGrid-spacing-xs-3': {
       margin: '0px -12px',
@@ -10,7 +10,7 @@ export default makeStyles(() => createStyles({
   selectField: {
     width: '100%',
     '& .MuiFormLabel-root': {
-      color: '#3D4551',
+      color: theme.palette.text.primary,
       fontSize: '16px',
       fontWeight: '600',
     },
@@ -46,8 +46,14 @@ export default makeStyles(() => createStyles({
     padding: '15px 35px',
   },
   inputLabel: {
-    color: '#3D4551',
+    color: theme.palette.text.primary,
     fontSize: 16,
     fontWeight: 600,
+  },
+  unitChangedDialogActions: {
+    justifyContent: 'center',
+    backgroundColor: '#F0F1F1',
+    padding: '15px 35px',
+    marginTop: '20px',
   },
 }));

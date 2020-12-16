@@ -11,15 +11,13 @@ import {
   Menu,
   MenuItem,
   Paper,
-  Table,
   TableContainer,
-  TableFooter,
-  TableRow,
 } from '@material-ui/core';
-import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
+import BackupIcon from '@material-ui/icons/Backup';
 import FilterListIcon from '@material-ui/icons/FilterList';
-import PublishIcon from '@material-ui/icons/Publish';
-import GetAppIcon from '@material-ui/icons/GetApp';
+import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
+import ReplyAllIcon from '@material-ui/icons/ReplyAll';
+import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import React, {
   ChangeEvent, MouseEvent, useCallback, useEffect, useRef, useState,
@@ -32,7 +30,7 @@ import { Roster } from '../../../actions/roster.actions';
 import { downloadFile } from '../../../utility/download';
 import { getNewPageIndex } from '../../../utility/table';
 import PageHeader from '../../page-header/page-header';
-import { TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
+import { SortDirection, TableColumn, TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
 import useStyles from './roster-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
@@ -53,6 +51,7 @@ import {
   QueryBuilder, QueryFieldPickListItem, QueryFieldType, QueryFilterState,
 } from '../../query-builder/query-builder';
 import { formatMessage } from '../../../utility/errors';
+import { ButtonSet } from '../../buttons/button-set';
 
 const unitColumn: ApiRosterColumnInfo = {
   name: 'unit',
@@ -61,10 +60,15 @@ const unitColumn: ApiRosterColumnInfo = {
   phi: false,
   pii: false,
   type: ApiRosterColumnType.String,
-  updatable: false,
-  required: false,
+  updatable: true,
+  required: true,
   config: {},
 };
+
+interface SortState {
+  column: string,
+  sortDirection: SortDirection,
+}
 
 export const RosterPage = () => {
   const classes = useStyles();
@@ -86,9 +90,11 @@ export const RosterPage = () => {
   const [deleteRosterEntryDialogOpen, setDeleteRosterEntryDialogOpen] = useState(false);
   const [editRosterEntryDialogProps, setEditRosterEntryDialogProps] = useState<EditRosterEntryDialogProps>({ open: false });
   const [deleteRosterEntryLoading, setDeleteRosterEntryLoading] = useState(false);
+  const [rosterEntryEndDateLoading, setRosterEntryEndDateLoading] = useState(false);
   const [downloadTemplateLoading, setDownloadTemplateLoading] = useState(false);
   const [exportRosterLoading, setExportRosterLoading] = useState(false);
   const [queryFilterState, setQueryFilterState] = useState<QueryFilterState>();
+  const [sortState, setSortState] = useState<SortState>();
   const [rosterColumnInfos, setRosterColumnInfos] = useState<ApiRosterColumnInfo[]>([]);
   const [visibleColumns, setVisibleColumns] = useState<ApiRosterColumnInfo[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -104,18 +110,21 @@ export const RosterPage = () => {
 
   const reloadTable = useCallback(async () => {
     try {
-
+      let sortParams = '';
+      if (sortState) {
+        sortParams = `&orderBy=${sortState.column}&sortDirection=${sortState.sortDirection}`;
+      }
       if (queryFilterState) {
         setApplyingFilters(true);
         setRows([]);
         setTotalRowsCount(0);
-        const response = await axios.post(`api/roster/${orgId}/search/?limit=${rowsPerPage}&page=${page}`, queryFilterState);
+        const response = await axios.post(`api/roster/${orgId}/search?limit=${rowsPerPage}&page=${page}${sortParams}`, queryFilterState);
         const data = response.data as ApiRosterPaginated;
         setRows(data.rows);
         setTotalRowsCount(data.totalRowsCount);
         setApplyingFilters(false);
       } else {
-        const response = await axios.get(`api/roster/${orgId}/?limit=${rowsPerPage}&page=${page}`);
+        const response = await axios.get(`api/roster/${orgId}?limit=${rowsPerPage}&page=${page}${sortParams}`);
         const data = response.data as ApiRosterPaginated;
         setRows(data.rows);
         setTotalRowsCount(data.totalRowsCount);
@@ -129,12 +138,12 @@ export const RosterPage = () => {
         onClose: () => { setAlertDialogProps({ open: false }); },
       });
     }
-  }, [page, rowsPerPage, orgId, queryFilterState]);
+  }, [page, rowsPerPage, orgId, queryFilterState, sortState]);
 
   const initializeRosterColumnInfo = useCallback(async () => {
     try {
       const infos = (await axios.get(`api/roster/${orgId}/info`)).data as ApiRosterColumnInfo[];
-      const unitColumnWithInfos = [unitColumn, ...infos];
+      const unitColumnWithInfos = sortRosterColumns([unitColumn, ...infos]);
       setRosterColumnInfos(unitColumnWithInfos);
       if (initialLoad.current) {
         setVisibleColumns(unitColumnWithInfos.slice(0, maxNumColumnsToShow));
@@ -164,6 +173,23 @@ export const RosterPage = () => {
     initialLoad.current = false;
   }, [dispatch, orgId, initializeRosterColumnInfo, reloadTable]);
 
+  const sortRosterColumns = (columns: ApiRosterColumnInfo[]) => {
+    const columnPriority: {
+      [key: string]: number | undefined,
+      default: number,
+    } = {
+      edipi: 1,
+      firstName: 2,
+      lastName: 3,
+      unit: 4,
+      lastReported: 5,
+      default: 6,
+    };
+    return columns.sort((a: ApiRosterColumnInfo, b: ApiRosterColumnInfo) => {
+      return (columnPriority[a.name] || columnPriority.default) - (columnPriority[b.name] || columnPriority.default);
+    });
+  };
+
   useEffect(() => {
     const unitNames: { [key: string]: string } = {};
     for (const unit of units) {
@@ -179,6 +205,13 @@ export const RosterPage = () => {
   //
   // Functions
   //
+
+  const handleSortChanged = (column: TableColumn, direction: SortDirection) => {
+    setSortState({
+      column: column.name,
+      sortDirection: direction,
+    });
+  };
 
   const handleChangePage = (event: MouseEvent<HTMLButtonElement> | null, pageNew: number) => {
     setPage(pageNew);
@@ -283,6 +316,31 @@ export const RosterPage = () => {
     setDeleteRosterEntryDialogOpen(true);
   };
 
+  const setRosterEntryEndDate = async () => {
+    try {
+      setRosterEntryEndDateLoading(true);
+      await axios.put(`api/roster/${orgId}/${selectedRosterEntry!.id}`, {
+        endDate: new Date().toISOString(),
+      });
+    } catch (error) {
+      let message = 'Internal Server Error';
+      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
+        message = error.response.data.errors[0].message;
+      }
+      setAlertDialogProps({
+        open: true,
+        title: 'Remove Roster Entry',
+        message: `Unable to set end date for roster entry: ${message}`,
+        onClose: () => { setAlertDialogProps({ open: false }); },
+      });
+    } finally {
+      setRosterEntryEndDateLoading(false);
+      setDeleteRosterEntryDialogOpen(false);
+      setSelectedRosterEntry(undefined);
+      await initializeTable();
+    }
+  };
+
   const deleteRosterEntry = async () => {
     try {
       setDeleteRosterEntryLoading(true);
@@ -374,7 +432,7 @@ export const RosterPage = () => {
       <Container maxWidth="md">
         <PageHeader title="Roster" />
 
-        <div className={classes.buttons}>
+        <ButtonSet>
           <input
             accept="text/csv"
             id="raised-button-file"
@@ -386,7 +444,8 @@ export const RosterPage = () => {
           <label htmlFor="raised-button-file">
             <Button
               size="large"
-              startIcon={<PublishIcon />}
+              variant="text"
+              startIcon={<BackupIcon />}
               component="span"
             >
               Upload CSV
@@ -396,7 +455,8 @@ export const RosterPage = () => {
           <ButtonWithSpinner
             type="button"
             size="large"
-            startIcon={<GetAppIcon />}
+            variant="text"
+            startIcon={<CloudDownloadIcon />}
             onClick={() => downloadCSVTemplate()}
             loading={downloadTemplateLoading}
           >
@@ -406,7 +466,8 @@ export const RosterPage = () => {
           <ButtonWithSpinner
             type="button"
             size="large"
-            startIcon={<GetAppIcon />}
+            variant="text"
+            startIcon={<ReplyAllIcon />}
             onClick={() => downloadCSVExport()}
             loading={exportRosterLoading}
           >
@@ -416,12 +477,13 @@ export const RosterPage = () => {
           <Button
             color="primary"
             size="large"
-            startIcon={<AddCircleOutlineIcon />}
+            variant="text"
+            startIcon={<PersonAddIcon />}
             onClick={addButtonClicked}
           >
-            Add
+            Add Individual
           </Button>
-        </div>
+        </ButtonSet>
 
         <TableContainer component={Paper}>
           <div className={classes.secondaryButtons}>
@@ -501,33 +563,33 @@ export const RosterPage = () => {
             open={filtersOpen}
           />
           <div className={classes.tableWrapper}>
-            <Table aria-label="simple table">
-              <TableCustomColumnsContent
-                rows={rows}
-                columns={visibleColumns}
-                idColumn="id"
-                noDataText={applyingFilters ? 'Searching...' : 'No Data'}
-                rowOptions={{
-                  showEditButton: true,
-                  showDeleteButton: true,
-                  onEditButtonClick: editButtonClicked,
-                  onDeleteButtonClick: deleteButtonClicked,
-                  renderCell: getCellDisplayValue,
-                }}
-              />
-              <TableFooter>
-                <TableRow>
-                  <TablePagination
-                    count={totalRowsCount}
-                    page={page}
-                    rowsPerPage={rowsPerPage}
-                    rowsPerPageOptions={[10, 25, 50]}
-                    onChangePage={handleChangePage}
-                    onChangeRowsPerPage={handleChangeRowsPerPage}
-                  />
-                </TableRow>
-              </TableFooter>
-            </Table>
+            <TableCustomColumnsContent
+              rows={rows}
+              columns={visibleColumns}
+              sortable
+              onSortChange={handleSortChanged}
+              idColumn="id"
+              noDataText={applyingFilters ? 'Searching...' : 'No Data'}
+              rowOptions={{
+                menuItems: [{
+                  name: 'Edit Entry',
+                  callback: editButtonClicked,
+                }, {
+                  name: 'Delete Entry',
+                  callback: deleteButtonClicked,
+                }],
+                renderCell: getCellDisplayValue,
+              }}
+            />
+            <TablePagination
+              className={classes.pagination}
+              count={totalRowsCount}
+              page={page}
+              rowsPerPage={rowsPerPage}
+              rowsPerPageOptions={[10, 25, 50]}
+              onChangePage={handleChangePage}
+              onChangeRowsPerPage={handleChangeRowsPerPage}
+            />
           </div>
         </TableContainer>
       </Container>
@@ -541,15 +603,18 @@ export const RosterPage = () => {
           <DialogTitle id="alert-dialog-title">Remove Individual</DialogTitle>
           <DialogContent>
             <DialogContentText id="alert-dialog-description">
-              Are you sure you want to remove this individual from this roster?
+              Is the removal of this individual a correction, or is the individual no longer part of the group?
             </DialogContentText>
           </DialogContent>
-          <DialogActions>
+          <DialogActions className={classes.deleteDialogActions}>
             <ButtonWithSpinner onClick={deleteRosterEntry} loading={deleteRosterEntryLoading}>
-              Yes
+              This is a Correction
             </ButtonWithSpinner>
-            <Button onClick={cancelDeleteRosterEntryDialog}>
-              No
+            <ButtonWithSpinner onClick={setRosterEntryEndDate} loading={rosterEntryEndDateLoading}>
+              Individual Left Group
+            </ButtonWithSpinner>
+            <Button variant="outlined" onClick={cancelDeleteRosterEntryDialog}>
+              Cancel
             </Button>
           </DialogActions>
         </Dialog>

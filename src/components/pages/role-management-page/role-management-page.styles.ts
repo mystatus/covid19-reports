@@ -6,11 +6,6 @@ export default makeStyles((theme: Theme) => createStyles({
     flexGrow: 1,
     padding: theme.spacing(3),
   },
-  newRole: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
   accordionHeader: {
     display: 'flex',
     margin: '0px 48px 0px 16px',
@@ -20,7 +15,7 @@ export default makeStyles((theme: Theme) => createStyles({
       flexShrink: 0,
       fontWeight: 'bold',
       fontSize: '13px',
-      color: '#71767A',
+      color: theme.palette.text.hint,
     },
   },
   roleAccordion: {
