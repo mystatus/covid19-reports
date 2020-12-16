@@ -11,7 +11,7 @@ class ReadOnlyRestController {
 
   // Redirects user to Kibana login page. By attaching the rorJWT this will effectively log in the user seamlessly,
   // and store rorCookie in the browser.
-  login(req: ApiRequest, res: Response) {
+  login(req: ApiRequest<null, null, LoginQuery>, res: Response) {
     console.log('ror login()');
 
     const rorJwt = buildJWT(req.appUser, req.appRole!, req.appWorkspace!);
@@ -19,7 +19,12 @@ class ReadOnlyRestController {
 
     res.cookie('orgId', req.appOrg!.id, { httpOnly: true });
 
-    return res.redirect(`${config.kibana.basePath}/login?jwt=${rorJwt}`);
+    let url = `${config.kibana.basePath}/login?jwt=${rorJwt}`;
+    if (req.query.dashboardUuid) {
+      url += `#/dashboard/${req.query.dashboardUuid}`;
+    }
+
+    return res.redirect(url);
   }
 
   // Logs out of a Kibana session by clearing the rorCookie.
@@ -50,6 +55,10 @@ export function buildJWT(user: User, role: Role, workspace: Workspace) {
   jwt.setExpiration(new Date().getTime() + (86400 * 1000 * 30)); // 30d
 
   return jwt.compact();
+}
+
+type LoginQuery = {
+  dashboardUuid?: string
 }
 
 export default new ReadOnlyRestController();
