@@ -1,7 +1,9 @@
-import {Response} from 'express';
-import {ApiRequest, EdipiParam} from '../index';
+import { Response } from 'express';
+import { ApiRequest, EdipiParam } from '../index';
 import config from '../../config';
+import { dateFromString } from '../../util/util';
 import AWS from 'aws-sdk';
+import { BadRequestError, InternalServerError } from '../../util/error-types';
 
 class ReingestController {
 
@@ -70,14 +72,18 @@ class ReingestController {
       });
     } catch(err) {
       console.log('Reingest Failed: ', err.message);
-      res.status(500).send(`Error: ${err.message}`);
+      throw new InternalServerError(`Error during reingest request: ${err.message}`);
     }
 
   }
 
   static convertDateParam(date: string|number|Date): number {
     if (typeof date == "string") {
-      return new Date(date).getTime();
+      const convertedDate = dateFromString(date);
+      if (!convertedDate) {
+        throw new BadRequestError(`Invalid date string provided for reingest: ${date}`);
+      }
+      return convertedDate.getTime();
     } else if (date instanceof Date) {
       return date.getTime();
     }

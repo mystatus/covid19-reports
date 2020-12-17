@@ -2,6 +2,24 @@ import { BadRequestError } from './error-types';
 import { ValueTransformer } from 'typeorm';
 import moment from 'moment';
 
+
+export function dateFromString(dateStr: string) {
+  if (dateStr && dateStr.length > 0) {
+    const numericDate = Number(dateStr);
+    let date: Date;
+    if (!Number.isNaN(numericDate)) {
+      date = new Date(numericDate);
+    } else {
+      date = new Date(dateStr);
+    }
+    if (Number.isNaN(date.getTime())) {
+      throw new BadRequestError(`Unable to parse date '${dateStr}'.  Valid dates are ISO formatted date strings and UNIX timestamps.`);
+    }
+    return date;
+  }
+  return undefined;
+}
+
 export function getOptionalParam<T extends object, K extends keyof T>(param: K, params: T, type: BaseType = 'string'): T[K] | undefined {
   if (!params.hasOwnProperty(param)) {
     return undefined;
