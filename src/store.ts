@@ -1,26 +1,51 @@
 import {
-  createStore, combineReducers, applyMiddleware, compose, Middleware, AnyAction,
+  createStore,
+  combineReducers,
+  applyMiddleware,
+  compose,
+  Middleware,
+  AnyAction,
 } from 'redux';
 import thunk from 'redux-thunk';
-import { appFrameInitialState, appFrameReducer, AppFrameState } from './reducers/app-frame.reducer';
-import { NotificationState, notificationInitialState, notificationReducer } from './reducers/notification.reducer';
-import { RoleState, roleInitialState, roleReducer } from './reducers/role.reducer';
-import { RosterState, rosterInitialState, rosterReducer } from './reducers/roster.reducer';
-import { UserState, userInitialState, userReducer } from './reducers/user.reducer';
-import { WorkspaceState, workspaceInitialState, workspaceReducer } from './reducers/workspace.reducer';
-import { unitInitialState, unitReducer, UnitState } from './reducers/unit.reducer';
+import {
+  persistStore,
+  persistReducer,
+} from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
+import {
+  appFrameInitialState,
+  appFrameReducer,
+} from './reducers/app-frame.reducer';
+import {
+  notificationInitialState,
+  notificationReducer,
+} from './reducers/notification.reducer';
+import {
+  roleInitialState,
+  roleReducer,
+} from './reducers/role.reducer';
+import {
+  rosterInitialState,
+  rosterReducer,
+} from './reducers/roster.reducer';
+import {
+  localStorageInitialState,
+  localStorageReducer,
+} from './reducers/local-storage.reducer';
+import {
+  userInitialState,
+  userReducer,
+} from './reducers/user.reducer';
+import {
+  workspaceInitialState,
+  workspaceReducer,
+} from './reducers/workspace.reducer';
+import {
+  unitInitialState,
+  unitReducer,
+} from './reducers/unit.reducer';
 
-export interface AppState {
-  appFrame: AppFrameState
-  notification: NotificationState
-  role: RoleState
-  unit: UnitState
-  roster: RosterState
-  user: UserState
-  workspace: WorkspaceState
-}
-
-export const initialState: AppState = {
+export const initialState = {
   appFrame: appFrameInitialState,
   notification: notificationInitialState,
   role: roleInitialState,
@@ -28,7 +53,10 @@ export const initialState: AppState = {
   roster: rosterInitialState,
   user: userInitialState,
   workspace: workspaceInitialState,
+  localStorage: localStorageInitialState,
 };
+
+export type AppState = typeof initialState;
 
 // React Devtools Extension
 const composeEnhancers = typeof window === 'object' && (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
@@ -45,7 +73,9 @@ const composeEnhancers = typeof window === 'object' && (window as any).__REDUX_D
  * @returns {boolean} True if the argument appears to be a plain object.
  */
 function isPlainObject(obj: any): boolean {
-  if (typeof obj !== 'object' || obj === null) { return false; }
+  if (typeof obj !== 'object' || obj === null) {
+    return false;
+  }
   let proto = obj;
 
   while (Object.getPrototypeOf(proto) !== null) {
@@ -56,9 +86,9 @@ function isPlainObject(obj: any): boolean {
 }
 
 function createPlainObjectMiddleware(): Middleware<AnyAction, AppState> {
-  return function() {
-    return function(next) {
-      return function(action) {
+  return () => {
+    return next => {
+      return action => {
         if (!isPlainObject(action)) {
           return next({ ...action });
         }
@@ -68,21 +98,38 @@ function createPlainObjectMiddleware(): Middleware<AnyAction, AppState> {
   };
 }
 
-export default createStore(
-  combineReducers({
-    appFrame: appFrameReducer,
-    notification: notificationReducer,
-    role: roleReducer,
-    unit: unitReducer,
-    roster: rosterReducer,
-    user: userReducer,
-    workspace: workspaceReducer,
-  }),
-  initialState,
-  composeEnhancers(
-    applyMiddleware(
-      thunk,
-      createPlainObjectMiddleware(),
+const persistConfig = {
+  key: 'root',
+  storage,
+  whitelist: ['localStorage'],
+};
+
+export const configureStore = () => {
+  const store = createStore(
+    persistReducer(
+      persistConfig,
+      combineReducers({
+        appFrame: appFrameReducer,
+        notification: notificationReducer,
+        role: roleReducer,
+        unit: unitReducer,
+        roster: rosterReducer,
+        user: userReducer,
+        workspace: workspaceReducer,
+        localStorage: localStorageReducer,
+      }),
     ),
-  ),
-);
+    initialState,
+    composeEnhancers(
+      applyMiddleware(
+        thunk,
+        createPlainObjectMiddleware(),
+      ),
+    ),
+  );
+
+  return {
+    store,
+    persistor: persistStore(store),
+  };
+};

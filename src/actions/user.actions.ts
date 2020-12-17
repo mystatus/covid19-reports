@@ -1,6 +1,8 @@
 import { Dispatch } from 'redux';
+import { AppState } from '../store';
 import { ApiUser } from '../models/api-response';
 import { UserClient } from '../client';
+import { LocalStorageState } from '../reducers/local-storage.reducer';
 
 export namespace User {
 
@@ -11,6 +13,7 @@ export namespace User {
       type = Login.type;
       constructor(public payload: {
         userData: ApiUser
+        localStorage: LocalStorageState
       }) {}
     }
 
@@ -32,17 +35,23 @@ export namespace User {
       type = Register.type;
       constructor(public payload: {
         userData: ApiUser
+        localStorage: LocalStorageState
       }) {}
     }
 
   }
 
-  export const login = () => async (dispatch: Dispatch<Actions.Login>) => {
+  export const login = () => async (dispatch: Dispatch<Actions.Login>, getState: () => AppState) => {
     const userData = await UserClient.current();
 
     console.log('userData', userData);
 
-    dispatch(new Actions.Login({ userData }));
+    const { localStorage } = getState();
+
+    dispatch(new Actions.Login({
+      userData,
+      localStorage,
+    }));
   };
 
   export const logout = () => (dispatch: Dispatch<Actions.Logout>) => {
@@ -53,7 +62,7 @@ export namespace User {
     dispatch(new Actions.ChangeOrg({ orgId }));
   };
 
-  export const register = (data: UserRegisterData) => async (dispatch: Dispatch<Actions.Register>) => {
+  export const register = (data: UserRegisterData) => async (dispatch: Dispatch<Actions.Register>, getState: () => AppState) => {
     console.log('register', data);
 
     const userData = await UserClient.register({
@@ -64,7 +73,12 @@ export namespace User {
       service: data.service,
     });
 
-    dispatch(new Actions.Register({ userData }));
+    const { localStorage } = getState();
+
+    dispatch(new Actions.Register({
+      userData,
+      localStorage,
+    }));
   };
 }
 

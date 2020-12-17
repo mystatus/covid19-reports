@@ -1,33 +1,23 @@
 import { User } from '../actions/user.actions';
-import { ApiRole, ApiUser } from '../models/api-response';
 import { getLoggedInState } from '../utility/user-utils';
 
-export interface UserState extends ApiUser {
-  activeRole?: ApiRole
-  isLoggedIn: boolean
+// We need to be careful about what goes into local storage due to security concerns. So make sure not to add anything
+// that is clearly identifying, such as PII/PHI data, group name, etc.
+
+export interface LocalStorageState {
+  orgId?: number
 }
 
-export const userInitialState: UserState = {
-  edipi: '',
-  firstName: '',
-  lastName: '',
-  phone: '',
-  service: '',
-  email: '',
-  rootAdmin: false,
-  isRegistered: false,
-  roles: [],
-  isLoggedIn: false,
-};
+export const localStorageInitialState: LocalStorageState = {};
 
-export function userReducer(state = userInitialState, action: any): UserState {
+export function localStorageReducer(state = localStorageInitialState, action: any): LocalStorageState {
   switch (action.type) {
     case User.Actions.Register.type: {
       const { userData, localStorage } = (action as User.Actions.Register).payload;
       const loggedInState = getLoggedInState(userData, localStorage);
       return {
         ...state,
-        ...loggedInState,
+        orgId: loggedInState.activeRole?.org?.id,
       };
     }
     case User.Actions.Login.type: {
@@ -35,17 +25,17 @@ export function userReducer(state = userInitialState, action: any): UserState {
       const loggedInState = getLoggedInState(userData, localStorage);
       return {
         ...state,
-        ...loggedInState,
+        orgId: loggedInState.activeRole?.org?.id,
       };
     }
-    case User.Actions.Logout.type:
-      return userInitialState;
+    case User.Actions.Logout.type: {
+      return localStorageInitialState;
+    }
     case User.Actions.ChangeOrg.type: {
-      const orgId = (action as User.Actions.ChangeOrg).payload.orgId;
-      const activeRole = state.roles?.find(role => role.org?.id === orgId);
+      const { orgId } = (action as User.Actions.ChangeOrg).payload;
       return {
         ...state,
-        activeRole,
+        orgId,
       };
     }
     default:
