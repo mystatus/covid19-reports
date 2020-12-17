@@ -3,6 +3,7 @@ import csv from 'csvtojson';
 import fs from 'fs';
 import moment, { Moment } from 'moment';
 import { getConnection, OrderByCondition } from 'typeorm';
+import _ from 'lodash';
 import {
   ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams, PagedQuery,
 } from '../index';
@@ -370,8 +371,8 @@ class RosterController {
 }
 
 async function internalSearchRoster(query: GetRosterQuery, org: Org, role: Role, searchParams?: SearchRosterBody) {
-  const limit = (query.limit != null) ? parseInt(query.limit) : 100;
-  const page = (query.page != null) ? parseInt(query.page) : 0;
+  const limit = parseInt(query.limit ?? '100');
+  const page = parseInt(query.page ?? '0');
   const orderBy = query.orderBy || 'edipi';
   const sortDirection = query.sortDirection || 'ASC';
   const rosterColumns = await Roster.getAllowedColumns(org, role);
@@ -479,7 +480,7 @@ function copyRosterEntry(roster: Roster) {
   newEntry.startDate = roster.startDate;
   newEntry.endDate = roster.endDate;
   newEntry.lastReported = roster.lastReported;
-  newEntry.customColumns = roster.customColumns;
+  newEntry.customColumns = _.cloneDeep(roster.customColumns);
   return newEntry;
 }
 

@@ -123,7 +123,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
                   <div>{column.displayName}</div>
                   <div>
                     {sortColumn === column && (
-                      sortDirection === 'ASC' ? <ArrowDropDownIcon /> : <ArrowDropUpIcon />
+                      sortDirection === 'ASC' ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />
                     )}
                   </div>
                 </div>

@@ -8,9 +8,8 @@ import AssignmentIndIcon from '@material-ui/icons/AssignmentInd';
 import SupervisorAccountIcon from '@material-ui/icons/SupervisorAccount';
 import GroupWorkIcon from '@material-ui/icons/GroupWork';
 import SecurityIcon from '@material-ui/icons/Security';
-import ReplyAllIcon from '@material-ui/icons/ReplyAll';
 import ViewWeekOutlinedIcon from '@material-ui/icons/ViewWeekOutlined';
-import DashboardoutlinedIcon from '@material-ui/icons/Dashboardoutlined';
+import DashboardOutlinedIcon from '@material-ui/icons/DashboardOutlined';
 import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
 import clsx from 'clsx';
 import { useDispatch, useSelector } from 'react-redux';
@@ -21,6 +20,7 @@ import { AppState } from '../../store';
 import { PersonCheckIcon } from '../icons/person-check-icon';
 import useStyles from './app-sidenav.styles';
 import { AppFrame } from '../../actions/app-frame.actions';
+import { DataExportIcon } from '../icons/data-export-icon';
 
 interface SidenavLinkProps {
   route: string,
@@ -115,7 +115,7 @@ export const AppSidenav = () => {
             <SidenavLink
               route="/data-export"
               name="Data Export"
-              icon={(<ReplyAllIcon className={classes.dataExportIcon} />)}
+              icon={(<DataExportIcon />)}
             />
           )}
           {user.activeRole?.canViewMuster && (
@@ -168,7 +168,7 @@ export const AppSidenav = () => {
               <SidenavLink
                 route="/workspaces"
                 name="Workspaces"
-                icon={(<DashboardoutlinedIcon />)}
+                icon={(<DashboardOutlinedIcon />)}
               />
             </List>
           </>

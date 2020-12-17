@@ -16,7 +16,6 @@ import {
 import BackupIcon from '@material-ui/icons/Backup';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
-import ReplyAllIcon from '@material-ui/icons/ReplyAll';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import React, {
@@ -52,6 +51,7 @@ import {
 } from '../../query-builder/query-builder';
 import { formatMessage } from '../../../utility/errors';
 import { ButtonSet } from '../../buttons/button-set';
+import { DataExportIcon } from '../../icons/data-export-icon';
 
 const unitColumn: ApiRosterColumnInfo = {
   name: 'unit',
@@ -61,7 +61,7 @@ const unitColumn: ApiRosterColumnInfo = {
   pii: false,
   type: ApiRosterColumnType.String,
   updatable: true,
-  required: true,
+  required: false,
   config: {},
 };
 
@@ -110,21 +110,28 @@ export const RosterPage = () => {
 
   const reloadTable = useCallback(async () => {
     try {
-      let sortParams = '';
+      const params: {[key: string]: string} = {
+        limit: `${rowsPerPage}`,
+        page: `${page}`,
+      };
       if (sortState) {
-        sortParams = `&orderBy=${sortState.column}&sortDirection=${sortState.sortDirection}`;
+        params.orderBy = sortState.column;
+        params.sortDirection = sortState.sortDirection;
       }
       if (queryFilterState) {
         setApplyingFilters(true);
-        setRows([]);
         setTotalRowsCount(0);
-        const response = await axios.post(`api/roster/${orgId}/search?limit=${rowsPerPage}&page=${page}${sortParams}`, queryFilterState);
+        const response = await axios.post(`api/roster/${orgId}/search`, queryFilterState, {
+          params,
+        });
         const data = response.data as ApiRosterPaginated;
         setRows(data.rows);
         setTotalRowsCount(data.totalRowsCount);
         setApplyingFilters(false);
       } else {
-        const response = await axios.get(`api/roster/${orgId}?limit=${rowsPerPage}&page=${page}${sortParams}`);
+        const response = await axios(`api/roster/${orgId}`, {
+          params,
+        });
         const data = response.data as ApiRosterPaginated;
         setRows(data.rows);
         setTotalRowsCount(data.totalRowsCount);
@@ -467,7 +474,7 @@ export const RosterPage = () => {
             type="button"
             size="large"
             variant="text"
-            startIcon={<ReplyAllIcon />}
+            startIcon={<DataExportIcon />}
             onClick={() => downloadCSVExport()}
             loading={exportRosterLoading}
           >

@@ -13,7 +13,6 @@ import {
   TableRow,
   Typography,
 } from '@material-ui/core';
-import GetAppIcon from '@material-ui/icons/GetApp';
 import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
 import ToggleButton from '@material-ui/lab/ToggleButton';
 import * as Plotly from 'plotly.js';
@@ -46,6 +45,8 @@ import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { Unit } from '../../../actions/unit.actions';
+import { ButtonSet } from '../../buttons/button-set';
+import { DataExportIcon } from '../../icons/data-export-icon';
 
 interface TimeRange {
   interval: 'day' | 'hour'
@@ -400,7 +401,18 @@ export const MusterPage = () => {
     <main className={classes.root}>
       <Container maxWidth="md">
         <PageHeader title="Muster Non-Compliance" />
-
+        <ButtonSet>
+          <ButtonWithSpinner
+            size="large"
+            variant="text"
+            color="primary"
+            startIcon={<DataExportIcon />}
+            onClick={() => downloadCSVExport()}
+            loading={exportLoading}
+          >
+            Export Data
+          </ButtonWithSpinner>
+        </ButtonSet>
         <Grid container spacing={3}>
           {/* Table */}
           {user.activeRole?.canViewPII && (
@@ -439,13 +451,6 @@ export const MusterPage = () => {
 
                     <Box flex={1} />
 
-                    <ButtonWithSpinner
-                      startIcon={<GetAppIcon />}
-                      onClick={() => downloadCSVExport()}
-                      loading={exportLoading}
-                    >
-                      Export to CSV
-                    </ButtonWithSpinner>
                   </div>
 
                   <Table aria-label="muster table">

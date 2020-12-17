@@ -2,7 +2,7 @@ import React from 'react';
 import useStyles from './button-set.styles';
 
 type ButtonSetProps = {
-  children?: React.ReactChild | React.ReactChild[],
+  children?: React.ReactNode,
 };
 
 export const ButtonSet = (props: ButtonSetProps) => {
