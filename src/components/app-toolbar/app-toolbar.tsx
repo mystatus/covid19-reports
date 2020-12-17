@@ -2,11 +2,10 @@ import {
   AppBar, Avatar, Button, Divider, Menu, MenuItem, Toolbar,
 } from '@material-ui/core';
 import { ArrowDropDown, Settings } from '@material-ui/icons';
-
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
 import { Md5 } from 'ts-md5/dist/md5';
+import { Link } from '../link/link';
 import { User } from '../../actions/user.actions';
 import { UserState } from '../../reducers/user.reducer';
 import { AppState } from '../../store';

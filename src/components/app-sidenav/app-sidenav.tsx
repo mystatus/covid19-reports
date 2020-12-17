@@ -1,6 +1,12 @@
 import React from 'react';
 import {
-  Divider, Drawer, IconButton, List, ListItem, ListItemIcon, ListItemText,
+  Divider,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from '@material-ui/core';
 import BarChartIcon from '@material-ui/icons/BarChart';
 import HomeIcon from '@material-ui/icons/Home';
@@ -12,51 +18,56 @@ import ViewWeekOutlinedIcon from '@material-ui/icons/ViewWeekOutlined';
 import DashboardOutlinedIcon from '@material-ui/icons/DashboardOutlined';
 import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
 import clsx from 'clsx';
-import { useDispatch, useSelector } from 'react-redux';
-import { Link, useLocation } from 'react-router-dom';
+import {
+  useDispatch,
+  useSelector,
+} from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import { AppFrameState } from '../../reducers/app-frame.reducer';
 import { UserState } from '../../reducers/user.reducer';
+import { UserSelector } from '../../selectors/user.selector';
 import { AppState } from '../../store';
 import { PersonCheckIcon } from '../icons/person-check-icon';
+import {
+  Link,
+  LinkProps,
+} from '../link/link';
 import useStyles from './app-sidenav.styles';
 import { AppFrame } from '../../actions/app-frame.actions';
 import { DataExportIcon } from '../icons/data-export-icon';
 
-interface SidenavLinkProps {
-  route: string,
+type SidenavLinkProps = {
   name: string,
   icon: any,
-  external?: boolean,
-}
+} & LinkProps;
 
 const SidenavLink = (props: SidenavLinkProps) => {
+  const {
+    name,
+    icon,
+  } = props;
   const classes = useStyles();
   const location = useLocation();
+
   const isActive = () => {
-    return location.pathname.endsWith(props.route);
-  };
-  const inner = () => {
-    return (
-      <ListItem button key={props.name}>
-        <ListItemIcon>{props.icon}</ListItemIcon>
-        <ListItemText primary={props.name} />
-      </ListItem>
-    );
+    // Only internal links can be active.
+    if ('to' in props) {
+      return location.pathname.endsWith(props.to as string);
+    }
+
+    return false;
   };
 
   return (
-    <>
-      {props.external && (
-        <a href={props.route} className={isActive() ? classes.activeLink : classes.inactiveLink}>
-          {inner()}
-        </a>
-      )}
-      {!props.external && (
-        <Link to={props.route} className={isActive() ? classes.activeLink : classes.inactiveLink}>
-          {inner()}
-        </Link>
-      )}
-    </>
+    <Link
+      className={isActive() ? classes.activeLink : classes.inactiveLink}
+      {...props}
+    >
+      <ListItem button key={name}>
+        <ListItemIcon>{icon}</ListItemIcon>
+        <ListItemText primary={name} />
+      </ListItem>
+    </Link>
   );
 };
 
@@ -64,6 +75,7 @@ export const AppSidenav = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
   const user = useSelector<AppState, UserState>(state => state.user);
+  const orgId = useSelector(UserSelector.orgId);
   const appFrame = useSelector<AppState, AppFrameState>(state => state.appFrame);
 
   const toggleSidenav = () => {
@@ -99,35 +111,34 @@ export const AppSidenav = () => {
 
         <List>
           <SidenavLink
-            route="/home"
+            to="/home"
             name="Home"
             icon={(<HomeIcon />)}
           />
           {user.activeRole?.workspace && (
             <SidenavLink
-              external
-              route={`/dashboard?orgId=${user.activeRole?.org?.id}`}
+              href={`/dashboard?orgId=${orgId}`}
               name="Analytics"
               icon={(<BarChartIcon />)}
             />
           )}
           {user.activeRole?.workspace && (
             <SidenavLink
-              route="/data-export"
+              to="/data-export"
               name="Data Export"
               icon={(<DataExportIcon />)}
             />
           )}
           {user.activeRole?.canViewMuster && (
             <SidenavLink
-              route="/muster"
+              to="/muster"
               name="Muster"
               icon={(<PersonCheckIcon />)}
             />
           )}
           {user.activeRole?.canViewRoster && (
             <SidenavLink
-              route="/roster"
+              to="/roster"
               name="Roster"
               icon={(<AssignmentIndIcon />)}
             />
@@ -146,27 +157,27 @@ export const AppSidenav = () => {
 
             <List>
               <SidenavLink
-                route="/units"
+                to="/units"
                 name="Units"
                 icon={(<GroupWorkIcon />)}
               />
               <SidenavLink
-                route="/users"
+                to="/users"
                 name="Users"
                 icon={(<SupervisorAccountIcon />)}
               />
               <SidenavLink
-                route="/roles"
+                to="/roles"
                 name="Roles"
                 icon={(<SecurityIcon />)}
               />
               <SidenavLink
-                route="/roster-columns"
+                to="/roster-columns"
                 name="Roster Columns"
                 icon={(<ViewWeekOutlinedIcon />)}
               />
               <SidenavLink
-                route="/workspaces"
+                to="/workspaces"
                 name="Workspaces"
                 icon={(<DashboardOutlinedIcon />)}
               />
