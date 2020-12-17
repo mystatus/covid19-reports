@@ -19,6 +19,12 @@ const baseConfig = {
     httpAuth: (process.env.ELASTICSEARCH_USER && process.env.ELASTICSEARCH_PASSWORD) ? `${process.env.ELASTICSEARCH_USER}:${process.env.ELASTICSEARCH_PASSWORD}` : 'kibana:kibana',
     apiVersion: process.env.ELASTICSEARCH_API_VERSION || '6.4',
   },
+
+  dynamo: {
+    symptomTable: process.env.SYMPTOMTABLE || 'dds-phase1-COVID-19-Symptoms',
+    symptomIndex: process.env.SYMPTOMINDEX || 'EDIPI-Timestamp-index',
+    symptomLambda: process.env.SYMPTOMFUNC || 'symptom_message_handler'
+  }
 };
 
 // Merge current environment config.

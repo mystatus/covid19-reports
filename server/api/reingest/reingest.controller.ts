@@ -1,0 +1,131 @@
+import {Response} from 'express';
+import {ApiRequest, EdipiParam} from '../index';
+import config from '../../config';
+import AWS from 'aws-sdk';
+
+class ReingestController {
+
+  static max_payload_size = 100;
+
+  async reingestSymptomRecords(req: ApiRequest<EdipiParam, TimestampData>, res: Response) {
+
+    let startDate = 0;
+    let endDate = Date.now();
+    if (req.body.startTime) {
+      startDate = ReingestController.convertDateParam(req.body.startTime);
+    }
+
+    if (req.body.endTime) {
+      endDate = ReingestController.convertDateParam(req.body.endTime);
+    }
+
+    const dynamoDB = new AWS.DynamoDB();
+    const queryInput = {
+      TableName: config.dynamo.symptomTable,
+      IndexName: config.dynamo.symptomIndex,
+      KeyConditions: {
+        "EDIPI": {
+          ComparisonOperator: "EQ",
+          AttributeValueList: [
+            {
+              S: req.params.edipi,
+            },
+          ],
+        },
+        "Timestamp": {
+          ComparisonOperator: "BETWEEN",
+          AttributeValueList: [
+            {
+              N: startDate.toString(),
+            },
+            {
+              N: endDate.toString(),
+            },
+          ],
+        },
+      },
+
+    };
+
+    try {
+      const data = await dynamoDB.query(queryInput).promise();
+
+      const {payloads, recordsIngested} = ReingestController.buildPayloadsFromData(data);
+
+      const lambda = new AWS.Lambda();
+      let lambdaInvocationCount = 0;
+      for (const lambdaPayload in payloads) {
+        const lambdaParams = {
+          FunctionName: config.dynamo.symptomLambda,
+          Payload: Buffer.from(JSON.stringify(lambdaPayload)),
+          InvocationType: 'Event'
+        }
+        lambda.invoke(lambdaParams);
+        lambdaInvocationCount++;
+      }
+
+      res.status(201).json({
+        'reingest-count': recordsIngested,
+        'lambda-invoke-count': lambdaInvocationCount
+      });
+    } catch(err) {
+      console.log('Reingest Failed: ', err.message);
+      res.status(500).send(`Error: ${err.message}`);
+    }
+
+  }
+
+  static convertDateParam(date: string|number|Date): number {
+    if (typeof date == "string") {
+      return new Date(date).getTime();
+    } else if (date instanceof Date) {
+      return date.getTime();
+    }
+    return date
+  }
+
+  static buildPayloadsFromData(data: AWS.DynamoDB.QueryOutput) {
+    let payload = {
+      Records: new Array<LambdaRecord>()
+    }
+    const payloads = [];
+    let recordsIngested = 0;
+    for (const dbItem in data.Items) {
+      const record = {
+        eventName: 'INSERT',
+        dynamodb: {
+          'NewImage': dbItem
+        }
+      }
+
+      payload.Records.push(record);
+      if (payload.Records.length >= ReingestController.max_payload_size) {
+        payloads.push(payload);
+        payload = {
+          Records: new Array<LambdaRecord>()
+        }
+      }
+      recordsIngested++;
+    }
+
+    if (payload.Records.length > 0) {
+      payloads.push(payload);
+    }
+    return {
+      payloads,
+      recordsIngested
+    };
+  }
+}
+
+export interface TimestampData {
+  startTime?: string|number|Date,
+  endTime?: string|number|Date,
+}
+
+interface LambdaRecord {
+  eventName: string,
+  dynamodb: object
+}
+
+export default new ReingestController();

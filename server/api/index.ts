@@ -5,6 +5,7 @@ import userRoutes from './user';
 import roleRoutes from './role';
 import rosterRoutes from './roster';
 import unitRoutes from './unit';
+import reingestRoutes from './reingest';
 import accessRequestRoutes from './access-request';
 import workspaceRoutes from './workspace';
 import notificationRoutes from './notification';
@@ -27,6 +28,7 @@ router.use('/workspace', workspaceRoutes);
 router.use('/notification', notificationRoutes);
 router.use('/muster', musterRoutes);
 router.use('/export', exportRoutes);
+router.use('/reingest', reingestRoutes);
 
 export interface ApiRequest<ReqParams = object, ReqBody = object, ReqQuery = object, ResBody = object> extends Request<ReqParams, ResBody, ReqBody, ReqQuery> {
   appUser: User,
