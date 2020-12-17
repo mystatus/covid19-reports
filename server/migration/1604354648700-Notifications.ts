@@ -3,7 +3,6 @@ import { Notification } from '../api/notification/notification.model';
 import { defaultNotifications } from '../api/notification/default-notifications';
 
 export class Notifications1604354648700 implements MigrationInterface {
-  name = 'Notifications1604354648700'
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`CREATE TABLE "notification" ("id" character varying NOT NULL, "ui_sort" double precision NOT NULL, "ui_name" character varying NOT NULL, "ui_description" character varying NOT NULL, "ui_settings_template" character varying NOT NULL, "sms_template" character varying NOT NULL, "email_text_template" character varying NOT NULL, "email_html_template" character varying NOT NULL, "default_threshold" integer NOT NULL DEFAULT 1, "default_max_daily_count" integer NOT NULL DEFAULT 24, "default_min_minutes_between_alerts" integer NOT NULL DEFAULT 60, "dashboard_uuid" character varying, CONSTRAINT "PK_50802da9f1d09f275d964dd491f" PRIMARY KEY ("id"))`);

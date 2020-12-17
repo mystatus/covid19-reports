@@ -1,6 +1,6 @@
-import { BadRequestError } from './error-types';
 import { ValueTransformer } from 'typeorm';
 import moment from 'moment';
+import { BadRequestError } from './error-types';
 
 
 export function dateFromString(dateStr: string) {
@@ -90,8 +90,8 @@ export const dateColumnTransformer: ValueTransformer = {
   },
   to: value => {
     return value ? moment(value).format('Y-M-D') : value;
-  }
-}
+  },
+};
 
 export const dateTimeColumnTransformer: ValueTransformer = {
   from: value => {
@@ -99,8 +99,8 @@ export const dateTimeColumnTransformer: ValueTransformer = {
   },
   to: value => {
     return value ? moment(value).toISOString() : value;
-  }
-}
+  },
+};
 
 export const timestampColumnTransformer: ValueTransformer = {
   from: value => {
@@ -108,7 +108,7 @@ export const timestampColumnTransformer: ValueTransformer = {
   },
   to: value => {
     return value ? moment(value).toISOString() : value;
-  }
-}
+  },
+};
 
 export const oneDaySeconds = 24 * 60 * 60;
