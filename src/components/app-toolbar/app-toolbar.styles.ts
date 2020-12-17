@@ -1,6 +1,5 @@
 import { createStyles, Theme } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { sidenavWidthExpanded } from '../app-sidenav/app-sidenav.styles';
 
 export default makeStyles((theme: Theme) => createStyles({
   appBar: {
@@ -9,14 +8,6 @@ export default makeStyles((theme: Theme) => createStyles({
     transition: theme.transitions.create(['width', 'margin'], {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
-    }),
-  },
-  appBarShift: {
-    marginLeft: sidenavWidthExpanded,
-    width: `calc(100% - ${sidenavWidthExpanded}px)`,
-    transition: theme.transitions.create(['width', 'margin'], {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen,
     }),
   },
   logo: {
@@ -60,7 +51,7 @@ export default makeStyles((theme: Theme) => createStyles({
       height: '32px',
       marginRight: '10px',
       top: '-1px',
-      backgroundColor: '#73B3E7',
+      backgroundColor: theme.palette.primary.light,
       fontSize: '14px',
     },
   },

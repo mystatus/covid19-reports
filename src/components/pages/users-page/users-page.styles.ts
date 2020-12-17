@@ -24,14 +24,14 @@ export default makeStyles((theme: Theme) => createStyles({
   },
   accessRequestApproveButton: {
     width: '100%',
-    backgroundColor: '#00A91C',
+    backgroundColor: theme.palette.success.main,
     '&:hover': {
       backgroundColor: '#008C17',
     },
   },
   accessRequestDenyButton: {
     width: '100%',
-    backgroundColor: '#E41D3D',
+    backgroundColor: theme.palette.error.main,
     marginLeft: '5px',
     '&:hover': {
       backgroundColor: '#B6001D',

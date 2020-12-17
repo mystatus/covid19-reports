@@ -22,7 +22,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import moment from 'moment-timezone';
 import axios from 'axios';
-import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
+import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import useStyles from './units-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
@@ -34,6 +34,7 @@ import { UnitSelector } from '../../../selectors/unit.selector';
 import { Unit } from '../../../actions/unit.actions';
 import PageHeader from '../../page-header/page-header';
 import { daysToString } from '../../../utility/days';
+import { ButtonSet } from '../../buttons/button-set';
 
 interface UnitMenuState {
   anchor: HTMLElement | null,
@@ -152,20 +153,18 @@ export const UnitsPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <Grid container>
-          <Grid item xs={6}>
-            <PageHeader title="Unit Management" />
-          </Grid>
-          <Grid className={classes.newUnit} item xs={6}>
-            <Button
-              color="primary"
-              onClick={newUnit}
-              startIcon={<AddCircleOutlineIcon />}
-            >
-              New Unit
-            </Button>
-          </Grid>
-        </Grid>
+        <PageHeader title="Unit Management" />
+        <ButtonSet>
+          <Button
+            size="large"
+            variant="text"
+            color="primary"
+            onClick={newUnit}
+            startIcon={<AddCircleIcon />}
+          >
+            Add New Unit
+          </Button>
+        </ButtonSet>
         <TableContainer className={classes.table} component={Paper}>
           <Table aria-label="unit table">
             <TableHead>

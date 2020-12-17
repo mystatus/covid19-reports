@@ -6,7 +6,7 @@ export default makeStyles((theme: Theme) => createStyles({
     flexGrow: 1,
   },
   infoIcon: {
-    color: '#71767A',
+    color: theme.palette.text.hint,
     fontSize: '20px',
     marginLeft: '5px',
   },
@@ -50,7 +50,7 @@ export default makeStyles((theme: Theme) => createStyles({
     left: '-12px',
     top: '-8px',
     '& .MuiIconButton-label': {
-      color: '#005EA2',
+      color: theme.palette.primary.main,
     },
     '& .MuiSwitch-track': {
       backgroundColor: '#D9E8F6',
@@ -61,7 +61,7 @@ export default makeStyles((theme: Theme) => createStyles({
     width: '50%',
     '& .MuiPaper-root': {
       padding: '10px',
-      backgroundColor: '#E0F7F6',
+      backgroundColor: theme.palette.secondary.light,
       width: '100%',
       '& > div': {
         display: 'inline',
@@ -71,7 +71,7 @@ export default makeStyles((theme: Theme) => createStyles({
   changeAlertButton: {
     textTransform: 'none',
     fontWeight: 'bold',
-    color: '#005EA2',
+    color: theme.palette.primary.main,
     padding: '0px',
   },
 }));

@@ -1,6 +1,6 @@
 import {
   Button,
-  Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, IconButton, Menu, MenuItem,
+  Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem,
   Paper,
   Table,
   TableBody,
@@ -12,7 +12,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
-import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
+import AddCircleIcon from '@material-ui/icons/AddCircle';
 import CheckIcon from '@material-ui/icons/Check';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PageHeader from '../../page-header/page-header';
@@ -22,6 +22,7 @@ import { AppState } from '../../../store';
 import { ApiWorkspace, ApiWorkspaceTemplate } from '../../../models/api-response';
 import { EditWorkspaceDialog, EditWorkspaceDialogProps } from './edit-workspace-dialog';
 import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
+import { ButtonSet } from '../../buttons/button-set';
 
 interface WorkspaceMenuState {
   anchor: HTMLElement | null,
@@ -136,20 +137,18 @@ export const WorkspacesPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <Grid container>
-          <Grid item xs={6}>
-            <PageHeader title="Workspaces" />
-          </Grid>
-          <Grid className={classes.newWorkspace} item xs={6}>
-            <Button
-              color="primary"
-              onClick={newWorkspace}
-              startIcon={<AddCircleOutlineIcon />}
-            >
-              New Workspace
-            </Button>
-          </Grid>
-        </Grid>
+        <PageHeader title="Workspaces" />
+        <ButtonSet>
+          <Button
+            size="large"
+            variant="text"
+            color="primary"
+            onClick={newWorkspace}
+            startIcon={<AddCircleIcon />}
+          >
+            Add New Workspace
+          </Button>
+        </ButtonSet>
         <TableContainer className={classes.table} component={Paper}>
           <Table aria-label="workspaces table">
             <TableHead>

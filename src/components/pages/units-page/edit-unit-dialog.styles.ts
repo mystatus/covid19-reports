@@ -1,7 +1,7 @@
-import { createStyles } from '@material-ui/core';
+import { createStyles, Theme } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 
-export default makeStyles(() => createStyles({
+export default makeStyles((theme: Theme) => createStyles({
   root: {
     '& .MuiGrid-spacing-xs-3': {
       margin: '0px -12px',
@@ -24,7 +24,7 @@ export default makeStyles(() => createStyles({
     fontWeight: 'bold',
     fontSize: '16px',
     lineHeight: '18px',
-    color: '#3D4551',
+    color: theme.palette.text.primary,
     marginBottom: '9px',
   },
   textCell: {
@@ -77,18 +77,18 @@ export default makeStyles(() => createStyles({
     },
   },
   dayButtonOn: {
-    border: '1px solid #005EA2',
+    border: `1px solid ${theme.palette.primary.main}`,
     color: 'white',
-    backgroundColor: '#005EA2',
+    backgroundColor: theme.palette.primary.main,
   },
   dayButtonOff: {
     border: '1px solid #DCDEE0',
-    color: '#3D4551',
+    color: theme.palette.text.primary,
     backgroundColor: 'white',
   },
   dayButtonError: {
     border: '1px solid #E41D3D',
-    color: '#3D4551',
+    color: theme.palette.text.primary,
     backgroundColor: 'white',
   },
   durationCell: {
