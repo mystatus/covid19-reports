@@ -5,20 +5,20 @@ import { dateFromString } from '../../util/util';
 import AWS from 'aws-sdk';
 import { BadRequestError, InternalServerError } from '../../util/error-types';
 
-class ReingestController {
 
-  static max_payload_size = 100;
+const maxPayloadSize = 100;
+class ReingestController {
 
   async reingestSymptomRecords(req: ApiRequest<EdipiParam, TimestampData>, res: Response) {
 
     let startDate = 0;
     let endDate = Date.now();
     if (req.body.startTime) {
-      startDate = ReingestController.convertDateParam(req.body.startTime);
+      startDate = convertDateParam(req.body.startTime);
     }
 
     if (req.body.endTime) {
-      endDate = ReingestController.convertDateParam(req.body.endTime);
+      endDate = convertDateParam(req.body.endTime);
     }
 
     const dynamoDB = new AWS.DynamoDB();
@@ -26,16 +26,16 @@ class ReingestController {
       TableName: config.dynamo.symptomTable,
       IndexName: config.dynamo.symptomIndex,
       KeyConditions: {
-        "EDIPI": {
-          ComparisonOperator: "EQ",
+        'EDIPI': {
+          ComparisonOperator: 'EQ',
           AttributeValueList: [
             {
               S: req.params.edipi,
             },
           ],
         },
-        "Timestamp": {
-          ComparisonOperator: "BETWEEN",
+        'Timestamp': {
+          ComparisonOperator: 'BETWEEN',
           AttributeValueList: [
             {
               N: startDate.toString(),
@@ -52,7 +52,7 @@ class ReingestController {
     try {
       const data = await dynamoDB.query(queryInput).promise();
 
-      const {payloads, recordsIngested} = ReingestController.buildPayloadsFromData(data);
+      const {payloads, recordsIngested} = buildPayloadsFromData(data);
 
       const lambda = new AWS.Lambda();
       let lambdaInvocationCount = 0;
@@ -74,59 +74,59 @@ class ReingestController {
       console.log('Reingest Failed: ', err.message);
       throw new InternalServerError(`Error during reingest request: ${err.message}`);
     }
-
   }
 
-  static convertDateParam(date: string|number|Date): number {
-    if (typeof date == "string") {
-      const convertedDate = dateFromString(date);
-      if (!convertedDate) {
-        throw new BadRequestError(`Invalid date string provided for reingest: ${date}`);
-      }
-      return convertedDate.getTime();
-    } else if (date instanceof Date) {
-      return date.getTime();
-    }
-    return date
-  }
-
-  static buildPayloadsFromData(data: AWS.DynamoDB.QueryOutput) {
-    let payload = {
-      Records: new Array<LambdaRecord>()
-    }
-    const payloads = [];
-    let recordsIngested = 0;
-    for (const dbItem in data.Items) {
-      const record = {
-        eventName: 'INSERT',
-        dynamodb: {
-          'NewImage': dbItem
-        }
-      }
-
-      payload.Records.push(record);
-      if (payload.Records.length >= ReingestController.max_payload_size) {
-        payloads.push(payload);
-        payload = {
-          Records: new Array<LambdaRecord>()
-        }
-      }
-      recordsIngested++;
-    }
-
-    if (payload.Records.length > 0) {
-      payloads.push(payload);
-    }
-    return {
-      payloads,
-      recordsIngested
-    };
-  }
 }
 
-export interface TimestampData {
-  startTime?: string|number|Date,
-  endTime?: string|number|Date,
+function buildPayloadsFromData(data: AWS.DynamoDB.QueryOutput) {
+  let payload = {
+    Records: new Array<LambdaRecord>()
+  }
+  const payloads = [];
+  let recordsIngested = 0;
+  for (const dbItem in data.Items) {
+    const record = {
+      eventName: 'INSERT',
+      dynamodb: {
+        'NewImage': dbItem
+      }
+    }
+
+    payload.Records.push(record);
+    if (payload.Records.length >= maxPayloadSize) {
+      payloads.push(payload);
+      payload = {
+        Records: new Array<LambdaRecord>()
+      }
+    }
+    recordsIngested++;
+  }
+
+  if (payload.Records.length > 0) {
+    payloads.push(payload);
+  }
+  return {
+    payloads,
+    recordsIngested
+  };
+}
+
+function convertDateParam(date: string | number | Date): number {
+  if (typeof date == "string") {
+    const convertedDate = dateFromString(date);
+    if (!convertedDate) {
+      throw new BadRequestError(`Invalid date string provided for reingest: ${date}`);
+    }
+    return convertedDate.getTime();
+  } else if (date instanceof Date) {
+    return date.getTime();
+  }
+  return date
+}
+
+interface TimestampData {
+  startTime?: string | number | Date,
+  endTime?: string | number | Date,
 }
 
 interface LambdaRecord {

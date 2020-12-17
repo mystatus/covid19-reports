@@ -21,9 +21,9 @@ const baseConfig = {
   },
 
   dynamo: {
-    symptomTable: process.env.SYMPTOMTABLE || 'dds-phase1-COVID-19-Symptoms',
-    symptomIndex: process.env.SYMPTOMINDEX || 'EDIPI-Timestamp-index',
-    symptomLambda: process.env.SYMPTOMFUNC || 'symptom_message_handler',
+    symptomTable: process.env.DYNAMO_SYMPTOM_TABLE || 'dds-phase1-COVID-19-Symptoms',
+    symptomIndex: process.env.DYNAMO_SYMPTOM_INDEX || 'EDIPI-Timestamp-index',
+    symptomLambda: process.env.DYNAMO_SYMPTOM_LAMBDA || 'symptom_message_handler',
   },
 };
 
