@@ -1,4 +1,4 @@
-import { CustomColumnConfig } from "./custom-roster-column.model";
+import { CustomColumnConfig } from './custom-roster-column.model';
 
 export interface CustomColumns {
   [key: string]: CustomColumnValue

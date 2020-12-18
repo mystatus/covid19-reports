@@ -1,7 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class DatetimeColumnType1603922924459 implements MigrationInterface {
-  name = 'DatetimeColumnType1603922924459'
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TYPE "public"."custom_roster_column_type_enum" RENAME TO "custom_roster_column_type_enum_old"`);

@@ -1,7 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class RosterCleanup1603484387031 implements MigrationInterface {
-  name = 'RosterCleanup1603484387031'
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "custom_roster_column" DROP CONSTRAINT "FK_fb53158e089b64e4c88c1e1ad18"`);

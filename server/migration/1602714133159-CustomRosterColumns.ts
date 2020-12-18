@@ -1,7 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class CustomRosterColumns1602714133159 implements MigrationInterface {
-  name = 'CustomRosterColumns1602714133159'
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`CREATE TYPE "custom_roster_column_type_enum" AS ENUM('string', 'boolean', 'date', 'number')`);

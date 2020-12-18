@@ -3,7 +3,6 @@ import { WorkspaceTemplate } from '../api/workspace/workspace-template.model';
 import { kibanaSavedObjectsMock } from '../kibana/kibana-saved-objects.mock';
 
 export class Workspaces1602287934964 implements MigrationInterface {
-  name = 'Workspaces1602287934964';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`CREATE TABLE "workspace_template" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "description" character varying NOT NULL, "pii" boolean NOT NULL, "phi" boolean NOT NULL, "kibana_saved_objects" text NOT NULL, CONSTRAINT "PK_cffbc7d1606ac418b10ce9bab12" PRIMARY KEY ("id"))`);

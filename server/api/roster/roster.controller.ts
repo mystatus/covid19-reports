@@ -14,7 +14,9 @@ import {
 import {
   BadRequestError, NotFoundError, UnprocessableEntity,
 } from '../../util/error-types';
-import { BaseType, getOptionalParam, getRequiredParam } from '../../util/util';
+import {
+  BaseType, getOptionalParam, getRequiredParam, dateFromString,
+} from '../../util/util';
 import { Org } from '../org/org.model';
 import { CustomColumnConfig, CustomRosterColumn } from './custom-roster-column.model';
 import { Unit } from '../unit/unit.model';
@@ -600,22 +602,6 @@ function getColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColu
   }
 }
 
-function dateFromString(dateStr: string) {
-  if (dateStr && dateStr.length > 0) {
-    const numericDate = Number(dateStr);
-    let date: Date;
-    if (!Number.isNaN(numericDate)) {
-      date = new Date(numericDate);
-    } else {
-      date = new Date(dateStr);
-    }
-    if (Number.isNaN(date.getTime())) {
-      throw new BadRequestError(`Unable to parse date '${dateStr}'.  Valid dates are ISO formatted date strings and UNIX timestamps.`);
-    }
-    return date;
-  }
-  return undefined;
-}
 
 interface RosterColumnWithValue extends RosterColumnInfo {
   value: CustomColumnValue,

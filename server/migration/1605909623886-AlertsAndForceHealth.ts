@@ -1,12 +1,10 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 import { Notification } from '../api/notification/notification.model';
 import { defaultNotifications } from '../api/notification/default-notifications';
 import { WorkspaceTemplate } from '../api/workspace/workspace-template.model';
 import { kibanaSavedObjectsMock } from '../kibana/kibana-saved-objects.mock';
-import { BadRequestError, NotFoundError, UnauthorizedError } from '../util/error-types';
 
 export class AlertsAndForceHealth1605909623886 implements MigrationInterface {
-  name = 'AlertsAndForceHealth1605909623886'
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     const workspaceTemplateRepo = queryRunner.manager.getRepository(WorkspaceTemplate);
