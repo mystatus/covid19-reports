@@ -1,5 +1,4 @@
 import { Response } from 'express';
-import { getConnection } from 'typeorm';
 import {
   ApiRequest, OrgParam, OrgUnitParams,
 } from '../index';

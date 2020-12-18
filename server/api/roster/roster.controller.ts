@@ -14,7 +14,9 @@ import {
 import {
   BadRequestError, NotFoundError, UnprocessableEntity,
 } from '../../util/error-types';
-import { BaseType, getOptionalParam, getRequiredParam, dateFromString } from '../../util/util';
+import {
+  BaseType, getOptionalParam, getRequiredParam, dateFromString,
+} from '../../util/util';
 import { Org } from '../org/org.model';
 import { CustomColumnConfig, CustomRosterColumn } from './custom-roster-column.model';
 import { Unit } from '../unit/unit.model';
@@ -599,7 +601,6 @@ function getColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColu
     }
   }
 }
-
 
 
 interface RosterColumnWithValue extends RosterColumnInfo {

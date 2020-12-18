@@ -1,8 +1,8 @@
 import { Response } from 'express';
+import AWS from 'aws-sdk';
 import { ApiRequest, EdipiParam } from '../index';
 import config from '../../config';
 import { dateFromString } from '../../util/util';
-import AWS from 'aws-sdk';
 import { BadRequestError, InternalServerError } from '../../util/error-types';
 
 
@@ -26,7 +26,7 @@ class ReingestController {
       TableName: config.dynamo.symptomTable,
       IndexName: config.dynamo.symptomIndex,
       KeyConditions: {
-        'EDIPI': {
+        EDIPI: {
           ComparisonOperator: 'EQ',
           AttributeValueList: [
             {
@@ -34,7 +34,7 @@ class ReingestController {
             },
           ],
         },
-        'Timestamp': {
+        Timestamp: {
           ComparisonOperator: 'BETWEEN',
           AttributeValueList: [
             {
@@ -52,25 +52,25 @@ class ReingestController {
     try {
       const data = await dynamoDB.query(queryInput).promise();
 
-      const {payloads, recordsIngested} = buildPayloadsFromData(data);
+      const { payloads, recordsIngested } = buildPayloadsFromData(data);
 
       const lambda = new AWS.Lambda();
       let lambdaInvocationCount = 0;
-      for (const lambdaPayload in payloads) {
+      for (const lambdaPayload of payloads) {
         const lambdaParams = {
           FunctionName: config.dynamo.symptomLambda,
           Payload: Buffer.from(JSON.stringify(lambdaPayload)),
-          InvocationType: 'Event'
-        }
+          InvocationType: 'Event',
+        };
         lambda.invoke(lambdaParams);
-        lambdaInvocationCount++;
+        lambdaInvocationCount += 1;
       }
 
       res.status(201).json({
         'reingest-count': recordsIngested,
-        'lambda-invoke-count': lambdaInvocationCount
+        'lambda-invoke-count': lambdaInvocationCount,
       });
-    } catch(err) {
+    } catch (err) {
       console.log('Reingest Failed: ', err.message);
       throw new InternalServerError(`Error during reingest request: ${err.message}`);
     }
@@ -80,26 +80,32 @@ class ReingestController {
 
 function buildPayloadsFromData(data: AWS.DynamoDB.QueryOutput) {
   let payload = {
-    Records: new Array<LambdaRecord>()
-  }
-  const payloads = [];
+    Records: new Array<LambdaRecord>(),
+  };
+  const payloads: { Records: LambdaRecord[]; }[] = [];
   let recordsIngested = 0;
-  for (const dbItem in data.Items) {
+  if (!data.Items) {
+    return {
+      payloads,
+      recordsIngested,
+    };
+  }
+  for (const dbItem of data.Items) {
     const record = {
       eventName: 'INSERT',
       dynamodb: {
-        'NewImage': dbItem
-      }
-    }
+        NewImage: dbItem,
+      },
+    };
 
     payload.Records.push(record);
     if (payload.Records.length >= maxPayloadSize) {
       payloads.push(payload);
       payload = {
-        Records: new Array<LambdaRecord>()
-      }
+        Records: new Array<LambdaRecord>(),
+      };
     }
-    recordsIngested++;
+    recordsIngested += 1;
   }
 
   if (payload.Records.length > 0) {
@@ -107,21 +113,21 @@ function buildPayloadsFromData(data: AWS.DynamoDB.QueryOutput) {
   }
   return {
     payloads,
-    recordsIngested
+    recordsIngested,
   };
 }
 
 function convertDateParam(date: string | number | Date): number {
-  if (typeof date == "string") {
+  if (typeof date === 'string') {
     const convertedDate = dateFromString(date);
     if (!convertedDate) {
       throw new BadRequestError(`Invalid date string provided for reingest: ${date}`);
     }
     return convertedDate.getTime();
-  } else if (date instanceof Date) {
+  } if (date instanceof Date) {
     return date.getTime();
   }
-  return date
+  return date;
 }
 
 interface TimestampData {
