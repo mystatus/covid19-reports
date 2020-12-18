@@ -203,6 +203,9 @@ theme.props = {
   MuiInput: {
     disableUnderline: true,
   },
+  MuiLink: {
+    underline: 'none',
+  },
   MuiTextField: {
     InputLabelProps: {
       shrink: true,
