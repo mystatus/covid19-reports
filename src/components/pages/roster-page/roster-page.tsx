@@ -24,6 +24,7 @@ import React, {
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import _ from 'lodash';
+import moment from 'moment';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { Roster } from '../../../actions/roster.actions';
 import { downloadFile } from '../../../utility/download';
@@ -327,7 +328,7 @@ export const RosterPage = () => {
     try {
       setRosterEntryEndDateLoading(true);
       await axios.put(`api/roster/${orgId}/${selectedRosterEntry!.id}`, {
-        endDate: new Date().toISOString(),
+        endDate: moment().subtract(1, 'day').toISOString(),
       });
     } catch (error) {
       let message = 'Internal Server Error';
