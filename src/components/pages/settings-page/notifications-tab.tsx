@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import {
   Button, Divider, IconButton, Paper, Switch, Table, TableCell, TableRow, Typography,
@@ -11,6 +11,8 @@ import { AppState } from '../../../store';
 import { UserState } from '../../../reducers/user.reducer';
 import { TabPanelProps } from './settings-page';
 import { EditAlertDialog, EditAlertDialogProps } from './edit-alert-dialog';
+import { Modal } from '../../../actions/modal.actions';
+import { formatMessage } from '../../../utility/errors';
 
 interface NotificationSettings {
   [key: string]: ApiUserNotificationSetting,
@@ -22,8 +24,9 @@ interface NotificationSaving {
 
 export const NotificationsTab = (props: TabPanelProps) => {
   const classes = useStyles();
+  const dispatch = useDispatch();
   const {
-    value, index, setAlertDialogProps, ...other
+    value, index, ...other
   } = props;
 
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({});
@@ -66,12 +69,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
         setEditAlertDialogProps({ open: false });
       },
       onError: (message: string) => {
-        setAlertDialogProps({
-          open: true,
-          title: 'Edit Alert',
-          message: `Unable to edit alert settings: ${message}`,
-          onClose: () => { setAlertDialogProps({ open: false }); },
-        });
+        dispatch(Modal.openModal('Edit Alert', `Unable to edit alert settings: ${message}`));
       },
     });
   };
@@ -118,16 +116,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
         return newState;
       });
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'Error',
-        message: `An error occurred while saving the alert setting: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      dispatch(Modal.openModal('Error', formatMessage(error, 'An error occurred while saving the alert setting')));
       await initializeTable();
     }
   };
@@ -154,15 +143,11 @@ export const NotificationsTab = (props: TabPanelProps) => {
   };
 
   const displayInfo = () => {
-    setAlertDialogProps({
-      open: true,
-      title: 'Alerts',
-      message: `Alerts within the StatusEngine application have been designed to give you the most up-to-date
+    dispatch(Modal.openModal('Alerts',
+      `Alerts within the StatusEngine application have been designed to give you the most up-to-date
       information on your group and users without overburdening your inbox or mobile device. Each alert topic
       has customizable parameters that allow you to tweak the alert type, threshold, frequency, and minimum
-      time between individual alerts.`,
-      onClose: () => { setAlertDialogProps({ open: false }); },
-    });
+      time between individual alerts.`));
   };
 
   useEffect(() => { initializeTable().then(); }, [initializeTable]);

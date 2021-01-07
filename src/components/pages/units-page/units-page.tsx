@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Grid,
   IconButton,
   Menu,
   MenuItem,
@@ -28,13 +27,14 @@ import useStyles from './units-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
 import { ApiUnit, MusterConfiguration } from '../../../models/api-response';
-import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditUnitDialog, EditUnitDialogProps } from './edit-unit-dialog';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { Unit } from '../../../actions/unit.actions';
 import PageHeader from '../../page-header/page-header';
 import { daysToString } from '../../../utility/days';
 import { ButtonSet } from '../../buttons/button-set';
+import { Modal } from '../../../actions/modal.actions';
+import { formatMessage } from '../../../utility/errors';
 
 interface UnitMenuState {
   anchor: HTMLElement | null,
@@ -46,7 +46,6 @@ export const UnitsPage = () => {
   const dispatch = useDispatch();
   const units = useSelector(UnitSelector.all);
   const [unitToDelete, setUnitToDelete] = useState<null | ApiUnit>(null);
-  const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
   const [editUnitDialogProps, setEditUnitDialogProps] = useState<EditUnitDialogProps>({ open: false });
   const [unitMenu, setUnitMenu] = React.useState<UnitMenuState>({ anchor: null });
 
@@ -67,12 +66,7 @@ export const UnitsPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        setAlertDialogProps({
-          open: true,
-          title: 'Add Unit',
-          message: `Unable to add unit: ${message}`,
-          onClose: () => { setAlertDialogProps({ open: false }); },
-        });
+        dispatch(Modal.openModal('Add Unit', `Unable to add unit: ${message}`));
       },
     });
   };
@@ -89,12 +83,7 @@ export const UnitsPage = () => {
           await initializeTable();
         },
         onError: (message: string) => {
-          setAlertDialogProps({
-            open: true,
-            title: 'Edit Unit',
-            message: `Unable to edit unit: ${message}`,
-            onClose: () => { setAlertDialogProps({ open: false }); },
-          });
+          dispatch(Modal.openModal('Edit Unit', `Unable to edit unit: ${message}`));
         },
       });
     }
@@ -114,16 +103,7 @@ export const UnitsPage = () => {
     try {
       await axios.delete(`api/unit/${orgId}/${unitToDelete.id}`);
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'Delete Unit',
-        message: `Unable to delete unit: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      dispatch(Modal.openModal('Delete Unit', formatMessage(error, 'Unable to delete unit')));
     }
     setUnitToDelete(null);
     await initializeTable();
@@ -251,9 +231,6 @@ export const UnitsPage = () => {
           onClose={editUnitDialogProps.onClose}
           onError={editUnitDialogProps.onError}
         />
-      )}
-      {alertDialogProps.open && (
-        <AlertDialog open={alertDialogProps.open} title={alertDialogProps.title} message={alertDialogProps.message} onClose={alertDialogProps.onClose} />
       )}
     </main>
   );

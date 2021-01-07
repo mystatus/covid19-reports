@@ -1,10 +1,13 @@
 import { AxiosError } from 'axios';
+import { isAxiosError } from './axios';
 
-export function formatMessage(error: Error, message: string, defaultErrorMessage = 'Internal Server Error') {
+export function formatMessage(error: Error, message = '', defaultErrorMessage = 'Internal Server Error') {
   let errorMessage = defaultErrorMessage;
-  const axiosError = error as AxiosError;
-  if (axiosError?.response?.data?.errors && axiosError?.response.data.errors.length > 0) {
-    errorMessage = axiosError?.response.data.errors[0].message;
+  if (isAxiosError(error)) {
+    const axiosError = error as AxiosError;
+    if (axiosError?.response?.data?.errors && axiosError?.response.data.errors.length > 0) {
+      errorMessage = axiosError?.response.data.errors[0].message ?? defaultErrorMessage;
+    }
   }
-  return `${message}${errorMessage ? `: ${errorMessage}` : ''}`;
+  return `${message}${message ? `: ${errorMessage}` : errorMessage}`;
 }

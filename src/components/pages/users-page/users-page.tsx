@@ -27,10 +27,10 @@ import useStyles from './users-page.styles';
 import { ApiRole, ApiUser, ApiAccessRequest } from '../../../models/api-response';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
-import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import SelectRoleDialog, { SelectRoleDialogProps } from './select-role-dialog';
 import { formatMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
+import { Modal } from '../../../actions/modal.actions';
 
 
 enum AccessRequestState {
@@ -61,7 +61,6 @@ export const UsersPage = () => {
   const [userRows, setUserRows] = useState<ApiUser[]>([]);
   const [accessRequests, setAccessRequests] = useState<AccessRequestRow[]>([]);
   const [userMoreMenu, setUserMenu] = React.useState<UserMoreMenuState | undefined>();
-  const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
   const [selectRoleDialogProps, setSelectRoleDialogProps] = useState<Partial<SelectRoleDialogProps> | undefined>();
   const { edipi: currentUserEdipi } = useSelector(UserSelector.current);
   const { id: orgId, name: orgName } = useSelector(UserSelector.org) ?? {};
@@ -85,12 +84,7 @@ export const UsersPage = () => {
   }, [orgId, dispatch]);
 
   const showAlertDialog = (error: Error, title: string, message: string) => {
-    setAlertDialogProps({
-      open: true,
-      title,
-      message: formatMessage(error, message),
-      onClose: () => { setAlertDialogProps({ open: false }); },
-    });
+    dispatch(Modal.openModal(title, formatMessage(error, message)));
   };
 
   const makeHandleUserMoreClick = (user: ApiUser) => (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -345,14 +339,6 @@ export const UsersPage = () => {
       {Boolean(selectRoleDialogProps?.open) && (
         <SelectRoleDialog
           {...(selectRoleDialogProps as SelectRoleDialogProps)}
-        />
-      )}
-      {alertDialogProps.open && (
-        <AlertDialog
-          open={alertDialogProps.open}
-          title={alertDialogProps.title}
-          message={alertDialogProps.message}
-          onClose={alertDialogProps.onClose}
         />
       )}
     </main>

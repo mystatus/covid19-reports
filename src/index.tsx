@@ -10,6 +10,7 @@ import * as serviceWorker from './service-worker';
 import { configureStore } from './store';
 import theme from './theme';
 import { ErrorBoundary } from './components/error-boundary/error-boundary';
+import { ModalProvider } from './components/modal/modal';
 
 const { store, persistor } = configureStore();
 
@@ -19,6 +20,7 @@ ReactDOM.render(
       <PersistGate persistor={persistor}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
+          <ModalProvider />
           <Router>
             <ErrorBoundary>
               <App />

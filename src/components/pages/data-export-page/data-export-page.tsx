@@ -15,15 +15,12 @@ import React, {
   useState,
   useCallback,
 } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { Modal } from '../../../actions/modal.actions';
 import { ApiError } from '../../../models/api-response';
 import { UserSelector } from '../../../selectors/user.selector';
 import { downloadFile } from '../../../utility/download';
 import { getLineCount } from '../../../utility/string-utils';
-import {
-  AlertDialog,
-  AlertDialogProps,
-} from '../../alert-dialog/alert-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { LinearProgressWithPercent } from '../../linear-progress-with-label/linear-progress-with-label';
 import PageHeader from '../../page-header/page-header';
@@ -31,12 +28,12 @@ import useStyles from './data-export-page.styles';
 
 export const DataExportPage = () => {
   const classes = useStyles();
+  const dispatch = useDispatch();
 
   const [startDate, setStartDate] = useState<Moment | null>(null);
   const [endDate, setEndDate] = useState<Moment | null>(null);
   const [isExportLoading, setIsExportLoading] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
-  const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
 
   const orgId = useSelector(UserSelector.orgId);
 
@@ -101,12 +98,7 @@ export const DataExportPage = () => {
     try {
       await runExport();
     } catch (err) {
-      setAlertDialogProps({
-        open: true,
-        title: 'Export Failed',
-        message: err.message,
-        onClose: () => setAlertDialogProps({ open: false }),
-      });
+      dispatch(Modal.openModal('Export Failed', err.message));
     } finally {
       setIsExportLoading(false);
     }
@@ -180,15 +172,6 @@ export const DataExportPage = () => {
           </Grid>
         </Grid>
       </Container>
-
-      {alertDialogProps.open && (
-        <AlertDialog
-          open={alertDialogProps.open}
-          title={alertDialogProps.title}
-          message={alertDialogProps.message}
-          onClose={alertDialogProps.onClose}
-        />
-      )}
     </main>
   );
 };

@@ -44,10 +44,15 @@ import {
   unitInitialState,
   unitReducer,
 } from './reducers/unit.reducer';
+import {
+  modalInitialState,
+  modalReducer,
+} from './reducers/modal.reducer';
 
 export const initialState = {
   appFrame: appFrameInitialState,
   notification: notificationInitialState,
+  modal: modalInitialState,
   role: roleInitialState,
   unit: unitInitialState,
   roster: rosterInitialState,
@@ -111,6 +116,7 @@ export const configureStore = () => {
       combineReducers({
         appFrame: appFrameReducer,
         notification: notificationReducer,
+        modal: modalReducer,
         role: roleReducer,
         unit: unitReducer,
         roster: rosterReducer,

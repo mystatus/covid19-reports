@@ -14,7 +14,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import PageHeader from '../../page-header/page-header';
 import useStyles from './role-management-page.styles';
-import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditRoleDialog, EditRoleDialogProps } from './edit-role-dialog';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
@@ -24,6 +23,8 @@ import { RoleSelector } from '../../../selectors/role.selector';
 import { Role } from '../../../actions/role.actions';
 import { Workspace } from '../../../actions/workspace.actions';
 import { ButtonSet } from '../../buttons/button-set';
+import { Modal } from '../../../actions/modal.actions';
+import { formatMessage } from '../../../utility/errors';
 
 
 export const RoleManagementPage = () => {
@@ -31,7 +32,6 @@ export const RoleManagementPage = () => {
   const dispatch = useDispatch();
   const [selectedRoleIndex, setSelectedRoleIndex] = useState(-1);
   const [deleteRoleDialogOpen, setDeleteRoleDialogOpen] = useState(false);
-  const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
   const [editRoleDialogProps, setEditRoleDialogProps] = useState<EditRoleDialogProps>({ open: false });
   const [deleteRoleLoading, setDeleteRoleLoading] = useState(false);
   const roles = useSelector(RoleSelector.all);
@@ -59,12 +59,7 @@ export const RoleManagementPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        setAlertDialogProps({
-          open: true,
-          title: 'Add Role',
-          message: `Unable to add role: ${message}`,
-          onClose: () => { setAlertDialogProps({ open: false }); },
-        });
+        dispatch(Modal.openModal('Add Role', `Unable to add role: ${message}`));
       },
     });
   };
@@ -80,12 +75,7 @@ export const RoleManagementPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        setAlertDialogProps({
-          open: true,
-          title: 'Edit Role',
-          message: `Unable to edit role: ${message}`,
-          onClose: () => { setAlertDialogProps({ open: false }); },
-        });
+        dispatch(Modal.openModal('Edit Role', `Unable to edit role: ${message}`));
       },
     });
   };
@@ -95,16 +85,7 @@ export const RoleManagementPage = () => {
     try {
       await axios.delete(`api/role/${orgId}/${roles[selectedRoleIndex].id}`);
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'Delete Role',
-        message: `Unable to delete role: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      dispatch(Modal.openModal('Delete Role', formatMessage(error, 'Unable to delete role')));
     }
     setDeleteRoleLoading(false);
     setDeleteRoleDialogOpen(false);
@@ -200,7 +181,6 @@ export const RoleManagementPage = () => {
         </Dialog>
       )}
       {editRoleDialogProps.open && <EditRoleDialog {...editRoleDialogProps} />}
-      {alertDialogProps.open && <AlertDialog {...alertDialogProps} />}
     </main>
   );
 };

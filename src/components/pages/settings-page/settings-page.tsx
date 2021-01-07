@@ -1,17 +1,15 @@
 import {
   Container, Tab, Tabs,
 } from '@material-ui/core';
-import React, { useState } from 'react';
+import React from 'react';
 import PageHeader from '../../page-header/page-header';
 import useStyles from './settings-page.styles';
-import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { NotificationsTab } from './notifications-tab';
 import { ProfileDetailsTab } from './profile-details-tab';
 
 export interface TabPanelProps {
   index: number;
   value: number;
-  setAlertDialogProps: (props: AlertDialogProps) => void
 }
 
 function tabHeaderProps(index: number) {
@@ -30,7 +28,6 @@ function tabProps(index: number) {
 
 export const SettingsPage = () => {
   const classes = useStyles();
-  const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
   const [value, setValue] = React.useState(0);
 
   const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
@@ -63,20 +60,15 @@ export const SettingsPage = () => {
           <NotificationsTab
             value={value}
             index={0}
-            setAlertDialogProps={setAlertDialogProps}
             {...tabProps(0)}
           />
           <ProfileDetailsTab
             value={value}
             index={1}
-            setAlertDialogProps={setAlertDialogProps}
             {...tabProps(1)}
           />
         </div>
       </Container>
-      {alertDialogProps.open && (
-        <AlertDialog open={alertDialogProps.open} title={alertDialogProps.title} message={alertDialogProps.message} onClose={alertDialogProps.onClose} />
-      )}
     </main>
   );
 };

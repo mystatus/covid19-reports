@@ -23,6 +23,7 @@ import { EditableBooleanTable } from '../../tables/editable-boolean-table';
 import { RosterSelector } from '../../../selectors/roster.selector';
 import { NotificationSelector } from '../../../selectors/notification.selector';
 import { WorkspaceSelector } from '../../../selectors/workspace.selector';
+import { formatMessage } from '../../../utility/errors';
 
 export interface EditRoleDialogProps {
   open: boolean,
@@ -153,11 +154,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
       }
     } catch (error) {
       if (onError) {
-        let message = 'Internal Server Error';
-        if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-          message = error.response.data.errors[0].message;
-        }
-        onError(message);
+        onError(formatMessage(error));
       }
       setFormDisabled(false);
       return;

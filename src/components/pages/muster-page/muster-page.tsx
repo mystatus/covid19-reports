@@ -41,11 +41,12 @@ import {
   ApiRosterColumnType,
   ApiUnitStatsByDate,
 } from '../../../models/api-response';
-import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { Unit } from '../../../actions/unit.actions';
 import { DataExportIcon } from '../../icons/data-export-icon';
+import { Modal } from '../../../actions/modal.actions';
+import { formatMessage } from '../../../utility/errors';
 
 interface TimeRange {
   interval: 'day' | 'hour'
@@ -114,7 +115,6 @@ export const MusterPage = () => {
   const [individualsUnitId, setIndividualsUnitId] = useState('');
   const [individualsPage, setIndividualsPage] = useState(0);
   const [individualsRowsPerPage, setIndividualsRowsPerPage] = useState(10);
-  const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
   const [exportLoading, setExportLoading] = useState(false);
   const [rosterColumnInfos, setRosterColumnInfos] = useState<ApiRosterColumnInfo[]>([]);
   const [rawTrendData, setRawTrendData] = useState<ApiMusterTrends>({ weekly: {}, monthly: {} });
@@ -268,23 +268,7 @@ export const MusterPage = () => {
   //
 
   const showErrorDialog = (title: string, error: Error) => {
-    let message: string;
-    if (isAxiosError(error)) {
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      } else {
-        message = 'Internal Server Error';
-      }
-    } else {
-      message = error.message;
-    }
-
-    setAlertDialogProps({
-      open: true,
-      title: `Error: ${title}`,
-      message,
-      onClose: () => { setAlertDialogProps({ open: false }); },
-    });
+    dispatch(Modal.openModal(`Error: ${title}`, formatMessage(error)));
   };
 
   const handleIndividualsChangePage = (event: MouseEvent<HTMLButtonElement> | null, pageNew: number) => {
@@ -320,16 +304,7 @@ export const MusterPage = () => {
       const filename = `${_.kebabCase(orgName)}_${_.kebabCase(unitId)}_muster-noncompliance_${startDate}_to_${endDate}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'Export to CSV',
-        message: `Unable to export: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      dispatch(Modal.openModal('Export to CSV', formatMessage(error, 'Unable to export')));
     } finally {
       setExportLoading(false);
     }
@@ -554,10 +529,6 @@ export const MusterPage = () => {
           </Grid>
         </Grid>
       </Container>
-
-      {alertDialogProps.open && (
-        <AlertDialog open={alertDialogProps.open} title={alertDialogProps.title} message={alertDialogProps.message} onClose={alertDialogProps.onClose} />
-      )}
     </main>
   );
 };

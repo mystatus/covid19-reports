@@ -10,7 +10,7 @@ import {
   TableRow,
 } from '@material-ui/core';
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import CheckIcon from '@material-ui/icons/Check';
@@ -21,8 +21,9 @@ import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
 import { ApiWorkspace, ApiWorkspaceTemplate } from '../../../models/api-response';
 import { EditWorkspaceDialog, EditWorkspaceDialogProps } from './edit-workspace-dialog';
-import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { ButtonSet } from '../../buttons/button-set';
+import { Modal } from '../../../actions/modal.actions';
+import { formatMessage } from '../../../utility/errors';
 
 interface WorkspaceMenuState {
   anchor: HTMLElement | null,
@@ -31,10 +32,10 @@ interface WorkspaceMenuState {
 
 export const WorkspacesPage = () => {
   const classes = useStyles();
+  const dispatch = useDispatch();
   const [workspaces, setWorkspaces] = useState<ApiWorkspace[]>([]);
   const [workspaceTemplates, setWorkspaceTemplates] = useState<ApiWorkspaceTemplate[]>([]);
   const [workspaceToDelete, setWorkspaceToDelete] = useState<null | ApiWorkspace>(null);
-  const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
   const [editWorkspaceDialogProps, setEditWorkspaceDialogProps] = useState<EditWorkspaceDialogProps>({ open: false });
   const [workspaceMenu, setWorkspaceMenu] = React.useState<WorkspaceMenuState>({ anchor: null });
 
@@ -56,12 +57,7 @@ export const WorkspacesPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        setAlertDialogProps({
-          open: true,
-          title: 'Add Workspace',
-          message: `Unable to add workspace: ${message}`,
-          onClose: () => { setAlertDialogProps({ open: false }); },
-        });
+        dispatch(Modal.openModal('Add Workspace', `Unable to add workspace: ${message}`));
       },
     });
   };
@@ -79,12 +75,7 @@ export const WorkspacesPage = () => {
           await initializeTable();
         },
         onError: (message: string) => {
-          setAlertDialogProps({
-            open: true,
-            title: 'Edit Workspace',
-            message: `Unable to edit workspace: ${message}`,
-            onClose: () => { setAlertDialogProps({ open: false }); },
-          });
+          dispatch(Modal.openModal('Edit Workspace', `Unable to edit workspace: ${message}`));
         },
       });
     }
@@ -105,16 +96,7 @@ export const WorkspacesPage = () => {
     try {
       await axios.delete(`api/workspace/${orgId}/${workspaceToDelete.id}`);
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'Delete Workspace',
-        message: `Unable to delete workspace: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      dispatch(Modal.openModal('Delete Workspace', formatMessage(error, 'Unable to delete workspace')));
     }
     setWorkspaceToDelete(null);
     await initializeTable();
@@ -233,9 +215,6 @@ export const WorkspacesPage = () => {
           onClose={editWorkspaceDialogProps.onClose}
           onError={editWorkspaceDialogProps.onError}
         />
-      )}
-      {alertDialogProps.open && (
-        <AlertDialog open={alertDialogProps.open} title={alertDialogProps.title} message={alertDialogProps.message} onClose={alertDialogProps.onClose} />
       )}
     </main>
   );
