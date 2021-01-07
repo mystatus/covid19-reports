@@ -101,6 +101,13 @@ router.post(
   controller.uploadRosterEntries,
 );
 
+router.delete(
+  '/:orgId/bulk',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageRoster),
+  controller.deleteRosterEntries,
+);
+
 router.get(
   '/:orgId/:rosterId',
   requireOrgAccess,

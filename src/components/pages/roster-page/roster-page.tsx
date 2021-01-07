@@ -17,6 +17,7 @@ import BackupIcon from '@material-ui/icons/Backup';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
+import DeleteSweepIcon from '@material-ui/icons/DeleteSweep';
 import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import React, {
   ChangeEvent, MouseEvent, useCallback, useEffect, useRef, useState,
@@ -237,9 +238,12 @@ export const RosterPage = () => {
       return;
     }
 
-    dispatch(Roster.upload(e.target.files[0], async (count, message) => {
-      if (count < 0) {
-        const msg = `An error occurred while uploading the roster: ${message || 'Please verify the roster data.'}`;
+    dispatch(Roster.upload(e.target.files[0], async (response, message) => {
+      if (response.errors?.length || message) {
+        const msg = (response.errors ?? []).reduce((result, error) => {
+          return `${result}<br/>${error.error}${error.column ? ` on '${error.column.displayName}'` : ''} (${error.edipi})`;
+        }, `An error occurred while uploading the roster: ${message || 'Please verify the roster data.'}`)
+
         setAlertDialogProps({
           open: true,
           title: 'Upload Error',
@@ -250,7 +254,7 @@ export const RosterPage = () => {
         setAlertDialogProps({
           open: true,
           title: 'Upload Successful',
-          message: `Successfully uploaded ${count} roster entries.`,
+          message: `Successfully uploaded ${response.count} roster entries.`,
           onClose: () => { setAlertDialogProps({ open: false }); },
         });
         await initializeTable();
@@ -318,6 +322,13 @@ export const RosterPage = () => {
       },
     });
   };
+
+  const deleteAllClicked = async () => {
+    // eslint-disable-next-line no-restricted-globals
+    if (confirm('This will permanently delete ALL roster entries?')) {
+      dispatch(Roster.deleteAll(orgId!));
+    }
+  }
 
   const deleteButtonClicked = (rosterEntry: ApiRosterEntry) => {
     setSelectedRosterEntry(rosterEntry);
@@ -490,6 +501,16 @@ export const RosterPage = () => {
             onClick={addButtonClicked}
           >
             Add Individual
+          </Button>
+
+          <Button
+            color="primary"
+            size="large"
+            variant="text"
+            startIcon={<DeleteSweepIcon />}
+            onClick={deleteAllClicked}
+          >
+            Delete All
           </Button>
         </ButtonSet>
 

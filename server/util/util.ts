@@ -3,7 +3,7 @@ import moment from 'moment';
 import { BadRequestError } from './error-types';
 
 
-export function dateFromString(dateStr: string) {
+export function dateFromString(dateStr: string, shouldThrow = true) {
   if (dateStr && dateStr.length > 0) {
     const numericDate = Number(dateStr);
     let date: Date;
@@ -13,7 +13,11 @@ export function dateFromString(dateStr: string) {
       date = new Date(dateStr);
     }
     if (Number.isNaN(date.getTime())) {
-      throw new BadRequestError(`Unable to parse date '${dateStr}'.  Valid dates are ISO formatted date strings and UNIX timestamps.`);
+      if (shouldThrow) {
+        throw new BadRequestError(`Unable to parse date '${dateStr}'.  Valid dates are ISO formatted date strings and UNIX timestamps.`);
+      } else {
+        return undefined;
+      }
     }
     return date;
   }

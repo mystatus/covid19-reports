@@ -187,7 +187,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
               onClose={handleRowMenuClose}
             >
               {rowOptions!.menuItems!.map(menuItem => (
-                <MenuItem onClick={handleMenuItemClick(menuItem.callback)}>{menuItem.name}</MenuItem>
+                <MenuItem onClick={handleMenuItemClick(menuItem.callback)} key={menuItem.name}>{menuItem.name}</MenuItem>
               ))}
             </Menu>
           )}

@@ -33,7 +33,7 @@ export const AlertDialog = (props: AlertDialogProps) => {
       <DialogTitle id="alert-dialog-title">{title || 'Alert'}</DialogTitle>
       <DialogContent>
         <DialogContentText id="alert-dialog-description">
-          {message}
+          <span dangerouslySetInnerHTML={{ __html: message ?? '' }} />
         </DialogContentText>
       </DialogContent>
       <DialogActions>

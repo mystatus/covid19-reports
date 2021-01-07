@@ -172,26 +172,63 @@ class RosterController {
     });
 
     const columns = await Roster.getAllowedColumns(org, req.appRole!);
+    const errors: Array<{ error: string, edipi?: string, column?: RosterColumnInfo }> = [];
+    const existingEntries = await Roster.find({
+      where: `edipi IN (${roster.map(({edipi}) => `'${edipi}'`).join(',')})`
+    });
+
+    const onError = (error: Error, row?: RosterFileRow, column?: RosterColumnInfo) => {
+      errors.push({ column, edipi: row?.edipi, error: error.message });
+    }
+
     roster.forEach(row => {
-      if (!row.unit) {
-        throw new BadRequestError('Unable to add roster entries without a unit ID.');
-      }
-      const unit = orgUnits.find(u => row.unit === u.id);
-      if (!unit) {
-        throw new NotFoundError(`Unit with ID ${row.unit} could not be found in the group.`);
+      let unit: Unit | undefined;
+      try {
+        if (!row.unit) {
+          throw new BadRequestError('Unable to add roster entries without a unit ID.');
+        }
+        unit = orgUnits.find(u => row.unit === u.id);
+        if (!unit) {
+          throw new NotFoundError(`Unit with ID ${row.unit} could not be found in the group.`);
+        }
+        if (existingEntries.some(({edipi}) => edipi === row.edipi)) {
+          throw new BadRequestError(`Entry with EDIPI already exists.`);
+        }
+      } catch (error) {
+        onError(error, row);
       }
       const entry = new Roster();
-      entry.unit = unit;
+      entry.unit = unit!;
       for (const column of columns) {
-        getColumnFromCSV(entry, row, column);
+        try {
+          getColumnFromCSV(entry, row, column);
+        } catch (error) {
+          onError(error, row, column);
+        }
       }
       rosterEntries.push(entry);
     });
-    await Roster.save(rosterEntries);
+
+    if (errors.length === 0) {
+      try {
+        await Roster.save(rosterEntries);
+      } catch (error) {
+        onError(error);
+      }
+    }
+
+    if (errors.length !== 0) {
+      res.status(400);
+    }
 
     res.json({
-      count: rosterEntries.length,
+      count: errors.length ? 0 : rosterEntries.length,
+      errors
     });
+  }
+
+  async deleteRosterEntries(req: ApiRequest<OrgParam>, res: Response) {
+    await Roster.clear();
   }
 
   async getFullRosterInfo(req: ApiRequest<OrgParam>, res: Response) {
@@ -580,15 +617,19 @@ function getColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColu
         break;
       case RosterColumnType.Date:
       case RosterColumnType.DateTime:
-        value = dateFromString(stringValue);
+        value = dateFromString(stringValue, false);
         break;
       case RosterColumnType.Boolean:
-        // TODO: Do we want to update this for more truthy options? yes/no, y/n, 1/0?
         value = stringValue === 'true';
         break;
       default:
         break;
     }
+
+    if (column.required && value === undefined) {
+      throw new BadRequestError(`Invalid value (${stringValue}) for ${column.name}`);
+    }
+
     if (value !== undefined) {
       if (column.custom) {
         if (!roster.customColumns) {
