@@ -1,7 +1,8 @@
 import {
-  Entity, PrimaryColumn, Column, BaseEntity, ManyToMany, JoinTable,
+  Entity, PrimaryColumn, Column, BaseEntity, ManyToMany, JoinTable, ManyToOne, OneToMany,
 } from 'typeorm';
 import { Role } from '../role/role.model';
+import {UserRole} from "./user-roles.model";
 
 const internalUserEdipi = 'internal';
 
@@ -13,6 +14,7 @@ export class User extends BaseEntity {
   })
   edipi!: string;
 
+  //TODO: Can we still keep this, and is it needed?
   @ManyToMany(() => Role, {
     cascade: true,
     onDelete: 'RESTRICT',
@@ -29,6 +31,9 @@ export class User extends BaseEntity {
     },
   })
   roles?: Role[];
+
+  @OneToMany(() => UserRole, userRole => userRole.user)
+  userRoles?: UserRole[];
 
   @Column()
   firstName!: string;
