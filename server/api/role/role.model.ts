@@ -1,9 +1,9 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, BaseEntity, JoinColumn, ManyToOne,
+  Entity, PrimaryGeneratedColumn, Column, BaseEntity, JoinColumn, ManyToOne, OneToMany,
 } from 'typeorm';
 import { Org } from '../org/org.model';
 import { Workspace } from '../workspace/workspace.model';
-import { escapeRegExp } from '../../util/util';
+import { UserRole } from "../user/user-roles.model";
 
 @Entity()
 export class Role extends BaseEntity {
@@ -29,6 +29,9 @@ export class Role extends BaseEntity {
     name: 'org_id',
   })
   org?: Org;
+
+  @OneToMany(() => UserRole, userRole => userRole.role)
+  userRoles?: UserRole[];
 
   @ManyToOne(() => Workspace, { cascade: true, onDelete: 'RESTRICT', nullable: true })
   @JoinColumn({
