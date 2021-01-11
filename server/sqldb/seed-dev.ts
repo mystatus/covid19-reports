@@ -136,7 +136,7 @@ function createGroupAdminRole(org: Org, workspace?: Workspace) {
 
 function createUserRole(org: Org, workspace?: Workspace) {
 
-  //TODO: SUFR - Role no longer includes indexPrefix, need to create assosciated UserRole
+  //TODO: SUFR - Role no longer includes indexPrefix, need to create assosciated UserRole?
   const role = new Role();
   role.name = 'Group User';
   role.description = 'Basic role for all group users.';
