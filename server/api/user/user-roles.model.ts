@@ -17,7 +17,7 @@ export class UserRole extends BaseEntity {
 
   @Column({
     length: 10,
-  }))
+  })
   userId!: string;
 
   @Column()
