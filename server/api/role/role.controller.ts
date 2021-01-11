@@ -40,10 +40,6 @@ class RoleController {
       throw new BadRequestError('A description must be supplied when adding a role.');
     }
 
-    if (!req.body.indexPrefix) {
-      throw new BadRequestError('An index prefix must be supplied when adding a role.');
-    }
-
     const role = new Role();
     role.org = req.appOrg;
     await setRoleFromBody(req.appOrg.id, role, req.body);
@@ -141,9 +137,7 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
   if (body.description != null) {
     role.description = body.description;
   }
-  if (body.indexPrefix != null) {
-    role.indexPrefix = body.indexPrefix;
-  }
+
   if (body.workspaceId !== undefined) {
     if (body.workspaceId == null) {
       role.workspace = null;
@@ -210,7 +204,6 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
 type RoleBody = {
   name?: string
   description?: string
-  indexPrefix?: string
   workspaceId?: number | null
   allowedRosterColumns?: string[]
   allowedNotificationEvents?: string[]

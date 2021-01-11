@@ -36,11 +36,6 @@ export class Role extends BaseEntity {
   })
   workspace?: Workspace | null;
 
-  @Column({
-    default: '',
-  })
-  indexPrefix!: string;
-
   @Column('simple-array', {
     default: '',
   })
@@ -102,7 +97,8 @@ export class Role extends BaseEntity {
   }
 
   getUnitFilter() {
-    return this.indexPrefix.replace(new RegExp(escapeRegExp('-'), 'g'), '_');
+    return '';
+    //return this.indexPrefix.replace(new RegExp(escapeRegExp('-'), 'g'), '_');
   }
 
   getKibanaIndex() {
@@ -127,7 +123,6 @@ export class Role extends BaseEntity {
     adminRole.name = 'Admin';
     adminRole.description = 'Site Administrator';
     adminRole.org = org;
-    adminRole.indexPrefix = '';
     adminRole.allowedNotificationEvents = ['*'];
     adminRole.allowedRosterColumns = ['*'];
 

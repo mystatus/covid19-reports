@@ -3,7 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  ManyToOne,
+  ManyToOne, OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { snakeCase } from 'typeorm/util/StringUtils';
@@ -17,6 +17,7 @@ import { Role } from '../role/role.model';
 import { Unit } from '../unit/unit.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { dateColumnTransformer, dateTimeColumnTransformer } from '../../util/util';
+import {UserRole} from "../user/user-roles.model";
 
 @Entity()
 export class Roster extends BaseEntity {
@@ -29,6 +30,9 @@ export class Roster extends BaseEntity {
     onDelete: 'RESTRICT',
   })
   unit!: Unit;
+
+  @OneToMany(() => UserRole, userRole => userRole.role)
+  userRoles?: UserRole[];
 
   @Column({
     length: 10,
