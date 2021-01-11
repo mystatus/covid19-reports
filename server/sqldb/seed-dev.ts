@@ -115,6 +115,8 @@ function randomNumber(min: number, max: number) {
 }
 
 function createGroupAdminRole(org: Org, workspace?: Workspace) {
+
+  //TODO: SUFR - Role no longer includes indexPrefix, need to create UserRole associated with this
   const role = new Role();
   role.name = 'Group Admin';
   role.description = 'For managing the group.';
@@ -133,6 +135,8 @@ function createGroupAdminRole(org: Org, workspace?: Workspace) {
 }
 
 function createUserRole(org: Org, workspace?: Workspace) {
+
+  //TODO: SUFR - Role no longer includes indexPrefix, need to create assosciated UserRole
   const role = new Role();
   role.name = 'Group User';
   role.description = 'Basic role for all group users.';

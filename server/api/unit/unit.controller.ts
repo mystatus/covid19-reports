@@ -13,10 +13,13 @@ import elasticsearch from '../../elasticsearch/elasticsearch';
 class UnitController {
 
   async getUnits(req: ApiRequest<OrgParam>, res: Response) {
+    //TODO: SUFR - Role no longer includes indexPrefix, need to query assosciated UserRole
     if (!req.appRole?.indexPrefix) {
       res.json([]);
       return;
     }
+
+    //TODO: SUFR - Role no longer includes indexPrefix, need to query assosciated UserRole
     const units = await Unit
       .createQueryBuilder('unit')
       .leftJoinAndSelect('unit.org', 'org')
@@ -65,6 +68,8 @@ class UnitController {
   }
 
   async updateUnit(req: ApiRequest<OrgUnitParams, UnitData>, res: Response) {
+
+    //TODO: SUFR - Role no longer includes indexPrefix, need to query assosciated UserRole
     if (!matchWildcardString(req.params.unitId, req.appRole!.indexPrefix)) {
       // If they don't have permission to see the unit, treat it as not found
       throw new NotFoundError('The unit could not be found.');
@@ -113,6 +118,8 @@ class UnitController {
   }
 
   async deleteUnit(req: ApiRequest<OrgUnitParams>, res: Response) {
+
+    //TODO: SUFR - Role no longer includes indexPrefix, need to query assosciated UserRole
     if (!matchWildcardString(req.params.unitId, req.appRole!.indexPrefix)) {
       // If they don't have permission to see the unit, treat it as not found
       throw new NotFoundError('The unit could not be found.');

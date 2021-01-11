@@ -125,6 +125,7 @@ export class Roster extends BaseEntity {
     });
 
     // Filter out roster entries that are not on the active roster or are not allowed by the role's index prefix.
+    //TODO: SUFR - index prefix no longer on Role model. Need to query corresponding UserRole
     return queryBuilder
       .where('u.org_id = :orgId', { orgId: org.id })
       .andWhere('(roster.end_date IS NULL OR roster.end_date >= CURRENT_DATE)')
