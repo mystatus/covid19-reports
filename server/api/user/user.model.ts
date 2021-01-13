@@ -2,7 +2,7 @@ import {
   Entity, PrimaryColumn, Column, BaseEntity, ManyToMany, JoinTable, ManyToOne, OneToMany,
 } from 'typeorm';
 import { Role } from '../role/role.model';
-import {UserRole} from "./user-roles.model";
+import { UserRole } from "./user-roles.model";
 
 const internalUserEdipi = 'internal';
 
@@ -13,27 +13,6 @@ export class User extends BaseEntity {
     length: 10,
   })
   edipi!: string;
-
-  //TODO: Can we still keep this, and is it needed?
-  @ManyToMany(() => Role, {
-    cascade: true,
-    onDelete: 'RESTRICT',
-  })
-  @JoinTable({
-    name: 'user_roles',
-    joinColumn: {
-      name: 'user',
-      referencedColumnName: 'edipi',
-    },
-    inverseJoinColumn: {
-      name: 'role',
-      referencedColumnName: 'id',
-    },
-  })
-  roles?: Role[];
-
-  @OneToMany(() => UserRole, userRole => userRole.user)
-  userRoles?: UserRole[];
 
   @Column()
   firstName!: string;
@@ -64,6 +43,45 @@ export class User extends BaseEntity {
     default: false,
   })
   isRegistered?: boolean;
+
+  
+  @OneToMany(() => UserRole, userRole => userRole.user)
+  userRoles: UserRole[];
+
+  get roles(): Role[] {
+    // TODO determine whether/how to return the indexPrefix?
+    return this.userRoles.map(userRole => userRole.role);
+  }
+
+  public async addRole(role: Role, indexPrefix: string): Promise<UserRole> {
+    let userRole = await UserRole.findOne({
+      where: {
+        userId: this.edipi,
+        roleId: role.id
+      }
+    });
+    if (!userRole) {
+      userRole = new UserRole();
+      userRole.userId = this.edipi;
+      userRole.roleId = role.id;
+      userRole.indexPrefix = indexPrefix;
+      this.userRoles.push(userRole);
+    }
+    return Promise.resolve(userRole);
+  }
+
+  public async removeRole(role: Role): Promise<UserRole> {
+    const found = await UserRole.findOne({
+      where: {
+        userId: this.edipi,
+        roleId: role.id
+      }
+    });
+    if (found) {
+      return Promise.resolve(found.remove()); // TODO consider softRemove()
+    }
+    return Promise.reject(`Error removing role. User ${this.edipi} does not have role ${role.name}`);
+  }
 
   public isInternal() {
     return this.edipi === internalUserEdipi;
