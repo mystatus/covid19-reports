@@ -55,11 +55,7 @@ async function generateOrg(orgNum: number, admin: User, numUsers: number, numRos
   await customColumn.save();
 
   const groupAdminRole = await createGroupAdminRole(org).save();
-  if (admin.roles) {
-    admin.roles.push(groupAdminRole);
-  } else {
-    admin.roles = [groupAdminRole];
-  }
+  admin.addRole(groupAdminRole, '*');
   await admin.save();
 
   let userRole = createUserRole(org);
@@ -74,7 +70,7 @@ async function generateOrg(orgNum: number, admin: User, numUsers: number, numRos
     user.phone = randomPhoneNumber();
     user.email = `user${i}@org${orgNum}.com`;
     user.service = 'Space Force';
-    user.roles = [userRole];
+    user.addRole(userRole, 'unit1');
     user.isRegistered = true;
     await user.save();
   }
@@ -115,13 +111,10 @@ function randomNumber(min: number, max: number) {
 }
 
 function createGroupAdminRole(org: Org, workspace?: Workspace) {
-
-  //TODO: SUFR - Role no longer includes indexPrefix, need to create UserRole associated with this
   const role = new Role();
   role.name = 'Group Admin';
   role.description = 'For managing the group.';
   role.org = org;
-  role.indexPrefix = '*';
   role.allowedRosterColumns = ['*'];
   role.allowedNotificationEvents = ['*'];
   role.canManageGroup = true;
@@ -135,13 +128,10 @@ function createGroupAdminRole(org: Org, workspace?: Workspace) {
 }
 
 function createUserRole(org: Org, workspace?: Workspace) {
-
-  //TODO: SUFR - Role no longer includes indexPrefix, need to create assosciated UserRole?
   const role = new Role();
   role.name = 'Group User';
   role.description = 'Basic role for all group users.';
   role.org = org;
-  role.indexPrefix = 'unit1';
   role.allowedRosterColumns = ['edipi', 'unit', 'rateRank', 'lastReported'];
   role.allowedNotificationEvents = [];
   role.canManageRoster = true;

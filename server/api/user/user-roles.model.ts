@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 import { Role } from '../role/role.model';
 import { User } from "./user.model";
-import {escapeRegExp} from "../../util/util";
+import { escapeRegExp } from "../../util/util";
 
 @Entity()
 export class UserRole extends BaseEntity {
@@ -24,13 +24,13 @@ export class UserRole extends BaseEntity {
   roleId!: number;
 
   @ManyToOne(() => User, user => user.userRoles)
-  user?: User;
+  user: User;
 
-  @ManyToOne(() => Role, role => role.user, {
+  @ManyToOne(() => Role, role => role.userRoles, {
     cascade: true,
     onDelete: 'RESTRICT',
   })
-  role?: Role;
+  role: Role;
 
   @Column({
     default: '',
@@ -42,12 +42,25 @@ export class UserRole extends BaseEntity {
   }
 
   getKibanaIndex() {
-    const suffix = this.role?.canViewPHI ? 'phi' : (this.role?.canViewPII ? 'pii' : 'base');
-    return `${this.role?.org!.indexPrefix}-${this.getUnitFilter()}-${suffix}-*`;
+    if (this.user.rootAdmin) {
+      return '*';
+    }
+    const suffix = this.role.canViewPHI ? 'phi' : (this.role.canViewPII ? 'pii' : 'base');
+    return `${this.role.org!.indexPrefix}-${this.getUnitFilter()}-${suffix}-*`;
   }
 
   getKibanaIndexForMuster(unitId?: string) {
-    return `${this.role?.org!.indexPrefix}-${unitId || this.getUnitFilter()}-phi-*`;
+    return `${this.role.org!.indexPrefix}-${unitId || this.getUnitFilter()}-phi-*`;
   }
 
+  getKibanaUserClaim() {
+    return `org${this.role.org!.id}-role${this.role.id}`;
+  }
+
+  getKibanaRoles() {
+    if (this.role.canManageWorkspace) {
+      return 'kibana_admin';
+    }
+    return 'kibana_ro_strict';
+  }
 }
