@@ -437,7 +437,7 @@ export const RosterPage = () => {
 
   return (
     <main className={classes.root}>
-      <Container maxWidth="md">
+      <Container maxWidth={false}>
         <PageHeader title="Roster" />
 
         <ButtonSet>
