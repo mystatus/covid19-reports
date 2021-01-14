@@ -7,12 +7,12 @@ import fs from 'fs';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import path from 'path';
-import apiRoutes, { ApiRequest } from './api';
+import apiRoutes from './api';
 import kibanaProxy from './kibana';
 import kibanaDashboard from './kibana/dashboard';
 import database from './sqldb';
 import config from './config';
-import { requireOrgAccess, requireUserAuth, requireWorkspaceAccess } from './auth';
+import { requireOrgAccess, requireUserAuth } from './auth';
 import { errorHandler } from './util/error-handler';
 
 database.then(() => {

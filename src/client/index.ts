@@ -19,6 +19,7 @@ client.interceptors.response.use(
   },
   (error: AxiosError) => {
     if (error.response) {
+      // eslint-disable-next-line @typescript-eslint/no-throw-literal
       throw error.response;
     } else if (error.request) {
       throw error.request;
@@ -59,9 +60,15 @@ export namespace UnitClient {
 }
 
 export namespace RosterClient {
+  export type UploadError = {
+    error: string,
+    edipi?: string,
+    line?: number,
+    column?: string,
+  };
   export interface UploadResponse {
     count: number
-    errors: Array<{ error: string, edipi?: string, column?: ApiRosterColumnInfo }> | undefined
+    errors: UploadError[] | undefined
   }
   export const fetchColumns = (orgId: number): Promise<ApiRosterColumnInfo[]> => {
     return client.get(`roster/${orgId}/column`);
@@ -69,15 +76,14 @@ export namespace RosterClient {
   export const upload = async (orgId: number, file: File): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append('roster_csv', file);
-    let response: UploadResponse | undefined = undefined;
+    let response: UploadResponse | undefined;
     try {
       response = await client.post(`roster/${orgId}/bulk`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-    }
-    catch (error) {
+    } catch (error) {
       if (error.data?.errors?.length) {
         return error.data;
       }

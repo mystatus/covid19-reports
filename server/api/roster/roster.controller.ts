@@ -2,7 +2,7 @@ import { Response } from 'express';
 import csv from 'csvtojson';
 import fs from 'fs';
 import moment, { Moment } from 'moment';
-import { getConnection, OrderByCondition } from 'typeorm';
+import { getConnection, In, OrderByCondition } from 'typeorm';
 import _ from 'lodash';
 import {
   ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams, PagedQuery,
@@ -12,7 +12,7 @@ import {
   Roster,
 } from './roster.model';
 import {
-  BadRequestError, NotFoundError, UnprocessableEntity,
+  BadRequestError, NotFoundError, RosterUploadError, RosterUploadErrorInfo, UnprocessableEntity,
 } from '../../util/error-types';
 import {
   BaseType, getOptionalParam, getRequiredParam, dateFromString,
@@ -172,17 +172,22 @@ class RosterController {
     });
 
     const columns = await Roster.getAllowedColumns(org, req.appRole!);
-    const errors: Array<{ error: string, edipi?: string, column?: RosterColumnInfo }> = [];
+    const errors: RosterUploadErrorInfo[] = [];
     const existingEntries = await Roster.find({
-      where: `edipi IN (${roster.map(({edipi}) => `'${edipi}'`).join(',')})`
+      where: {
+        edipi: In(roster.map(x => x.edipi)),
+      },
     });
 
-    const onError = (error: Error, row?: RosterFileRow, column?: RosterColumnInfo) => {
-      errors.push({ column, edipi: row?.edipi, error: error.message });
-    }
+    const onError = (error: Error, row?: RosterFileRow, index?: number, column?: string) => {
+      errors.push({
+        column, edipi: row?.edipi, error: error.message, line: index !== undefined ? index + 1 : undefined,
+      });
+    };
 
-    roster.forEach(row => {
+    roster.forEach((row, index) => {
       let unit: Unit | undefined;
+      // Pre-validate / check for row-level issues.
       try {
         if (!row.unit) {
           throw new BadRequestError('Unable to add roster entries without a unit ID.');
@@ -191,19 +196,20 @@ class RosterController {
         if (!unit) {
           throw new NotFoundError(`Unit with ID ${row.unit} could not be found in the group.`);
         }
-        if (existingEntries.some(({edipi}) => edipi === row.edipi)) {
+        if (existingEntries.some(({ edipi }) => edipi === row.edipi)) {
           throw new BadRequestError(`Entry with EDIPI already exists.`);
         }
       } catch (error) {
-        onError(error, row);
+        onError(error, row, index);
       }
+
       const entry = new Roster();
       entry.unit = unit!;
       for (const column of columns) {
         try {
-          getColumnFromCSV(entry, row, column);
+          setColumnFromCSV(entry, row, column);
         } catch (error) {
-          onError(error, row, column);
+          onError(error, row, index, column.name);
         }
       }
       rosterEntries.push(entry);
@@ -213,22 +219,26 @@ class RosterController {
       try {
         await Roster.save(rosterEntries);
       } catch (error) {
-        onError(error);
+        console.error('error', error)
+        const edipi = error.parameters[0];
+        const index = roster.findIndex(r => r.edipi === edipi);
+        const row = index === -1 ? undefined : roster[index];
+        onError(error, row, index, error.column);
       }
     }
 
     if (errors.length !== 0) {
-      res.status(400);
+      throw new RosterUploadError(errors);
     }
 
     res.json({
-      count: errors.length ? 0 : rosterEntries.length,
-      errors
+      count: rosterEntries.length,
     });
   }
 
   async deleteRosterEntries(req: ApiRequest<OrgParam>, res: Response) {
     await Roster.clear();
+    res.status(200).send();
   }
 
   async getFullRosterInfo(req: ApiRequest<OrgParam>, res: Response) {
@@ -597,7 +607,7 @@ async function getColumnFromBody(org: Org, roster: Roster, row: RosterEntryData,
   }
 }
 
-function getColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColumnInfo) {
+function setColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColumnInfo) {
   let stringValue: string | undefined;
   if (column.required) {
     stringValue = getRequiredParam(column.name, row);
@@ -617,7 +627,7 @@ function getColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColu
         break;
       case RosterColumnType.Date:
       case RosterColumnType.DateTime:
-        value = dateFromString(stringValue, false);
+        value = dateFromString(stringValue);
         break;
       case RosterColumnType.Boolean:
         value = stringValue === 'true';

@@ -239,10 +239,19 @@ export const RosterPage = () => {
     }
 
     dispatch(Roster.upload(e.target.files[0], async (response, message) => {
+      // reset the file input so that onChange fires again on repeat uploads of the same file.
+      fileInputRef.current!.value = '';
       if (response.errors?.length || message) {
-        const msg = (response.errors ?? []).reduce((result, error) => {
-          return `${result}<br/>${error.error}${error.column ? ` on '${error.column.displayName}'` : ''} (${error.edipi})`;
-        }, `An error occurred while uploading the roster: ${message || 'Please verify the roster data.'}`)
+        let msg = message || 'Please verify the roster data.';
+
+        (response.errors ?? []).forEach(error => {
+          const line = error.line ? `Line: ${error.line}` : undefined;
+          msg += '<br/>';
+          if (line) {
+            msg += `<em>${line}${error.column ? `, Column: ${error.column}` : ''}</em> - `;
+          }
+          msg += error.error;
+        });
 
         setAlertDialogProps({
           open: true,

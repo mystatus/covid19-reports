@@ -51,6 +51,16 @@ export class UnprocessableEntity extends RequestError {
   }
 }
 
+export class RosterUploadError extends RequestError {
+  errors?: RosterUploadErrorInfo[];
+
+  constructor(errors?: RosterUploadErrorInfo[], message = 'Roster Upload Error', showErrorPage = false) {
+    super(message, 'RosterUploadError', 400, showErrorPage);
+    this.errors = errors;
+    Error.captureStackTrace(this, RosterUploadError);
+  }
+}
+
 export class InternalServerError extends RequestError {
   constructor(message: string, showErrorPage = false) {
     super(message, 'InternalServerError', 500, showErrorPage);
@@ -64,5 +74,13 @@ export type RequestErrorType = (
   'Forbidden' |
   'NotFound' |
   'UnprocessableEntity' |
+  'RosterUploadError' |
   'InternalServerError'
 );
+
+export type RosterUploadErrorInfo = {
+  error: string,
+  edipi?: string,
+  line?: number,
+  column?: string,
+};

@@ -65,8 +65,8 @@ export namespace Roster {
       return;
     }
 
-    let response: RosterClient.UploadResponse | undefined = undefined
-    let message: string | undefined = undefined
+    let response: RosterClient.UploadResponse | undefined;
+    let message: string | undefined;
 
     try {
       response = await RosterClient.upload(orgId, file);
@@ -94,7 +94,7 @@ export namespace Roster {
   export const deleteAll = (orgId: number) => async (dispatch: Dispatch) => {
     dispatch(new Actions.DeleteAll());
     try {
-      const columns = await RosterClient.deleteAll(orgId);
+      await RosterClient.deleteAll(orgId);
       dispatch(new Actions.DeleteAllSuccess());
     } catch (error) {
       dispatch(new Actions.DeleteAllFailure({ error }));
