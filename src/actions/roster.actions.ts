@@ -33,9 +33,27 @@ export namespace Roster {
         error: any
       }) { }
     }
+
+    export class DeleteAll {
+      static type = 'ROSTER_DELETE_ALL';
+      type = DeleteAll.type;
+    }
+
+    export class DeleteAllSuccess {
+      static type = `${DeleteAll.type}_SUCCESS`;
+      type = DeleteAllSuccess.type;
+    }
+
+    export class DeleteAllFailure {
+      static type = `${DeleteAll.type}_FAILURE`;
+      type = DeleteAllFailure.type;
+      constructor(public payload: {
+        error: any
+      }) { }
+    }
   }
 
-  export const upload = (file: File, onComplete: (count: number, message?: string) => void) => async (dispatch: Dispatch<Actions.Upload>, getState: () => AppState) => {
+  export const upload = (file: File, onComplete: (response: RosterClient.UploadResponse, message?: string) => void) => async (dispatch: Dispatch<Actions.Upload>, getState: () => AppState) => {
     console.log('uploading file...');
     console.log('file', file);
 
@@ -47,12 +65,15 @@ export namespace Roster {
       return;
     }
 
+    let response: RosterClient.UploadResponse | undefined;
+    let message: string | undefined;
+
     try {
-      const count = await RosterClient.upload(orgId, file);
-      onComplete(count);
+      response = await RosterClient.upload(orgId, file);
     } catch (error) {
-      const message = formatMessage(error, 'Failed to upload roster');
-      onComplete(-1, message);
+      message = formatMessage(error, 'Failed to upload roster');
+    } finally {
+      onComplete(response ?? { count: -1, errors: undefined }, message);
     }
 
     console.log('upload complete!');
@@ -69,5 +90,14 @@ export namespace Roster {
       dispatch(new Actions.FetchColumnsFailure({ error }));
     }
   };
-}
 
+  export const deleteAll = (orgId: number) => async (dispatch: Dispatch) => {
+    dispatch(new Actions.DeleteAll());
+    try {
+      await RosterClient.deleteAll(orgId);
+      dispatch(new Actions.DeleteAllSuccess());
+    } catch (error) {
+      dispatch(new Actions.DeleteAllFailure({ error }));
+    }
+  };
+}

@@ -23,4 +23,7 @@
     "strictPropertyInitialization": false,
     "outDir": "./build"
   },
+  "include": [
+    "."
+  ]
 }

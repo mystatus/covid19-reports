@@ -17,6 +17,7 @@ import BackupIcon from '@material-ui/icons/Backup';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
+import DeleteSweepIcon from '@material-ui/icons/DeleteSweep';
 import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import React, {
   ChangeEvent, MouseEvent, useCallback, useEffect, useRef, useState,
@@ -237,9 +238,21 @@ export const RosterPage = () => {
       return;
     }
 
-    dispatch(Roster.upload(e.target.files[0], async (count, message) => {
-      if (count < 0) {
-        const msg = `An error occurred while uploading the roster: ${message || 'Please verify the roster data.'}`;
+    dispatch(Roster.upload(e.target.files[0], async (response, message) => {
+      // reset the file input so that onChange fires again on repeat uploads of the same file.
+      fileInputRef.current!.value = '';
+      if (response.errors?.length || message) {
+        let msg = message || 'Please verify the roster data.';
+
+        (response.errors ?? []).forEach(error => {
+          const line = error.line ? `Line: ${error.line}` : undefined;
+          msg += '<br/>';
+          if (line) {
+            msg += `<em>${line}${error.column ? `, Column: ${error.column}` : ''}</em> - `;
+          }
+          msg += error.error;
+        });
+
         setAlertDialogProps({
           open: true,
           title: 'Upload Error',
@@ -250,7 +263,7 @@ export const RosterPage = () => {
         setAlertDialogProps({
           open: true,
           title: 'Upload Successful',
-          message: `Successfully uploaded ${count} roster entries.`,
+          message: `Successfully uploaded ${response.count} roster entries.`,
           onClose: () => { setAlertDialogProps({ open: false }); },
         });
         await initializeTable();
@@ -317,6 +330,14 @@ export const RosterPage = () => {
         });
       },
     });
+  };
+
+  const deleteAllClicked = async () => {
+    // eslint-disable-next-line no-restricted-globals, no-alert
+    if (confirm('This will permanently delete ALL roster entries?')) {
+      await dispatch(Roster.deleteAll(orgId!));
+      await initializeTable();
+    }
   };
 
   const deleteButtonClicked = (rosterEntry: ApiRosterEntry) => {
@@ -490,6 +511,16 @@ export const RosterPage = () => {
             onClick={addButtonClicked}
           >
             Add Individual
+          </Button>
+
+          <Button
+            color="primary"
+            size="large"
+            variant="text"
+            startIcon={<DeleteSweepIcon />}
+            onClick={deleteAllClicked}
+          >
+            Delete All
           </Button>
         </ButtonSet>
 

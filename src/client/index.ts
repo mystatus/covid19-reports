@@ -19,6 +19,7 @@ client.interceptors.response.use(
   },
   (error: AxiosError) => {
     if (error.response) {
+      // eslint-disable-next-line @typescript-eslint/no-throw-literal
       throw error.response;
     } else if (error.request) {
       throw error.request;
@@ -59,17 +60,39 @@ export namespace UnitClient {
 }
 
 export namespace RosterClient {
+  export type UploadError = {
+    error: string,
+    edipi?: string,
+    line?: number,
+    column?: string,
+  };
+  export interface UploadResponse {
+    count: number
+    errors: UploadError[] | undefined
+  }
   export const fetchColumns = (orgId: number): Promise<ApiRosterColumnInfo[]> => {
     return client.get(`roster/${orgId}/column`);
   };
-  export const upload = (orgId: number, file: File): Promise<number> => {
+  export const upload = async (orgId: number, file: File): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append('roster_csv', file);
-    return client.post(`roster/${orgId}/bulk`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    let response: UploadResponse | undefined;
+    try {
+      response = await client.post(`roster/${orgId}/bulk`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } catch (error) {
+      if (error.data?.errors?.length) {
+        return error.data;
+      }
+      throw error;
+    }
+    return response ?? { count: -1, errors: [] };
+  };
+  export const deleteAll = (orgId: number) => {
+    return client.delete(`roster/${orgId}/bulk`);
   };
 }
 
