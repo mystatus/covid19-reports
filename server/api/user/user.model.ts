@@ -65,7 +65,7 @@ export class User extends BaseEntity {
       userRole.userId = this.edipi;
       userRole.roleId = role.id;
       userRole.indexPrefix = indexPrefix || role.defaultIndexPrefix;
-      this.userRoles.push(userRole);
+      this.userRoles = [userRole];
     }
     return Promise.resolve(userRole);
   }
