@@ -1,29 +1,50 @@
-import moment from 'moment-timezone';
-import { MSearchResponse } from 'elasticsearch';
 import { Response } from 'express';
-import elasticsearch from '../../elasticsearch/elasticsearch';
-import { InternalServerError, NotFoundError } from '../../util/error-types';
+import { NotFoundError } from '../../util/error-types';
 import {
   musterUtils,
   MusterWindow,
 } from '../../util/muster-utils';
 import {
-  ApiRequest, OrgRoleParams, OrgUnitParams, PagedQuery,
+  ApiRequest,
+  OrgRoleParams,
+  OrgUnitParams,
+  PagedQuery,
 } from '../index';
-import { MusterConfiguration, Unit } from '../unit/unit.model';
 import {
-  dayIsIn, DaysOfTheWeek, nextDay, oneDaySeconds,
+  MusterConfiguration,
+  Unit,
+} from '../unit/unit.model';
+import {
+  dayIsIn,
+  DaysOfTheWeek,
+  nextDay,
+  oneDaySeconds,
+  requireQuery,
+  TimeInterval,
 } from '../../util/util';
 
 class MusterController {
 
-  // TODO: Support custom muster intervals.
   async getIndividuals(req: ApiRequest<OrgRoleParams, null, GetIndividualsQuery>, res: Response) {
-    const intervalCount = parseInt(req.query.intervalCount ?? '1');
-    const limit = parseInt(req.query.limit ?? '10');
-    const page = parseInt(req.query.page ?? '0');
+    requireQuery(req, [
+      'interval',
+      'intervalCount',
+      'limit',
+      'page',
+    ]);
 
-    const individuals = await musterUtils.getIndividualsData(req.appOrg!, req.appRole!, intervalCount, req.query.unitId);
+    const interval = req.query.interval;
+    const intervalCount = parseInt(req.query.intervalCount);
+    const limit = parseInt(req.query.limit);
+    const page = parseInt(req.query.page);
+
+    const individuals = await musterUtils.getRosterMusterStats({
+      org: req.appOrg!,
+      role: req.appRole!,
+      interval,
+      intervalCount,
+      unitId: req.query.unitId || undefined,
+    });
 
     const offset = page * limit;
 
@@ -34,230 +55,21 @@ class MusterController {
   }
 
   async getTrends(req: ApiRequest<null, null, GetTrendsQuery>, res: Response) {
+    requireQuery(req, [
+      'weeksCount',
+      'monthsCount',
+    ]);
+
     const weeksCount = parseInt(req.query.weeksCount ?? '6');
     const monthsCount = parseInt(req.query.monthsCount ?? '6');
 
-    const unitRosterCounts = {
-      weekly: await musterUtils.getUnitRosterCounts(req.appRole!, 'week', weeksCount),
-      monthly: await musterUtils.getUnitRosterCounts(req.appRole!, 'month', monthsCount),
-    };
+    const unitTrends = await musterUtils.getUnitMusterStats({
+      role: req.appRole!,
+      weeksCount,
+      monthsCount,
+    });
 
-    // Get unique dates and unit names.
-    const weeklyDates = new Set<string>();
-    const monthlyDates = new Set<string>();
-    const unitIds = new Set<string>();
-
-    for (const date of Object.keys(unitRosterCounts.weekly)) {
-      weeklyDates.add(date);
-
-      for (const unitId of Object.keys(unitRosterCounts.weekly[date])) {
-        unitIds.add(unitId);
-      }
-    }
-
-    for (const date of Object.keys(unitRosterCounts.monthly)) {
-      monthlyDates.add(date);
-
-      for (const unitId of Object.keys(unitRosterCounts.monthly[date])) {
-        unitIds.add(unitId);
-      }
-    }
-
-    //
-    // Build elastcisearch multisearch queries.
-    //
-    const esBody = [] as any[];
-
-    // Weekly ES Queries
-    for (const unitId of unitIds) {
-      esBody.push({
-        index: req.appRole!.getKibanaIndexForMuster(unitId),
-      });
-      esBody.push({
-        size: 0,
-        query: {
-          bool: {
-            must: [{
-              range: {
-                Timestamp: {
-                  gte: `now-${weeksCount}w/w`,
-                  lt: 'now/w',
-                },
-              },
-            }],
-          },
-        },
-        aggs: {
-          reportsHistogram: {
-            date_histogram: {
-              field: 'Timestamp',
-              interval: 'week',
-            },
-          },
-        },
-      });
-    }
-
-    // Monthly ES Queries
-    for (const unitId of unitIds) {
-      esBody.push({
-        index: req.appRole!.getKibanaIndexForMuster(unitId),
-      });
-      esBody.push({
-        size: 0,
-        query: {
-          bool: {
-            must: [{
-              range: {
-                Timestamp: {
-                  gte: `now-${monthsCount}M/M`,
-                  lt: 'now/M',
-                },
-              },
-            }],
-          },
-        },
-        aggs: {
-          reportsHistogram: {
-            date_histogram: {
-              field: 'Timestamp',
-              interval: 'month',
-            },
-          },
-        },
-      });
-    }
-
-    // Send request.
-    let response: MSearchResponse<unknown>;
-    try {
-      response = await elasticsearch.msearch({ body: esBody });
-    } catch (err) {
-      throw new InternalServerError(`Elasticsearch: ${err.message}`);
-    }
-
-    //
-    // Calculate and organize data.
-    //
-    type UnitStatsByDate = {
-      [date: string]: {
-        [unitId: string]: {
-          nonMusterPercent: number,
-          reportsCount: number
-          rosterCount: number
-        }
-      }
-    };
-
-    const unitStats = {
-      weekly: {} as UnitStatsByDate,
-      monthly: {} as UnitStatsByDate,
-    };
-
-    // Weekly
-    for (const date of weeklyDates) {
-      unitStats.weekly[date] = {};
-    }
-
-    let responseIndex = 0;
-    for (const unitId of unitIds) {
-      let buckets: {
-        key_as_string: string
-        key: number
-        doc_count: number
-      }[];
-      if (!response.responses![responseIndex].aggregations) {
-        buckets = [];
-      } else {
-        buckets = response.responses![responseIndex].aggregations.reportsHistogram.buckets as {
-          key_as_string: string
-          key: number
-          doc_count: number
-        }[];
-      }
-
-      for (const bucket of buckets) {
-        const date = moment.utc(bucket.key).format(musterUtils.dateFormat);
-        const reportsCount = bucket.doc_count;
-        const rosterCount = unitRosterCounts.weekly[date][unitId];
-
-        const nextWeek = moment.utc(date).add(1, 'week');
-        const maxReportsCount = rosterCount * nextWeek.diff(date, 'days');
-
-        unitStats.weekly[date][unitId] = {
-          nonMusterPercent: musterUtils.calcNonMusterPercent(reportsCount, maxReportsCount),
-          rosterCount,
-          reportsCount,
-        };
-      }
-      responseIndex += 1;
-    }
-
-    // Any units that weren't found must not have any reports. Add them manually.
-    for (const date of weeklyDates) {
-      for (const unitId of unitIds) {
-        if (!unitStats.weekly[date][unitId]) {
-          unitStats.weekly[date][unitId] = {
-            nonMusterPercent: 100,
-            rosterCount: unitRosterCounts.weekly[date][unitId],
-            reportsCount: 0,
-          };
-        }
-      }
-    }
-
-    // Monthly
-    for (const date of monthlyDates) {
-      unitStats.monthly[date] = {};
-    }
-
-    for (const unitId of unitIds) {
-      let buckets: {
-        key_as_string: string
-        key: number
-        doc_count: number
-      }[];
-      if (!response.responses![responseIndex].aggregations) {
-        buckets = [];
-      } else {
-        buckets = response.responses![responseIndex].aggregations.reportsHistogram.buckets as {
-          key_as_string: string
-          key: number
-          doc_count: number
-        }[];
-      }
-
-      for (const bucket of buckets) {
-        const date = moment.utc(bucket.key).format(musterUtils.dateFormat);
-        const reportsCount = bucket.doc_count;
-        const rosterCount = unitRosterCounts.monthly[date][unitId];
-
-        const nextMonth = moment.utc(date).add(1, 'month');
-        const maxReportsCount = rosterCount * nextMonth.diff(date, 'days');
-
-        unitStats.monthly[date][unitId] = {
-          nonMusterPercent: musterUtils.calcNonMusterPercent(reportsCount, maxReportsCount),
-          rosterCount,
-          reportsCount,
-        };
-      }
-      responseIndex += 1;
-    }
-
-    // Any units that weren't found must not have any reports. Add them manually.
-    for (const date of monthlyDates) {
-      for (const unitId of unitIds) {
-        if (!unitStats.monthly[date][unitId]) {
-          unitStats.monthly[date][unitId] = {
-            nonMusterPercent: 100,
-            rosterCount: unitRosterCounts.monthly[date][unitId],
-            reportsCount: 0,
-          };
-        }
-      }
-    }
-
-    res.json(unitStats);
+    res.json(unitTrends);
   }
 
   async getClosedMusterWindows(req: ApiRequest<null, null, GetClosedMusterWindowsQuery>, res: Response) {
@@ -365,6 +177,7 @@ class MusterController {
 }
 
 type GetIndividualsQuery = {
+  interval: TimeInterval
   intervalCount: string
   unitId: string
 } & PagedQuery;

@@ -157,9 +157,9 @@ export interface ApiWorkspace {
 export interface ApiUnitStatsByDate {
   [date: string]: {
     [unitName: string]: {
+      mustersReported: number
+      mustersNotReported: number
       nonMusterPercent: number
-      reportsCount: number
-      rosterCount: number
     }
   }
 }
