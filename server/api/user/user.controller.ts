@@ -106,10 +106,6 @@ class UserController {
       newUser = true;
     }
 
-    if (!user.roles) {
-      user.roles = [];
-    }
-
     const orgRoleIndex = user.roles.findIndex(userRole => userRole.org!.id === org.id);
 
     if (orgRoleIndex >= 0) {
@@ -155,7 +151,6 @@ class UserController {
         .getMany();
 
       roleUsers.forEach(user => {
-        user.roles = [role];
         users.push(user);
       });
     }

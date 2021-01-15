@@ -48,7 +48,8 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
   }
 
   if (user.rootAdmin) {
-    user.roles = (await Org.find()).map(org => Role.admin(org));
+    // FIXME
+    // user.roles = (await Org.find()).map(org => Role.admin(org));
   }
 
   req.appUser = user;
