@@ -3,7 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  ManyToOne, OneToMany,
+  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { snakeCase } from 'typeorm/util/StringUtils';

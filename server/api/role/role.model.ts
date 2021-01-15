@@ -131,7 +131,7 @@ export class Role extends BaseEntity {
     adminRole.name = 'Admin';
     adminRole.description = 'Site Administrator';
     adminRole.org = org;
-    adminRole.defaultIndexPrefix = '';
+    adminRole.defaultIndexPrefix = '*';
     adminRole.allowedNotificationEvents = ['*'];
     adminRole.allowedRosterColumns = ['*'];
 

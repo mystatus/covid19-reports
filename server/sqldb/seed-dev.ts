@@ -9,6 +9,8 @@ import { Roster } from '../api/roster/roster.model';
 import { CustomRosterColumn } from '../api/roster/custom-roster-column.model';
 import { Unit } from '../api/unit/unit.model';
 
+require('dotenv').config();
+
 export default (async function() {
   if (process.env.NODE_ENV !== 'development') {
     throw new Error('You can only seed the database in a development environment.');
@@ -55,7 +57,7 @@ async function generateOrg(orgNum: number, admin: User, numUsers: number, numRos
   await customColumn.save();
 
   const groupAdminRole = await createGroupAdminRole(org).save();
-  admin.addRole(groupAdminRole, '*');
+  await admin.addRole(groupAdminRole, '*');
   await admin.save();
 
   let userRole = createUserRole(org);
@@ -70,8 +72,8 @@ async function generateOrg(orgNum: number, admin: User, numUsers: number, numRos
     user.phone = randomPhoneNumber();
     user.email = `user${i}@org${orgNum}.com`;
     user.service = 'Space Force';
-    user.addRole(userRole, 'unit1');
     user.isRegistered = true;
+    await user.addRole(userRole, 'unit1');
     await user.save();
   }
 
