@@ -13,19 +13,17 @@ import elasticsearch from '../../elasticsearch/elasticsearch';
 class UnitController {
 
   async getUnits(req: ApiRequest<OrgParam>, res: Response) {
-    //TODO: SUFR - Role no longer includes indexPrefix, need to query assosciated UserRole
-    if (!req.appRole?.indexPrefix) {
+    if (!req.appRole?.defaultIndexPrefix) {
       res.json([]);
       return;
     }
 
-    //TODO: SUFR - Role no longer includes indexPrefix, need to query assosciated UserRole
     const units = await Unit
       .createQueryBuilder('unit')
       .leftJoinAndSelect('unit.org', 'org')
       .where('unit.org_id=:orgId', { orgId: req.appOrg!.id })
       .andWhere('unit.id like :unitFilter', {
-        unitFilter: req.appRole!.indexPrefix.replace('*', '%'),
+        unitFilter: req.appRole!.defaultIndexPrefix.replace('*', '%'),
       })
       .orderBy('unit.id', 'ASC')
       .getMany();
@@ -37,7 +35,7 @@ class UnitController {
     if (!req.body.id) {
       throw new BadRequestError('An ID must be supplied when adding a unit.');
     }
-    if (!matchWildcardString(req.body.id, req.appRole!.indexPrefix)) {
+    if (!matchWildcardString(req.body.id, req.appRole!.defaultIndexPrefix)) {
       throw new BadRequestError('The provided unit ID does not conform to the unit filter for your role.');
     }
     if (!req.body.name) {
@@ -68,9 +66,7 @@ class UnitController {
   }
 
   async updateUnit(req: ApiRequest<OrgUnitParams, UnitData>, res: Response) {
-
-    //TODO: SUFR - Role no longer includes indexPrefix, need to query assosciated UserRole
-    if (!matchWildcardString(req.params.unitId, req.appRole!.indexPrefix)) {
+    if (!matchWildcardString(req.params.unitId, req.appRole!.defaultIndexPrefix)) {
       // If they don't have permission to see the unit, treat it as not found
       throw new NotFoundError('The unit could not be found.');
     }
@@ -118,9 +114,7 @@ class UnitController {
   }
 
   async deleteUnit(req: ApiRequest<OrgUnitParams>, res: Response) {
-
-    //TODO: SUFR - Role no longer includes indexPrefix, need to query assosciated UserRole
-    if (!matchWildcardString(req.params.unitId, req.appRole!.indexPrefix)) {
+    if (!matchWildcardString(req.params.unitId, req.appRole!.defaultIndexPrefix)) {
       // If they don't have permission to see the unit, treat it as not found
       throw new NotFoundError('The unit could not be found.');
     }

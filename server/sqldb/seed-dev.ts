@@ -115,6 +115,7 @@ function createGroupAdminRole(org: Org, workspace?: Workspace) {
   role.name = 'Group Admin';
   role.description = 'For managing the group.';
   role.org = org;
+  role.defaultIndexPrefix = '*';
   role.allowedRosterColumns = ['*'];
   role.allowedNotificationEvents = ['*'];
   role.canManageGroup = true;
@@ -132,6 +133,7 @@ function createUserRole(org: Org, workspace?: Workspace) {
   role.name = 'Group User';
   role.description = 'Basic role for all group users.';
   role.org = org;
+  role.defaultIndexPrefix = 'unit1';
   role.allowedRosterColumns = ['edipi', 'unit', 'rateRank', 'lastReported'];
   role.allowedNotificationEvents = [];
   role.canManageRoster = true;
