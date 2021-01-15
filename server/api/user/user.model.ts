@@ -53,7 +53,7 @@ export class User extends BaseEntity {
     return this.userRoles.map(userRole => userRole.role);
   }
 
-  public async addRole(role: Role, indexPrefix: string): Promise<UserRole> {
+  public async addRole(role: Role, indexPrefix?: string): Promise<UserRole> {
     let userRole = await UserRole.findOne({
       where: {
         userId: this.edipi,
@@ -64,7 +64,7 @@ export class User extends BaseEntity {
       userRole = new UserRole();
       userRole.userId = this.edipi;
       userRole.roleId = role.id;
-      userRole.indexPrefix = indexPrefix;
+      userRole.indexPrefix = indexPrefix || role.defaultIndexPrefix;
       this.userRoles.push(userRole);
     }
     return Promise.resolve(userRole);

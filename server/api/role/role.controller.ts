@@ -46,7 +46,7 @@ class RoleController {
 
     const newRole = await role.save();
 
-    await res.status(201).json(newRole);
+    res.status(201).json(newRole);
   }
 
   async getRole(req: ApiRequest<OrgRoleParams>, res: Response) {
@@ -156,6 +156,9 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
       role.workspace = workspace;
     }
   }
+  if (body.defaultIndexPrefix != null) {
+    role.defaultIndexPrefix = body.defaultIndexPrefix;
+  }
   if (body.canManageGroup != null) {
     role.canManageGroup = body.canManageGroup;
   }
@@ -205,6 +208,7 @@ type RoleBody = {
   name?: string
   description?: string
   workspaceId?: number | null
+  defaultIndexPrefix?: string | null
   allowedRosterColumns?: string[]
   allowedNotificationEvents?: string[]
   canManageGroup?: boolean
