@@ -4,6 +4,7 @@ import {
 import { Org } from '../org/org.model';
 import { Workspace } from '../workspace/workspace.model';
 import { UserRole } from "../user/user-roles.model";
+import { escapeRegExp } from '../../util/util';
 
 @Entity()
 export class Role extends BaseEntity {
@@ -38,6 +39,11 @@ export class Role extends BaseEntity {
     name: 'workspace_id',
   })
   workspace?: Workspace | null;
+
+  @Column({
+    default: '',
+  })
+  defaultIndexPrefix!: string;
 
   @Column('simple-array', {
     default: '',
@@ -100,8 +106,7 @@ export class Role extends BaseEntity {
   }
 
   getUnitFilter() {
-    return '';
-    //return this.indexPrefix.replace(new RegExp(escapeRegExp('-'), 'g'), '_');
+    return this.defaultIndexPrefix.replace(new RegExp(escapeRegExp('-'), 'g'), '_');
   }
 
   getKibanaIndex() {
