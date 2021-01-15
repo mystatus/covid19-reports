@@ -19,7 +19,7 @@ export interface ApiRole {
   workspace?: ApiWorkspace,
   name: string,
   description: string,
-  indexPrefix: string,
+  defaultIndexPrefix: string,
   allowedRosterColumns: string[],
   allowedNotificationEvents: string[],
   canManageGroup: boolean,
