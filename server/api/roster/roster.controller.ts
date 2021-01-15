@@ -181,7 +181,11 @@ class RosterController {
 
     const onError = (error: Error, row?: RosterFileRow, index?: number, column?: string) => {
       errors.push({
-        column, edipi: row?.edipi, error: error.message, line: index !== undefined ? index + 1 : undefined,
+        column,
+        edipi: row?.edipi,
+        error: error.message,
+        // Offset by 2 - 1 because of being zero-based and 1 because of the csv header row
+        line: index !== undefined ? index + 2 : undefined,
       });
     };
 
@@ -219,7 +223,6 @@ class RosterController {
       try {
         await Roster.save(rosterEntries);
       } catch (error) {
-        console.error('error', error)
         const edipi = error.parameters[0];
         const index = roster.findIndex(r => r.edipi === edipi);
         const row = index === -1 ? undefined : roster[index];

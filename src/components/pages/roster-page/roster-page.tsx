@@ -333,11 +333,12 @@ export const RosterPage = () => {
   };
 
   const deleteAllClicked = async () => {
-    // eslint-disable-next-line no-restricted-globals
+    // eslint-disable-next-line no-restricted-globals, no-alert
     if (confirm('This will permanently delete ALL roster entries?')) {
-      dispatch(Roster.deleteAll(orgId!));
+      await dispatch(Roster.deleteAll(orgId!));
+      await initializeTable();
     }
-  }
+  };
 
   const deleteButtonClicked = (rosterEntry: ApiRosterEntry) => {
     setSelectedRosterEntry(rosterEntry);
