@@ -3,7 +3,7 @@ import {
 } from 'typeorm';
 import { Org } from '../org/org.model';
 import { Workspace } from '../workspace/workspace.model';
-import { UserRole } from "../user/user-roles.model";
+import { UserRole } from "../user/user-role.model";
 import { escapeRegExp } from '../../util/util';
 
 @Entity()

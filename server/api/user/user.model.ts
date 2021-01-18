@@ -2,7 +2,7 @@ import {
   Entity, PrimaryColumn, Column, BaseEntity, ManyToMany, JoinTable, ManyToOne, OneToMany,
 } from 'typeorm';
 import { Role } from '../role/role.model';
-import { UserRole } from "./user-roles.model";
+import { UserRole } from "./user-role.model";
 
 const internalUserEdipi = 'internal';
 
