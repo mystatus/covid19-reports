@@ -11,7 +11,7 @@ import { WorkspaceTemplate } from './api/workspace/workspace-template.model';
 import { CustomRosterColumn } from './api/roster/custom-roster-column.model';
 import { Notification } from './api/notification/notification.model';
 import { UserNotificationSetting } from './api/notification/user-notification-setting.model';
-import { UserRole } from './api/user/user-roles.model';
+import { UserRole } from './api/user/user-role.model';
 
 export const ormConfig: PostgresConnectionOptions = {
   type: 'postgres',
@@ -37,4 +37,5 @@ export const ormConfig: PostgresConnectionOptions = {
   namingStrategy: new SnakeNamingStrategy(),
   synchronize: (process.env.NODE_ENV === 'development' && process.env.SYNC_DATABASE === 'true'),
   logging: false,
+  // logging: true,
 };
