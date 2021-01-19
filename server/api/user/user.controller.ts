@@ -131,10 +131,10 @@ class UserController {
     // TODO: This could potentially be optimized with something like this:
     // SELECT "user".*
     //   FROM role
-    // INNER JOIN user_roles
-    //   ON role.id = user_roles.role
+    // INNER JOIN user_role
+    //   ON role.id = user_role.role_id
     // INNER JOIN "user"
-    //   ON user_roles."user" = "user"."EDIPI"
+    //   ON user_role."user" = "user"."EDIPI"
     // WHERE role.org_id=1
 
     const roles = await Role.find({

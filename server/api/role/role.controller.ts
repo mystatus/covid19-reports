@@ -92,8 +92,8 @@ class RoleController {
     const userCount = await getConnection()
       .createQueryBuilder()
       .select('*')
-      .from('user_roles', 'user_roles')
-      .where('user_roles.role = :id', { id: roleId })
+      .from('user_role', 'user_role')
+      .where('user_role.role_id = :id', { id: roleId })
       .getCount();
 
     if (userCount > 0) {
