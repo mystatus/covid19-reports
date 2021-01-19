@@ -14,272 +14,257 @@ import {
 import elasticsearch from '../elasticsearch/elasticsearch';
 import { InternalServerError } from './error-types';
 import {
-  getEsDateFormat,
-  getEsTimeInterval,
+  getElasticsearchDateFormat,
+  getElasticsearchTimeInterval,
   getMomentDateFormat,
   TimeInterval,
 } from './util';
 
-export const musterUtils = {
+/**
+ * Get muster stats for each individual on the roster, given a time range and optional unit to filter by. The returned
+ * data will include each individual's muster stats merged with their roster data.
+ */
+export async function getRosterMusterStats(args: {
+  org: Org
+  role: Role
+  interval: TimeInterval
+  intervalCount: number
+  unitId?: string
+}) {
+  const { org, role, interval, intervalCount, unitId } = args;
 
-  /**
-   * Get muster stats for each individual on the roster, given a time range and optional unit to filter by. The returned
-   * data will include each individual's muster stats merged with their roster data.
-   */
-  async getRosterMusterStats(args: {
-    org: Org
-    role: Role
-    interval: TimeInterval
-    intervalCount: number
-    unitId?: string
-  }) {
-    const { org, role, interval, intervalCount, unitId } = args;
-
-    // Send ES request.
-    let response: SearchResponse<never>;
-    try {
-      response = await elasticsearch.search({
-        index: role.getKibanaIndexForMuster(unitId),
-        body: buildIndividualsMusterBody({
-          interval,
-          intervalCount,
-        }),
-      });
-    } catch (err) {
-      console.error(err);
-      throw new InternalServerError(`Elasticsearch: ${err.message}`);
-    }
-
-    // Get allowed roster data for the individuals returned from ES.
-    let rosterEntries: Roster[];
-    if (unitId) {
-      rosterEntries = await Roster.find({
-        relations: ['unit', 'unit.org'],
-        where: (qb: any) => {
-          qb.where('unit_id = :unitId', { unitId })
-            .andWhere('unit_org = :orgId', { orgId: org.id });
-        },
-      });
-    } else {
-      rosterEntries = await Roster.find({
-        relations: ['unit', 'unit.org'],
-        where: (qb: any) => {
-          qb.where('unit_org = :orgId', { orgId: org.id });
-        },
-      });
-    }
-
-    const rosterEntriesByEdipi: { [edipi: string]: Roster } = {};
-    rosterEntries.forEach(e => {
-      rosterEntriesByEdipi[e.edipi] = e;
+  // Send ES request.
+  let response: SearchResponse<never>;
+  try {
+    response = await elasticsearch.search({
+      index: role.getKibanaIndexForMuster(unitId),
+      body: buildIndividualsMusterBody({
+        interval,
+        intervalCount,
+      }),
     });
+  } catch (err) {
+    console.error(err);
+    throw new InternalServerError(`Elasticsearch: ${err.message}`);
+  }
 
-    const allowedRosterColumns = await Roster.getAllowedColumns(org, role);
-
-    const aggs = response.aggregations as {
-      muster: {
-        buckets: Array<{
-          key: {
-            edipi: string
-            reported: boolean
-          }
-          doc_count: number
-        }>
-      }
-    };
-
-    // Collect reports and reports missed.
-    const individualStats: IndividualStats = {};
-
-    for (const bucket of aggs.muster.buckets) {
-      const { edipi, reported } = bucket.key;
-
-      if (!individualStats[edipi]) {
-        individualStats[edipi] = {
-          mustersReported: 0,
-          mustersNotReported: 0,
-          nonMusterPercent: 0,
-        };
-      }
-
-      if (reported) {
-        individualStats[edipi].mustersReported = bucket.doc_count;
-      } else {
-        individualStats[edipi].mustersNotReported = bucket.doc_count;
-      }
-    }
-
-    // Calculate non-muster percents.
-    for (const edipi of Object.keys(individualStats)) {
-      const data = individualStats[edipi];
-      individualStats[edipi].nonMusterPercent = musterUtils.calcNonMusterPercent(data.mustersReported, data.mustersNotReported);
-    }
-
-    // Build a sorted array of the individuals' stats merged with their roster data.
-    const individuals = Object.keys(individualStats)
-      .filter(edipi => {
-        return (
-          rosterEntriesByEdipi[edipi]
-          && individualStats[edipi].nonMusterPercent > 0
-        );
-      })
-      .sort((edipiA, edipiB) => {
-        const entryA = rosterEntriesByEdipi[edipiA];
-        const entryB = rosterEntriesByEdipi[edipiB];
-        const individualA = individualStats[edipiA];
-        const individualB = individualStats[edipiB];
-
-        let diff = individualB.nonMusterPercent - individualA.nonMusterPercent;
-        if (diff === 0) {
-          diff = entryA.unit?.name.localeCompare(entryB.unit!.name) ?? 0;
-        }
-        if (diff === 0) {
-          diff = entryA.lastName?.localeCompare(entryB.lastName!) ?? 0;
-        }
-        if (diff === 0) {
-          diff = entryA.firstName?.localeCompare(entryB.firstName!) ?? 0;
-        }
-        return diff;
-      })
-      .map(edipi => {
-        const rosterEntryCleaned: Partial<Roster> = {};
-        const rosterEntry = rosterEntriesByEdipi[edipi];
-        const individual = individualStats[edipi];
-        for (const columnInfo of allowedRosterColumns) {
-          const columnValue = rosterEntry.getColumnValue(columnInfo);
-          Reflect.set(rosterEntryCleaned, columnInfo.name, columnValue);
-        }
-        return {
-          ...individual,
-          ...rosterEntryCleaned,
-          unitId: rosterEntry.unit.id,
-        } as IndividualStats[string] & Partial<Roster>;
-      });
-
-    return individuals;
-  },
-
-  /**
-   * Get aggregated unit muster stats over the given weeks/months.
-   */
-  async getUnitMusterStats(args: {
-    role: Role
-    weeksCount: number
-    monthsCount: number
-  }) {
-    const { role, weeksCount, monthsCount } = args;
-
-    // Get unit names.
-    const unitIdFilter = role.getUnitFilter().replace('*', '%');
-    const units = await Unit.find({
-      where: {
-        org: role.org,
-        id: Like(unitIdFilter),
+  // Get allowed roster data for the individuals returned from ES.
+  let rosterEntries: Roster[];
+  if (unitId) {
+    rosterEntries = await Roster.find({
+      relations: ['unit', 'unit.org'],
+      where: (qb: any) => {
+        qb.where('unit_id = :unitId', { unitId })
+          .andWhere('unit_org = :orgId', { orgId: org.id });
       },
     });
+  } else {
+    rosterEntries = await Roster.find({
+      relations: ['unit', 'unit.org'],
+      where: (qb: any) => {
+        qb.where('unit_org = :orgId', { orgId: org.id });
+      },
+    });
+  }
 
-    const unitNames = units.map(u => u.name);
+  const rosterEntriesByEdipi: { [edipi: string]: Roster } = {};
+  rosterEntries.forEach(e => {
+    rosterEntriesByEdipi[e.edipi] = e;
+  });
 
-    //
-    // Build elastcisearch multisearch queries.
-    //
-    const index = role.getKibanaIndexForMuster();
-    const esBody = [
-      { index },
-      buildMusterEsBody({
-        interval: 'week',
-        intervalCount: weeksCount,
-      }),
+  const allowedRosterColumns = await Roster.getAllowedColumns(org, role);
 
-      { index },
-      buildMusterEsBody({
-        interval: 'month',
-        intervalCount: monthsCount,
-      }),
-    ] as any[];
+  // Collect reports and reports missed.
+  const individualStats: IndividualStats = {};
 
-    // Send ES request.
-    let response: MSearchResponse<unknown>;
-    try {
-      response = await elasticsearch.msearch({ body: esBody });
-    } catch (err) {
-      console.error(err);
-      throw new InternalServerError(`Elasticsearch: ${err.message}`);
+  const aggs = response.aggregations as IndividualsMusterAggregations;
+  for (const bucket of aggs.muster.buckets) {
+    const { edipi, reported } = bucket.key;
+
+    if (!individualStats[edipi]) {
+      individualStats[edipi] = {
+        mustersReported: 0,
+        mustersNotReported: 0,
+        nonMusterPercent: 0,
+      };
     }
 
-    //
-    // Organize and return data.
-    //
-    const weeklyAggs = response.responses![0].aggregations as MusterAggregation;
-    const monthlyAggs = response.responses![1].aggregations as MusterAggregation;
-
-    return {
-      weekly: buildUnitStats({
-        aggregations: weeklyAggs,
-        unitNames,
-        interval: 'week',
-        intervalCount: weeksCount,
-      }),
-      monthly: buildUnitStats({
-        aggregations: monthlyAggs,
-        unitNames,
-        interval: 'month',
-        intervalCount: monthsCount,
-      }),
-    };
-  },
-
-  calcNonMusterPercent(mustersReported: number, mustersNotReported: number) {
-    const totalReports = mustersReported + mustersNotReported;
-    if (totalReports === 0) {
-      return 0;
+    if (reported) {
+      individualStats[edipi].mustersReported = bucket.doc_count;
+    } else {
+      individualStats[edipi].mustersNotReported = bucket.doc_count;
     }
+  }
 
-    const nonMusterPercent = (mustersNotReported / totalReports) * 100;
+  // Calculate non-muster percents.
+  for (const edipi of Object.keys(individualStats)) {
+    const data = individualStats[edipi];
+    individualStats[edipi].nonMusterPercent = calcNonMusterPercent(data.mustersReported, data.mustersNotReported);
+  }
 
-    if (nonMusterPercent < 0 || nonMusterPercent > 100) {
-      console.warn(`Invalid non-muster percent (${nonMusterPercent}). It should be between 0 and 100.`);
-    }
+  // Build a sorted array of the individuals' stats merged with their roster data.
+  const individuals = Object.keys(individualStats)
+    .filter(edipi => {
+      return (
+        rosterEntriesByEdipi[edipi]
+        && individualStats[edipi].nonMusterPercent > 0
+      );
+    })
+    .sort((edipiA, edipiB) => {
+      const entryA = rosterEntriesByEdipi[edipiA];
+      const entryB = rosterEntriesByEdipi[edipiB];
+      const individualA = individualStats[edipiA];
+      const individualB = individualStats[edipiB];
 
-    return nonMusterPercent;
-  },
+      let diff = individualB.nonMusterPercent - individualA.nonMusterPercent;
+      if (diff === 0) {
+        diff = entryA.unit?.name.localeCompare(entryB.unit!.name) ?? 0;
+      }
+      if (diff === 0) {
+        diff = entryA.lastName?.localeCompare(entryB.lastName!) ?? 0;
+      }
+      if (diff === 0) {
+        diff = entryA.firstName?.localeCompare(entryB.firstName!) ?? 0;
+      }
+      return diff;
+    })
+    .map(edipi => {
+      const rosterEntryCleaned: Partial<Roster> = {};
+      const rosterEntry = rosterEntriesByEdipi[edipi];
+      const individual = individualStats[edipi];
+      for (const columnInfo of allowedRosterColumns) {
+        const columnValue = rosterEntry.getColumnValue(columnInfo);
+        Reflect.set(rosterEntryCleaned, columnInfo.name, columnValue);
+      }
+      return {
+        ...individual,
+        ...rosterEntryCleaned,
+        unitId: rosterEntry.unit.id,
+      } as IndividualStats[string] & Partial<Roster>;
+    });
 
-  getEarliestMusterWindowTime(muster: MusterConfiguration, referenceTime: number) {
-    const musterTime = moment(muster.startTime, 'HH:mm');
-    return moment
-      .unix(referenceTime)
-      .tz(muster.timezone)
-      .startOf('week')
-      .add(musterTime.hour(), 'hours')
-      .add(musterTime.minutes(), 'minutes')
-      .unix();
-  },
+  return individuals;
+}
 
-  buildMusterWindow(unit: Unit, startTimestamp: number, endTimestamp: number, muster: MusterConfiguration): MusterWindow {
-    return {
-      id: `${unit.org!.id}-${unit.id}-${moment.unix(startTimestamp).utc().format('Y-M-D-HH-mm')}`,
-      orgId: unit.org!.id,
-      unitId: unit.id,
-      unitName: unit.name,
-      startTimestamp,
-      endTimestamp,
-      startTime: muster.startTime,
-      timezone: muster.timezone,
-      durationMinutes: muster.durationMinutes,
-    };
-  },
+/**
+ * Get aggregated unit muster stats over the given weeks/months.
+ */
+export async function getUnitMusterStats(args: {
+  role: Role
+  weeksCount: number
+  monthsCount: number
+}) {
+  const { role, weeksCount, monthsCount } = args;
 
-  getDistanceToWindow(start: number, end: number, time: number) {
-    if (time > end) {
-      return time - end;
-    }
-    if (time < start) {
-      return time - start;
-    }
+  // Get unit names.
+  const unitIdFilter = role.getUnitFilter().replace('*', '%');
+  const units = await Unit.find({
+    where: {
+      org: role.org,
+      id: Like(unitIdFilter),
+    },
+  });
+
+  const unitNames = units.map(u => u.name);
+
+  //
+  // Build elastcisearch multisearch queries.
+  //
+  const index = role.getKibanaIndexForMuster();
+  const esBody = [
+    { index },
+    buildMusterEsBody({
+      interval: 'week',
+      intervalCount: weeksCount,
+    }),
+
+    { index },
+    buildMusterEsBody({
+      interval: 'month',
+      intervalCount: monthsCount,
+    }),
+  ] as any[];
+
+  // Send ES request.
+  let response: MSearchResponse<unknown>;
+  try {
+    response = await elasticsearch.msearch({ body: esBody });
+  } catch (err) {
+    console.error(err);
+    throw new InternalServerError(`Elasticsearch: ${err.message}`);
+  }
+
+  //
+  // Organize and return data.
+  //
+  const weeklyAggs = response.responses![0].aggregations as MusterAggregation;
+  const monthlyAggs = response.responses![1].aggregations as MusterAggregation;
+
+  return {
+    weekly: buildUnitStats({
+      aggregations: weeklyAggs,
+      unitNames,
+      interval: 'week',
+      intervalCount: weeksCount,
+    }),
+    monthly: buildUnitStats({
+      aggregations: monthlyAggs,
+      unitNames,
+      interval: 'month',
+      intervalCount: monthsCount,
+    }),
+  };
+}
+
+export function calcNonMusterPercent(mustersReported: number, mustersNotReported: number) {
+  const totalReports = mustersReported + mustersNotReported;
+  if (totalReports === 0) {
     return 0;
-  },
+  }
 
-};
+  const nonMusterPercent = (mustersNotReported / totalReports) * 100;
+
+  if (nonMusterPercent < 0 || nonMusterPercent > 100) {
+    console.warn(`Invalid non-muster percent (${nonMusterPercent}). It should be between 0 and 100.`);
+  }
+
+  return nonMusterPercent;
+}
+
+export function getEarliestMusterWindowTime(muster: MusterConfiguration, referenceTime: number) {
+  const musterTime = moment(muster.startTime, 'HH:mm');
+  return moment
+    .unix(referenceTime)
+    .tz(muster.timezone)
+    .startOf('week')
+    .add(musterTime.hour(), 'hours')
+    .add(musterTime.minutes(), 'minutes')
+    .unix();
+}
+
+export function buildMusterWindow(unit: Unit, startTimestamp: number, endTimestamp: number, muster: MusterConfiguration): MusterWindow {
+  return {
+    id: `${unit.org!.id}-${unit.id}-${moment.unix(startTimestamp).utc().format('Y-M-D-HH-mm')}`,
+    orgId: unit.org!.id,
+    unitId: unit.id,
+    unitName: unit.name,
+    startTimestamp,
+    endTimestamp,
+    startTime: muster.startTime,
+    timezone: muster.timezone,
+    durationMinutes: muster.durationMinutes,
+  };
+}
+
+export function getDistanceToWindow(start: number, end: number, time: number) {
+  if (time > end) {
+    return time - end;
+  }
+  if (time < start) {
+    return time - start;
+  }
+  return 0;
+}
 
 function buildIndividualsMusterBody({
   interval,
@@ -288,7 +273,39 @@ function buildIndividualsMusterBody({
   interval: TimeInterval,
   intervalCount: number
 }) {
-  const esInterval = getEsTimeInterval(interval);
+  /*
+    Example ES Response:
+    {
+      ...
+      "aggregations": {
+        "muster": {
+          "after_key": {
+            "edipi": "0000000001",
+            "reported": false
+          },
+          "buckets": [
+            {
+              "key": {
+                "edipi": "0000000001",
+                "reported": false
+              },
+              "doc_count": 1
+            },
+            {
+              "key": {
+                "edipi": "0000000001",
+                "reported": true
+              },
+              "doc_count": 4
+            },
+            ...
+          ]
+        }
+      }
+    }
+  */
+
+  const esInterval = getElasticsearchTimeInterval(interval);
 
   return {
     size: 0,
@@ -322,7 +339,7 @@ function buildIndividualsMusterBody({
               reported: {
                 terms: {
                   field: 'Muster.reported',
-                  missing_bucket: true,
+                  missing_bucket: true, // Prevent the request from failing if there are docs without Muster.reported.
                 },
               },
             },
@@ -340,7 +357,42 @@ function buildMusterEsBody({
   interval: TimeInterval,
   intervalCount: number
 }) {
-  const esInterval = getEsTimeInterval(interval);
+  /*
+    Example ES Response:
+    {
+      ...
+      "aggregations": {
+        "muster": {
+          "after_key": {
+            "unit": "Steel Rain",
+            "date": "2021-01-18",
+            "reported": true
+          },
+          "buckets": [
+            {
+              "key": {
+                "unit": "Airhawk",
+                "date": "2020-12-28",
+                "reported": false
+              },
+              "doc_count": 84
+            },
+            {
+              "key": {
+                "unit": "Airhawk",
+                "date": "2020-12-28",
+                "reported": true
+              },
+              "doc_count": 152
+            },
+            ...
+          ]
+        }
+      }
+    }
+  */
+
+  const esInterval = getElasticsearchTimeInterval(interval);
 
   return {
     size: 0,
@@ -368,7 +420,7 @@ function buildMusterEsBody({
                 date_histogram: {
                   field: 'Timestamp',
                   interval: `1${esInterval}`,
-                  format: getEsDateFormat(interval),
+                  format: getElasticsearchDateFormat(interval),
                 },
               },
             },
@@ -383,7 +435,7 @@ function buildMusterEsBody({
               reported: {
                 terms: {
                   field: 'Muster.reported',
-                  missing_bucket: true,
+                  missing_bucket: true, // Prevent the request from failing if there are docs without Muster.reported.
                 },
               },
             },
@@ -444,12 +496,24 @@ function buildUnitStats(args: {
   for (const date of Object.keys(unitStats)) {
     for (const unit of Object.keys(unitStats[date])) {
       const data = unitStats[date][unit];
-      unitStats[date][unit].nonMusterPercent = musterUtils.calcNonMusterPercent(data.mustersReported, data.mustersNotReported);
+      unitStats[date][unit].nonMusterPercent = calcNonMusterPercent(data.mustersReported, data.mustersNotReported);
     }
   }
 
   return unitStats;
 }
+
+type IndividualsMusterAggregations = {
+  muster: {
+    buckets: Array<{
+      key: {
+        edipi: string
+        reported: boolean
+      }
+      doc_count: number
+    }>
+  }
+};
 
 type IndividualStats = {
   [edipi: string]: {
@@ -472,14 +536,14 @@ type UnitStatsByDate = {
 
 type MusterAggregation = {
   muster: {
-    buckets: {
+    buckets: Array<{
       key: {
         date: string
         unit: string
         reported: boolean
       }
       doc_count: number
-    }[]
+    }>
   }
 };
 

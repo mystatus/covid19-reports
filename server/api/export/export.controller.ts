@@ -7,9 +7,9 @@ import {
   ForbiddenError,
   InternalServerError,
 } from '../../util/error-types';
-import { musterUtils } from '../../util/muster-utils';
+import { getRosterMusterStats } from '../../util/muster-utils';
 import {
-  requireQuery,
+  assertRequestQuery,
   TimeInterval,
 } from '../../util/util';
 import {
@@ -126,7 +126,7 @@ class ExportController {
   }
 
   async exportMusterIndividualsToCsv(req: ApiRequest<OrgParam, null, ExportMusterIndividualsQuery>, res: Response) {
-    requireQuery(req, [
+    assertRequestQuery(req, [
       'interval',
       'intervalCount',
     ]);
@@ -134,7 +134,7 @@ class ExportController {
     const interval = req.query.interval;
     const intervalCount = parseInt(req.query.intervalCount);
 
-    const individuals = await musterUtils.getRosterMusterStats({
+    const individuals = await getRosterMusterStats({
       org: req.appOrg!,
       role: req.appRole!,
       interval,

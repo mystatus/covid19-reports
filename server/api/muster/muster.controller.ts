@@ -1,7 +1,11 @@
 import { Response } from 'express';
 import { NotFoundError } from '../../util/error-types';
 import {
-  musterUtils,
+  buildMusterWindow,
+  getDistanceToWindow,
+  getEarliestMusterWindowTime,
+  getRosterMusterStats,
+  getUnitMusterStats,
   MusterWindow,
 } from '../../util/muster-utils';
 import {
@@ -19,14 +23,14 @@ import {
   DaysOfTheWeek,
   nextDay,
   oneDaySeconds,
-  requireQuery,
+  assertRequestQuery,
   TimeInterval,
 } from '../../util/util';
 
 class MusterController {
 
   async getIndividuals(req: ApiRequest<OrgRoleParams, null, GetIndividualsQuery>, res: Response) {
-    requireQuery(req, [
+    assertRequestQuery(req, [
       'interval',
       'intervalCount',
       'limit',
@@ -38,7 +42,7 @@ class MusterController {
     const limit = parseInt(req.query.limit);
     const page = parseInt(req.query.page);
 
-    const individuals = await musterUtils.getRosterMusterStats({
+    const individuals = await getRosterMusterStats({
       org: req.appOrg!,
       role: req.appRole!,
       interval,
@@ -55,7 +59,7 @@ class MusterController {
   }
 
   async getTrends(req: ApiRequest<null, null, GetTrendsQuery>, res: Response) {
-    requireQuery(req, [
+    assertRequestQuery(req, [
       'weeksCount',
       'monthsCount',
     ]);
@@ -63,7 +67,7 @@ class MusterController {
     const weeksCount = parseInt(req.query.weeksCount ?? '6');
     const monthsCount = parseInt(req.query.monthsCount ?? '6');
 
-    const unitTrends = await musterUtils.getUnitMusterStats({
+    const unitTrends = await getUnitMusterStats({
       role: req.appRole!,
       weeksCount,
       monthsCount,
@@ -88,7 +92,7 @@ class MusterController {
       for (const muster of unit.musterConfiguration) {
         // Get the unix timestamp of the earliest possible muster window, it could be in the previous week if the
         // muster window spans the week boundary.
-        let current = musterUtils.getEarliestMusterWindowTime(muster, since - muster.durationMinutes * 60);
+        let current = getEarliestMusterWindowTime(muster, since - muster.durationMinutes * 60);
         const durationSeconds = muster.durationMinutes * 60;
         // Loop through each week
         while (current < until) {
@@ -97,7 +101,7 @@ class MusterController {
             const end = current + durationSeconds;
             // If the window ended in the query window, add it to the list
             if (end > since && end <= until && dayIsIn(day, muster.days)) {
-              musterWindows.push(musterUtils.buildMusterWindow(unit, current, end, muster));
+              musterWindows.push(buildMusterWindow(unit, current, end, muster));
             }
             current += oneDaySeconds;
           }
@@ -133,7 +137,7 @@ class MusterController {
         continue;
       }
       // Get the unix timestamp of the earliest possible muster window in the week of the timestamp
-      let current = musterUtils.getEarliestMusterWindowTime(muster, timestamp);
+      let current = getEarliestMusterWindowTime(muster, timestamp);
       const durationSeconds = muster.durationMinutes * 60;
       // Loop through each day of the week
       let firstWindowStart: number = 0;
@@ -145,7 +149,7 @@ class MusterController {
             firstWindowStart = current;
           }
           lastWindowStart = current;
-          const distanceToWindow = musterUtils.getDistanceToWindow(current, end, timestamp);
+          const distanceToWindow = getDistanceToWindow(current, end, timestamp);
           // Pick the closest window, if one window ends and another starts on the same second as the timestamp, prefer
           // the window that is starting
           if (minDistance == null || timestamp === current || Math.abs(minDistance) > Math.abs(distanceToWindow)) {
@@ -162,7 +166,7 @@ class MusterController {
         // nearest window in the adjacent week
         const windowStart = firstWindowStart > timestamp ? lastWindowStart - oneDaySeconds * 7 : firstWindowStart + oneDaySeconds * 7;
         const windowEnd = windowStart + durationSeconds;
-        const distanceToWindow = musterUtils.getDistanceToWindow(windowStart, windowEnd, timestamp);
+        const distanceToWindow = getDistanceToWindow(windowStart, windowEnd, timestamp);
         if (Math.abs(minDistance!) > Math.abs(distanceToWindow)) {
           closestMuster = muster;
           closestStart = windowStart;
@@ -171,7 +175,7 @@ class MusterController {
       }
     }
 
-    res.json(closestMuster ? musterUtils.buildMusterWindow(unit, closestStart, closestEnd, closestMuster) : null);
+    res.json(closestMuster ? buildMusterWindow(unit, closestStart, closestEnd, closestMuster) : null);
   }
 
 }

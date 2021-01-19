@@ -119,7 +119,7 @@ export type TimeInterval =
   | 'month'
   | 'year';
 
-export function getEsTimeInterval(interval: TimeInterval) {
+export function getElasticsearchTimeInterval(interval: TimeInterval) {
   switch (interval) {
     case 'day': return 'd';
     case 'week': return 'w';
@@ -130,7 +130,7 @@ export function getEsTimeInterval(interval: TimeInterval) {
   }
 }
 
-export function getEsDateFormat(interval: TimeInterval) {
+export function getElasticsearchDateFormat(interval: TimeInterval) {
   switch (interval) {
     case 'day':
     case 'week': return 'yyyy-MM-dd';
@@ -152,25 +152,18 @@ export function getMomentDateFormat(interval: TimeInterval) {
   }
 }
 
-export function requireQuery<TQuery extends object>(
+export function assertRequestQuery<TQuery extends object>(
   req: ApiRequest<unknown, unknown, TQuery>,
-  keys: Array<keyof TQuery>,
+  requiredKeys: Array<keyof TQuery>,
 ) {
-  const missing = getMissingKeys(req.query, keys);
-  if (missing.length) {
-    throw new BadRequestError(`Missing required query params: ${missing.join(', ')}`);
+  const missingKeys = getMissingKeys(req.query, requiredKeys);
+  if (missingKeys.length) {
+    throw new BadRequestError(`Missing required request query params: ${missingKeys.join(', ')}`);
   }
 
   return req.query;
 }
 
 function getMissingKeys<T extends object>(obj: T, keys: Array<keyof T>) {
-  const missing = [];
-  for (const key of keys) {
-    if (obj[key] === undefined) {
-      missing.push(key);
-    }
-  }
-
-  return missing;
+  return keys.filter(key => obj[key] === undefined);
 }
