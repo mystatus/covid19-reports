@@ -1,5 +1,6 @@
 import { ValueTransformer } from 'typeorm';
 import moment from 'moment';
+import { ApiRequest } from '../api';
 import { BadRequestError } from './error-types';
 
 
@@ -57,14 +58,13 @@ export function matchWildcardString(str: string, pattern: string) {
   return new RegExp(`^${pattern.split('*').map(escapeRegex).join('.*')}$`).test(str);
 }
 
-export type BaseType = (
-  'string' |
-  'number' |
-  'boolean' |
-  'object' |
-  'function' |
-  'undefined'
-);
+export type BaseType =
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'object'
+  | 'function'
+  | 'undefined';
 
 export enum DaysOfTheWeek {
   None = 0,
@@ -116,3 +116,58 @@ export const timestampColumnTransformer: ValueTransformer = {
 };
 
 export const oneDaySeconds = 24 * 60 * 60;
+
+export type TimeInterval =
+  | 'day'
+  | 'week'
+  | 'month'
+  | 'year';
+
+export function getElasticsearchTimeInterval(interval: TimeInterval) {
+  switch (interval) {
+    case 'day': return 'd';
+    case 'week': return 'w';
+    case 'month': return 'M';
+    case 'year': return 'y';
+    default:
+      throw new Error(`Unsupported time interval '${interval}'`);
+  }
+}
+
+export function getElasticsearchDateFormat(interval: TimeInterval) {
+  switch (interval) {
+    case 'day':
+    case 'week': return 'yyyy-MM-dd';
+    case 'month': return 'yyyy-MM';
+    case 'year': return 'yyyy';
+    default:
+      throw new Error(`Unsupported interval '${interval}'`);
+  }
+}
+
+export function getMomentDateFormat(interval: TimeInterval) {
+  switch (interval) {
+    case 'day':
+    case 'week': return 'yyyy-MM-DD';
+    case 'month': return 'yyyy-MM';
+    case 'year': return 'yyyy';
+    default:
+      throw new Error(`Unsupported interval '${interval}'`);
+  }
+}
+
+export function assertRequestQuery<TQuery extends object>(
+  req: ApiRequest<unknown, unknown, TQuery>,
+  requiredKeys: Array<keyof TQuery>,
+) {
+  const missingKeys = getMissingKeys(req.query, requiredKeys);
+  if (missingKeys.length) {
+    throw new BadRequestError(`Missing required request query params: ${missingKeys.join(', ')}`);
+  }
+
+  return req.query;
+}
+
+function getMissingKeys<T extends object>(obj: T, keys: Array<keyof T>) {
+  return keys.filter(key => obj[key] === undefined);
+}

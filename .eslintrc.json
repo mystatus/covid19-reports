@@ -64,6 +64,7 @@
     ],
     "no-underscore-dangle": "off",
     "no-use-before-define": "off",
+    "object-curly-newline": ["error", { "consistent": true }],
     "padded-blocks": "off",
     "prefer-destructuring": "off",
     "radix": "off",

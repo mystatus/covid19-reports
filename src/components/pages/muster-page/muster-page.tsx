@@ -175,7 +175,12 @@ export const MusterPage = () => {
 
   const reloadTrendData = useCallback(async () => {
     try {
-      const data = (await axios.get(`api/muster/${orgId}/trends`)).data as ApiMusterTrends;
+      const data = (await axios.get(`api/muster/${orgId}/trends`, {
+        params: {
+          weeksCount: 6,
+          monthsCount: 6,
+        },
+      })).data as ApiMusterTrends;
       setRawTrendData(data);
     } catch (error) {
       showErrorDialog('Get Trends', error);
@@ -233,11 +238,11 @@ export const MusterPage = () => {
         x: datesSorted,
         y: [] as number[],
         name: name || unitId,
-        hovertemplate: `%{y:.2f}%`,
+        hovertemplate: `%{y:.1f}%`,
       };
 
       for (const date of datesSorted) {
-        const nonMusterPercent = unitStatsByDate[date][unitId]?.nonMusterPercent ?? 0;
+        const nonMusterPercent = unitStatsByDate[date][unitId].nonMusterPercent;
         chartData.y.push(nonMusterPercent);
       }
 

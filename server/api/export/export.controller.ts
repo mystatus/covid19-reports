@@ -7,7 +7,11 @@ import {
   ForbiddenError,
   InternalServerError,
 } from '../../util/error-types';
-import { musterUtils } from '../../util/muster-utils';
+import { getRosterMusterStats } from '../../util/muster-utils';
+import {
+  assertRequestQuery,
+  TimeInterval,
+} from '../../util/util';
 import {
   ApiRequest,
   OrgParam,
@@ -122,9 +126,21 @@ class ExportController {
   }
 
   async exportMusterIndividualsToCsv(req: ApiRequest<OrgParam, null, ExportMusterIndividualsQuery>, res: Response) {
-    const intervalCount = parseInt(req.query.intervalCount ?? '1');
+    assertRequestQuery(req, [
+      'interval',
+      'intervalCount',
+    ]);
 
-    const individuals = await musterUtils.getIndividualsData(req.appOrg!, req.appRole!, intervalCount, req.query.unitId);
+    const interval = req.query.interval;
+    const intervalCount = parseInt(req.query.intervalCount);
+
+    const individuals = await getRosterMusterStats({
+      org: req.appOrg!,
+      role: req.appRole!,
+      interval,
+      intervalCount,
+      unitId: req.query.unitId,
+    });
 
     // Delete roster ids since they're meaningless to the user.
     for (const individual of individuals) {
@@ -146,8 +162,9 @@ type ExportOrgQuery = {
 };
 
 type ExportMusterIndividualsQuery = {
+  interval: TimeInterval
   intervalCount: string
-  unitId: string
+  unitId?: string
 } & PagedQuery;
 
 export default new ExportController();

@@ -1,9 +1,16 @@
 import {
-  Entity, Column, BaseEntity, JoinColumn, ManyToOne, PrimaryColumn,
+  Entity,
+  Column,
+  BaseEntity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+  Index,
 } from 'typeorm';
 import { Org } from '../org/org.model';
 
 @Entity()
+@Index(['org', 'name'], { unique: true })
 export class Unit extends BaseEntity {
 
   @PrimaryColumn()
