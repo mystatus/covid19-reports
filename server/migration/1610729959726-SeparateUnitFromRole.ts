@@ -1,5 +1,4 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
-import { UserRolesMigration } from '../sqldb/user-roles-migration';
 
 export class SeparateUnitFromRole1610729959726 implements MigrationInterface {
     name = 'SeparateUnitFromRole1610729959726'
@@ -12,7 +11,7 @@ export class SeparateUnitFromRole1610729959726 implements MigrationInterface {
 
         await queryRunner.query(`
             INSERT INTO user_role (user_id, role_id, index_prefix, user_edipi)
-            SELECT ur.user as user_id, ur.role as role_id, r.index_prefix, ur.user as user_edipi
+            SELECT ur.user as user_id, ur.role as role_id, r.default_index_prefix, ur.user as user_edipi
             FROM user_roles ur
             INNER JOIN role r on r.id = ur.role`
         );
