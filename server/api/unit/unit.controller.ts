@@ -9,6 +9,7 @@ import {
 import { Roster } from '../roster/roster.model';
 import { matchWildcardString, sanitizeIndexPrefix } from '../../util/util';
 import elasticsearch from '../../elasticsearch/elasticsearch';
+import { ChangeType, RosterHistory } from '../roster/roster-history.model';
 
 class UnitController {
 
@@ -145,16 +146,20 @@ class UnitController {
 
   async getUnitRoster(req: ApiRequest<OrgUnitParams, null, GetUnitRosterQuery>, res: Response) {
     const timestamp = parseInt(req.query.timestamp);
-    const roster = await Roster.createQueryBuilder('roster')
+
+    const roster = await RosterHistory.createQueryBuilder('roster')
       .leftJoin('roster.unit', 'u')
       .select('roster.edipi', 'edipi')
+      .addSelect('roster.change_type', 'changeType')
       .where('u.org_id = :orgId', { orgId: req.appOrg!.id })
       .andWhere('u.id = :unitId', { unitId: req.params.unitId })
-      .andWhere('(roster.end_date IS NULL OR roster.end_date >= to_timestamp(:timestamp))', { timestamp })
-      .andWhere('(roster.start_date IS NULL OR roster.start_date <= to_timestamp(:timestamp))', { timestamp })
-      .getRawMany() as { edipi: string }[];
+      .andWhere('roster.timestamp <= to_timestamp(:timestamp)', { timestamp })
+      .distinctOn(['roster.edipi'])
+      .orderBy('roster.edipi')
+      .addOrderBy('roster.timestamp', 'DESC')
+      .getRawMany() as { edipi: string, changeType: ChangeType }[];
 
-    res.json(roster.map(entry => entry.edipi));
+    res.json(roster.filter(entry => entry.changeType !== ChangeType.Deleted).map(entry => entry.edipi));
   }
 }
 

@@ -97,7 +97,6 @@ async function generateOrg(orgNum: number, admin: User, numUsers: number, numRos
     rosterEntry.lastName = `Entry${i}`;
     // Ensure at least some roster entries are in unit 1.
     rosterEntry.unit = (i % 2 === 0) ? units[0] : units[randomNumber(1, 4)];
-    rosterEntry.lastReported = new Date();
     const customColumns: any = {};
     customColumns[customColumn.name] = `custom column value`;
     rosterEntry.customColumns = customColumns;
