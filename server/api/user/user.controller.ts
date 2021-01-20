@@ -87,15 +87,16 @@ class UserController {
 
     let newUser = false;
     let user = await User.findOne({
-      relations: ['roles'],
+      relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
       where: {
         edipi,
       },
       join: {
         alias: 'user',
         leftJoinAndSelect: {
-          roles: 'user.roles',
-          org: 'roles.org',
+          userRoles: 'userRoles',
+          role: 'userRoles.role',
+          org: 'userRoles.role.org',
         },
       },
     });
@@ -106,13 +107,13 @@ class UserController {
       newUser = true;
     }
 
-    const orgRoleIndex = user.roles.findIndex(userRole => userRole.org!.id === org.id);
+    const orgRoleIndex = user.userRoles.findIndex(userRole => userRole.role.org!.id === org.id);
 
     if (orgRoleIndex >= 0) {
       user.roles.splice(orgRoleIndex, 1);
     }
 
-    user.roles.push(role);
+    user.addRole(role);
 
     if (firstName) {
       user.firstName = firstName;
@@ -166,7 +167,7 @@ class UserController {
     }
 
     const user = await User.findOne({
-      relations: ['roles', 'roles.org'],
+      relations: ['userRoles', 'userRoles.role.org'],
       where: {
         edipi: userEDIPI,
       },

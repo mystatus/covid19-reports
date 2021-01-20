@@ -154,15 +154,16 @@ class AccessRequestController {
     }
 
     const user = await User.findOne({
-      relations: ['roles'],
+      relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
       where: {
         edipi: accessRequest.user!.edipi,
       },
       join: {
         alias: 'user',
         leftJoinAndSelect: {
-          roles: 'user.roles',
-          org: 'roles.org',
+          userRoles: 'userRoles',
+          role: 'userRoles.role',
+          org: 'userRoles.role.org',
         },
       },
     });

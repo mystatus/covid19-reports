@@ -35,7 +35,7 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
     user = User.internal();
   } else {
     user = await User.findOne({
-      relations: ['roles', 'roles.org', 'roles.workspace', 'roles.org.contact'],
+      relations: ['userRoles', 'userRoles.role', 'userRoles.role.org', 'userRoles.role.workspace', 'userRoles.role.org.contact'],
       where: {
         edipi: id,
       },
