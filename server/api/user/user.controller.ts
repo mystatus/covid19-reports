@@ -4,6 +4,7 @@ import { ApiRequest, OrgEdipiParams, OrgParam } from '../index';
 import { User } from './user.model';
 import { Role } from '../role/role.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
+import { getManager } from 'typeorm';
 
 class UserController {
 
@@ -86,46 +87,51 @@ class UserController {
     }
 
     let newUser = false;
-    let user = await User.findOne({
-      relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
-      where: {
-        edipi,
-      },
-      join: {
-        alias: 'user',
-        leftJoinAndSelect: {
-          userRoles: 'userRoles',
-          role: 'userRoles.role',
-          org: 'userRoles.role.org',
+    let savedUser: User | null = null;
+
+    await getManager().transaction(async transactionalEntityManager => {
+      let user = await transactionalEntityManager.findOne<User>('User', {
+        relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
+        where: {
+          edipi,
         },
-      },
+        join: {
+          alias: 'user',
+          leftJoinAndSelect: {
+            userRoles: 'userRoles',
+            role: 'userRoles.role',
+            org: 'userRoles.role.org',
+          },
+        },
+      });
+  
+      if (!user) {
+        user = transactionalEntityManager.create<User>('User', {
+          edipi
+        });
+        newUser = true;
+      }
+  
+      const orgRoleIndex = user.userRoles.findIndex(userRole => userRole.role.org!.id === org.id);
+  
+      if (orgRoleIndex >= 0) {
+        user.roles.splice(orgRoleIndex, 1);
+      }
+  
+      user.addRole(transactionalEntityManager, role);
+  
+      if (firstName) {
+        user.firstName = firstName;
+      }
+  
+      if (lastName) {
+        user.lastName = lastName;
+      }
+  
+      savedUser = await transactionalEntityManager.save(user);
     });
 
-    if (!user) {
-      user = new User();
-      user.edipi = edipi;
-      newUser = true;
-    }
-
-    const orgRoleIndex = user.userRoles.findIndex(userRole => userRole.role.org!.id === org.id);
-
-    if (orgRoleIndex >= 0) {
-      user.roles.splice(orgRoleIndex, 1);
-    }
-
-    user.addRole(role);
-
-    if (firstName) {
-      user.firstName = firstName;
-    }
-
-    if (lastName) {
-      user.lastName = lastName;
-    }
-
-    const updatedUser = await user.save();
-
-    await res.status(newUser ? 201 : 200).json(updatedUser);
+    await res.status(newUser ? 201 : 200).json(savedUser ?? {});
   }
 
   async getOrgUsers(req: ApiRequest<OrgParam>, res: Response) {

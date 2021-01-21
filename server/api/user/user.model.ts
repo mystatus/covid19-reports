@@ -1,6 +1,7 @@
 import {
-  Entity, PrimaryColumn, Column, BaseEntity, OneToMany,
+  Entity, PrimaryColumn, Column, BaseEntity, OneToMany, EntityManager,
 } from 'typeorm';
+import { NotFoundError } from '../../util/error-types';
 import { Role } from '../role/role.model';
 import { UserRole } from "./user-role.model";
 
@@ -53,34 +54,43 @@ export class User extends BaseEntity {
     return this.userRoles.map(userRole => userRole.role);
   }
 
-  public async addRole(role: Role, indexPrefix?: string): Promise<UserRole> {
-    let userRole = await UserRole.findOne({
+  async addRole(entityManager: EntityManager, role: Role, indexPrefix?: string): Promise<UserRole> {
+    let userRole = await entityManager.findOne<UserRole>('UserRole', {
       where: {
         userId: this.edipi,
         roleId: role.id
       }
     });
     if (!userRole) {
-      userRole = new UserRole();
-      userRole.userId = this.edipi;
-      userRole.roleId = role.id;
-      userRole.indexPrefix = indexPrefix || role.defaultIndexPrefix;
-      this.userRoles = [userRole];
+      userRole = entityManager.create<UserRole>('UserRole', {
+        user: this,
+        role,
+        indexPrefix: indexPrefix || role.defaultIndexPrefix
+      });
+      this.userRoles.push(userRole);
+      entityManager.save(this);
     }
-    return Promise.resolve(userRole);
+    return userRole;
   }
 
-  public async removeRole(role: Role): Promise<UserRole> {
-    const found = await UserRole.findOne({
+  async addRoles(entityManager: EntityManager, roles: Role[]): Promise<void> {
+    for (const role of roles) {
+      await this.addRole(entityManager, role);
+    }
+  }
+
+  async removeRole(entityManager: EntityManager, role: Role): Promise<UserRole> {
+    const found = await entityManager.findOne<UserRole>('UserRole', {
       where: {
         userId: this.edipi,
         roleId: role.id
       }
     });
     if (found) {
-      return Promise.resolve(found.remove()); // TODO consider softRemove()
+      return entityManager.remove(found); // Consider using softRemove()
+    } else {
+      throw new NotFoundError(`Error removing role. User ${this.edipi} does not have role ${role.name}`)
     }
-    return Promise.reject(`Error removing role. User ${this.edipi} does not have role ${role.name}`);
   }
 
   public isInternal() {

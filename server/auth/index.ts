@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { getManager } from 'typeorm';
 import { ApiRequest } from '../api';
 import { User } from '../api/user/user.model';
 import { Role } from '../api/role/role.model';
@@ -30,29 +31,33 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
     throw new UnauthorizedError('Client not authorized.', true);
   }
 
-  let user: User | undefined;
-  if (id === 'internal') {
-    user = User.internal();
-  } else {
-    user = await User.findOne({
-      relations: ['userRoles', 'userRoles.role', 'userRoles.role.org', 'userRoles.role.workspace', 'userRoles.role.org.contact'],
-      where: {
-        edipi: id,
-      },
-    });
-  }
-
-  if (!user) {
-    user = new User();
-    user.edipi = id;
-  }
-
-  if (user.rootAdmin) {
-    // FIXME
-    // user.roles = (await Org.find()).map(org => Role.admin(org));
-  }
-
-  req.appUser = user;
+  await getManager().transaction(async transactionalEntityManager => {
+    let user: User | undefined;
+    if (id === 'internal') {
+      user = User.internal();
+    } else {
+      user = await transactionalEntityManager.findOne<User>('User', {
+        relations: ['userRoles', 'userRoles.role', 'userRoles.role.org', 'userRoles.role.workspace', 'userRoles.role.org.contact'],
+        where: {
+          edipi: id,
+        },
+      });
+    }
+  
+    if (!user) {
+      user = transactionalEntityManager.create<User>('User', {
+        edipi: id
+      });
+    }
+  
+    if (user?.rootAdmin) {
+      const roles = (await transactionalEntityManager.find<Org>('Org'))
+        .map(org => Role.admin(org));
+      await user!.addRoles(transactionalEntityManager, roles);
+    }
+  
+    req.appUser = user;
+  });
 
   next();
 }
