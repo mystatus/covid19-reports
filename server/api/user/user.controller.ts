@@ -147,7 +147,7 @@ class UserController {
     const users: User[] = [];
     for (const role of roles) {
       const roleUsers = await User.createQueryBuilder('user')
-        .innerJoin('user.roles', 'role')
+        .innerJoin('user.userRoles', 'role')
         .where('role.id = :id', { id: role.id })
         .getMany();
 
