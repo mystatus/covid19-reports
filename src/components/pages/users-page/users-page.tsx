@@ -301,7 +301,7 @@ export const UsersPage = () => {
                     </IconButton>
                   </TableCell>
                   <TableCell>{row.phone}</TableCell>
-                  <TableCell>{row.roles ? row.roles[0].name : 'Unknown'}</TableCell>
+                  <TableCell>{row.userRoles?.length ? row.userRoles[0].role.name : 'Unknown'}</TableCell>
                   <TableCell align="right" padding="none" size="small">
                     <IconButton
                       aria-label="more"
