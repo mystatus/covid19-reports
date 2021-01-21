@@ -1,5 +1,5 @@
 import {
-  Entity, PrimaryColumn, Column, BaseEntity, ManyToMany, JoinTable, ManyToOne, OneToMany,
+  Entity, PrimaryColumn, Column, BaseEntity, OneToMany,
 } from 'typeorm';
 import { Role } from '../role/role.model';
 import { UserRole } from "./user-role.model";
@@ -44,9 +44,9 @@ export class User extends BaseEntity {
   })
   isRegistered?: boolean;
 
-  
+
   @OneToMany(() => UserRole, userRole => userRole.user)
-  userRoles: UserRole[];
+  userRoles!: UserRole[];
 
   get roles(): Role[] {
     // TODO determine whether/how to return the indexPrefix?
