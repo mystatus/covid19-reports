@@ -16,39 +16,48 @@ export const userInitialState: UserState = {
   email: '',
   rootAdmin: false,
   isRegistered: false,
-  roles: [],
+  userRoles: [],
   isLoggedIn: false,
 };
 
 export function userReducer(state = userInitialState, action: any): UserState {
+  let reduced = state;
   switch (action.type) {
     case User.Actions.Register.type: {
       const { userData, localStorage } = (action as User.Actions.Register).payload;
       const loggedInState = getLoggedInState(userData, localStorage);
-      return {
+      reduced = {
         ...state,
         ...loggedInState,
       };
+      break;
     }
     case User.Actions.Login.type: {
       const { userData, localStorage } = (action as User.Actions.Login).payload;
       const loggedInState = getLoggedInState(userData, localStorage);
-      return {
+      reduced = {
         ...state,
         ...loggedInState,
       };
+      break;
     }
     case User.Actions.Logout.type:
-      return userInitialState;
+      reduced = userInitialState;
+      break;
     case User.Actions.ChangeOrg.type: {
       const orgId = (action as User.Actions.ChangeOrg).payload.orgId;
-      const activeRole = state.roles?.find(role => role.org?.id === orgId);
-      return {
-        ...state,
-        activeRole,
-      };
+      const userRole = state.userRoles?.find(ur => ur.role.org?.id === orgId);
+      if (userRole) {
+        const activeRole = userRole?.role;
+        reduced = {
+          ...state,
+          activeRole,
+        };
+      }
+      break;
     }
     default:
-      return state;
+      break;
   }
+  return reduced;
 }
