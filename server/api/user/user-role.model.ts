@@ -24,13 +24,13 @@ export class UserRole extends BaseEntity {
   roleId!: number;
 
   @ManyToOne(() => User, user => user.userRoles)
-  user: User;
+  user!: User;
 
   @ManyToOne(() => Role, role => role.userRoles, {
     cascade: true,
     onDelete: 'RESTRICT',
   })
-  role: Role;
+  role!: Role;
 
   @Column({
     default: '',
