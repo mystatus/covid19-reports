@@ -197,7 +197,7 @@ export const UsersPage = () => {
 
         {accessRequests.length > 0 && (
           <TableContainer className={classes.table} component={Paper}>
-            <Table aria-label="simple table">
+            <Table aria-label="access requests table">
               <TableHead>
                 <TableRow className={classes.tableHeader}>
                   <TableCell colSpan={6}>
@@ -253,7 +253,7 @@ export const UsersPage = () => {
           </TableContainer>
         )}
         <TableContainer className={classes.table} component={Paper}>
-          <Table aria-label="simple table">
+          <Table aria-label="users table">
             <TableHead>
               <TableRow className={classes.tableHeader}>
                 <TableCell colSpan={7}>

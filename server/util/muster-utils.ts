@@ -266,6 +266,11 @@ export function getDistanceToWindow(start: number, end: number, time: number) {
   return 0;
 }
 
+
+export function getMusterConfig(unit: Unit): MusterConfiguration[] {
+  return unit.musterConfiguration?.length > 0 ? unit.musterConfiguration : unit.org!.defaultMusterConfiguration;
+}
+
 function buildIndividualsMusterBody({
   interval,
   intervalCount,

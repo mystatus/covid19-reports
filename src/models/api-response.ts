@@ -11,6 +11,7 @@ export interface ApiOrg {
   description: string,
   indexPrefix: string,
   contact?: ApiUser,
+  defaultMusterConfiguration: MusterConfiguration[],
 }
 
 export interface ApiRole {

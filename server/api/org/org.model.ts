@@ -1,6 +1,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, JoinColumn,
 } from 'typeorm';
+import { MusterConfiguration } from '../unit/unit.model';
 import { User } from '../user/user.model';
 
 @Entity()
@@ -33,4 +34,9 @@ export class Org extends BaseEntity {
   })
   contact?: User;
 
+  @Column('json', {
+    nullable: false,
+    default: '[]',
+  })
+  defaultMusterConfiguration: MusterConfiguration[] = [];
 }

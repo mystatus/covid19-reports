@@ -42,4 +42,11 @@ router.post(
   controller.addOrg,
 );
 
+router.put(
+  '/:orgId/default-muster',
+  bodyParser.json(),
+  requireOrgAccess,
+  controller.updateOrgDefaultMuster,
+);
+
 export default router;
