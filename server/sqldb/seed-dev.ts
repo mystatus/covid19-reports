@@ -54,7 +54,7 @@ async function generateOrg(entityManager: EntityManager, orgNum: number, admin: 
   await entityManager.save<Org>('Org', org);
 
   const customColumn = entityManager.create<CustomRosterColumn>('CustomRosterColumn', {
-    org: org,
+    org,
     name: 'myCustomColumn',
     display: 'My Custom Column',
     type: RosterColumnType.String,
