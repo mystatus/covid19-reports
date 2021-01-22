@@ -57,7 +57,7 @@ export const WorkspacesPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        dispatch(Modal.openModal('Add Workspace', `Unable to add workspace: ${message}`));
+        dispatch(Modal.alert('Add Workspace', `Unable to add workspace: ${message}`));
       },
     });
   };
@@ -75,7 +75,7 @@ export const WorkspacesPage = () => {
           await initializeTable();
         },
         onError: (message: string) => {
-          dispatch(Modal.openModal('Edit Workspace', `Unable to edit workspace: ${message}`));
+          dispatch(Modal.alert('Edit Workspace', `Unable to edit workspace: ${message}`));
         },
       });
     }
@@ -96,7 +96,7 @@ export const WorkspacesPage = () => {
     try {
       await axios.delete(`api/workspace/${orgId}/${workspaceToDelete.id}`);
     } catch (error) {
-      dispatch(Modal.openModal('Delete Workspace', formatMessage(error, 'Unable to delete workspace')));
+      dispatch(Modal.alert('Delete Workspace', formatMessage(error, 'Unable to delete workspace')));
     }
     setWorkspaceToDelete(null);
     await initializeTable();

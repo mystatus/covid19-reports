@@ -14,10 +14,10 @@ export const modalInitialState: ModalState = {
 
 export function modalReducer(state = modalInitialState, action: any): ModalState {
   switch (action.type) {
-    case Modal.Actions.Open.type: {
+    case Modal.Actions.Alert.type: {
       return {
         ...state,
-        ...(action as Modal.Actions.Open).payload,
+        ...(action as Modal.Actions.Alert).payload,
       };
     }
     case Modal.Actions.Close.type: {

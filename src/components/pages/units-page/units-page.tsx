@@ -66,7 +66,7 @@ export const UnitsPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        dispatch(Modal.openModal('Add Unit', `Unable to add unit: ${message}`));
+        dispatch(Modal.alert('Add Unit', `Unable to add unit: ${message}`));
       },
     });
   };
@@ -83,7 +83,7 @@ export const UnitsPage = () => {
           await initializeTable();
         },
         onError: (message: string) => {
-          dispatch(Modal.openModal('Edit Unit', `Unable to edit unit: ${message}`));
+          dispatch(Modal.alert('Edit Unit', `Unable to edit unit: ${message}`));
         },
       });
     }
@@ -103,7 +103,7 @@ export const UnitsPage = () => {
     try {
       await axios.delete(`api/unit/${orgId}/${unitToDelete.id}`);
     } catch (error) {
-      dispatch(Modal.openModal('Delete Unit', formatMessage(error, 'Unable to delete unit')));
+      dispatch(Modal.alert('Delete Unit', formatMessage(error, 'Unable to delete unit')));
     }
     setUnitToDelete(null);
     await initializeTable();

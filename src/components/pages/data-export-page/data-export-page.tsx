@@ -98,7 +98,7 @@ export const DataExportPage = () => {
     try {
       await runExport();
     } catch (err) {
-      dispatch(Modal.openModal('Export Failed', err.message));
+      dispatch(Modal.alert('Export Failed', err.message));
     } finally {
       setIsExportLoading(false);
     }

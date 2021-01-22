@@ -59,7 +59,7 @@ export const RoleManagementPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        dispatch(Modal.openModal('Add Role', `Unable to add role: ${message}`));
+        dispatch(Modal.alert('Add Role', `Unable to add role: ${message}`));
       },
     });
   };
@@ -75,7 +75,7 @@ export const RoleManagementPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        dispatch(Modal.openModal('Edit Role', `Unable to edit role: ${message}`));
+        dispatch(Modal.alert('Edit Role', `Unable to edit role: ${message}`));
       },
     });
   };
@@ -85,7 +85,7 @@ export const RoleManagementPage = () => {
     try {
       await axios.delete(`api/role/${orgId}/${roles[selectedRoleIndex].id}`);
     } catch (error) {
-      dispatch(Modal.openModal('Delete Role', formatMessage(error, 'Unable to delete role')));
+      dispatch(Modal.alert('Delete Role', formatMessage(error, 'Unable to delete role')));
     }
     setDeleteRoleLoading(false);
     setDeleteRoleDialogOpen(false);

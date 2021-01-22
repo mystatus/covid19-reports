@@ -138,7 +138,7 @@ export const RosterPage = () => {
         setTotalRowsCount(data.totalRowsCount);
       }
     } catch (e) {
-      dispatch(Modal.openModal('Error', formatMessage(e, 'Error Applying Filters')));
+      dispatch(Modal.alert('Error', formatMessage(e, 'Error Applying Filters')));
     }
   }, [dispatch, page, rowsPerPage, orgId, queryFilterState, sortState]);
 
@@ -151,7 +151,7 @@ export const RosterPage = () => {
         setVisibleColumns(unitColumnWithInfos.slice(0, maxNumColumnsToShow));
       }
     } catch (error) {
-      dispatch(Modal.openModal('Get Roster Column Info', formatMessage(error, 'Failed to get roster column info')));
+      dispatch(Modal.alert('Get Roster Column Info', formatMessage(error, 'Failed to get roster column info')));
     }
   }, [dispatch, orgId]);
 
@@ -237,9 +237,9 @@ export const RosterPage = () => {
           msg += error.error;
         });
 
-        dispatch(Modal.openModal('Upload Error', msg));
+        dispatch(Modal.alert('Upload Error', msg));
       } else {
-        dispatch(Modal.openModal('Upload Successful', `Successfully uploaded ${response.count} roster entries.`));
+        dispatch(Modal.alert('Upload Successful', `Successfully uploaded ${response.count} roster entries.`));
         await initializeTable();
       }
     }));
@@ -276,7 +276,7 @@ export const RosterPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        dispatch(Modal.openModal('Edit Roster Entry', `Unable to edit roster entry: ${message}`));
+        dispatch(Modal.alert('Edit Roster Entry', `Unable to edit roster entry: ${message}`));
       },
     });
   };
@@ -291,7 +291,7 @@ export const RosterPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        dispatch(Modal.openModal('Add Roster Entry', `Unable to add roster entry: ${message}`));
+        dispatch(Modal.alert('Add Roster Entry', `Unable to add roster entry: ${message}`));
       },
     });
   };
@@ -316,7 +316,7 @@ export const RosterPage = () => {
         endDate: moment().subtract(1, 'day').toISOString(),
       });
     } catch (error) {
-      dispatch(Modal.openModal('Remove Roster Entry', formatMessage(error, 'Unable to set end date for roster entry')));
+      dispatch(Modal.alert('Remove Roster Entry', formatMessage(error, 'Unable to set end date for roster entry')));
     } finally {
       setRosterEntryEndDateLoading(false);
       setDeleteRosterEntryDialogOpen(false);
@@ -330,7 +330,7 @@ export const RosterPage = () => {
       setDeleteRosterEntryLoading(true);
       await axios.delete(`api/roster/${orgId}/${selectedRosterEntry!.id}`);
     } catch (error) {
-      dispatch(Modal.openModal('Delete Roster Entry', formatMessage(error, 'Unable to delete roster entry')));
+      dispatch(Modal.alert('Delete Roster Entry', formatMessage(error, 'Unable to delete roster entry')));
     } finally {
       setDeleteRosterEntryLoading(false);
       setDeleteRosterEntryDialogOpen(false);
@@ -357,7 +357,7 @@ export const RosterPage = () => {
       const filename = `${_.kebabCase(orgName)}_roster_export_${date}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
-      dispatch(Modal.openModal('Roster CSV Export', formatMessage(error, 'Unable to export roster to CSV')));
+      dispatch(Modal.alert('Roster CSV Export', formatMessage(error, 'Unable to export roster to CSV')));
     } finally {
       setExportRosterLoading(false);
     }
@@ -374,7 +374,7 @@ export const RosterPage = () => {
 
       downloadFile(response.data, 'roster-template', 'csv');
     } catch (error) {
-      dispatch(Modal.openModal('CSV Template Download', formatMessage(error, 'Unable to download CSV template')));
+      dispatch(Modal.alert('CSV Template Download', formatMessage(error, 'Unable to download CSV template')));
     } finally {
       setDownloadTemplateLoading(false);
     }

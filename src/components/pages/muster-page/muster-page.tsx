@@ -25,7 +25,6 @@ import Plot from 'react-plotly.js';
 import _ from 'lodash';
 import moment from 'moment';
 import { AppFrame } from '../../../actions/app-frame.actions';
-import { isAxiosError } from '../../../utility/axios';
 import { downloadFile } from '../../../utility/download';
 import { getMaxPageIndex, getNewPageIndex, columnInfosOrdered } from '../../../utility/table';
 import PageHeader from '../../page-header/page-header';
@@ -138,6 +137,10 @@ export const MusterPage = () => {
     }
   }, [orgId, dispatch]);
 
+  const showErrorDialog = useCallback((title: string, error: Error) => {
+    dispatch(Modal.alert(`Error: ${title}`, formatMessage(error)));
+  }, [dispatch]);
+
   const reloadTable = useCallback(async () => {
     const { interval, intervalCount } = stringToTimeRange(individualsTimeRangeString);
     let data: ApiMusterIndividuals;
@@ -171,7 +174,7 @@ export const MusterPage = () => {
     } else {
       setIndividualsData(data);
     }
-  }, [individualsTimeRangeString, individualsPage, individualsRowsPerPage, orgId, individualsUnitId]);
+  }, [individualsTimeRangeString, individualsRowsPerPage, individualsPage, orgId, individualsUnitId, showErrorDialog]);
 
   const reloadTrendData = useCallback(async () => {
     try {
@@ -180,7 +183,7 @@ export const MusterPage = () => {
     } catch (error) {
       showErrorDialog('Get Trends', error);
     }
-  }, [orgId]);
+  }, [orgId, showErrorDialog]);
 
   const initializeRosterColumnInfo = useCallback(async () => {
     try {
@@ -189,7 +192,7 @@ export const MusterPage = () => {
     } catch (error) {
       showErrorDialog('Get Roster Info', error);
     }
-  }, [orgId]);
+  }, [orgId, showErrorDialog]);
 
   const initialize = useCallback(async () => {
     dispatch(AppFrame.setPageLoading(true));
@@ -267,10 +270,6 @@ export const MusterPage = () => {
   // Functions
   //
 
-  const showErrorDialog = (title: string, error: Error) => {
-    dispatch(Modal.openModal(`Error: ${title}`, formatMessage(error)));
-  };
-
   const handleIndividualsChangePage = (event: MouseEvent<HTMLButtonElement> | null, pageNew: number) => {
     setIndividualsPage(pageNew);
   };
@@ -304,7 +303,7 @@ export const MusterPage = () => {
       const filename = `${_.kebabCase(orgName)}_${_.kebabCase(unitId)}_muster-noncompliance_${startDate}_to_${endDate}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
-      dispatch(Modal.openModal('Export to CSV', formatMessage(error, 'Unable to export')));
+      dispatch(Modal.alert('Export to CSV', formatMessage(error, 'Unable to export')));
     } finally {
       setExportLoading(false);
     }

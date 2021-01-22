@@ -1,43 +1,20 @@
-import React, { ReactNode, useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
+import React from 'react';
 import {
   Button,
   Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
 } from '@material-ui/core';
 import { useDispatch, useSelector } from 'react-redux';
-import useStyles from './modal.styles';
 import { Modal as ModalActions } from '../../actions/modal.actions';
 import { ModalState } from '../../reducers/modal.reducer';
 import { AppState } from '../../store';
 
-export interface ModalButtonProps {
-  text: string
-}
-
-export interface ModalProps {
-  open: boolean,
-  title?: string,
-  inline?: boolean,
-  message?: string,
-  children?: ReactNode,
-  buttons?: ModalButtonProps[],
-  onClose?: (button?: ModalButtonProps) => boolean,
-}
-
-export const Modal = ({ children }: ModalProps) => {
-  return ReactDOM.createPortal(children, document.getElementById('#modal-provider-content')!);
-};
-
 export const ModalProvider = () => {
   const { message, open, title } = useSelector<AppState, ModalState>(state => state.modal);
   const dispatch = useDispatch();
-  const classes = useStyles();
   const buttons = [{
     text: 'OK',
   }];
-  const onClose = (button?: ModalButtonProps) => {
-    dispatch(ModalActions.closeModal(button?.text));
-  };
+  const onClose = () => dispatch(ModalActions.close());
 
   if (!open) {
     return null;
@@ -45,9 +22,8 @@ export const ModalProvider = () => {
 
   return (
     <Dialog
-      className={classes.root}
       open={open}
-      onClose={() => onClose()}
+      onClose={onClose}
       aria-labelledby="modal-dialog-title"
       aria-describedby="modal-dialog-description"
     >
@@ -61,7 +37,7 @@ export const ModalProvider = () => {
       </DialogContent>
       <DialogActions>
         {buttons.map(button => (
-          <Button key={button.text} onClick={() => onClose(button)}>
+          <Button key={button.text} onClick={onClose}>
             {button.text}
           </Button>
         ))}

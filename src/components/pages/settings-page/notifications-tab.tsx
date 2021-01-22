@@ -69,7 +69,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
         setEditAlertDialogProps({ open: false });
       },
       onError: (message: string) => {
-        dispatch(Modal.openModal('Edit Alert', `Unable to edit alert settings: ${message}`));
+        dispatch(Modal.alert('Edit Alert', `Unable to edit alert settings: ${message}`));
       },
     });
   };
@@ -116,7 +116,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
         return newState;
       });
     } catch (error) {
-      dispatch(Modal.openModal('Error', formatMessage(error, 'An error occurred while saving the alert setting')));
+      dispatch(Modal.alert('Error', formatMessage(error, 'An error occurred while saving the alert setting')));
       await initializeTable();
     }
   };
@@ -143,7 +143,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
   };
 
   const displayInfo = () => {
-    dispatch(Modal.openModal('Alerts',
+    dispatch(Modal.alert('Alerts',
       `Alerts within the StatusEngine application have been designed to give you the most up-to-date
       information on your group and users without overburdening your inbox or mobile device. Each alert topic
       has customizable parameters that allow you to tweak the alert type, threshold, frequency, and minimum

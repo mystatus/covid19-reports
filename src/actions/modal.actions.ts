@@ -4,9 +4,9 @@ export namespace Modal {
 
   export namespace Actions {
 
-    export class Open {
-      static type = 'MODAL_OPEN';
-      type = Open.type;
+    export class Alert {
+      static type = 'MODAL_ALERT';
+      type = Alert.type;
       constructor(public payload: {
         message: string,
         open: boolean,
@@ -17,19 +17,16 @@ export namespace Modal {
     export class Close {
       static type = 'MODAL_CLOSE';
       type = Close.type;
-      constructor(public payload: {
-        button?: string,
-      }) {}
     }
 
   }
 
-  export const openModal = (title: string, message: string) => (dispatch: Dispatch<Actions.Open>) => {
-    dispatch(new Actions.Open({ open: true, message, title }));
+  export const alert = (title: string, message: string) => (dispatch: Dispatch<Actions.Alert>) => {
+    dispatch(new Actions.Alert({ open: true, message, title }));
   };
 
-  export const closeModal = (button?: string) => (dispatch: Dispatch<Actions.Close>) => {
-    dispatch(new Actions.Close({ button }));
+  export const close = () => (dispatch: Dispatch<Actions.Close>) => {
+    dispatch(new Actions.Close());
   };
 
 }

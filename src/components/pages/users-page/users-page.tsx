@@ -84,7 +84,7 @@ export const UsersPage = () => {
   }, [orgId, dispatch]);
 
   const showAlertDialog = (error: Error, title: string, message: string) => {
-    dispatch(Modal.openModal(title, formatMessage(error, message)));
+    dispatch(Modal.alert(title, formatMessage(error, message)));
   };
 
   const makeHandleUserMoreClick = (user: ApiUser) => (event: React.MouseEvent<HTMLButtonElement>) => {

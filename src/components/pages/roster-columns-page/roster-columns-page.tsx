@@ -1,6 +1,14 @@
 import {
   Button,
-  Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, IconButton, Menu, MenuItem,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  Menu,
+  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -58,7 +66,7 @@ export const RosterColumnsPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        dispatch(Modal.openModal('Add Column', `Unable to add column: ${message}`));
+        dispatch(Modal.alert('Add Column', `Unable to add column: ${message}`));
       },
     });
   };
@@ -76,7 +84,7 @@ export const RosterColumnsPage = () => {
           await initializeTable();
         },
         onError: (message: string) => {
-          dispatch(Modal.openModal('Edit Column', `Unable to edit column: ${message}`));
+          dispatch(Modal.alert('Edit Column', `Unable to edit column: ${message}`));
         },
       });
     }
@@ -97,7 +105,7 @@ export const RosterColumnsPage = () => {
     try {
       await axios.delete(`api/roster/${orgId}/column/${columnToDelete.name}`);
     } catch (error) {
-      dispatch(Modal.openModal('Delete Column', formatMessage(error, 'Unable to delete column')));
+      dispatch(Modal.alert('Delete Column', formatMessage(error, 'Unable to delete column')));
     }
     setColumnToDelete(null);
     await initializeTable();
