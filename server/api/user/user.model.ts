@@ -3,7 +3,7 @@ import {
 } from 'typeorm';
 import { NotFoundError } from '../../util/error-types';
 import { Role } from '../role/role.model';
-import { UserRole } from "./user-role.model";
+import { UserRole } from './user-role.model';
 
 const internalUserEdipi = 'internal';
 
@@ -49,26 +49,20 @@ export class User extends BaseEntity {
   @OneToMany(() => UserRole, userRole => userRole.user)
   userRoles!: UserRole[];
 
-  get roles(): Role[] {
-    // TODO determine whether/how to return the indexPrefix?
-    return this.userRoles.map(userRole => userRole.role);
-  }
-
   async addRole(entityManager: EntityManager, role: Role, indexPrefix?: string): Promise<UserRole> {
     let userRole = await entityManager.findOne<UserRole>('UserRole', {
       where: {
-        userId: this.edipi,
-        roleId: role.id
-      }
+        userEdipi: this.edipi,
+        roleId: role.id,
+      },
     });
     if (!userRole) {
       userRole = entityManager.create<UserRole>('UserRole', {
         user: this,
         role,
-        indexPrefix: indexPrefix || role.defaultIndexPrefix
+        indexPrefix: indexPrefix || role.defaultIndexPrefix,
       });
-      this.userRoles.push(userRole);
-      entityManager.save(this);
+      userRole = await entityManager.save(userRole);
     }
     return userRole;
   }
@@ -82,15 +76,14 @@ export class User extends BaseEntity {
   async removeRole(entityManager: EntityManager, role: Role): Promise<UserRole> {
     const found = await entityManager.findOne<UserRole>('UserRole', {
       where: {
-        userId: this.edipi,
-        roleId: role.id
-      }
+        userEdipi: this.edipi,
+        roleId: role.id,
+      },
     });
     if (found) {
       return entityManager.remove(found); // Consider using softRemove()
-    } else {
-      throw new NotFoundError(`Error removing role. User ${this.edipi} does not have role ${role.name}`)
     }
+    throw new NotFoundError(`Error removing role. User ${this.edipi} does not have role ${role.name}`);
   }
 
   public isInternal() {

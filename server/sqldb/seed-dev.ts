@@ -1,5 +1,5 @@
 import process from 'process';
-import { EntityManager, getManager } from 'typeorm';
+import { getManager, EntityManager } from 'typeorm';
 import database from '.';
 import { Org } from '../api/org/org.model';
 import { Role } from '../api/role/role.model';
@@ -24,7 +24,7 @@ export default (async function() {
   await getManager().transaction(async transactionalEntityManager => {
 
     // Create Group Admin
-    const groupAdmin = transactionalEntityManager.create<User>('User', {
+    let groupAdmin = transactionalEntityManager.create<User>('User', {
       edipi: '0000000001',
       firstName: 'Group',
       lastName: 'Admin',
@@ -33,7 +33,7 @@ export default (async function() {
       service: 'Space Force',
       isRegistered: true,
     });
-    transactionalEntityManager.save(groupAdmin);
+    groupAdmin = await transactionalEntityManager.save(groupAdmin);
 
     // Create Org 1 & 2 and their Users
     await generateOrg(transactionalEntityManager, 1, groupAdmin, 5, 20);
@@ -44,16 +44,17 @@ export default (async function() {
   console.log('Finished!');
 }());
 
+
 async function generateOrg(entityManager: EntityManager, orgNum: number, admin: User, numUsers: number, numRosterEntries: number) {
-  const org = entityManager.create<Org>('Org', {
+  let org = entityManager.create<Org>('Org', {
     name: `Test Group ${orgNum}`,
     description: `Group ${orgNum} for testing.`,
     contact: admin,
     indexPrefix: `testgroup${orgNum}`,
   });
-  await entityManager.save<Org>('Org', org);
+  org = await entityManager.save(org);
 
-  const customColumn = entityManager.create<CustomRosterColumn>('CustomRosterColumn', {
+  let customColumn = entityManager.create<CustomRosterColumn>('CustomRosterColumn', {
     org,
     name: 'myCustomColumn',
     display: 'My Custom Column',
@@ -62,19 +63,19 @@ async function generateOrg(entityManager: EntityManager, orgNum: number, admin: 
     pii: false,
     required: false,
   });
-  await entityManager.save<CustomRosterColumn>('CustomRosterColumn', customColumn);
+  customColumn = await entityManager.save(customColumn);
 
-  const groupAdminRole = createGroupAdminRole(entityManager, org);
-  await entityManager.save<Role>('Role', groupAdminRole);
+  let groupAdminRole = createGroupAdminRole(entityManager, org);
+  groupAdminRole = await entityManager.save(groupAdminRole);
   await admin.addRole(entityManager, groupAdminRole, '*');
-  await entityManager.save<User>('User', admin);
+  admin = await entityManager.save(admin);
 
-  let userRole = createUserRole(entityManager, org);
-  userRole.allowedRosterColumns.push(customColumn.name);
-  userRole = await entityManager.save<Role>('Role', userRole);
+  let groupUserRole = createGroupUserRole(entityManager, org);
+  groupUserRole.allowedRosterColumns.push(customColumn.name);
+  groupUserRole = await entityManager.save(groupUserRole);
 
   for (let i = 0; i < numUsers; i++) {
-    const user = entityManager.create<User>('User', {
+    let user = entityManager.create<User>('User', {
       edipi: `${orgNum}00000000${i}`,
       firstName: 'User',
       lastName: `${i}`,
@@ -83,19 +84,20 @@ async function generateOrg(entityManager: EntityManager, orgNum: number, admin: 
       service: 'Space Force',
       isRegistered: true,
     });
-    await user.addRole(entityManager, userRole, 'unit1');
-    await entityManager.save<User>('User', user);
+    user = await entityManager.save(user);
+    await user.addRole(entityManager, groupUserRole, 'unit1');
   }
 
   const units: Unit[] = [];
   for (let i = 1; i <= 5; i++) {
-    const unit = entityManager.create<Unit>('Unit', {
-      org: org,
+    let unit = entityManager.create<Unit>('Unit', {
+      org,
       name: `Unit ${i}`,
       id: `unit${i}`,
       musterConfiguration: [],
     });
-    units.push(await entityManager.save<Unit>('Unit', unit));
+    unit = await entityManager.save(unit);
+    units.push(unit);
   }
 
   for (let i = 0; i < numRosterEntries; i++) {
@@ -109,7 +111,7 @@ async function generateOrg(entityManager: EntityManager, orgNum: number, admin: 
       lastReported: new Date(),
       customColumns,
     });
-    await entityManager.save<Roster>('Roster', rosterEntry);
+    await entityManager.save(rosterEntry);
   }
 
   return org;
@@ -124,7 +126,7 @@ function randomNumber(min: number, max: number) {
 }
 
 function createGroupAdminRole(entityManager: EntityManager, org: Org, workspace?: Workspace) {
-  return entityManager.create<Role>('Role', {
+  const role = entityManager.create<Role>('Role', {
     name: 'Group Admin',
     description: 'For managing the group.',
     org,
@@ -139,10 +141,11 @@ function createGroupAdminRole(entityManager: EntityManager, org: Org, workspace?
     canViewRoster: true,
     workspace,
   });
+  return role;
 }
 
-function createUserRole(entityManager: EntityManager, org: Org, workspace?: Workspace) {
-  return entityManager.create<Role>('Role', {
+function createGroupUserRole(entityManager: EntityManager, org: Org, workspace?: Workspace) {
+  const role = entityManager.create<Role>('Role', {
     name: 'Group User',
     description: 'Basic role for all group users.',
     org,
@@ -154,4 +157,5 @@ function createUserRole(entityManager: EntityManager, org: Org, workspace?: Work
     canViewMuster: true,
     workspace,
   });
+  return role;
 }

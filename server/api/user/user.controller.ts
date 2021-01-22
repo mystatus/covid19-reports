@@ -1,10 +1,10 @@
 import { Response } from 'express';
+import { getManager } from 'typeorm';
 import { AccessRequest } from '../access-request/access-request.model';
 import { ApiRequest, OrgEdipiParams, OrgParam } from '../index';
 import { User } from './user.model';
 import { Role } from '../role/role.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
-import { getManager } from 'typeorm';
 
 class UserController {
 
@@ -104,30 +104,30 @@ class UserController {
           },
         },
       });
-  
+
       if (!user) {
         user = transactionalEntityManager.create<User>('User', {
-          edipi
+          edipi,
         });
         newUser = true;
       }
-  
-      const orgRoleIndex = user.userRoles.findIndex(userRole => userRole.role.org!.id === org.id);
-  
-      if (orgRoleIndex >= 0) {
-        user.roles.splice(orgRoleIndex, 1);
-      }
-  
+
+      // FIXME
+      // const orgRoleIndex = user.userRoles.findIndex(userRole => userRole.role.org!.id === org.id);
+      // if (orgRoleIndex >= 0) {
+      //   user.roles.splice(orgRoleIndex, 1);
+      // }
+
       user.addRole(transactionalEntityManager, role);
-  
+
       if (firstName) {
         user.firstName = firstName;
       }
-  
+
       if (lastName) {
         user.lastName = lastName;
       }
-  
+
       savedUser = await transactionalEntityManager.save(user);
     });
 
@@ -179,10 +179,9 @@ class UserController {
       },
     });
 
-    const roleIndex = (user?.roles ?? []).findIndex(userRole => userRole.org!.id === req.appOrg!.id);
-
-    if (roleIndex !== -1) {
-      user!.roles!.splice(roleIndex, 1);
+    const userRole = user?.userRoles.find(ur => ur.role.org!.id === req.appOrg!.id);
+    if (user && userRole) {
+      user.removeRole(getManager(), userRole.role);
       res.json(await user!.save());
     } else {
       res.json({});

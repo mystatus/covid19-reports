@@ -43,19 +43,19 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
         },
       });
     }
-  
+
     if (!user) {
       user = transactionalEntityManager.create<User>('User', {
-        edipi: id
+        edipi: id,
       });
     }
-  
+
     if (user?.rootAdmin) {
       const roles = (await transactionalEntityManager.find<Org>('Org'))
         .map(org => Role.admin(org));
       await user!.addRoles(transactionalEntityManager, roles);
     }
-  
+
     req.appUser = user;
   });
 
@@ -100,11 +100,11 @@ export async function requireOrgAccess(req: any, res: Response, next: NextFuncti
   }
   const user: User = req.appUser;
   if (orgId && user) {
-    const orgRole = user.roles!.find(role => role.org!.id === orgId);
-    if (orgRole) {
-      req.appOrg = orgRole.org;
-      req.appRole = orgRole;
-      req.appWorkspace = orgRole.workspace;
+    const orgUserRole = user.userRoles.find(userRole => userRole.role.org!.id === orgId);
+    if (orgUserRole) {
+      req.appOrg = orgUserRole.role.org;
+      req.appRole = orgUserRole.role;
+      req.appWorkspace = orgUserRole.role.workspace;
     } else if (user.rootAdmin) {
       const org = await Org.findOne({
         where: {

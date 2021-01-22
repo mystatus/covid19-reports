@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { getConnection } from 'typeorm';
+import { getConnection, getManager } from 'typeorm';
 import { BadRequestError, NotFoundError, UnauthorizedError } from '../../util/error-types';
 import { ApiRequest, OrgParam } from '../index';
 import { Org } from '../org/org.model';
@@ -172,14 +172,13 @@ class AccessRequestController {
       throw new NotFoundError('User was not found');
     }
 
-    const existingRole = user.roles!.find(userRole => userRole.org!.id === orgId);
-
-    if (existingRole) {
+    const userRole = user.userRoles.find(ur => ur.role.org!.id === orgId);
+    if (userRole?.role) {
       await accessRequest.remove();
       throw new BadRequestError('User already has a role in the organization');
     }
 
-    user.roles!.push(role);
+    user.addRole(getManager(), role);
 
     await user.save();
 

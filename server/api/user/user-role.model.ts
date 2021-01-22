@@ -6,8 +6,8 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Role } from '../role/role.model';
-import { User } from "./user.model";
-import { escapeRegExp } from "../../util/util";
+import { User } from './user.model';
+import { escapeRegExp } from '../../util/util';
 
 @Entity()
 export class UserRole extends BaseEntity {
@@ -18,13 +18,13 @@ export class UserRole extends BaseEntity {
   @Column({
     length: 10,
   })
-  userId!: string;
-
-  @Column()
-  roleId!: number;
+  userEdipi!: string;
 
   @ManyToOne(() => User, user => user.userRoles)
   user!: User;
+
+  @Column()
+  roleId!: number;
 
   @ManyToOne(() => Role, role => role.userRoles, {
     cascade: true,
