@@ -1,7 +1,9 @@
 import {
-  Entity, PrimaryColumn, Column, BaseEntity, ManyToMany, JoinTable,
+  Entity, PrimaryColumn, Column, BaseEntity, OneToMany, EntityManager,
 } from 'typeorm';
+import { NotFoundError } from '../../util/error-types';
 import { Role } from '../role/role.model';
+import { UserRole } from './user-role.model';
 
 const internalUserEdipi = 'internal';
 
@@ -12,23 +14,6 @@ export class User extends BaseEntity {
     length: 10,
   })
   edipi!: string;
-
-  @ManyToMany(() => Role, {
-    cascade: true,
-    onDelete: 'RESTRICT',
-  })
-  @JoinTable({
-    name: 'user_roles',
-    joinColumn: {
-      name: 'user',
-      referencedColumnName: 'edipi',
-    },
-    inverseJoinColumn: {
-      name: 'role',
-      referencedColumnName: 'id',
-    },
-  })
-  roles?: Role[];
 
   @Column()
   firstName!: string;
@@ -59,6 +44,47 @@ export class User extends BaseEntity {
     default: false,
   })
   isRegistered?: boolean;
+
+
+  @OneToMany(() => UserRole, userRole => userRole.user)
+  userRoles!: UserRole[];
+
+  async addRole(entityManager: EntityManager, role: Role, indexPrefix?: string): Promise<UserRole> {
+    let userRole = await entityManager.findOne<UserRole>('UserRole', {
+      where: {
+        userEdipi: this.edipi,
+        roleId: role.id,
+      },
+    });
+    if (!userRole) {
+      userRole = entityManager.create<UserRole>('UserRole', {
+        user: this,
+        role,
+        indexPrefix: indexPrefix || role.defaultIndexPrefix,
+      });
+      userRole = await entityManager.save(userRole);
+    }
+    return userRole;
+  }
+
+  async addRoles(entityManager: EntityManager, roles: Role[]): Promise<void> {
+    for (const role of roles) {
+      await this.addRole(entityManager, role);
+    }
+  }
+
+  async removeRole(entityManager: EntityManager, role: Role): Promise<UserRole> {
+    const found = await entityManager.findOne<UserRole>('UserRole', {
+      where: {
+        userEdipi: this.edipi,
+        roleId: role.id,
+      },
+    });
+    if (found) {
+      return entityManager.remove(found); // Consider using softRemove()
+    }
+    throw new NotFoundError(`Error removing role. User ${this.edipi} does not have role ${role.name}`);
+  }
 
   public isInternal() {
     return this.edipi === internalUserEdipi;

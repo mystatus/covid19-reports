@@ -125,7 +125,7 @@ export class Roster extends BaseEntity {
       .where('u.org_id = :orgId', { orgId: org.id })
       .andWhere('(roster.end_date IS NULL OR roster.end_date >= CURRENT_DATE)')
       .andWhere('(roster.start_date IS NULL OR roster.start_date <= CURRENT_DATE)')
-      .andWhere('u.id like :name', { name: role.indexPrefix.replace('*', '%') });
+      .andWhere('u.id like :name', { name: role.defaultIndexPrefix.replace('*', '%') });
   }
 
   static async getAllowedColumns(org: Org, role: Role) {

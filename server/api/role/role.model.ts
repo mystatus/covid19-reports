@@ -1,8 +1,9 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, BaseEntity, JoinColumn, ManyToOne,
+  Entity, PrimaryGeneratedColumn, Column, BaseEntity, JoinColumn, ManyToOne, OneToMany,
 } from 'typeorm';
 import { Org } from '../org/org.model';
 import { Workspace } from '../workspace/workspace.model';
+import { UserRole } from '../user/user-role.model';
 import { escapeRegExp } from '../../util/util';
 
 @Entity()
@@ -30,6 +31,9 @@ export class Role extends BaseEntity {
   })
   org?: Org;
 
+  @OneToMany(() => UserRole, userRole => userRole.role)
+  userRoles?: UserRole[];
+
   @ManyToOne(() => Workspace, { cascade: true, onDelete: 'RESTRICT', nullable: true })
   @JoinColumn({
     name: 'workspace_id',
@@ -39,7 +43,7 @@ export class Role extends BaseEntity {
   @Column({
     default: '',
   })
-  indexPrefix!: string;
+  defaultIndexPrefix!: string;
 
   @Column('simple-array', {
     default: '',
@@ -102,7 +106,7 @@ export class Role extends BaseEntity {
   }
 
   getUnitFilter() {
-    return this.indexPrefix.replace(new RegExp(escapeRegExp('-'), 'g'), '_');
+    return this.defaultIndexPrefix.replace(new RegExp(escapeRegExp('-'), 'g'), '_');
   }
 
   getKibanaIndex() {
@@ -127,7 +131,7 @@ export class Role extends BaseEntity {
     adminRole.name = 'Admin';
     adminRole.description = 'Site Administrator';
     adminRole.org = org;
-    adminRole.indexPrefix = '';
+    adminRole.defaultIndexPrefix = '*';
     adminRole.allowedNotificationEvents = ['*'];
     adminRole.allowedRosterColumns = ['*'];
 
