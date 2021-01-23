@@ -3,6 +3,7 @@ import express from 'express';
 import controller from './org.controller';
 import {
   requireOrgAccess,
+  requireRolePermission,
   requireRootAdmin,
 } from '../../auth';
 
@@ -46,6 +47,7 @@ router.put(
   '/:orgId/default-muster',
   bodyParser.json(),
   requireOrgAccess,
+  requireRolePermission(role => role.canManageGroup),
   controller.updateOrgDefaultMuster,
 );
 

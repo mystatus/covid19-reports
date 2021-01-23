@@ -86,12 +86,13 @@ class MusterController {
       .leftJoinAndSelect('unit.org', 'org')
       .where('json_array_length(unit.muster_configuration) > 0')
       .orWhere('json_array_length(org.default_muster_configuration) > 0')
+      .andWhere('unit.muster_configuration IS NULL')
       .getMany();
 
     const musterWindows: MusterWindow[] = [];
 
     for (const unit of unitsWithMusterConfigs) {
-      const musterConfig = getMusterConfig(unit);
+      const musterConfig = getMusterConfig(unit)!;
       for (const muster of musterConfig) {
         // Get the unix timestamp of the earliest possible muster window, it could be in the previous week if the
         // muster window spans the week boundary.
@@ -130,7 +131,7 @@ class MusterController {
       throw new NotFoundError('The unit could not be found.');
     }
 
-    const musterConfig = getMusterConfig(unit);
+    const musterConfig = getMusterConfig(unit) ?? [];
     let minDistance: number | null = null;
     let closestMuster: MusterConfiguration | undefined;
     let closestStart = 0;

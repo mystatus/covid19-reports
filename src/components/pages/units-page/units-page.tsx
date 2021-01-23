@@ -74,6 +74,7 @@ export const UnitsPage = () => {
         setDefaultMusterDialogProps({ open: false });
         if (success) {
           await dispatch(User.login());
+          await initializeTable();
           setDefaultMusterSaved(true);
         }
       },
@@ -215,7 +216,7 @@ export const UnitsPage = () => {
                     <TableRow key={unit.id}>
                       <TableCell>{unit.id}</TableCell>
                       <TableCell>{unit.name}</TableCell>
-                      {unit.musterConfiguration.length > 0 && (
+                      {unit.musterConfiguration?.length > 0 && (
                         <TableCell className={classes.musterConfiguration}>
                           {unit.musterConfiguration.map((muster, index) => (
                             <div key={JSON.stringify({ muster, index })}>
@@ -224,9 +225,9 @@ export const UnitsPage = () => {
                           ))}
                         </TableCell>
                       )}
-                      {unit.musterConfiguration.length === 0 && (
+                      {!unit.musterConfiguration?.length && (
                         <TableCell className={classes.noMusterConfiguration}>
-                          {defaultMusterConfiguration?.length ? (
+                          {(defaultMusterConfiguration?.length !== 0 && unit.musterConfiguration === null) ? (
                             <span>* Using default muster requirements</span>
                           ) : (
                             <span>No configured muster requirements</span>

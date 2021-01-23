@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Avatar,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   Grid,
   IconButton,
   Table,
@@ -16,6 +18,7 @@ import {
   TextField,
   Typography,
 } from '@material-ui/core';
+import clsx from 'clsx';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import axios from 'axios';
@@ -57,10 +60,11 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
   const {
     open, orgId, unit, onClose, onError,
   } = props;
+  const defaultMusterConfiguration = unit?.org?.defaultMusterConfiguration;
 
-  const musterRows = (musterConfiguration?: MusterConfiguration[]) => {
+  const musterRows = useCallback((musterConfiguration?: MusterConfiguration[]) => {
     const today = moment().format('Y-M-D');
-    return musterConfiguration?.map(muster => {
+    return (musterConfiguration ?? defaultMusterConfiguration)?.map(muster => {
       return {
         ...muster,
         durationHours: muster.durationMinutes / 60,
@@ -68,13 +72,18 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
         startTimeDate: moment(`${today} ${muster.startTime}`, 'Y-M-D h:mm').toDate(),
       };
     });
-  };
+  }, [defaultMusterConfiguration]);
 
   const existingUnit: boolean = !!unit;
   const [id, setId] = useState(unit?.id || '');
   const [name, setName] = useState(unit?.name || '');
   const [musterConfiguration, setMusterConfiguration] = useState<MusterConfigurationRow[]>(musterRows(unit?.musterConfiguration) || []);
   const [errorMessage, setErrorMessage] = React.useState<null | string>(null);
+  const [overrideDefault, setOverrideDefault] = useState(unit?.musterConfiguration !== null);
+
+  useEffect(() => {
+    setMusterConfiguration(musterRows(overrideDefault ? unit?.musterConfiguration : undefined) || []);
+  }, [musterRows, overrideDefault, unit?.musterConfiguration]);
 
   if (!open) {
     return <></>;
@@ -147,6 +156,9 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
   };
 
   const toggleMusterDay = (rowKey: string, day: DaysOfTheWeek) => () => {
+    if (!overrideDefault) {
+      return;
+    }
     const configuration = [...musterConfiguration];
     const index = configuration.findIndex(muster => muster.rowKey === rowKey);
     if (index >= 0) {
@@ -171,6 +183,9 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
   };
 
   const validateMusterWindows = () => {
+    if (!overrideDefault) {
+      return true;
+    }
     if (musterConfiguration.find(muster => muster.days === DaysOfTheWeek.None)) {
       setErrorMessage('Please select one or more days.');
       return false;
@@ -231,7 +246,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
     const body = {
       id,
       name,
-      musterConfiguration: musterConfiguration.map(muster => {
+      musterConfiguration: !overrideDefault ? null : musterConfiguration.map(muster => {
         return {
           days: muster.days,
           startTime: muster.startTime,
@@ -267,7 +282,9 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
       return classes.dayButtonError;
     }
     // eslint-disable-next-line no-bitwise
-    return muster.days & day ? classes.dayButtonOn : classes.dayButtonOff;
+    const onOffClass = muster.days & day ? classes.dayButtonOn : classes.dayButtonOff;
+
+    return overrideDefault ? onOffClass : clsx(onOffClass, classes.dayButtonDisabled);
   };
 
   /* eslint-disable no-bitwise */
@@ -299,16 +316,19 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
           </Grid>
           <Grid item xs={12}>
             <Typography className={classes.headerLabel}>Muster Configuration</Typography>
-            <Button
-              className={classes.addMusterButton}
-              color="primary"
-              variant="text"
-              size="small"
-              startIcon={<AddCircleIcon />}
-              onClick={addMusterWindow}
-            >
-              Add New Muster Window
-            </Button>
+            <div>
+              <FormControlLabel
+                control={(
+                  <Checkbox
+                    checked={overrideDefault}
+                    color="primary"
+                    disabled={formDisabled}
+                    onChange={() => setOverrideDefault(!overrideDefault)}
+                  />
+                  )}
+                label="Override Default Group Muster Requirements"
+              />
+            </div>
             {musterConfiguration.length > 0 && (
               <Table aria-label="muster table" className={classes.musterTable}>
                 <TableHead>
@@ -373,7 +393,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
                         <MuiPickersUtilsProvider utils={MomentUtils}>
                           <TimePicker
                             id={`muster-start-time-${muster.rowKey}`}
-                            disabled={formDisabled}
+                            disabled={formDisabled || !overrideDefault}
                             value={muster.startTimeDate}
                             InputProps={{ disableUnderline: true }}
                             onChange={setMusterStartTime(muster.rowKey)}
@@ -384,7 +404,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
                         <Autocomplete
                           id={`muster-timezone-${muster.rowKey}`}
                           value={muster.timezone}
-                          disabled={formDisabled}
+                          disabled={formDisabled || !overrideDefault}
                           disableClearable
                           options={moment.tz.names()}
                           noOptionsText="No matching time zones"
@@ -396,7 +416,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
                       </TableCell>
                       <TableCell className={classes.durationCell}>
                         <TextField
-                          disabled={formDisabled}
+                          disabled={formDisabled || !overrideDefault}
                           onChange={setMusterDuration(muster.rowKey)}
                           value={muster.durationHours}
                           type="number"
@@ -404,17 +424,32 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
                         />
                       </TableCell>
                       <TableCell className={classes.iconCell}>
-                        <IconButton
-                          aria-label="remove muster window"
-                          onClick={() => removeMusterWindow(muster.rowKey)}
-                        >
-                          <HighlightOffIcon />
-                        </IconButton>
+                        {overrideDefault && (
+                          <IconButton
+                            aria-label="remove muster window"
+                            disabled={formDisabled || !overrideDefault}
+                            onClick={() => removeMusterWindow(muster.rowKey)}
+                          >
+                            <HighlightOffIcon />
+                          </IconButton>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+            )}
+            {overrideDefault && (
+              <Button
+                className={classes.addMusterButton}
+                color="primary"
+                variant="text"
+                size="small"
+                startIcon={<AddCircleIcon />}
+                onClick={addMusterWindow}
+              >
+                Add New Muster Window
+              </Button>
             )}
           </Grid>
           {errorMessage && (

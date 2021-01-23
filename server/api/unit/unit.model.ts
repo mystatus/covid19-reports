@@ -30,10 +30,9 @@ export class Unit extends BaseEntity {
   name!: string;
 
   @Column('json', {
-    nullable: false,
-    default: '[]',
+    nullable: true,
   })
-  musterConfiguration: MusterConfiguration[] = [];
+  musterConfiguration?: MusterConfiguration[];
 }
 
 export interface MusterConfiguration {
