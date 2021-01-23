@@ -30,6 +30,7 @@ import { ApiUnit, MusterConfiguration } from '../../../models/api-response';
 import {
   dayIsIn, DaysOfTheWeek, nextDay, oneDaySeconds,
 } from '../../../utility/days';
+import { formatMessage } from '../../../utility/errors';
 
 export interface EditUnitDialogProps {
   open: boolean,
@@ -247,11 +248,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
       }
     } catch (error) {
       if (onError) {
-        let message = 'Internal Server Error';
-        if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-          message = error.response.data.errors[0].message;
-        }
-        onError(message);
+        onError(formatMessage(error));
       }
       setFormDisabled(false);
       return;

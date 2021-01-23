@@ -23,6 +23,7 @@ import {
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
 import { UnitSelector } from '../../../selectors/unit.selector';
+import { formatMessage } from '../../../utility/errors';
 
 export interface EditRosterEntryDialogProps {
   open: boolean,
@@ -109,11 +110,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
       }
     } catch (error) {
       if (onError) {
-        let message = 'Internal Server Error';
-        if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-          message = error.response.data.errors[0].message;
-        }
-        onError(message);
+        onError(formatMessage(error));
       }
       setFormDisabled(false);
       return;

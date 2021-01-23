@@ -1,6 +1,14 @@
 import {
   Button,
-  Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, IconButton, Menu, MenuItem,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  Menu,
+  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -19,10 +27,11 @@ import useStyles from './roster-columns-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
 import { ApiRosterColumnInfo, rosterColumnTypeDisplayName } from '../../../models/api-response';
-import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditColumnDialog, EditColumnDialogProps } from './edit-column-dialog';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonSet } from '../../buttons/button-set';
+import { Modal } from '../../../actions/modal.actions';
+import { formatMessage } from '../../../utility/errors';
 
 interface ColumnMenuState {
   anchor: HTMLElement | null,
@@ -35,7 +44,6 @@ export const RosterColumnsPage = () => {
 
   const [columns, setColumns] = useState<ApiRosterColumnInfo[]>([]);
   const [columnToDelete, setColumnToDelete] = useState<null | ApiRosterColumnInfo>(null);
-  const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
   const [editColumnDialogProps, setEditColumnDialogProps] = useState<EditColumnDialogProps>({ open: false });
   const [columnMenu, setColumnMenu] = React.useState<ColumnMenuState>({ anchor: null });
 
@@ -58,12 +66,7 @@ export const RosterColumnsPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        setAlertDialogProps({
-          open: true,
-          title: 'Add Column',
-          message: `Unable to add column: ${message}`,
-          onClose: () => { setAlertDialogProps({ open: false }); },
-        });
+        dispatch(Modal.alert('Add Column', `Unable to add column: ${message}`));
       },
     });
   };
@@ -81,12 +84,7 @@ export const RosterColumnsPage = () => {
           await initializeTable();
         },
         onError: (message: string) => {
-          setAlertDialogProps({
-            open: true,
-            title: 'Edit Column',
-            message: `Unable to edit column: ${message}`,
-            onClose: () => { setAlertDialogProps({ open: false }); },
-          });
+          dispatch(Modal.alert('Edit Column', `Unable to edit column: ${message}`));
         },
       });
     }
@@ -107,16 +105,7 @@ export const RosterColumnsPage = () => {
     try {
       await axios.delete(`api/roster/${orgId}/column/${columnToDelete.name}`);
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'Delete Column',
-        message: `Unable to delete column: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      dispatch(Modal.alert('Delete Column', formatMessage(error, 'Unable to delete column')));
     }
     setColumnToDelete(null);
     await initializeTable();
@@ -236,9 +225,6 @@ export const RosterColumnsPage = () => {
           onClose={editColumnDialogProps.onClose}
           onError={editColumnDialogProps.onError}
         />
-      )}
-      {alertDialogProps.open && (
-        <AlertDialog open={alertDialogProps.open} title={alertDialogProps.title} message={alertDialogProps.message} onClose={alertDialogProps.onClose} />
       )}
     </main>
   );
