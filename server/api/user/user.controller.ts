@@ -135,34 +135,22 @@ class UserController {
   }
 
   async getOrgUsers(req: ApiRequest<OrgParam>, res: Response) {
-    // TODO: This could potentially be optimized with something like this:
-    // SELECT "user".*
-    //   FROM role
-    // INNER JOIN user_role
-    //   ON role.id = user_role.role_id
-    // INNER JOIN "user"
-    //   ON user_role."user" = "user"."EDIPI"
-    // WHERE role.org_id=1
+    let orgUsers = new Array<User>();
 
-    const roles = await Role.find({
-      where: {
-        org: req.appOrg!.id,
-      },
-    });
+    const orgRoles: Array<{ id: number }> = await getManager().query(`SELECT r.id FROM role r WHERE r.org_id = ${req.appOrg!.id}`);
+    if (orgRoles.length > 0) {
+      const roleIds = orgRoles.map(role => role.id);
 
-    const users: User[] = [];
-    for (const role of roles) {
-      const roleUsers = await User.createQueryBuilder('user')
-        .innerJoin('user.userRoles', 'role')
-        .where('role.id = :id', { id: role.id })
-        .getMany();
-
-      roleUsers.forEach(user => {
-        users.push(user);
-      });
+      const userRoles: Array<{ edipi: string }> = await getManager().query(`SELECT ur.user_edipi as edipi FROM user_role ur WHERE ur.role_id in (${roleIds})`);
+      if (userRoles.length > 0) {
+        const userIds = userRoles.map(userRole => userRole.edipi);
+        orgUsers = await User.findByIds(userIds, {
+          relations: ['userRoles', 'userRoles.role'],
+        });
+      }
     }
 
-    res.json(users);
+    res.json(orgUsers);
   }
 
   async removeUserFromGroup(req: ApiRequest<OrgEdipiParams>, res: Response) {

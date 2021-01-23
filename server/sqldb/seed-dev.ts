@@ -57,7 +57,7 @@ async function generateOrg(entityManager: EntityManager, orgNum: number, admin: 
   let customColumn = entityManager.create<CustomRosterColumn>('CustomRosterColumn', {
     org,
     name: 'myCustomColumn',
-    display: 'My Custom Column',
+    display: `My Custom Column : Group ${orgNum}`,
     type: RosterColumnType.String,
     phi: false,
     pii: false,
@@ -92,7 +92,7 @@ async function generateOrg(entityManager: EntityManager, orgNum: number, admin: 
   for (let i = 1; i <= 5; i++) {
     let unit = entityManager.create<Unit>('Unit', {
       org,
-      name: `Unit ${i}`,
+      name: `Unit ${i} : Group ${orgNum}`,
       id: `unit${i}`,
       musterConfiguration: [],
     });
@@ -127,7 +127,7 @@ function randomNumber(min: number, max: number) {
 
 function createGroupAdminRole(entityManager: EntityManager, org: Org, workspace?: Workspace) {
   const role = entityManager.create<Role>('Role', {
-    name: 'Group Admin',
+    name: `Group Admin : Group ${org.id}`,
     description: 'For managing the group.',
     org,
     defaultIndexPrefix: '*',
@@ -146,8 +146,8 @@ function createGroupAdminRole(entityManager: EntityManager, org: Org, workspace?
 
 function createGroupUserRole(entityManager: EntityManager, org: Org, workspace?: Workspace) {
   const role = entityManager.create<Role>('Role', {
-    name: 'Group User',
-    description: 'Basic role for all group users.',
+    name: `Group User : Group ${org.id}`,
+    description: `Basic role for all Group ${org.id} users.`,
     org,
     defaultIndexPrefix: 'unit1',
     allowedRosterColumns: ['edipi', 'unit', 'rateRank', 'lastReported'],

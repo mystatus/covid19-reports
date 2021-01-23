@@ -36,7 +36,6 @@ export interface ApiUserRole {
   indexPrefix: string,
   role: ApiRole,
   user: ApiUser,
-  userId: string,
 }
 
 export interface ApiUser {
