@@ -93,8 +93,8 @@ export const GroupsPage = () => {
       return org.accessRequest.status;
     }
 
-    const role = user.roles!.find(r => r.org!.id === org.id);
-    return role!.name;
+    const userRole = user.userRoles!.find(ur => ur.role.org!.id === org.id);
+    return userRole?.role!.name;
   }
 
   function getStatusColor(org: MyOrg) {
@@ -114,10 +114,10 @@ export const GroupsPage = () => {
 
   function getMyOrgs() {
     // Build list of orgs we're in or have made access requests to.
-    const userOrgs = user.roles!.map(role => ({
-      id: role.org!.id,
-      name: role.org!.name,
-      contact: role.org!.contact,
+    const userOrgs = user.userRoles!.map(userRole => ({
+      id: userRole.role.org!.id,
+      name: userRole.role.org!.name,
+      contact: userRole.role.org!.contact,
     })) as MyOrg[];
 
     const accessReqs = accessRequests.map(req => ({
@@ -172,9 +172,10 @@ export const GroupsPage = () => {
     }
 
     // Filter orgs that we're already in.
-    const userRoles = user.roles || [];
-    for (const role of userRoles) {
-      myOrgsLookup[role.org!.id] = true;
+    if (user.userRoles) {
+      for (const userRole of user.userRoles) {
+        myOrgsLookup[userRole.role.org!.id] = true;
+      }
     }
 
     setRequestAccessOrgs(

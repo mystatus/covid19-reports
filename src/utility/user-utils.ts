@@ -3,12 +3,13 @@ import { LocalStorageState } from '../reducers/local-storage.reducer';
 import { UserState } from '../reducers/user.reducer';
 
 export function getLoggedInState(user: ApiUser, localStorage: LocalStorageState): Partial<UserState> {
-  const roles = user.roles ?? [];
-  const restoredActiveRole = roles?.find(role => role.org?.id === localStorage.orgId);
+  const userRoles = user.userRoles ?? [];
+  const userRole = userRoles.find(ur => ur.role.org?.id === localStorage.orgId);
+  const restoredActiveRole = userRole?.role;
   return {
     ...user,
-    roles,
-    activeRole: restoredActiveRole ?? roles[0],
+    userRoles,
+    activeRole: restoredActiveRole ?? userRoles[0].role,
     isLoggedIn: true,
   };
 }

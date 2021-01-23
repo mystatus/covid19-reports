@@ -40,7 +40,7 @@ export const AppToolbar = () => {
         <Toolbar className={classes.toolbar}>
           <img className={classes.logo} src={logoImage} alt="StatusEngine Logo" height="35" />
           <div className={classes.spacer} />
-          {user.activeRole && user.roles && (
+          {user.activeRole && user.userRoles && (
             <>
               <Button
                 className={classes.toolbarButton}
@@ -59,13 +59,13 @@ export const AppToolbar = () => {
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 className={classes.toolbarMenu}
               >
-                {user.roles.map(role => (
+                {user.userRoles.map(userRole => (
                   <MenuItem
-                    key={role.id}
-                    selected={user.activeRole!.org!.id === role.org!.id}
-                    onClick={handleOrgChanged(role.org!.id)}
+                    key={userRole.role.id}
+                    selected={user.activeRole!.org!.id === userRole.role.org!.id}
+                    onClick={handleOrgChanged(userRole.role.org!.id)}
                   >
-                    {role.org!.name}
+                    {userRole.role.org!.name}
                   </MenuItem>
                 ))}
                 <Divider />

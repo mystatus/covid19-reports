@@ -47,7 +47,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   const existingRole: boolean = !!role;
   const [name, setName] = useState(role?.name || '');
   const [description, setDescription] = useState(role?.description || '');
-  const [indexPrefix, setIndexPrefix] = useState(role?.indexPrefix || '');
+  const [defaultIndexPrefix, setDefaultIndexPrefix] = useState(role?.defaultIndexPrefix || '');
   const [workspaceId, setWorkspaceId] = useState(role?.workspace?.id || -1);
   const [allowedRosterColumns, setAllowedRosterColumns] = useState(parsePermissions(rosterColumns || [], role?.allowedRosterColumns));
   const [allowedNotificationEvents, setAllowedNotificationEvents] = useState(parsePermissions(notifications?.map(notification => {
@@ -134,7 +134,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
     const body = {
       name,
       description,
-      indexPrefix,
+      defaultIndexPrefix,
       workspaceId: workspaceId < 0 ? null : workspaceId,
       allowedRosterColumns: permissionsToArray(allowedColumns),
       allowedNotificationEvents: permissionsToArray(allowedNotificationEvents),
@@ -267,8 +267,8 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
               className={classes.textField}
               id="role-index-prefix"
               disabled={formDisabled}
-              value={indexPrefix}
-              onChange={onInputChanged(setIndexPrefix)}
+              value={defaultIndexPrefix}
+              onChange={onInputChanged(setDefaultIndexPrefix)}
             />
           </Grid>
           <Grid item xs={6}>

@@ -130,7 +130,7 @@ export const RoleManagementPage = () => {
               id={`role${row.id}_header`}
             >
               <Typography className={classes.nameColumn}>{row.name}</Typography>
-              <Typography className={classes.indexPrefixColumn}>{row.indexPrefix}</Typography>
+              <Typography className={classes.indexPrefixColumn}>{row.defaultIndexPrefix}</Typography>
               <Typography>{row.workspace ? row.workspace.name : 'None'}</Typography>
             </AccordionSummary>
             <AccordionDetails>
