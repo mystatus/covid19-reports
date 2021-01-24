@@ -262,7 +262,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
             <Typography className={classes.workspaceDescription}>{getWorkspaceDescription()}</Typography>
           </Grid>
           <Grid item xs={6}>
-            <Typography className={classes.roleHeader}>Unit Filter:</Typography>
+            <Typography className={classes.roleHeader}>Default Unit Filter:</Typography>
             <TextField
               className={classes.textField}
               id="role-index-prefix"

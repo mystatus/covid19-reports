@@ -97,7 +97,7 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
     <NegativeMarginScrollFix spacing={scrollFix ? gridSpacing : 0}>
       <Grid container spacing={gridSpacing}>
         <TextSection full={hideUnitFilter} text={role.description} title="Description" />
-        <TextSection text={role.defaultIndexPrefix} title="Unit Filter" visible={!hideUnitFilter} />
+        <TextSection text={role.defaultIndexPrefix} title="Default Unit Filter" visible={!hideUnitFilter} />
         <Grid item container xs={6}>
           <TextSection
             full

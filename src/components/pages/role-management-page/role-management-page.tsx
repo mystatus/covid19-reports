@@ -115,7 +115,7 @@ export const RoleManagementPage = () => {
         </ButtonSet>
         <div className={classes.accordionHeader}>
           <Typography>Role Name</Typography>
-          <Typography>Unit Filter</Typography>
+          <Typography>Default Unit Filter</Typography>
           <Typography>Analytics Workspace</Typography>
         </div>
         {roles.map((row, index) => (
