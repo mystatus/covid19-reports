@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { getConnection } from 'typeorm';
+import { getConnection, getManager } from 'typeorm';
 import { BadRequestError, NotFoundError, UnauthorizedError } from '../../util/error-types';
 import { ApiRequest, OrgParam } from '../index';
 import { Org } from '../org/org.model';
@@ -126,63 +126,67 @@ class AccessRequestController {
       throw new BadRequestError('Missing role for approved access request');
     }
 
-    const accessRequest = await AccessRequest.findOne({
-      relations: ['user'],
-      where: {
-        id: req.body.requestId,
-        org: orgId,
-      },
-    });
+    let processedRequest: AccessRequest | null = null;
 
-    if (!accessRequest) {
-      throw new NotFoundError('Access request was not found');
-    }
-
-    const role = await Role.findOne({
-      where: {
-        id: req.body.roleId,
-        org: orgId,
-      },
-    });
-
-    if (!role) {
-      throw new NotFoundError('Role was not found');
-    }
-
-    if (!req.appRole || !req.appRole.isSupersetOf(role)) {
-      throw new UnauthorizedError('Unable to assign a role with greater permissions than your current role.');
-    }
-
-    const user = await User.findOne({
-      relations: ['roles'],
-      where: {
-        edipi: accessRequest.user!.edipi,
-      },
-      join: {
-        alias: 'user',
-        leftJoinAndSelect: {
-          roles: 'user.roles',
-          org: 'roles.org',
+    await getManager().transaction(async transactionalEntityManager => {
+      const accessRequest = await transactionalEntityManager.findOne<AccessRequest>('AccessRequest', {
+        relations: ['user'],
+        where: {
+          id: req.body.requestId,
+          org: orgId,
         },
-      },
+      });
+
+      if (!accessRequest) {
+        throw new NotFoundError('Access request was not found');
+      }
+
+      const role = await transactionalEntityManager.findOne<Role>('Role', {
+        where: {
+          id: req.body.roleId,
+          org: orgId,
+        },
+      });
+
+      if (!role) {
+        throw new NotFoundError('Role was not found');
+      }
+
+      if (!req.appRole || !req.appRole.isSupersetOf(role)) {
+        throw new UnauthorizedError('Unable to assign a role with greater permissions than your current role.');
+      }
+
+      const user = await transactionalEntityManager.findOne<User>('User', {
+        relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
+        where: {
+          edipi: accessRequest.user!.edipi,
+        },
+        join: {
+          alias: 'user',
+          leftJoinAndSelect: {
+            userRoles: 'user.userRoles',
+            role: 'userRoles.role',
+            org: 'role.org',
+          },
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundError('User was not found');
+      }
+
+      const userRole = user.userRoles.find(ur => ur.role.org!.id === orgId);
+      if (userRole?.role) {
+        await accessRequest.remove();
+        throw new BadRequestError('User already has a role in the organization');
+      }
+
+      user.addRole(transactionalEntityManager, role);
+
+      await transactionalEntityManager.save(user);
+
+      processedRequest = await transactionalEntityManager.remove(accessRequest);
     });
-
-    if (!user) {
-      throw new NotFoundError('User was not found');
-    }
-
-    const existingRole = user.roles!.find(userRole => userRole.org!.id === orgId);
-
-    if (existingRole) {
-      await accessRequest.remove();
-      throw new BadRequestError('User already has a role in the organization');
-    }
-
-    user.roles!.push(role);
-
-    await user.save();
-
-    const processedRequest = await accessRequest.remove();
 
     res.json({
       success: true,
