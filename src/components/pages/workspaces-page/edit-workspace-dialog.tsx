@@ -11,6 +11,7 @@ import axios from 'axios';
 import CheckIcon from '@material-ui/icons/Check';
 import useStyles from './edit-workspace-dialog.styles';
 import { ApiWorkspace, ApiWorkspaceTemplate } from '../../../models/api-response';
+import { formatMessage } from '../../../utility/errors';
 
 export interface EditWorkspaceDialogProps {
   open: boolean,
@@ -88,11 +89,7 @@ export const EditWorkspaceDialog = (props: EditWorkspaceDialogProps) => {
       }
     } catch (error) {
       if (onError) {
-        let message = 'Internal Server Error';
-        if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-          message = error.response.data.errors[0].message;
-        }
-        onError(message);
+        onError(formatMessage(error));
       }
       setFormDisabled(false);
       return;

@@ -9,7 +9,6 @@ export function errorHandler(error: any, req: Request, res: Response, next: Next
     return;
   }
 
-  console.log('asdf');
   console.error(error);
 
   let statusCode;

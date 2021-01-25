@@ -15,6 +15,7 @@ import {
 } from '../../../models/api-response';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { buildSettingText } from './notifications-tab';
+import { formatMessage } from '../../../utility/errors';
 
 export interface EditAlertDialogProps {
   open: boolean,
@@ -71,11 +72,7 @@ export const EditAlertDialog = (props: EditAlertDialogProps) => {
       }
     } catch (error) {
       if (onError) {
-        let message = 'Internal Server Error';
-        if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-          message = error.response.data.errors[0].message;
-        }
-        onError(message);
+        onError(formatMessage(error));
       }
       setFormDisabled(false);
     }

@@ -43,7 +43,6 @@ import {
   ApiRosterEntry,
   ApiRosterPaginated,
 } from '../../../models/api-response';
-import { AlertDialog, AlertDialogProps } from '../../alert-dialog/alert-dialog';
 import { EditRosterEntryDialog, EditRosterEntryDialogProps } from './edit-roster-entry-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { Unit } from '../../../actions/unit.actions';
@@ -54,6 +53,7 @@ import {
 import { formatMessage } from '../../../utility/errors';
 import { ButtonSet } from '../../buttons/button-set';
 import { DataExportIcon } from '../../icons/data-export-icon';
+import { Modal } from '../../../actions/modal.actions';
 
 const unitColumn: ApiRosterColumnInfo = {
   name: 'unit',
@@ -88,7 +88,6 @@ export const RosterPage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [unitNameMap, setUnitNameMap] = useState<{[key: string]: string}>({});
   const [selectedRosterEntry, setSelectedRosterEntry] = useState<ApiRosterEntry>();
-  const [alertDialogProps, setAlertDialogProps] = useState<AlertDialogProps>({ open: false });
   const [deleteRosterEntryDialogOpen, setDeleteRosterEntryDialogOpen] = useState(false);
   const [editRosterEntryDialogProps, setEditRosterEntryDialogProps] = useState<EditRosterEntryDialogProps>({ open: false });
   const [deleteRosterEntryLoading, setDeleteRosterEntryLoading] = useState(false);
@@ -138,16 +137,10 @@ export const RosterPage = () => {
         setRows(data.rows);
         setTotalRowsCount(data.totalRowsCount);
       }
-
     } catch (e) {
-      setAlertDialogProps({
-        open: true,
-        title: 'Error',
-        message: formatMessage(e, 'Error Applying Filters'),
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      dispatch(Modal.alert('Error', formatMessage(e, 'Error Applying Filters')));
     }
-  }, [page, rowsPerPage, orgId, queryFilterState, sortState]);
+  }, [dispatch, page, rowsPerPage, orgId, queryFilterState, sortState]);
 
   const initializeRosterColumnInfo = useCallback(async () => {
     try {
@@ -158,18 +151,9 @@ export const RosterPage = () => {
         setVisibleColumns(unitColumnWithInfos.slice(0, maxNumColumnsToShow));
       }
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'Get Roster Column Info',
-        message: `Failed to get roster column info: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      dispatch(Modal.alert('Get Roster Column Info', formatMessage(error, 'Failed to get roster column info')));
     }
-  }, [orgId]);
+  }, [dispatch, orgId]);
 
   const initializeTable = useCallback(async () => {
     dispatch(AppFrame.setPageLoading(initialLoad.current));
@@ -253,19 +237,9 @@ export const RosterPage = () => {
           msg += error.error;
         });
 
-        setAlertDialogProps({
-          open: true,
-          title: 'Upload Error',
-          message: msg,
-          onClose: () => { setAlertDialogProps({ open: false }); },
-        });
+        dispatch(Modal.alert('Upload Error', msg));
       } else {
-        setAlertDialogProps({
-          open: true,
-          title: 'Upload Successful',
-          message: `Successfully uploaded ${response.count} roster entries.`,
-          onClose: () => { setAlertDialogProps({ open: false }); },
-        });
+        dispatch(Modal.alert('Upload Successful', `Successfully uploaded ${response.count} roster entries.`));
         await initializeTable();
       }
     }));
@@ -302,12 +276,7 @@ export const RosterPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        setAlertDialogProps({
-          open: true,
-          title: 'Edit Roster Entry',
-          message: `Unable to edit roster entry: ${message}`,
-          onClose: () => { setAlertDialogProps({ open: false }); },
-        });
+        dispatch(Modal.alert('Edit Roster Entry', `Unable to edit roster entry: ${message}`));
       },
     });
   };
@@ -322,12 +291,7 @@ export const RosterPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        setAlertDialogProps({
-          open: true,
-          title: 'Add Roster Entry',
-          message: `Unable to add roster entry: ${message}`,
-          onClose: () => { setAlertDialogProps({ open: false }); },
-        });
+        dispatch(Modal.alert('Add Roster Entry', `Unable to add roster entry: ${message}`));
       },
     });
   };
@@ -352,16 +316,7 @@ export const RosterPage = () => {
         endDate: moment().subtract(1, 'day').toISOString(),
       });
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'Remove Roster Entry',
-        message: `Unable to set end date for roster entry: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      dispatch(Modal.alert('Remove Roster Entry', formatMessage(error, 'Unable to set end date for roster entry')));
     } finally {
       setRosterEntryEndDateLoading(false);
       setDeleteRosterEntryDialogOpen(false);
@@ -375,16 +330,7 @@ export const RosterPage = () => {
       setDeleteRosterEntryLoading(true);
       await axios.delete(`api/roster/${orgId}/${selectedRosterEntry!.id}`);
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'Delete Roster Entry',
-        message: `Unable to delete roster entry: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      dispatch(Modal.alert('Delete Roster Entry', formatMessage(error, 'Unable to delete roster entry')));
     } finally {
       setDeleteRosterEntryLoading(false);
       setDeleteRosterEntryDialogOpen(false);
@@ -411,16 +357,7 @@ export const RosterPage = () => {
       const filename = `${_.kebabCase(orgName)}_roster_export_${date}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'Roster CSV Export',
-        message: `Unable to export roster to CSV: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      dispatch(Modal.alert('Roster CSV Export', formatMessage(error, 'Unable to export roster to CSV')));
     } finally {
       setExportRosterLoading(false);
     }
@@ -437,16 +374,7 @@ export const RosterPage = () => {
 
       downloadFile(response.data, 'roster-template', 'csv');
     } catch (error) {
-      let message = 'Internal Server Error';
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        message = error.response.data.errors[0].message;
-      }
-      setAlertDialogProps({
-        open: true,
-        title: 'CSV Template Download',
-        message: `Unable to download CSV template: ${message}`,
-        onClose: () => { setAlertDialogProps({ open: false }); },
-      });
+      dispatch(Modal.alert('CSV Template Download', formatMessage(error, 'Unable to download CSV template')));
     } finally {
       setDownloadTemplateLoading(false);
     }
@@ -660,9 +588,6 @@ export const RosterPage = () => {
       )}
       {editRosterEntryDialogProps.open && (
         <EditRosterEntryDialog {...editRosterEntryDialogProps} />
-      )}
-      {alertDialogProps.open && (
-        <AlertDialog {...alertDialogProps} />
       )}
     </main>
   );
