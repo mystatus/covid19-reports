@@ -69,6 +69,8 @@ export class RosterHistory1611025383465 implements MigrationInterface {
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query('DROP TRIGGER IF EXISTS roster_audit ON roster');
     await queryRunner.query('DROP FUNCTION IF EXISTS roster_audit_func');
+    await queryRunner.query('DROP TRIGGER IF EXISTS roster_truncate ON roster');
+    await queryRunner.query('DROP FUNCTION IF EXISTS roster_truncate_func');
     await queryRunner.query(`ALTER TABLE "roster_history" DROP CONSTRAINT "FK_34e597fefbd4b9d5600513023fd"`);
     await queryRunner.query(`ALTER TABLE "roster" DROP CONSTRAINT "UQ_ce01434bd61ca4cdb9527b8f1fa"`);
     await queryRunner.query(`ALTER TABLE "roster" ADD "end_date" date`);
@@ -84,17 +86,29 @@ const rosterAuditTrigger = `
   CREATE OR REPLACE FUNCTION roster_audit_func() RETURNS TRIGGER AS $body$
     BEGIN
       IF (TG_OP = 'UPDATE') THEN
-          INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
-          VALUES (NEW.edipi, NEW.first_name, NEW.last_name, NEW.custom_columns, now(), 'changed', NEW.unit_id, NEW.unit_org);
-          RETURN NEW;
+        INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
+        VALUES (NEW.edipi, NEW.first_name, NEW.last_name, NEW.custom_columns, now(), 'changed', NEW.unit_id, NEW.unit_org);
+        RETURN NEW;
       ELSIF (TG_OP = 'DELETE') THEN
-          INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
-          VALUES (OLD.edipi, OLD.first_name, OLD.last_name, OLD.custom_columns, now(), 'deleted', OLD.unit_id, OLD.unit_org);
-          RETURN OLD;
+        INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
+        VALUES (OLD.edipi, OLD.first_name, OLD.last_name, OLD.custom_columns, now(), 'deleted', OLD.unit_id, OLD.unit_org);
+        RETURN OLD;
       ELSIF (TG_OP = 'INSERT') THEN
-          INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
-          VALUES (NEW.edipi, NEW.first_name, NEW.last_name, NEW.custom_columns, now(), 'added', NEW.unit_id, NEW.unit_org);
-          RETURN NEW;
+        INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
+        VALUES (NEW.edipi, NEW.first_name, NEW.last_name, NEW.custom_columns, now(), 'added', NEW.unit_id, NEW.unit_org);
+        RETURN NEW;
+      END IF;
+      RETURN NULL;
+    END;
+  $body$
+  LANGUAGE plpgsql;
+
+  CREATE OR REPLACE FUNCTION roster_truncate_func() RETURNS TRIGGER AS $body$
+    BEGIN
+      IF (TG_OP = 'TRUNCATE') THEN
+        INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
+        SELECT edipi, first_name, last_name, custom_columns, now(), 'deleted', unit_id, unit_org
+          FROM roster;
       END IF;
       RETURN NULL;
     END;
@@ -106,6 +120,12 @@ const rosterAuditTrigger = `
   CREATE TRIGGER roster_audit
     AFTER INSERT OR UPDATE OR DELETE ON roster
     FOR EACH ROW EXECUTE PROCEDURE roster_audit_func();
+
+  DROP TRIGGER IF EXISTS roster_truncate ON roster;
+
+  CREATE TRIGGER roster_truncate
+    BEFORE TRUNCATE ON roster
+    EXECUTE PROCEDURE roster_truncate_func();
 `;
 
 type OldRoster = {
