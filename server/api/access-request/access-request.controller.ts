@@ -177,7 +177,7 @@ class AccessRequestController {
 
       const userRole = user.userRoles.find(ur => ur.role.org!.id === orgId);
       if (userRole?.role) {
-        await accessRequest.remove();
+        await transactionalEntityManager.remove(accessRequest);
         throw new BadRequestError('User already has a role in the organization');
       }
 
