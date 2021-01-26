@@ -52,8 +52,8 @@ export class User extends BaseEntity {
   async addRole(entityManager: EntityManager, role: Role, indexPrefix?: string): Promise<UserRole> {
     let userRole = await entityManager.findOne(UserRole, {
       where: {
-        userEdipi: this.edipi,
-        roleId: role.id,
+        user: this,
+        role,
       },
     });
     if (!userRole) {
@@ -76,8 +76,8 @@ export class User extends BaseEntity {
   async removeRole(entityManager: EntityManager, role: Role): Promise<UserRole> {
     const found = await entityManager.findOne(UserRole, {
       where: {
-        userEdipi: this.edipi,
-        roleId: role.id,
+        user: this,
+        role,
       },
     });
     if (found) {
