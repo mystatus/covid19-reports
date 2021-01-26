@@ -21,10 +21,10 @@ export default (async function() {
 
   const connection = await database;
 
-  await getManager().transaction(async transactionalEntityManager => {
+  await getManager().transaction(async manager => {
 
     // Create Group Admin
-    let groupAdmin = transactionalEntityManager.create<User>('User', {
+    let groupAdmin = manager.create<User>('User', {
       edipi: '0000000001',
       firstName: 'Group',
       lastName: 'Admin',
@@ -33,11 +33,11 @@ export default (async function() {
       service: 'Space Force',
       isRegistered: true,
     });
-    groupAdmin = await transactionalEntityManager.save(groupAdmin);
+    groupAdmin = await manager.save(groupAdmin);
 
     // Create Org 1 & 2 and their Users
-    await generateOrg(transactionalEntityManager, 1, groupAdmin, 5, 20);
-    await generateOrg(transactionalEntityManager, 2, groupAdmin, 5, 20);
+    await generateOrg(manager, 1, groupAdmin, 5, 20);
+    await generateOrg(manager, 2, groupAdmin, 5, 20);
   });
 
   await connection.close();

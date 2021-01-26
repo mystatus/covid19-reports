@@ -31,12 +31,12 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
     throw new UnauthorizedError('Client not authorized.', true);
   }
 
-  await getManager().transaction(async transactionalEntityManager => {
+  await getManager().transaction(async manager => {
     let user: User | undefined;
     if (id === 'internal') {
       user = User.internal();
     } else {
-      user = await transactionalEntityManager.findOne<User>('User', {
+      user = await manager.findOne(User, {
         relations: ['userRoles', 'userRoles.role', 'userRoles.role.org', 'userRoles.role.workspace', 'userRoles.role.org.contact'],
         where: {
           edipi: id,
@@ -45,15 +45,15 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
     }
 
     if (!user) {
-      user = transactionalEntityManager.create<User>('User', {
+      user = manager.create<User>('User', {
         edipi: id,
       });
     }
 
-    if (user?.rootAdmin) {
-      const roles = (await transactionalEntityManager.find<Org>('Org'))
+    if (user.rootAdmin) {
+      const roles = (await manager.find<Org>('Org'))
         .map(org => Role.admin(org));
-      await user!.addRoles(transactionalEntityManager, roles);
+      await user.addRoles(manager, roles);
     }
 
     req.appUser = user;

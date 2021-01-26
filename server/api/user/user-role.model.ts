@@ -15,19 +15,10 @@ export class UserRole extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({
-    length: 10,
-  })
-  userEdipi!: string;
-
   @ManyToOne(() => User, user => user.userRoles)
   user!: User;
 
-  @Column()
-  roleId!: number;
-
   @ManyToOne(() => Role, role => role.userRoles, {
-    cascade: true,
     onDelete: 'RESTRICT',
   })
   role!: Role;

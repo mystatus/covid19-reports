@@ -1,11 +1,11 @@
 import { Response } from 'express';
-import { getConnection } from 'typeorm';
 import { ApiRequest, OrgParam, OrgRoleParams } from '../index';
 import { Roster } from '../roster/roster.model';
 import { Role } from './role.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
 import { Workspace } from '../workspace/workspace.model';
 import { Notification } from '../notification/notification.model';
+import { UserRole } from '../user/user-role.model';
 
 class RoleController {
 
@@ -89,12 +89,11 @@ class RoleController {
       throw new NotFoundError('Role could not be found.');
     }
 
-    const userCount = await getConnection()
-      .createQueryBuilder()
-      .select('*')
-      .from('user_role', 'ur')
-      .where('ur.role_id = :id', { id: roleId })
-      .getCount();
+    const userCount = await UserRole.count({
+      where: {
+        roleId,
+      },
+    });
 
     if (userCount > 0) {
       throw new BadRequestError('Cannot delete a role that is assigned to users.');
@@ -206,7 +205,7 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
 type RoleBody = {
   name?: string
   description?: string
-  defaultIndexPrefix?: string | null
+  defaultIndexPrefix?: string
   workspaceId?: number | null
   allowedRosterColumns?: string[]
   allowedNotificationEvents?: string[]

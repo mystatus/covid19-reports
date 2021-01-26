@@ -50,7 +50,7 @@ export class User extends BaseEntity {
   userRoles!: UserRole[];
 
   async addRole(entityManager: EntityManager, role: Role, indexPrefix?: string): Promise<UserRole> {
-    let userRole = await entityManager.findOne<UserRole>('UserRole', {
+    let userRole = await entityManager.findOne(UserRole, {
       where: {
         userEdipi: this.edipi,
         roleId: role.id,
@@ -74,7 +74,7 @@ export class User extends BaseEntity {
   }
 
   async removeRole(entityManager: EntityManager, role: Role): Promise<UserRole> {
-    const found = await entityManager.findOne<UserRole>('UserRole', {
+    const found = await entityManager.findOne(UserRole, {
       where: {
         userEdipi: this.edipi,
         roleId: role.id,

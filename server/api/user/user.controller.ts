@@ -5,6 +5,7 @@ import { ApiRequest, OrgEdipiParams, OrgParam } from '../index';
 import { User } from './user.model';
 import { Role } from '../role/role.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
+import { UserRole } from './user-role.model';
 
 class UserController {
 
@@ -89,8 +90,8 @@ class UserController {
     let newUser = false;
     let savedUser: User | null = null;
 
-    await getManager().transaction(async transactionalEntityManager => {
-      let user = await transactionalEntityManager.findOne<User>('User', {
+    await getManager().transaction(async manager => {
+      let user = await manager.findOne(User, {
         relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
         where: {
           edipi,
@@ -106,13 +107,13 @@ class UserController {
       });
 
       if (!user) {
-        user = transactionalEntityManager.create<User>('User', {
+        user = manager.create<User>('User', {
           edipi,
         });
         newUser = true;
       }
 
-      user.addRole(transactionalEntityManager, role);
+      await user.addRole(manager, role);
 
       if (firstName) {
         user.firstName = firstName;
@@ -122,7 +123,7 @@ class UserController {
         user.lastName = lastName;
       }
 
-      savedUser = await transactionalEntityManager.save(user);
+      savedUser = await manager.save(user);
     });
 
     await res.status(newUser ? 201 : 200).json(savedUser ?? {});
@@ -131,13 +132,18 @@ class UserController {
   async getOrgUsers(req: ApiRequest<OrgParam>, res: Response) {
     let orgUsers = new Array<User>();
 
-    const orgRoles: Array<{ id: number }> = await getManager().query(`SELECT r.id FROM role r WHERE r.org_id = ${req.appOrg!.id}`);
+    const orgRoles: Array<{ id: number }> = await Role.find({
+      select: ['id'],
+      where: {
+        org: req.appOrg,
+      },
+    });
     if (orgRoles.length > 0) {
       const roleIds = orgRoles.map(role => role.id);
 
-      const userRoles: Array<{ edipi: string }> = await getManager().query(`SELECT ur.user_edipi as edipi FROM user_role ur WHERE ur.role_id in (${roleIds})`);
+      const userRoles = await UserRole.findByIds(roleIds);
       if (userRoles.length > 0) {
-        const userIds = userRoles.map(userRole => userRole.edipi);
+        const userIds = userRoles.map(userRole => userRole.user.edipi);
         orgUsers = await User.findByIds(userIds, {
           relations: ['userRoles', 'userRoles.role'],
         });
@@ -155,8 +161,8 @@ class UserController {
     }
     let savedUser: User | null = null;
 
-    await getManager().transaction(async transactionalEntityManager => {
-      const user = await transactionalEntityManager.findOne<User>('User', {
+    await getManager().transaction(async manager => {
+      const user = await manager.findOne(User, {
         relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
         where: {
           edipi: userEDIPI,
@@ -165,8 +171,8 @@ class UserController {
 
       const userRole = user?.userRoles.find(ur => ur.role.org!.id === req.appOrg!.id);
       if (user && userRole) {
-        await user.removeRole(transactionalEntityManager, userRole.role);
-        savedUser = await transactionalEntityManager.save(user);
+        await user.removeRole(manager, userRole.role);
+        savedUser = await manager.save(user);
       }
     });
     res.json(savedUser ?? {});

@@ -4,7 +4,6 @@ import {
 import { Org } from '../org/org.model';
 import { Workspace } from '../workspace/workspace.model';
 import { UserRole } from '../user/user-role.model';
-import { escapeRegExp } from '../../util/util';
 
 @Entity()
 export class Role extends BaseEntity {
@@ -103,26 +102,6 @@ export class Role extends BaseEntity {
       }
     }
     return true;
-  }
-
-  getUnitFilter() {
-    return this.defaultIndexPrefix.replace(new RegExp(escapeRegExp('-'), 'g'), '_');
-  }
-
-  getKibanaIndex() {
-    const suffix = this.canViewPHI ? 'phi' : (this.canViewPII ? 'pii' : 'base');
-    return `${this.org!.indexPrefix}-${this.getUnitFilter()}-${suffix}-*`;
-  }
-
-  getKibanaIndexForMuster(unitId?: string) {
-    return `${this.org!.indexPrefix}-${unitId || this.getUnitFilter()}-phi-*`;
-  }
-
-  getKibanaRoles() {
-    if (this.canManageWorkspace) {
-      return 'kibana_admin';
-    }
-    return 'kibana_ro_strict';
   }
 
   static admin(org: Org) {

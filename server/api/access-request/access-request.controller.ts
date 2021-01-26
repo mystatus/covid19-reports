@@ -128,8 +128,8 @@ class AccessRequestController {
 
     let processedRequest: AccessRequest | null = null;
 
-    await getManager().transaction(async transactionalEntityManager => {
-      const accessRequest = await transactionalEntityManager.findOne<AccessRequest>('AccessRequest', {
+    await getManager().transaction(async manager => {
+      const accessRequest = await manager.findOne(AccessRequest, {
         relations: ['user'],
         where: {
           id: req.body.requestId,
@@ -141,7 +141,7 @@ class AccessRequestController {
         throw new NotFoundError('Access request was not found');
       }
 
-      const role = await transactionalEntityManager.findOne<Role>('Role', {
+      const role = await manager.findOne(Role, {
         where: {
           id: req.body.roleId,
           org: orgId,
@@ -156,7 +156,7 @@ class AccessRequestController {
         throw new UnauthorizedError('Unable to assign a role with greater permissions than your current role.');
       }
 
-      const user = await transactionalEntityManager.findOne(User, {
+      const user = await manager.findOne(User, {
         relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
         where: {
           edipi: accessRequest.user!.edipi,
@@ -169,15 +169,15 @@ class AccessRequestController {
 
       const userRole = user.userRoles.find(ur => ur.role.org!.id === orgId);
       if (userRole?.role) {
-        await transactionalEntityManager.remove(accessRequest);
+        await manager.remove(accessRequest);
         throw new BadRequestError('User already has a role in the organization');
       }
 
-      user.addRole(transactionalEntityManager, role);
+      await user.addRole(manager, role);
 
-      await transactionalEntityManager.save(user);
+      await manager.save(user);
 
-      processedRequest = await transactionalEntityManager.remove(accessRequest);
+      processedRequest = await manager.remove(accessRequest);
     });
 
     res.json({

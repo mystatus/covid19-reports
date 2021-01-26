@@ -1,9 +1,9 @@
 import { User } from '../actions/user.actions';
-import { ApiRole, ApiUser } from '../models/api-response';
+import { ApiUser, ApiUserRole } from '../models/api-response';
 import { getLoggedInState } from '../utility/user-utils';
 
 export interface UserState extends ApiUser {
-  activeRole?: ApiRole
+  activeRole?: ApiUserRole
   isLoggedIn: boolean
 }
 
@@ -21,43 +21,34 @@ export const userInitialState: UserState = {
 };
 
 export function userReducer(state = userInitialState, action: any): UserState {
-  let reduced = state;
   switch (action.type) {
     case User.Actions.Register.type: {
       const { userData, localStorage } = (action as User.Actions.Register).payload;
       const loggedInState = getLoggedInState(userData, localStorage);
-      reduced = {
+      return {
         ...state,
         ...loggedInState,
       };
-      break;
     }
     case User.Actions.Login.type: {
       const { userData, localStorage } = (action as User.Actions.Login).payload;
       const loggedInState = getLoggedInState(userData, localStorage);
-      reduced = {
+      return {
         ...state,
         ...loggedInState,
       };
-      break;
     }
     case User.Actions.Logout.type:
-      reduced = userInitialState;
-      break;
+      return userInitialState;
     case User.Actions.ChangeOrg.type: {
       const orgId = (action as User.Actions.ChangeOrg).payload.orgId;
       const userRole = state.userRoles?.find(ur => ur.role.org?.id === orgId);
-      if (userRole) {
-        const activeRole = userRole?.role;
-        reduced = {
-          ...state,
-          activeRole,
-        };
-      }
-      break;
+      return {
+        ...state,
+        activeRole: userRole,
+      };
     }
     default:
-      break;
+      return state;
   }
-  return reduced;
 }
