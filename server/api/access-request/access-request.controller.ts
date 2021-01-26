@@ -156,18 +156,10 @@ class AccessRequestController {
         throw new UnauthorizedError('Unable to assign a role with greater permissions than your current role.');
       }
 
-      const user = await transactionalEntityManager.findOne<User>('User', {
+      const user = await transactionalEntityManager.findOne(User, {
         relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
         where: {
           edipi: accessRequest.user!.edipi,
-        },
-        join: {
-          alias: 'user',
-          leftJoinAndSelect: {
-            userRoles: 'user.userRoles',
-            role: 'userRoles.role',
-            org: 'role.org',
-          },
         },
       });
 
