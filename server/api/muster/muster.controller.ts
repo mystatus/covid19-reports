@@ -27,6 +27,7 @@ import {
   assertRequestQuery,
   TimeInterval,
 } from '../../util/util';
+import { Brackets } from 'typeorm';
 
 class MusterController {
 
@@ -84,9 +85,14 @@ class MusterController {
     const unitsWithMusterConfigs = await Unit
       .createQueryBuilder('unit')
       .leftJoinAndSelect('unit.org', 'org')
-      .where('json_array_length(unit.muster_configuration) > 0')
-      .orWhere('json_array_length(org.default_muster_configuration) > 0')
-      .andWhere('unit.muster_configuration IS NULL')
+      .where(new Brackets(sqb => {
+        sqb.where('unit.muster_configuration IS NOT NULL');
+        sqb.andWhere('json_array_length(unit.muster_configuration) > 0');
+      }))
+      .orWhere(new Brackets(sqb => {
+        sqb.where('unit.muster_configuration IS NULL');
+        sqb.andWhere('json_array_length(org.default_muster_configuration) > 0');
+      }))
       .getMany();
 
     const musterWindows: MusterWindow[] = [];

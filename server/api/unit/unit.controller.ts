@@ -65,7 +65,6 @@ class UnitController {
   }
 
   async updateUnit(req: ApiRequest<OrgUnitParams, UnitData>, res: Response) {
-    console.log('updateUnit', req.params, req.body);
     if (!matchWildcardString(req.params.unitId, req.appRole!.indexPrefix)) {
       // If they don't have permission to see the unit, treat it as not found
       throw new NotFoundError('The unit could not be found.');
@@ -161,7 +160,6 @@ class UnitController {
 
 
 function setUnitFromBody(unit: Unit, body: UnitData) {
-  console.log('setUnitFromBody', { unit, body });
   if (body.name) {
     unit.name = body.name;
   }
