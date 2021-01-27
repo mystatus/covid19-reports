@@ -5,7 +5,6 @@ import { ApiRequest, OrgEdipiParams, OrgParam } from '../index';
 import { User } from './user.model';
 import { Role } from '../role/role.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
-import { UserRole } from './user-role.model';
 
 class UserController {
 
@@ -141,9 +140,9 @@ class UserController {
     if (orgRoles.length > 0) {
       const roleIds = orgRoles.map(role => role.id);
 
-      const userRoles = await UserRole.findByIds(roleIds);
+      const userRoles: Array<{ edipi: string }> = await getManager().query(`SELECT ur.user_edipi as edipi FROM user_role ur WHERE ur.role_id in (${roleIds})`);
       if (userRoles.length > 0) {
-        const userIds = userRoles.map(userRole => userRole.user.edipi);
+        const userIds = userRoles.map(userRole => userRole.edipi);
         orgUsers = await User.findByIds(userIds, {
           relations: ['userRoles', 'userRoles.role'],
         });
