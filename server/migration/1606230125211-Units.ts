@@ -1,6 +1,4 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
-import { Unit } from '../api/unit/unit.model';
-import { Org } from '../api/org/org.model';
 import { sanitizeIndexPrefix } from '../util/util';
 
 export class Units1606230125211 implements MigrationInterface {
@@ -10,21 +8,16 @@ export class Units1606230125211 implements MigrationInterface {
 
     await queryRunner.query(`ALTER TABLE "roster" ADD "unit_id" character varying`);
     await queryRunner.query(`ALTER TABLE "roster" ADD "unit_org" integer`);
-    const orgs = await queryRunner.manager.getRepository(Org).find();
-    const unitRepo = queryRunner.manager.getRepository(Unit);
+    const orgs = await queryRunner.query(`SELECT id FROM "org"`);
+
     for (const org of orgs) {
       const orgUnits = (await queryRunner.query(`SELECT DISTINCT "unit" FROM "roster" WHERE "org_id"=${org.id}`)).map((roster: { unit: string }) => roster.unit);
 
-      for (const unitId of orgUnits) {
-        const unit = new Unit();
-        unit.id = sanitizeIndexPrefix(unitId);
-        unit.name = unitId;
-        unit.org = org;
-        unit.musterConfiguration = [];
-        await unitRepo.save(unit);
-
-        await queryRunner.query(`UPDATE "roster" SET "unit_id"='${unit.id}' WHERE "unit"='${unit.name}' AND "org_id"=${org.id}`);
-        await queryRunner.query(`UPDATE "roster" SET "unit_org"=${org.id} WHERE "unit"='${unit.name}' AND "org_id"=${org.id}`);
+      for (const name of orgUnits) {
+        const id = sanitizeIndexPrefix(name);
+        await queryRunner.query(`INSERT INTO "unit" (id, name, org_id, muster_configuration) VALUES ("${id}", "${name}", "${org.id}", "[]")`);
+        await queryRunner.query(`UPDATE "roster" SET "unit_id"='${id}' WHERE "unit"='${name}' AND "org_id"=${org.id}`);
+        await queryRunner.query(`UPDATE "roster" SET "unit_org"=${org.id} WHERE "unit"='${name}' AND "org_id"=${org.id}`);
       }
     }
 

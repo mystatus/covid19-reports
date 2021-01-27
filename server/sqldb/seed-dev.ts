@@ -42,6 +42,7 @@ async function generateOrg(orgNum: number, admin: User, numUsers: number, numRos
   org.description = `Group ${orgNum} for testing.`;
   org.contact = admin;
   org.indexPrefix = `testgroup${orgNum}`;
+  org.defaultMusterConfiguration = [];
   await org.save();
 
   const customColumn = new CustomRosterColumn();

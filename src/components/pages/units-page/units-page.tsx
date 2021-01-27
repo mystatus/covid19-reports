@@ -1,5 +1,9 @@
 import {
   Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
   Container,
   Dialog,
   DialogActions,
@@ -9,13 +13,13 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Typography,
 } from '@material-ui/core';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -23,6 +27,7 @@ import moment from 'moment-timezone';
 import axios from 'axios';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
+import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import useStyles from './units-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
@@ -32,9 +37,10 @@ import { UnitSelector } from '../../../selectors/unit.selector';
 import { Unit } from '../../../actions/unit.actions';
 import PageHeader from '../../page-header/page-header';
 import { daysToString } from '../../../utility/days';
-import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
 import { formatMessage } from '../../../utility/errors';
+import { DefaultMusterDialog, DefaultMusterDialogProps } from './default-muster-dialog';
+import { User } from '../../../actions/user.actions';
 
 interface UnitMenuState {
   anchor: HTMLElement | null,
@@ -47,15 +53,36 @@ export const UnitsPage = () => {
   const units = useSelector(UnitSelector.all);
   const [unitToDelete, setUnitToDelete] = useState<null | ApiUnit>(null);
   const [editUnitDialogProps, setEditUnitDialogProps] = useState<EditUnitDialogProps>({ open: false });
+  const [defaultMusterDialogProps, setDefaultMusterDialogProps] = useState<DefaultMusterDialogProps>({ open: false });
   const [unitMenu, setUnitMenu] = React.useState<UnitMenuState>({ anchor: null });
+  const [defaultMusterSaved, setDefaultMusterSaved] = React.useState(false);
 
-  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
+  const org = useSelector<AppState, UserState>(state => state.user).activeRole?.org;
+  const orgId = org?.id;
+  const defaultMusterConfiguration = org?.defaultMusterConfiguration ?? [];
 
   const initializeTable = React.useCallback(async () => {
     if (orgId) {
       await dispatch(Unit.fetch(orgId));
     }
   }, [orgId, dispatch]);
+
+  const showDefaultMusterConfig = async () => {
+    setDefaultMusterDialogProps({
+      open: true,
+      onClose: async (success?: boolean) => {
+        setDefaultMusterDialogProps({ open: false });
+        if (success) {
+          await dispatch(User.login());
+          await initializeTable();
+          setDefaultMusterSaved(true);
+        }
+      },
+      onError: (message: string) => {
+        dispatch(Modal.alert('Default Muster Configuration', `Unable edit the default muster configuration: ${message}`));
+      },
+    });
+  };
 
   const newUnit = async () => {
     setEditUnitDialogProps({
@@ -134,71 +161,106 @@ export const UnitsPage = () => {
     <main className={classes.root}>
       <Container maxWidth="md">
         <PageHeader title="Unit Management" />
-        <ButtonSet>
-          <Button
-            size="large"
-            variant="text"
-            color="primary"
-            onClick={newUnit}
-            startIcon={<AddCircleIcon />}
-          >
-            Add New Unit
-          </Button>
-        </ButtonSet>
-        <TableContainer className={classes.table} component={Paper}>
-          <Table aria-label="unit table">
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Muster Requirements</TableCell>
-                <TableCell />
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {units.map(unit => (
-                <TableRow key={unit.id}>
-                  <TableCell>{unit.id}</TableCell>
-                  <TableCell>{unit.name}</TableCell>
-                  {unit.musterConfiguration.length > 0 && (
-                    <TableCell className={classes.musterConfiguration}>
-                      {unit.musterConfiguration.map(muster => (
-                        <div>
-                          {musterConfigurationToString(muster)}
-                        </div>
-                      ))}
-                    </TableCell>
-                  )}
-                  {unit.musterConfiguration.length === 0 && (
-                    <TableCell className={classes.noMusterConfiguration}>
-                      No configured muster requirements
-                    </TableCell>
-                  )}
-                  <TableCell className={classes.iconCell}>
-                    <IconButton
-                      aria-label="unit actions"
-                      aria-controls={`unit-${unit.id}-menu`}
-                      aria-haspopup="true"
-                      onClick={handleUnitMenuClick(unit)}
-                    >
-                      <MoreVertIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
+        <Card>
+          <CardHeader title="Default Muster Requirements" />
+          <CardContent>
+            <div className={classes.musterConfiguration}>
+              {defaultMusterConfiguration.map((muster, index) => (
+                <div key={JSON.stringify({ muster, index })}>
+                  {musterConfigurationToString(muster)}
+                </div>
               ))}
-              <Menu
-                id="unit-menu"
-                anchorEl={unitMenu.anchor}
-                keepMounted
-                open={Boolean(unitMenu.unit)}
-                onClose={handleUnitMenuClose}
+            </div>
+            {!defaultMusterConfiguration?.length && <span>No default requirements found.</span>}
+            <CardActions>
+              <Button
+                size="large"
+                onClick={showDefaultMusterConfig}
               >
-                <MenuItem onClick={editUnit}>Edit Unit</MenuItem>
-                <MenuItem onClick={deleteUnit}>Delete Unit</MenuItem>
-              </Menu>
-            </TableBody>
-          </Table>
-        </TableContainer>
+                Configure
+              </Button>
+              {defaultMusterSaved && (
+                <Typography variant="subtitle1" className={classes.defaultMusterSaved}>
+                  <CheckCircleIcon /> Changes saved successfully!
+                </Typography>
+              )}
+            </CardActions>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader title="Units" />
+          <CardActions>
+            <Button
+              size="large"
+              variant="text"
+              color="primary"
+              onClick={newUnit}
+              startIcon={<AddCircleIcon />}
+            >
+              Add New Unit
+            </Button>
+          </CardActions>
+          <CardContent>
+            <TableContainer className={classes.table}>
+              <Table aria-label="unit table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>ID</TableCell>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Muster Requirements</TableCell>
+                    <TableCell />
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {units.map(unit => (
+                    <TableRow key={unit.id}>
+                      <TableCell>{unit.id}</TableCell>
+                      <TableCell>{unit.name}</TableCell>
+                      {unit.musterConfiguration?.length > 0 && (
+                        <TableCell className={classes.musterConfiguration}>
+                          {unit.musterConfiguration.map((muster, index) => (
+                            <div key={JSON.stringify({ muster, index })}>
+                              {musterConfigurationToString(muster)}
+                            </div>
+                          ))}
+                        </TableCell>
+                      )}
+                      {!unit.musterConfiguration?.length && (
+                        <TableCell className={classes.noMusterConfiguration}>
+                          {(defaultMusterConfiguration?.length !== 0 && unit.musterConfiguration === null) ? (
+                            <span>* Using default muster requirements</span>
+                          ) : (
+                            <span>No configured muster requirements</span>
+                          )}
+                        </TableCell>
+                      )}
+                      <TableCell className={classes.iconCell}>
+                        <IconButton
+                          aria-label="unit actions"
+                          aria-controls={`unit-${unit.id}-menu`}
+                          aria-haspopup="true"
+                          onClick={handleUnitMenuClick(unit)}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <Menu
+                    id="unit-menu"
+                    anchorEl={unitMenu.anchor}
+                    keepMounted
+                    open={Boolean(unitMenu.unit)}
+                    onClose={handleUnitMenuClose}
+                  >
+                    <MenuItem onClick={editUnit}>Edit Unit</MenuItem>
+                    <MenuItem onClick={deleteUnit}>Delete Unit</MenuItem>
+                  </Menu>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
       </Container>
       {Boolean(unitToDelete) && (
         <Dialog
@@ -223,15 +285,8 @@ export const UnitsPage = () => {
           </DialogActions>
         </Dialog>
       )}
-      {editUnitDialogProps.open && (
-        <EditUnitDialog
-          open={editUnitDialogProps.open}
-          orgId={editUnitDialogProps.orgId}
-          unit={editUnitDialogProps.unit}
-          onClose={editUnitDialogProps.onClose}
-          onError={editUnitDialogProps.onError}
-        />
-      )}
+      {editUnitDialogProps.open && <EditUnitDialog {...editUnitDialogProps} />}
+      {defaultMusterDialogProps.open && <DefaultMusterDialog {...defaultMusterDialogProps} />}
     </main>
   );
 };

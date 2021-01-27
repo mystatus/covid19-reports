@@ -10,6 +10,7 @@ import {
   BadRequestError,
   NotFoundError,
 } from '../../util/error-types';
+import { MusterConfiguration } from '../unit/unit.model';
 
 class OrgController {
 
@@ -86,6 +87,16 @@ class OrgController {
     res.json(updatedOrg);
   }
 
+  async updateOrgDefaultMuster(req: ApiRequest<OrgParam, UpdateOrgDefaultMusterBody>, res: Response) {
+    const defaultMusterConfiguration = req.body.defaultMusterConfiguration;
+
+    req.appOrg!.defaultMusterConfiguration = defaultMusterConfiguration ?? [];
+
+    const updatedOrg = await req.appOrg!.save();
+
+    res.json(updatedOrg);
+  }
+
 }
 
 type AddOrgBody = {
@@ -94,5 +105,9 @@ type AddOrgBody = {
 };
 
 type UpdateOrgBody = AddOrgBody;
+
+type UpdateOrgDefaultMusterBody = {
+  defaultMusterConfiguration: MusterConfiguration[]
+};
 
 export default new OrgController();

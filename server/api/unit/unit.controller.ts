@@ -166,7 +166,7 @@ function setUnitFromBody(unit: Unit, body: UnitData) {
   if (body.id) {
     unit.id = body.id;
   }
-  if (body.musterConfiguration) {
+  if (body.musterConfiguration !== undefined) {
     unit.musterConfiguration = body.musterConfiguration;
   }
 }

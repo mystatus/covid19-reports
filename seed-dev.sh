@@ -28,7 +28,7 @@ case "$response" in
   echo "Created '$SQL_DATABASE' database"
 
   ./migration-run.sh
-  ts-node --project "$DIR/server/tsconfig.json" "$DIR/server/sqldb/seed-dev.ts"
+  npx ts-node --project "$DIR/server/tsconfig.json" "$DIR/server/sqldb/seed-dev.ts"
   ;;
 *)
   echo "Aborted"

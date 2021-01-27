@@ -32,7 +32,7 @@ export default makeStyles((theme: Theme) => createStyles({
     backgroundColor: '#F0F1F1',
   },
   addMusterButton: {
-    margin: '10px 0px 20px 10px',
+    margin: '10px 0px 20px 0px',
     fontSize: '16px',
     textTransform: 'none',
     '& svg': {
@@ -81,11 +81,6 @@ export default makeStyles((theme: Theme) => createStyles({
     border: `1px solid ${theme.palette.primary.main}`,
     color: 'white',
     backgroundColor: theme.palette.primary.main,
-    '&$dayButtonDisabled': {
-      backgroundColor: '#ddd',
-      borderColor: '#ddd',
-      color: theme.palette.text.primary,
-    },
   },
   dayButtonOff: {
     border: '1px solid #DCDEE0',
@@ -96,9 +91,6 @@ export default makeStyles((theme: Theme) => createStyles({
     border: '1px solid #E41D3D',
     color: theme.palette.text.primary,
     backgroundColor: 'white',
-  },
-  dayButtonDisabled: {
-    opacity: 0.7,
   },
   durationCell: {
     width: '17%',

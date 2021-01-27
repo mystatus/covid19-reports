@@ -83,9 +83,17 @@ theme.overrides = {
       },
     },
   },
+  MuiCard: {
+    root: {
+      marginBottom: theme.spacing(3),
+    },
+  },
   MuiCardActions: {
     root: {
       padding: theme.spacing(3),
+      '& + .MuiCardContent-root': {
+        paddingTop: theme.spacing(3),
+      },
     },
   },
   MuiCardContent: {
@@ -94,6 +102,19 @@ theme.overrides = {
 
       '& header > *:nth-child(1)': theme.typography.h2,
       '& header p': theme.typography.subtitle1,
+
+      '& .MuiCardActions-root': {
+        padding: `${theme.spacing(3)}px 0 0`,
+      },
+    },
+  },
+  MuiCardHeader: {
+    root: {
+      padding: theme.spacing(4),
+      paddingBottom: theme.spacing(0),
+      '& + .MuiCardActions-root': {
+        padding: `${theme.spacing(1)}px ${theme.spacing(3)}px 0`,
+      },
     },
   },
   MuiChip: {
