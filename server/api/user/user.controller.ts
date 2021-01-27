@@ -91,6 +91,14 @@ class UserController {
       where: {
         edipi,
       },
+      join: {
+        alias: 'user',
+        leftJoinAndSelect: {
+          userRoles: 'user.userRoles',
+          role: 'userRoles.role',
+          org: 'role.org',
+        },
+      },
     });
 
     let newUser = false;
