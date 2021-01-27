@@ -115,28 +115,28 @@ export const AppSidenav = () => {
             name="Home"
             icon={(<HomeIcon />)}
           />
-          {user.activeRole?.workspace && (
+          {user.activeRole?.role.workspace && (
             <SidenavLink
               href={`/dashboard?orgId=${orgId}`}
               name="Analytics"
               icon={(<BarChartIcon />)}
             />
           )}
-          {user.activeRole?.workspace && (
+          {user.activeRole?.role.workspace && (
             <SidenavLink
               to="/data-export"
               name="Data Export"
               icon={(<DataExportIcon />)}
             />
           )}
-          {user.activeRole?.canViewMuster && (
+          {user.activeRole?.role.canViewMuster && (
             <SidenavLink
               to="/muster"
               name="Muster"
               icon={(<PersonCheckIcon />)}
             />
           )}
-          {user.activeRole?.canViewRoster && (
+          {user.activeRole?.role.canViewRoster && (
             <SidenavLink
               to="/roster"
               name="Roster"
@@ -145,7 +145,7 @@ export const AppSidenav = () => {
           )}
         </List>
 
-        {user.activeRole?.canManageGroup && (
+        {user.activeRole?.role.canManageGroup && (
           <>
             <div className={clsx(classes.header, {
               [classes.headerExpanded]: appFrame.sidenavExpanded,

@@ -34,8 +34,6 @@ import PageHeader from '../../page-header/page-header';
 import { SortDirection, TableColumn, TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
 import useStyles from './roster-page.styles';
-import { UserState } from '../../../reducers/user.reducer';
-import { AppState } from '../../../store';
 import {
   ApiRosterColumnInfo,
   ApiRosterColumnType,
@@ -54,6 +52,7 @@ import { formatMessage } from '../../../utility/errors';
 import { ButtonSet } from '../../buttons/button-set';
 import { DataExportIcon } from '../../icons/data-export-icon';
 import { Modal } from '../../../actions/modal.actions';
+import { UserSelector } from '../../../selectors/user.selector';
 
 const unitColumn: ApiRosterColumnInfo = {
   name: 'unit',
@@ -102,8 +101,9 @@ export const RosterPage = () => {
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
   const [applyingFilters, setApplyingFilters] = useState(false);
   const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
-  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
-  const orgName = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.name;
+  const org = useSelector(UserSelector.org);
+  const orgId = org?.id;
+  const orgName = org?.name;
 
   //
   // Effects

@@ -33,7 +33,7 @@ class ExportController {
     //
     // Get ES data and stream to client.
     //
-    const index = req.appRole!.getKibanaIndex();
+    const index = req.appUserRole!.getKibanaIndex();
     const scrollQueue = [] as SearchResponse<any>[];
     try {
       scrollQueue.push(await elasticsearch.search({
@@ -102,7 +102,7 @@ class ExportController {
 
     const orgId = req.appOrg!.id;
 
-    const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appRole!);
+    const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appUserRole!);
     const rosterData = await queryBuilder
       .orderBy({
         edipi: 'ASC',
@@ -136,7 +136,7 @@ class ExportController {
 
     const individuals = await getRosterMusterStats({
       org: req.appOrg!,
-      role: req.appRole!,
+      userRole: req.appUserRole!,
       interval,
       intervalCount,
       unitId: req.query.unitId,

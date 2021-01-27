@@ -17,6 +17,7 @@ import { Role } from '../role/role.model';
 import { Unit } from '../unit/unit.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { dateColumnTransformer, dateTimeColumnTransformer } from '../../util/util';
+import { UserRole } from '../user/user-role.model';
 
 @Entity()
 export class Roster extends BaseEntity {
@@ -102,12 +103,12 @@ export class Roster extends BaseEntity {
     return `roster.${snakeCase(column.name)}`;
   }
 
-  static async queryAllowedRoster(org: Org, role: Role, columns?: RosterColumnInfo[]) {
+  static async queryAllowedRoster(org: Org, userRole: UserRole, columns?: RosterColumnInfo[]) {
     //
     // Query the roster, returning only columns and rows that are allowed for the role of the requester.
     //
     if (!columns) {
-      columns = await Roster.getAllowedColumns(org, role);
+      columns = await Roster.getAllowedColumns(org, userRole.role);
     }
     const queryBuilder = Roster.createQueryBuilder('roster').select([]);
     queryBuilder.leftJoin('roster.unit', 'u');
@@ -125,7 +126,7 @@ export class Roster extends BaseEntity {
       .where('u.org_id = :orgId', { orgId: org.id })
       .andWhere('(roster.end_date IS NULL OR roster.end_date >= CURRENT_DATE)')
       .andWhere('(roster.start_date IS NULL OR roster.start_date <= CURRENT_DATE)')
-      .andWhere('u.id like :name', { name: role.indexPrefix.replace('*', '%') });
+      .andWhere('u.id like :name', { name: userRole.indexPrefix.replace('*', '%') });
   }
 
   static async getAllowedColumns(org: Org, role: Role) {

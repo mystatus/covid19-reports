@@ -11,6 +11,7 @@ import { WorkspaceTemplate } from './api/workspace/workspace-template.model';
 import { CustomRosterColumn } from './api/roster/custom-roster-column.model';
 import { Notification } from './api/notification/notification.model';
 import { UserNotificationSetting } from './api/notification/user-notification-setting.model';
+import { UserRole } from './api/user/user-role.model';
 
 export const ormConfig: PostgresConnectionOptions = {
   type: 'postgres',
@@ -20,6 +21,7 @@ export const ormConfig: PostgresConnectionOptions = {
   password: process.env.SQL_PASSWORD || 'postgres',
   database: process.env.SQL_DATABASE || 'dds',
   entities: [
+    UserRole,
     User,
     Role,
     Org,

@@ -7,12 +7,11 @@ import {
 import { HelpOutline } from '@material-ui/icons';
 import { ApiNotification, ApiUserNotificationSetting } from '../../../models/api-response';
 import useStyles from './notifications-tab.style';
-import { AppState } from '../../../store';
-import { UserState } from '../../../reducers/user.reducer';
 import { TabPanelProps } from './settings-page';
 import { EditAlertDialog, EditAlertDialogProps } from './edit-alert-dialog';
 import { Modal } from '../../../actions/modal.actions';
 import { formatMessage } from '../../../utility/errors';
+import { UserSelector } from '../../../selectors/user.selector';
 
 interface NotificationSettings {
   [key: string]: ApiUserNotificationSetting,
@@ -34,7 +33,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [editAlertDialogProps, setEditAlertDialogProps] = useState<EditAlertDialogProps>({ open: false });
 
-  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
+  const orgId = useSelector(UserSelector.orgId);
 
   const initializeTable = React.useCallback(async () => {
     const notificationsResponse = (await axios.get(`api/notification/${orgId}`)).data as ApiNotification[];

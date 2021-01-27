@@ -43,7 +43,7 @@ const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props:
 
   useEffect(() => {
     if (availableRoles!.length > 0) {
-      const roleId = user?.roles?.length ? user?.roles[0].id : availableRoles[0].id;
+      const roleId = user?.userRoles?.length ? user?.userRoles[0].role.id : availableRoles[0].id;
       const roleIndex = availableRoles.findIndex(role => role.id === roleId);
       setSelectedRoleIndex(roleIndex >= 0 ? roleIndex : 0);
     }
@@ -103,7 +103,7 @@ const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props:
         </Button>
         <ButtonWithSpinner
           onClick={() => onChange(selectedRole)}
-          disabled={(user?.roles ?? []).some(role => role.id === selectedRole.id)}
+          disabled={(user?.userRoles ?? []).some(userRole => userRole.role.id === selectedRole.id)}
           color="primary"
           loading={loading}
         >

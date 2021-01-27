@@ -25,7 +25,7 @@ import {
   RosterColumnInfo,
   RosterColumnType,
 } from './roster.types';
-import { Role } from '../role/role.model';
+import { UserRole } from '../user/user-role.model';
 
 class RosterController {
 
@@ -103,7 +103,7 @@ class RosterController {
   }
 
   async getRosterTemplate(req: ApiRequest, res: Response) {
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
+    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
     const headers: string[] = ['unit'];
     const example: string[] = ['unit1'];
     columns.forEach(column => {
@@ -140,11 +140,11 @@ class RosterController {
   }
 
   async getRoster(req: ApiRequest<OrgParam, any, GetRosterQuery>, res: Response) {
-    res.json(await internalSearchRoster(req.query, req.appOrg!, req.appRole!));
+    res.json(await internalSearchRoster(req.query, req.appOrg!, req.appUserRole!));
   }
 
   async searchRoster(req: ApiRequest<OrgParam, SearchRosterBody, GetRosterQuery>, res: Response) {
-    res.json(await internalSearchRoster(req.query, req.appOrg!, req.appRole!, req.body));
+    res.json(await internalSearchRoster(req.query, req.appOrg!, req.appUserRole!, req.body));
   }
 
   async uploadRosterEntries(req: ApiRequest<OrgParam>, res: Response) {
@@ -171,7 +171,7 @@ class RosterController {
       },
     });
 
-    const columns = await Roster.getAllowedColumns(org, req.appRole!);
+    const columns = await Roster.getAllowedColumns(org, req.appUserRole!.role);
     const errors: RosterUploadErrorInfo[] = [];
     const existingEntries = await Roster.find({
       where: {
@@ -250,7 +250,7 @@ class RosterController {
   }
 
   async getRosterInfo(req: ApiRequest<OrgParam>, res: Response) {
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
+    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
     res.json(columns);
   }
 
@@ -318,7 +318,7 @@ class RosterController {
 
     const entry = new Roster();
     entry.unit = unit;
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
+    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
     await setRosterParamsFromBody(req.appOrg!, entry, req.body, columns, true);
     const newRosterEntry = await entry.save();
 
@@ -328,7 +328,7 @@ class RosterController {
   async getRosterEntry(req: ApiRequest<OrgRosterParams>, res: Response) {
     const rosterId = req.params.rosterId;
 
-    const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appRole!);
+    const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appUserRole!);
     const rosterEntry = await queryBuilder
       .andWhere('roster.id=\':id\'', {
         id: rosterId,
@@ -410,7 +410,7 @@ class RosterController {
         entry.unit = unit;
       }
 
-      const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
+      const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
       await setRosterParamsFromBody(req.appOrg!, entry, req.body, columns);
       if (startDateOverride) {
         entry.startDate = startDateOverride;
@@ -422,12 +422,12 @@ class RosterController {
 
 }
 
-async function internalSearchRoster(query: GetRosterQuery, org: Org, role: Role, searchParams?: SearchRosterBody) {
+async function internalSearchRoster(query: GetRosterQuery, org: Org, userRole: UserRole, searchParams?: SearchRosterBody) {
   const limit = parseInt(query.limit ?? '100');
   const page = parseInt(query.page ?? '0');
   const orderBy = query.orderBy || 'edipi';
   const sortDirection = query.sortDirection || 'ASC';
-  const rosterColumns = await Roster.getAllowedColumns(org, role);
+  const rosterColumns = await Roster.getAllowedColumns(org, userRole.role);
 
   const columns: RosterColumnInfo[] = [{
     name: 'unit',
@@ -442,7 +442,7 @@ async function internalSearchRoster(query: GetRosterQuery, org: Org, role: Role,
 
   async function makeQueryBuilder() {
     if (!searchParams) {
-      return Roster.queryAllowedRoster(org, role);
+      return Roster.queryAllowedRoster(org, userRole);
     }
     return Object.keys(searchParams)
       .reduce((queryBuilder, key) => {
@@ -494,7 +494,7 @@ async function internalSearchRoster(query: GetRosterQuery, org: Org, role: Role,
         }
 
         throw new BadRequestError('Malformed search query. Received unexpected value for "op".');
-      }, await Roster.queryAllowedRoster(org, role));
+      }, await Roster.queryAllowedRoster(org, userRole));
   }
 
   const queryBuilder = await makeQueryBuilder();
