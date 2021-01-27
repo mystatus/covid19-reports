@@ -1,9 +1,9 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, BaseEntity, JoinColumn, ManyToOne,
+  Entity, PrimaryGeneratedColumn, Column, BaseEntity, JoinColumn, ManyToOne, OneToMany,
 } from 'typeorm';
 import { Org } from '../org/org.model';
 import { Workspace } from '../workspace/workspace.model';
-import { escapeRegExp } from '../../util/util';
+import { UserRole } from '../user/user-role.model';
 
 @Entity()
 export class Role extends BaseEntity {
@@ -30,6 +30,9 @@ export class Role extends BaseEntity {
   })
   org?: Org;
 
+  @OneToMany(() => UserRole, userRole => userRole.role)
+  userRoles?: UserRole[];
+
   @ManyToOne(() => Workspace, { cascade: true, onDelete: 'RESTRICT', nullable: true })
   @JoinColumn({
     name: 'workspace_id',
@@ -39,7 +42,7 @@ export class Role extends BaseEntity {
   @Column({
     default: '',
   })
-  indexPrefix!: string;
+  defaultIndexPrefix!: string;
 
   @Column('simple-array', {
     default: '',
@@ -101,33 +104,13 @@ export class Role extends BaseEntity {
     return true;
   }
 
-  getUnitFilter() {
-    return this.indexPrefix.replace(new RegExp(escapeRegExp('-'), 'g'), '_');
-  }
-
-  getKibanaIndex() {
-    const suffix = this.canViewPHI ? 'phi' : (this.canViewPII ? 'pii' : 'base');
-    return `${this.org!.indexPrefix}-${this.getUnitFilter()}-${suffix}-*`;
-  }
-
-  getKibanaIndexForMuster(unitId?: string) {
-    return `${this.org!.indexPrefix}-${unitId || this.getUnitFilter()}-phi-*`;
-  }
-
-  getKibanaRoles() {
-    if (this.canManageWorkspace) {
-      return 'kibana_admin';
-    }
-    return 'kibana_ro_strict';
-  }
-
   static admin(org: Org) {
     const adminRole = new Role();
     adminRole.id = 0;
     adminRole.name = 'Admin';
     adminRole.description = 'Site Administrator';
     adminRole.org = org;
-    adminRole.indexPrefix = '';
+    adminRole.defaultIndexPrefix = '*';
     adminRole.allowedNotificationEvents = ['*'];
     adminRole.allowedRosterColumns = ['*'];
 

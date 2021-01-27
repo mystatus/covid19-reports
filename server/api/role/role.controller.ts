@@ -1,16 +1,16 @@
 import { Response } from 'express';
-import { getConnection } from 'typeorm';
 import { ApiRequest, OrgParam, OrgRoleParams } from '../index';
 import { Roster } from '../roster/roster.model';
 import { Role } from './role.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
 import { Workspace } from '../workspace/workspace.model';
 import { Notification } from '../notification/notification.model';
+import { UserRole } from '../user/user-role.model';
 
 class RoleController {
 
   async getOrgRoles(req: ApiRequest, res: Response) {
-    if (!req.appOrg || !req.appRole) {
+    if (!req.appOrg || !req.appUserRole) {
       throw new NotFoundError('Organization was not found.');
     }
 
@@ -40,17 +40,13 @@ class RoleController {
       throw new BadRequestError('A description must be supplied when adding a role.');
     }
 
-    if (!req.body.indexPrefix) {
-      throw new BadRequestError('An index prefix must be supplied when adding a role.');
-    }
-
     const role = new Role();
     role.org = req.appOrg;
     await setRoleFromBody(req.appOrg.id, role, req.body);
 
     const newRole = await role.save();
 
-    await res.status(201).json(newRole);
+    res.status(201).json(newRole);
   }
 
   async getRole(req: ApiRequest<OrgRoleParams>, res: Response) {
@@ -93,12 +89,11 @@ class RoleController {
       throw new NotFoundError('Role could not be found.');
     }
 
-    const userCount = await getConnection()
-      .createQueryBuilder()
-      .select('*')
-      .from('user_roles', 'user_roles')
-      .where('user_roles.role = :id', { id: roleId })
-      .getCount();
+    const userCount = await UserRole.count({
+      where: {
+        roleId,
+      },
+    });
 
     if (userCount > 0) {
       throw new BadRequestError('Cannot delete a role that is assigned to users.');
@@ -141,9 +136,6 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
   if (body.description != null) {
     role.description = body.description;
   }
-  if (body.indexPrefix != null) {
-    role.indexPrefix = body.indexPrefix;
-  }
   if (body.workspaceId !== undefined) {
     if (body.workspaceId == null) {
       role.workspace = null;
@@ -161,6 +153,9 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
 
       role.workspace = workspace;
     }
+  }
+  if (body.defaultIndexPrefix != null) {
+    role.defaultIndexPrefix = body.defaultIndexPrefix;
   }
   if (body.canManageGroup != null) {
     role.canManageGroup = body.canManageGroup;
@@ -210,7 +205,7 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
 type RoleBody = {
   name?: string
   description?: string
-  indexPrefix?: string
+  defaultIndexPrefix?: string
   workspaceId?: number | null
   allowedRosterColumns?: string[]
   allowedNotificationEvents?: string[]

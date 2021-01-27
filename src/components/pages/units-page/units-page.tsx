@@ -29,8 +29,6 @@ import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import useStyles from './units-page.styles';
-import { UserState } from '../../../reducers/user.reducer';
-import { AppState } from '../../../store';
 import { ApiUnit, MusterConfiguration } from '../../../models/api-response';
 import { EditUnitDialog, EditUnitDialogProps } from './edit-unit-dialog';
 import { UnitSelector } from '../../../selectors/unit.selector';
@@ -41,6 +39,7 @@ import { Modal } from '../../../actions/modal.actions';
 import { formatMessage } from '../../../utility/errors';
 import { DefaultMusterDialog, DefaultMusterDialogProps } from './default-muster-dialog';
 import { User } from '../../../actions/user.actions';
+import { UserSelector } from '../../../selectors/user.selector';
 
 interface UnitMenuState {
   anchor: HTMLElement | null,
@@ -57,7 +56,7 @@ export const UnitsPage = () => {
   const [unitMenu, setUnitMenu] = React.useState<UnitMenuState>({ anchor: null });
   const [defaultMusterSaved, setDefaultMusterSaved] = React.useState(false);
 
-  const org = useSelector<AppState, UserState>(state => state.user).activeRole?.org;
+  const org = useSelector(UserSelector.org);
   const orgId = org?.id;
   const defaultMusterConfiguration = org?.defaultMusterConfiguration ?? [];
 

@@ -20,7 +20,7 @@ export interface ApiRole {
   workspace?: ApiWorkspace,
   name: string,
   description: string,
-  indexPrefix: string,
+  defaultIndexPrefix: string,
   allowedRosterColumns: string[],
   allowedNotificationEvents: string[],
   canManageGroup: boolean,
@@ -32,6 +32,13 @@ export interface ApiRole {
   canViewPHI: boolean,
 }
 
+export interface ApiUserRole {
+  id: number,
+  indexPrefix: string,
+  role: ApiRole,
+  user: ApiUser,
+}
+
 export interface ApiUser {
   edipi: string,
   firstName: string,
@@ -39,7 +46,7 @@ export interface ApiUser {
   service: string,
   phone: string,
   email: string,
-  roles?: ApiRole[],
+  userRoles?: ApiUserRole[],
   rootAdmin: boolean,
   isRegistered: boolean,
 }

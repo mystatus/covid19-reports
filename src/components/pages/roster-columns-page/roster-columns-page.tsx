@@ -24,14 +24,13 @@ import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PageHeader from '../../page-header/page-header';
 import useStyles from './roster-columns-page.styles';
-import { UserState } from '../../../reducers/user.reducer';
-import { AppState } from '../../../store';
 import { ApiRosterColumnInfo, rosterColumnTypeDisplayName } from '../../../models/api-response';
 import { EditColumnDialog, EditColumnDialogProps } from './edit-column-dialog';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
 import { formatMessage } from '../../../utility/errors';
+import { UserSelector } from '../../../selectors/user.selector';
 
 interface ColumnMenuState {
   anchor: HTMLElement | null,
@@ -47,7 +46,7 @@ export const RosterColumnsPage = () => {
   const [editColumnDialogProps, setEditColumnDialogProps] = useState<EditColumnDialogProps>({ open: false });
   const [columnMenu, setColumnMenu] = React.useState<ColumnMenuState>({ anchor: null });
 
-  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
+  const orgId = useSelector(UserSelector.orgId);
 
   const initializeTable = React.useCallback(async () => {
     dispatch(AppFrame.setPageLoading(true));

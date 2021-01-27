@@ -31,8 +31,7 @@ import { MusterConfiguration } from '../../../models/api-response';
 import {
   dayIsIn, DaysOfTheWeek, nextDay, oneDaySeconds,
 } from '../../../utility/days';
-import { AppState } from '../../../store';
-import { UserState } from '../../../reducers/user.reducer';
+import { UserSelector } from '../../../selectors/user.selector';
 
 export interface DefaultMusterDialogProps {
   open: boolean,
@@ -54,7 +53,7 @@ interface MusterWindow {
 export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
   const classes = useStyles();
   const [formDisabled, setFormDisabled] = useState(false);
-  const org = useSelector<AppState, UserState>(state => state.user).activeRole?.org;
+  const org = useSelector(UserSelector.org);
   const orgId = org?.id;
   const defaultMusterConfiguration = org?.defaultMusterConfiguration;
   const {
