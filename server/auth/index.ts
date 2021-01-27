@@ -31,19 +31,25 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
     throw new UnauthorizedError('Client not authorized.', true);
   }
 
-  await getManager().transaction(async manager => {
-    let user: User | undefined;
-    if (id === 'internal') {
-      user = User.internal();
-    } else {
-      user = await manager.findOne(User, {
-        relations: ['userRoles', 'userRoles.role', 'userRoles.role.org', 'userRoles.role.workspace', 'userRoles.role.org.contact'],
-        where: {
-          edipi: id,
-        },
-      });
-    }
+  let user: User | undefined;
+  let roles: Role[] = [];
 
+  if (id === 'internal') {
+    user = User.internal();
+  } else {
+    user = await User.findOne({
+      relations: ['userRoles', 'userRoles.role', 'userRoles.role.org', 'userRoles.role.workspace', 'userRoles.role.org.contact'],
+      where: {
+        edipi: id,
+      },
+    });
+  }
+
+  if (user?.rootAdmin) {
+    roles = (await Org.find()).map(org => Role.admin(org));
+  }
+
+  await getManager().transaction(async manager => {
     if (!user) {
       user = manager.create<User>('User', {
         edipi: id,
@@ -51,8 +57,6 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
     }
 
     if (user.rootAdmin) {
-      const roles = (await manager.find<Org>('Org'))
-        .map(org => Role.admin(org));
       await user.addRoles(manager, roles);
     }
 

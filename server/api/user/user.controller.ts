@@ -86,25 +86,25 @@ class UserController {
       throw new BadRequestError('You may not edit your own role.');
     }
 
+    let user = await User.findOne({
+      relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
+      where: {
+        edipi,
+      },
+      join: {
+        alias: 'user',
+        leftJoinAndSelect: {
+          userRoles: 'user.userRoles',
+          role: 'userRoles.role',
+          org: 'role.org',
+        },
+      },
+    });
+
     let newUser = false;
     let savedUser: User | null = null;
 
     await getManager().transaction(async manager => {
-      let user = await manager.findOne(User, {
-        relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
-        where: {
-          edipi,
-        },
-        join: {
-          alias: 'user',
-          leftJoinAndSelect: {
-            userRoles: 'user.userRoles',
-            role: 'userRoles.role',
-            org: 'role.org',
-          },
-        },
-      });
-
       if (!user) {
         user = manager.create<User>('User', {
           edipi,
@@ -125,7 +125,7 @@ class UserController {
       savedUser = await manager.save(user);
     });
 
-    await res.status(newUser ? 201 : 200).json(savedUser ?? {});
+    res.status(newUser ? 201 : 200).json(savedUser ?? {});
   }
 
   async getOrgUsers(req: ApiRequest<OrgParam>, res: Response) {
@@ -158,22 +158,23 @@ class UserController {
     if (req.appUser.edipi === userEDIPI) {
       throw new Error('Unable to remove yourself from the group.');
     }
+
+    const user = await User.findOne({
+      relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
+      where: {
+        edipi: userEDIPI,
+      },
+    });
+
     let savedUser: User | null = null;
+    const userRole = user?.userRoles.find(ur => ur.role.org!.id === req.appOrg!.id);
 
-    await getManager().transaction(async manager => {
-      const user = await manager.findOne(User, {
-        relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
-        where: {
-          edipi: userEDIPI,
-        },
-      });
-
-      const userRole = user?.userRoles.find(ur => ur.role.org!.id === req.appOrg!.id);
-      if (user && userRole) {
+    if (user && userRole) {
+      await getManager().transaction(async manager => {
         await user.removeRole(manager, userRole.role);
         savedUser = await manager.save(user);
-      }
-    });
+      });
+    }
     res.json(savedUser ?? {});
   }
 

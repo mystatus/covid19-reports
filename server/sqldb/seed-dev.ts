@@ -24,7 +24,7 @@ export default (async function() {
   await getManager().transaction(async manager => {
 
     // Create Group Admin
-    let groupAdmin = manager.create<User>('User', {
+    let groupAdmin = manager.create(User, {
       edipi: '0000000001',
       firstName: 'Group',
       lastName: 'Admin',
@@ -46,7 +46,7 @@ export default (async function() {
 
 
 async function generateOrg(entityManager: EntityManager, orgNum: number, admin: User, numUsers: number, numRosterEntries: number) {
-  let org = entityManager.create<Org>('Org', {
+  let org = entityManager.create(Org, {
     name: `Test Group ${orgNum}`,
     description: `Group ${orgNum} for testing.`,
     contact: admin,
@@ -55,7 +55,7 @@ async function generateOrg(entityManager: EntityManager, orgNum: number, admin: 
   });
   org = await entityManager.save(org);
 
-  let customColumn = entityManager.create<CustomRosterColumn>('CustomRosterColumn', {
+  let customColumn = entityManager.create(CustomRosterColumn, {
     org,
     name: 'myCustomColumn',
     display: `My Custom Column : Group ${orgNum}`,
@@ -76,7 +76,7 @@ async function generateOrg(entityManager: EntityManager, orgNum: number, admin: 
   groupUserRole = await entityManager.save(groupUserRole);
 
   for (let i = 0; i < numUsers; i++) {
-    let user = entityManager.create<User>('User', {
+    let user = entityManager.create(User, {
       edipi: `${orgNum}00000000${i}`,
       firstName: 'User',
       lastName: `${i}`,
@@ -91,7 +91,7 @@ async function generateOrg(entityManager: EntityManager, orgNum: number, admin: 
 
   const units: Unit[] = [];
   for (let i = 1; i <= 5; i++) {
-    let unit = entityManager.create<Unit>('Unit', {
+    let unit = entityManager.create(Unit, {
       org,
       name: `Unit ${i} : Group ${orgNum}`,
       id: `unit${i}`,
@@ -104,7 +104,7 @@ async function generateOrg(entityManager: EntityManager, orgNum: number, admin: 
   for (let i = 0; i < numRosterEntries; i++) {
     const customColumns: any = {};
     customColumns[customColumn.name] = `custom column value`;
-    const rosterEntry = entityManager.create<Roster>('Roster', {
+    const rosterEntry = entityManager.create(Roster, {
       edipi: `${orgNum}${`${i}`.padStart(9, '0')}`,
       firstName: 'Roster',
       lastName: `Entry${i}`,
@@ -127,7 +127,7 @@ function randomNumber(min: number, max: number) {
 }
 
 function createGroupAdminRole(entityManager: EntityManager, org: Org, workspace?: Workspace) {
-  const role = entityManager.create<Role>('Role', {
+  const role = entityManager.create(Role, {
     name: `Group Admin : Group ${org.id}`,
     description: 'For managing the group.',
     org,
@@ -146,7 +146,7 @@ function createGroupAdminRole(entityManager: EntityManager, org: Org, workspace?
 }
 
 function createGroupUserRole(entityManager: EntityManager, org: Org, workspace?: Workspace) {
-  const role = entityManager.create<Role>('Role', {
+  const role = entityManager.create(Role, {
     name: `Group User : Group ${org.id}`,
     description: `Basic role for all Group ${org.id} users.`,
     org,
