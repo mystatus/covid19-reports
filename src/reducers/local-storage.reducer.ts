@@ -17,7 +17,7 @@ export function localStorageReducer(state = localStorageInitialState, action: an
       const loggedInState = getLoggedInState(userData, localStorage);
       return {
         ...state,
-        orgId: loggedInState.activeRole?.org?.id,
+        orgId: loggedInState.activeRole?.role.org?.id,
       };
     }
     case User.Actions.Login.type: {
@@ -25,7 +25,7 @@ export function localStorageReducer(state = localStorageInitialState, action: an
       const loggedInState = getLoggedInState(userData, localStorage);
       return {
         ...state,
-        orgId: loggedInState.activeRole?.org?.id,
+        orgId: loggedInState.activeRole?.role.org?.id,
       };
     }
     case User.Actions.Logout.type: {

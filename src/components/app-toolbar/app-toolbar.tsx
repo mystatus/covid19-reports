@@ -48,7 +48,7 @@ export const AppToolbar = () => {
                 onClick={e => setOrgMenuAnchor(e.currentTarget)}
                 endIcon={<ArrowDropDown />}
               >
-                {`${user.activeRole.org?.name}`}
+                {`${user.activeRole.role.org?.name}`}
               </Button>
               <Menu
                 open={Boolean(orgMenuAnchor)}
@@ -62,7 +62,7 @@ export const AppToolbar = () => {
                 {user.userRoles.map(userRole => (
                   <MenuItem
                     key={userRole.role.id}
-                    selected={user.activeRole!.org!.id === userRole.role.org!.id}
+                    selected={user.activeRole!.role.org!.id === userRole.role.org!.id}
                     onClick={handleOrgChanged(userRole.role.org!.id)}
                   >
                     {userRole.role.org!.name}

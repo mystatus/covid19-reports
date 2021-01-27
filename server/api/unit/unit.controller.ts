@@ -13,7 +13,7 @@ import elasticsearch from '../../elasticsearch/elasticsearch';
 class UnitController {
 
   async getUnits(req: ApiRequest<OrgParam>, res: Response) {
-    if (!req.appRole?.defaultIndexPrefix) {
+    if (!req.appUserRole?.indexPrefix) {
       res.json([]);
       return;
     }
@@ -22,7 +22,7 @@ class UnitController {
       .leftJoinAndSelect('unit.org', 'org')
       .where('unit.org_id=:orgId', { orgId: req.appOrg!.id })
       .andWhere('unit.id like :unitFilter', {
-        unitFilter: req.appRole!.defaultIndexPrefix.replace('*', '%'),
+        unitFilter: req.appUserRole!.indexPrefix.replace('*', '%'),
       })
       .orderBy('unit.id', 'ASC')
       .getMany();
@@ -34,7 +34,7 @@ class UnitController {
     if (!req.body.id) {
       throw new BadRequestError('An ID must be supplied when adding a unit.');
     }
-    if (!matchWildcardString(req.body.id, req.appRole!.defaultIndexPrefix)) {
+    if (!matchWildcardString(req.body.id, req.appUserRole!.indexPrefix)) {
       throw new BadRequestError('The provided unit ID does not conform to the unit filter for your role.');
     }
     if (!req.body.name) {
@@ -65,7 +65,7 @@ class UnitController {
   }
 
   async updateUnit(req: ApiRequest<OrgUnitParams, UnitData>, res: Response) {
-    if (!matchWildcardString(req.params.unitId, req.appRole!.defaultIndexPrefix)) {
+    if (!matchWildcardString(req.params.unitId, req.appUserRole!.indexPrefix)) {
       // If they don't have permission to see the unit, treat it as not found
       throw new NotFoundError('The unit could not be found.');
     }
@@ -113,7 +113,7 @@ class UnitController {
   }
 
   async deleteUnit(req: ApiRequest<OrgUnitParams>, res: Response) {
-    if (!matchWildcardString(req.params.unitId, req.appRole!.defaultIndexPrefix)) {
+    if (!matchWildcardString(req.params.unitId, req.appUserRole!.indexPrefix)) {
       // If they don't have permission to see the unit, treat it as not found
       throw new NotFoundError('The unit could not be found.');
     }

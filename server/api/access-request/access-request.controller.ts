@@ -152,7 +152,7 @@ class AccessRequestController {
         throw new NotFoundError('Role was not found');
       }
 
-      if (!req.appRole || !req.appRole.isSupersetOf(role)) {
+      if (!req.appUserRole || !req.appUserRole.role.isSupersetOf(role)) {
         throw new UnauthorizedError('Unable to assign a role with greater permissions than your current role.');
       }
 

@@ -10,7 +10,7 @@ import { UserRole } from '../user/user-role.model';
 class RoleController {
 
   async getOrgRoles(req: ApiRequest, res: Response) {
-    if (!req.appOrg || !req.appRole) {
+    if (!req.appOrg || !req.appUserRole) {
       throw new NotFoundError('Organization was not found.');
     }
 

@@ -34,7 +34,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [editAlertDialogProps, setEditAlertDialogProps] = useState<EditAlertDialogProps>({ open: false });
 
-  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
+  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.role.org?.id;
 
   const initializeTable = React.useCallback(async () => {
     const notificationsResponse = (await axios.get(`api/notification/${orgId}`)).data as ApiNotification[];

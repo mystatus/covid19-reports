@@ -102,8 +102,8 @@ export const RosterPage = () => {
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
   const [applyingFilters, setApplyingFilters] = useState(false);
   const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
-  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
-  const orgName = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.name;
+  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.role.org?.id;
+  const orgName = useSelector<AppState, UserState>(state => state.user).activeRole?.role.org?.name;
 
   //
   // Effects

@@ -123,8 +123,8 @@ export const MusterPage = () => {
   const [monthlyTrendData, setMonthlyTrendData] = useState<Plotly.Data[]>([]);
   const [individualsData, setIndividualsData] = useState<ApiMusterIndividuals>({ rows: [], totalRowsCount: 0 });
 
-  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole!.org!.id;
-  const orgName = useSelector<AppState, UserState>(state => state.user).activeRole!.org!.name;
+  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole!.role.org!.id;
+  const orgName = useSelector<AppState, UserState>(state => state.user).activeRole!.role.org!.name;
   const isPageLoading = useSelector<AppState, boolean>(state => state.appFrame.isPageLoading);
 
   //
@@ -382,7 +382,7 @@ export const MusterPage = () => {
 
         <Grid container spacing={3}>
           {/* Table */}
-          {user.activeRole?.canViewPII && (
+          {user.activeRole?.role.canViewPII && (
             <Grid item xs={12}>
               <Paper>
                 <TableContainer>

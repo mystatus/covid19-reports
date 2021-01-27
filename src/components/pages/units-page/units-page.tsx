@@ -57,7 +57,7 @@ export const UnitsPage = () => {
   const [unitMenu, setUnitMenu] = React.useState<UnitMenuState>({ anchor: null });
   const [defaultMusterSaved, setDefaultMusterSaved] = React.useState(false);
 
-  const org = useSelector<AppState, UserState>(state => state.user).activeRole?.org;
+  const org = useSelector<AppState, UserState>(state => state.user).activeRole?.role.org;
   const orgId = org?.id;
   const defaultMusterConfiguration = org?.defaultMusterConfiguration ?? [];
 

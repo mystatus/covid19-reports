@@ -47,7 +47,7 @@ export const RosterColumnsPage = () => {
   const [editColumnDialogProps, setEditColumnDialogProps] = useState<EditColumnDialogProps>({ open: false });
   const [columnMenu, setColumnMenu] = React.useState<ColumnMenuState>({ anchor: null });
 
-  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
+  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.role.org?.id;
 
   const initializeTable = React.useCallback(async () => {
     dispatch(AppFrame.setPageLoading(true));

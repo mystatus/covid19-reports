@@ -39,7 +39,7 @@ export const WorkspacesPage = () => {
   const [editWorkspaceDialogProps, setEditWorkspaceDialogProps] = useState<EditWorkspaceDialogProps>({ open: false });
   const [workspaceMenu, setWorkspaceMenu] = React.useState<WorkspaceMenuState>({ anchor: null });
 
-  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
+  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.role.org?.id;
 
   const initializeTable = React.useCallback(async () => {
     const ws = (await axios.get(`api/workspace/${orgId}`)).data as ApiWorkspace[];
