@@ -103,7 +103,7 @@ export async function requireOrgAccess(req: any, res: Response, next: NextFuncti
     const orgUserRole = user.userRoles.find(userRole => userRole.role.org!.id === orgId);
     if (orgUserRole) {
       req.appOrg = orgUserRole.role.org;
-      req.appUserRole = orgUserRole.role;
+      req.appUserRole = orgUserRole;
       req.appWorkspace = orgUserRole.role.workspace;
     } else if (user.rootAdmin) {
       const org = await Org.findOne({
