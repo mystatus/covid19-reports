@@ -77,8 +77,9 @@ export async function getRosterMusterStats(args: {
   // Collect reports and reports missed.
   const individualStats: IndividualStats = {};
 
-  const aggs = response.aggregations as IndividualsMusterAggregations;
-  for (const bucket of aggs.muster.buckets) {
+  const aggs = response.aggregations as IndividualsMusterAggregations | undefined;
+  const buckets = aggs?.muster.buckets ?? [];
+  for (const bucket of buckets) {
     const { edipi, reported } = bucket.key;
 
     if (!individualStats[edipi]) {
@@ -197,8 +198,8 @@ export async function getUnitMusterStats(args: {
   //
   // Organize and return data.
   //
-  const weeklyAggs = response.responses![0].aggregations as MusterAggregation;
-  const monthlyAggs = response.responses![1].aggregations as MusterAggregation;
+  const weeklyAggs = response.responses![0].aggregations as MusterAggregation | undefined;
+  const monthlyAggs = response.responses![1].aggregations as MusterAggregation | undefined;
 
   return {
     weekly: buildUnitStats({
@@ -451,7 +452,7 @@ function buildMusterEsBody({
 }
 
 function buildUnitStats(args: {
-  aggregations: MusterAggregation,
+  aggregations: MusterAggregation | undefined,
   unitNames: string[]
   interval: TimeInterval
   intervalCount: number
@@ -481,7 +482,8 @@ function buildUnitStats(args: {
   }
 
   // Collect reports and reports missed.
-  for (const bucket of aggregations.muster.buckets) {
+  const buckets = aggregations?.muster.buckets ?? [];
+  for (const bucket of buckets) {
     const { date, unit, reported } = bucket.key;
 
     if (unitStats[date][unit] == null) {
