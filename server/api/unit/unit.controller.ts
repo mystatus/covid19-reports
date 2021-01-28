@@ -66,7 +66,7 @@ class UnitController {
   }
 
   async updateUnit(req: ApiRequest<OrgUnitParams, UnitData>, res: Response) {
-    if (!matchWildcardString(req.params.unitId, req.appRole!.indexPrefix)) {
+    if (!matchWildcardString(req.params.unitId, req.appUserRole!.indexPrefix)) {
       // If they don't have permission to see the unit, treat it as not found
       throw new NotFoundError('The unit could not be found.');
     }

@@ -102,12 +102,6 @@ async function generateOrg(manager: EntityManager, orgNum: number, admin: User, 
   }
 
   for (let i = 0; i < numRosterEntries; i++) {
-    const rosterEntry = new Roster();
-    rosterEntry.edipi = `${orgNum}${`${i}`.padStart(9, '0')}`;
-    rosterEntry.firstName = 'Roster';
-    rosterEntry.lastName = `Entry${i}`;
-    // Ensure at least some roster entries are in unit 1.
-    rosterEntry.unit = (i % 2 === 0) ? units[0] : units[randomNumber(1, 4)];
     const customColumns: any = {};
     customColumns[customColumn.name] = `custom column value`;
     const rosterEntry = manager.create(Roster, {
@@ -115,7 +109,6 @@ async function generateOrg(manager: EntityManager, orgNum: number, admin: User, 
       firstName: 'Roster',
       lastName: `Entry${i}`,
       unit: (i % 2 === 0) ? units[0] : units[randomNumber(1, 4)], // Ensure at least some roster entries are in unit 1.
-      lastReported: new Date(),
       customColumns,
     });
     await manager.save(rosterEntry);
