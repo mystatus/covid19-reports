@@ -115,22 +115,20 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
     });
   };
 
-  const filterAllowedRosterColumns = (viewMuster: boolean) => {
+  const filterAllowedRosterColumns = () => {
     const allowedColumns: RolePermissions = {};
     rosterColumns!.forEach(column => {
       const allowed = columnAllowed(column);
       const previousValue = allowedRosterColumns[column.name];
       allowedColumns[column.name] = previousValue && allowed;
     });
-    allowedColumns.lastReported = viewMuster;
     return allowedColumns;
   };
 
   const onSave = async () => {
     setSaveRoleLoading(true);
     setFormDisabled(true);
-    const viewMuster = canManageGroup || canViewMuster;
-    const allowedColumns = filterAllowedRosterColumns(viewMuster);
+    const allowedColumns = filterAllowedRosterColumns();
     const body = {
       name,
       description,
@@ -142,7 +140,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
       canManageRoster: canManageGroup || canManageRoster,
       canManageWorkspace: canManageGroup || canManageWorkspace,
       canViewRoster: canManageGroup || canManageRoster || canViewRoster,
-      canViewMuster: viewMuster,
+      canViewMuster: canManageGroup || canViewMuster,
       canViewPII: canViewPII || canViewPHI,
       canViewPHI,
     };
@@ -174,8 +172,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   };
 
   const buildRosterColumnRows = () => {
-    const columns = rosterColumns?.filter(column => column.name !== 'lastReported');
-    return columns?.map(column => (
+    return rosterColumns?.map(column => (
       <TableRow key={column.name}>
         <TableCell>
           {column.displayName}

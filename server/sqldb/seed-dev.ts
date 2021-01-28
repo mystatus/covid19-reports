@@ -138,7 +138,7 @@ function createUserRole(org: Org, workspace?: Workspace) {
   role.description = 'Basic role for all group users.';
   role.org = org;
   role.indexPrefix = 'unit1';
-  role.allowedRosterColumns = ['edipi', 'unit', 'rateRank', 'lastReported'];
+  role.allowedRosterColumns = ['edipi', 'firstName', 'lastName'];
   role.allowedNotificationEvents = [];
   role.canManageRoster = true;
   role.canViewRoster = true;

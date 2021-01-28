@@ -124,7 +124,7 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
         <Section title="Viewable Roster Columns">
           <RoleDataTable
             aria-label="Roster Columns"
-            data={rosterColumns.filter(column => column.name !== 'lastReported')}
+            data={rosterColumns}
             extractLabel="displayName"
             extractValue={column => columnAllowed(column) && <CheckIcon />}
           />
