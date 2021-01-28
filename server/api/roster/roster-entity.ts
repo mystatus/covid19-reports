@@ -4,6 +4,11 @@ import {
 import { CustomColumns, RosterColumnInfo, RosterColumnType } from './roster.types';
 import { Unit } from '../unit/unit.model';
 
+/**
+ * This class serves as the base entity for both Roster and RosterHistory.  This allows both Roster and RosterHistory
+ * to have columns, functions, and constraints that aren't shared with each other while still retaining a shared set of
+ * columns.
+ */
 export class RosterEntity extends BaseEntity {
 
   @PrimaryGeneratedColumn()
