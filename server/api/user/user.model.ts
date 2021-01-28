@@ -70,6 +70,20 @@ export class User extends BaseEntity {
     return this;
   }
 
+  async removeRole(manager: EntityManager, role?: Role, userRole?: UserRole): Promise<User> {
+    if (role || userRole) {
+      const found = userRole ?? await this.findUserRole(role!);
+      if (found) {
+        const index = this.userRoles.indexOf(found);
+        this.userRoles.splice(index, 1);
+        await manager.remove(found);
+      } else if (role) {
+        throw new NotFoundError(`Error removing role. User ${this.edipi} does not have role ${role.name}`);
+      }
+    }
+    return this;
+  }
+
   async changeRole(manager: EntityManager, role: Role, indexPrefix?: string): Promise<User> {
     let userRole = await this.findUserRole(role);
     if (!userRole) {
@@ -83,20 +97,6 @@ export class User extends BaseEntity {
       });
       this.userRoles.push(userRole);
       await manager.save(userRole);
-    }
-    return this;
-  }
-
-  async removeRole(manager: EntityManager, role?: Role, userRole?: UserRole): Promise<User> {
-    if (role || userRole) {
-      const found = userRole ?? await this.findUserRole(role!);
-      if (found) {
-        const index = this.userRoles.indexOf(found);
-        this.userRoles.splice(index, 1);
-        await manager.remove(found);
-      } else if (role) {
-        throw new NotFoundError(`Error removing role. User ${this.edipi} does not have role ${role.name}`);
-      }
     }
     return this;
   }
