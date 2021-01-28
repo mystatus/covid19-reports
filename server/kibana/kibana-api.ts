@@ -12,8 +12,8 @@ export class KibanaApi {
   private axiosInstance?: AxiosInstance;
 
   static async connect(req: ApiRequest, res?: Response, next?: NextFunction) {
-    if (!req.appRole) {
-      throw new Error('KibanaApi.connect() requires req.appRole to be set');
+    if (!req.appUserRole) {
+      throw new Error('KibanaApi.connect() requires req.appUserRole to be set');
     }
     if (!req.appOrg) {
       throw new Error('KibanaApi.connect() requires req.appOrg to be set');
@@ -29,7 +29,7 @@ export class KibanaApi {
       baseURL: `${config.kibana.uri}`,
       headers: {
         'kbn-xsrf': 'true', // Kibana requires 'kbn-xsrf' to be set or it will return an error. It can be any string.
-        'x-se-fire-department-all': req.appRole.getKibanaIndex(),
+        'x-se-fire-department-all': req.appUserRole.getKibanaIndex(),
       },
       maxRedirects: 0,
       httpsAgent: new https.Agent({
@@ -43,7 +43,7 @@ export class KibanaApi {
     kibanaApi.axiosInstance.defaults.jar = new tough.CookieJar();
 
     // Start a Kibana Session on behalf of the requesting user, storing rorCookie in cookie jar.
-    const rorJwt = buildJWT(req.appUser, req.appRole, req.appWorkspace);
+    const rorJwt = buildJWT(req.appUser, req.appUserRole, req.appWorkspace);
 
     try {
       await kibanaApi.axiosInstance.get(`login?jwt=${rorJwt}`);

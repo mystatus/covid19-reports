@@ -31,12 +31,12 @@ export class Roster extends RosterEntity {
     return `roster.${snakeCase(column.name)}`;
   }
 
-  static async queryAllowedRoster(org: Org, role: Role, columns?: RosterColumnInfo[]) {
+  static async queryAllowedRoster(org: Org, userRole: UserRole, columns?: RosterColumnInfo[]) {
     //
     // Query the roster, returning only columns and rows that are allowed for the role of the requester.
     //
     if (!columns) {
-      columns = await Roster.getAllowedColumns(org, role);
+      columns = await Roster.getAllowedColumns(org, userRole.role);
     }
     const queryBuilder = Roster.createQueryBuilder('roster').select([]);
     queryBuilder.leftJoin('roster.unit', 'u');

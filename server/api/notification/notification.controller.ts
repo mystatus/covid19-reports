@@ -25,10 +25,11 @@ class NotificationController {
       },
     });
 
-    const all = req.appRole!.allowedNotificationEvents.length === 1
-      && req.appRole?.allowedNotificationEvents[0] === '*';
+    const role = req.appUserRole!.role;
+    const all = role.allowedNotificationEvents.length === 1
+      && role.allowedNotificationEvents[0] === '*';
     const available = all ? notifications : notifications.filter(notification => {
-      return req.appRole!.allowedNotificationEvents.indexOf(notification.id) >= 0;
+      return role.allowedNotificationEvents.indexOf(notification.id) >= 0;
     });
 
     res.json(available.map(sanitizeNotification));

@@ -13,7 +13,7 @@ import { Role } from '../role/role.model';
 class WorkspaceController {
 
   async getOrgWorkspaces(req: ApiRequest, res: Response) {
-    if (!req.appOrg || !req.appRole) {
+    if (!req.appOrg || !req.appUserRole) {
       throw new NotFoundError('Organization was not found.');
     }
 
@@ -31,7 +31,7 @@ class WorkspaceController {
   }
 
   async getOrgWorkspaceTemplates(req: ApiRequest, res: Response) {
-    if (!req.appOrg || !req.appRole) {
+    if (!req.appOrg || !req.appUserRole) {
       throw new NotFoundError('Organization was not found.');
     }
 
@@ -50,8 +50,8 @@ class WorkspaceController {
       throw new NotFoundError('Organization was not found.');
     }
 
-    if (!req.appRole) {
-      throw new NotFoundError('req.appRole is not set');
+    if (!req.appUserRole) {
+      throw new NotFoundError('req.appUserRole is not set');
     }
 
     if (!req.body.name) {
@@ -92,7 +92,7 @@ class WorkspaceController {
       // NOTE: We can't connect to the Kibana API with middleware when creating a workspace, since the workspace
       // doesn't exist yet to build the JWT with. So connect manually now that it exists.
       await KibanaApi.connect(req);
-      await setupKibanaWorkspace(newWorkspace, req.appRole!, req.kibanaApi!);
+      await setupKibanaWorkspace(newWorkspace, req.appUserRole!.role, req.kibanaApi!);
     });
 
     await res.status(201).json(newWorkspace);

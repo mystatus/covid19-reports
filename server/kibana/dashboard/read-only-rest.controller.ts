@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { ApiRequest } from '../../api';
 import { User } from '../../api/user/user.model';
-import { Role } from '../../api/role/role.model';
+import { UserRole } from '../../api/user/user-role.model';
 import { Workspace } from '../../api/workspace/workspace.model';
 import config from '../../config';
 
@@ -14,7 +14,7 @@ class ReadOnlyRestController {
   login(req: ApiRequest<null, null, LoginQuery>, res: Response) {
     console.log('ror login()');
 
-    const rorJwt = buildJWT(req.appUser, req.appRole!, req.appWorkspace!);
+    const rorJwt = buildJWT(req.appUser, req.appUserRole!, req.appWorkspace!);
     console.log('ror jwt', rorJwt);
 
     res.cookie('orgId', req.appOrg!.id, { httpOnly: true });
@@ -39,13 +39,13 @@ class ReadOnlyRestController {
 }
 
 // Builds ReadOnlyRest JWT token.
-export function buildJWT(user: User, role: Role, workspace: Workspace) {
+export function buildJWT(user: User, userRole: UserRole, workspace: Workspace) {
   console.log('ror buildJWT()');
 
   const claims = {
     sub: user.edipi,
     iss: 'https://statusengine.mysymptoms.mil',
-    roles: role.getKibanaRoles(),
+    roles: userRole.getKibanaRoles(),
     firecares_id: `${workspace!.id}`, // TODO: Rename 'firecares_id'.
   };
 
