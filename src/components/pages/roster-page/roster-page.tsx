@@ -175,8 +175,7 @@ export const RosterPage = () => {
       firstName: 2,
       lastName: 3,
       unit: 4,
-      lastReported: 5,
-      default: 6,
+      default: 5,
     };
     return columns.sort((a: ApiRosterColumnInfo, b: ApiRosterColumnInfo) => {
       return (columnPriority[a.name] || columnPriority.default) - (columnPriority[b.name] || columnPriority.default);

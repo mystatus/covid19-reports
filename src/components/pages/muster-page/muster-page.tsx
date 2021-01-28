@@ -344,7 +344,6 @@ export const MusterPage = () => {
       'firstName',
       'lastName',
       'unitId',
-      'lastReported',
       'nonMusterPercent',
     ]).slice(0, maxNumColumnsToShow);
   };
@@ -438,9 +437,6 @@ export const MusterPage = () => {
                       noDataText={isPageLoading ? 'Loading...' : 'All Individuals Compliant'}
                       rowOptions={{
                         renderCell: (row, column) => {
-                          if (column.name === 'lastReported') {
-                            return moment(row[column.name]).format('YYYY-MM-DD, HH:mm');
-                          }
                           const value = row[column.name];
                           if (column.name === 'unitId') {
                             return units.find(unit => unit.id === value)?.name || value;
