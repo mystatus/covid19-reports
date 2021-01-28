@@ -190,15 +190,18 @@ class RosterController {
     };
 
     roster.forEach((row, index) => {
-      let unit: Unit | undefined;
+      const units = orgUnits.filter(u => row.unit === u.id || row.unit === u.name);
+      const unit = units.length > 0 ? units[0] : undefined;
       // Pre-validate / check for row-level issues.
       try {
         if (!row.unit) {
-          throw new BadRequestError('Unable to add roster entries without a unit ID.');
+          throw new BadRequestError('Unable to add roster entries without a unit.');
         }
-        unit = orgUnits.find(u => row.unit === u.id);
-        if (!unit) {
-          throw new NotFoundError(`Unit with ID ${row.unit} could not be found in the group.`);
+        if (units.length === 0) {
+          throw new NotFoundError(`Unit "${row.unit}" could not be found in the group.`);
+        }
+        if (units.length > 1) {
+          throw new BadRequestError(`Unit "${row.unit}" is ambiguous. Use the Unit ID to disambiguate: ${units.map(u => u.id).join(', ')}.`);
         }
         if (existingEntries.some(({ edipi }) => edipi === row.edipi)) {
           throw new BadRequestError(`Entry with EDIPI already exists.`);
