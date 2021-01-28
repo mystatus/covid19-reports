@@ -11,6 +11,7 @@ import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { baseRosterColumns, RosterEntity } from './roster-entity';
+import { UserRole } from '../user/user-role.model';
 
 @Entity()
 @Unique(['edipi', 'unit'])
@@ -52,7 +53,7 @@ export class Roster extends RosterEntity {
     // Filter out roster entries that are not on the active roster or are not allowed by the role's index prefix.
     return queryBuilder
       .where('u.org_id = :orgId', { orgId: org.id })
-      .andWhere('u.id like :name', { name: role.indexPrefix.replace('*', '%') });
+      .andWhere('u.id like :name', { name: userRole.indexPrefix.replace('*', '%') });
   }
 
   static async getAllowedColumns(org: Org, role: Role) {

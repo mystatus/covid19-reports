@@ -21,7 +21,7 @@ import { Org } from '../org/org.model';
 import { CustomColumnConfig, CustomRosterColumn } from './custom-roster-column.model';
 import { Unit } from '../unit/unit.model';
 import { CustomColumnValue, RosterColumnInfo, RosterColumnType } from './roster.types';
-import { Role } from '../role/role.model';
+import { UserRole } from '../user/user-role.model';
 import { ChangeType, RosterHistory } from './roster-history.model';
 import { baseRosterColumns } from './roster-entity';
 
