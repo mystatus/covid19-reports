@@ -121,26 +121,18 @@ class UserController {
   }
 
   async getOrgUsers(req: ApiRequest<OrgParam>, res: Response) {
-    let orgUsers = new Array<User>();
-
-    const orgRoles: Array<{ id: number }> = await Role.find({
-      select: ['id'],
+    const orgUsers: User[] = [];
+    const roles = await Role.find({
+      relations: ['userRoles', 'userRoles.user', 'userRoles.user.userRoles', 'userRoles.user.userRoles.role'],
       where: {
         org: req.appOrg,
       },
     });
-    if (orgRoles.length > 0) {
-      const roleIds = orgRoles.map(role => role.id);
-
-      const userRoles: Array<{ edipi: string }> = await getManager().query(`SELECT ur.user_edipi as edipi FROM user_role ur WHERE ur.role_id in (${roleIds})`);
-      if (userRoles.length > 0) {
-        const userIds = userRoles.map(userRole => userRole.edipi);
-        orgUsers = await User.findByIds(userIds, {
-          relations: ['userRoles', 'userRoles.role'],
-        });
+    for (const role of roles) {
+      for (const userRole of (role.userRoles ?? [])) {
+        orgUsers.push(userRole.user);
       }
     }
-
     res.json(orgUsers);
   }
 
