@@ -58,6 +58,7 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
 
     if (user.rootAdmin) {
       await user.addRoles(manager, roles);
+      user = await manager.save(user);
     }
 
     req.appUser = user;

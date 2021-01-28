@@ -49,41 +49,74 @@ export class User extends BaseEntity {
   @OneToMany(() => UserRole, userRole => userRole.user)
   userRoles!: UserRole[];
 
-  async addRole(entityManager: EntityManager, role: Role, indexPrefix?: string): Promise<UserRole> {
-    let userRole = await entityManager.findOne(UserRole, {
-      where: {
-        user: this,
-        role,
-      },
-    });
+  async addRole(manager: EntityManager, role: Role, indexPrefix?: string): Promise<User> {
+    let userRole = await this.findUserRole(role);
     if (!userRole) {
-      userRole = entityManager.create<UserRole>('UserRole', {
+      userRole = manager.create<UserRole>('UserRole', {
         user: this,
         role,
         indexPrefix: indexPrefix || role.defaultIndexPrefix,
       });
-      userRole = await entityManager.save(userRole);
+      this.userRoles.push(userRole);
+      await manager.save(userRole);
     }
-    return userRole;
+    return this;
   }
 
-  async addRoles(entityManager: EntityManager, roles: Role[]): Promise<void> {
+  async addRoles(manager: EntityManager, roles: Role[]): Promise<User> {
     for (const role of roles) {
-      await this.addRole(entityManager, role);
+      await this.addRole(manager, role);
     }
+    return this;
   }
 
-  async removeRole(entityManager: EntityManager, role: Role): Promise<UserRole> {
-    const found = await entityManager.findOne(UserRole, {
-      where: {
+  async changeRole(manager: EntityManager, role: Role, indexPrefix?: string): Promise<User> {
+    let userRole = await this.findUserRole(role);
+    if (!userRole) {
+      if (this.userRoles.length === 1) {
+        await this.removeRole(manager, undefined, this.userRoles[0]);
+      }
+      userRole = manager.create<UserRole>('UserRole', {
         user: this,
         role,
-      },
-    });
-    if (found) {
-      return entityManager.remove(found); // Consider using softRemove()
+        indexPrefix: indexPrefix || role.defaultIndexPrefix,
+      });
+      this.userRoles.push(userRole);
+      await manager.save(userRole);
     }
-    throw new NotFoundError(`Error removing role. User ${this.edipi} does not have role ${role.name}`);
+    return this;
+  }
+
+  async removeRole(manager: EntityManager, role?: Role, userRole?: UserRole): Promise<User> {
+    if (role || userRole) {
+      const found = userRole ?? await this.findUserRole(role!);
+      if (found) {
+        const index = this.userRoles.indexOf(found);
+        this.userRoles.splice(index, 1);
+        await manager.remove(found);
+      } else if (role) {
+        throw new NotFoundError(`Error removing role. User ${this.edipi} does not have role ${role.name}`);
+      }
+    }
+    return this;
+  }
+
+  protected async findUserRole(role: Role): Promise<UserRole | undefined> {
+    if (!this.userRoles) {
+      if (!this.hasId()) {
+        this.userRoles = [];
+      } else {
+        this.userRoles = await UserRole.find({
+          relations: ['role', 'role.org'],
+          where: {
+            user: this,
+          },
+        });
+      }
+    }
+    return this.userRoles.find(userRole => {
+      return userRole.role.id === role.id;
+    });
   }
 
   public isInternal() {

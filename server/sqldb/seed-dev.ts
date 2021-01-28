@@ -45,17 +45,17 @@ export default (async function() {
 }());
 
 
-async function generateOrg(entityManager: EntityManager, orgNum: number, admin: User, numUsers: number, numRosterEntries: number) {
-  let org = entityManager.create(Org, {
+async function generateOrg(manager: EntityManager, orgNum: number, admin: User, numUsers: number, numRosterEntries: number) {
+  let org = manager.create(Org, {
     name: `Test Group ${orgNum}`,
     description: `Group ${orgNum} for testing.`,
     contact: admin,
     indexPrefix: `testgroup${orgNum}`,
     defaultMusterConfiguration: [],
   });
-  org = await entityManager.save(org);
+  org = await manager.save(org);
 
-  let customColumn = entityManager.create(CustomRosterColumn, {
+  let customColumn = manager.create(CustomRosterColumn, {
     org,
     name: 'myCustomColumn',
     display: `My Custom Column : Group ${orgNum}`,
@@ -64,19 +64,19 @@ async function generateOrg(entityManager: EntityManager, orgNum: number, admin: 
     pii: false,
     required: false,
   });
-  customColumn = await entityManager.save(customColumn);
+  customColumn = await manager.save(customColumn);
 
-  let groupAdminRole = createGroupAdminRole(entityManager, org);
-  groupAdminRole = await entityManager.save(groupAdminRole);
-  await admin.addRole(entityManager, groupAdminRole, '*');
-  admin = await entityManager.save(admin);
+  let groupAdminRole = createGroupAdminRole(manager, org);
+  groupAdminRole = await manager.save(groupAdminRole);
+  await admin.addRole(manager, groupAdminRole, '*');
+  admin = await manager.save(admin);
 
-  let groupUserRole = createGroupUserRole(entityManager, org);
+  let groupUserRole = createGroupUserRole(manager, org);
   groupUserRole.allowedRosterColumns.push(customColumn.name);
-  groupUserRole = await entityManager.save(groupUserRole);
+  groupUserRole = await manager.save(groupUserRole);
 
   for (let i = 0; i < numUsers; i++) {
-    let user = entityManager.create(User, {
+    let user = manager.create(User, {
       edipi: `${orgNum}00000000${i}`,
       firstName: 'User',
       lastName: `${i}`,
@@ -85,26 +85,26 @@ async function generateOrg(entityManager: EntityManager, orgNum: number, admin: 
       service: 'Space Force',
       isRegistered: true,
     });
-    user = await entityManager.save(user);
-    await user.addRole(entityManager, groupUserRole, 'unit1');
+    user = await manager.save(user);
+    await user.addRole(manager, groupUserRole, 'unit1');
   }
 
   const units: Unit[] = [];
   for (let i = 1; i <= 5; i++) {
-    let unit = entityManager.create(Unit, {
+    let unit = manager.create(Unit, {
       org,
       name: `Unit ${i} : Group ${orgNum}`,
       id: `unit${i}`,
       musterConfiguration: [],
     });
-    unit = await entityManager.save(unit);
+    unit = await manager.save(unit);
     units.push(unit);
   }
 
   for (let i = 0; i < numRosterEntries; i++) {
     const customColumns: any = {};
     customColumns[customColumn.name] = `custom column value`;
-    const rosterEntry = entityManager.create(Roster, {
+    const rosterEntry = manager.create(Roster, {
       edipi: `${orgNum}${`${i}`.padStart(9, '0')}`,
       firstName: 'Roster',
       lastName: `Entry${i}`,
@@ -112,7 +112,7 @@ async function generateOrg(entityManager: EntityManager, orgNum: number, admin: 
       lastReported: new Date(),
       customColumns,
     });
-    await entityManager.save(rosterEntry);
+    await manager.save(rosterEntry);
   }
 
   return org;
@@ -126,8 +126,8 @@ function randomNumber(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function createGroupAdminRole(entityManager: EntityManager, org: Org, workspace?: Workspace) {
-  const role = entityManager.create(Role, {
+function createGroupAdminRole(manager: EntityManager, org: Org, workspace?: Workspace) {
+  const role = manager.create(Role, {
     name: `Group Admin : Group ${org.id}`,
     description: 'For managing the group.',
     org,
@@ -145,8 +145,8 @@ function createGroupAdminRole(entityManager: EntityManager, org: Org, workspace?
   return role;
 }
 
-function createGroupUserRole(entityManager: EntityManager, org: Org, workspace?: Workspace) {
-  const role = entityManager.create(Role, {
+function createGroupUserRole(manager: EntityManager, org: Org, workspace?: Workspace) {
+  const role = manager.create(Role, {
     name: `Group User : Group ${org.id}`,
     description: `Basic role for all Group ${org.id} users.`,
     org,

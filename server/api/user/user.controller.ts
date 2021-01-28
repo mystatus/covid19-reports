@@ -53,7 +53,7 @@ class UserController {
 
     const updatedUser = await user.save();
 
-    await res.status(201).json(updatedUser);
+    res.status(201).json(updatedUser);
   }
 
   async upsertUser(req: ApiRequest<OrgParam, UpsertUserBody>, res: Response) {
@@ -104,16 +104,18 @@ class UserController {
         newUser = true;
       }
 
-      await user.addRole(manager, role);
-
       if (firstName) {
         user.firstName = firstName;
       }
-
       if (lastName) {
         user.lastName = lastName;
       }
 
+      if (newUser) {
+        await user.addRole(manager, role);
+      } else {
+        await user.changeRole(manager, role);
+      }
       savedUser = await manager.save(user);
     });
 
