@@ -15,7 +15,7 @@ export class Units1606230125211 implements MigrationInterface {
 
       for (const name of orgUnits) {
         const id = sanitizeIndexPrefix(name);
-        await queryRunner.query(`INSERT INTO "unit" (id, name, org_id, muster_configuration) VALUES ("${id}", "${name}", "${org.id}", "[]")`);
+        await queryRunner.query(`INSERT INTO "unit" (id, name, org_id, muster_configuration) VALUES ('${id}', '${name}', '${org.id}', '[]')`);
         await queryRunner.query(`UPDATE "roster" SET "unit_id"='${id}' WHERE "unit"='${name}' AND "org_id"=${org.id}`);
         await queryRunner.query(`UPDATE "roster" SET "unit_org"=${org.id} WHERE "unit"='${name}' AND "org_id"=${org.id}`);
       }
