@@ -16,8 +16,8 @@ const kibanaProxyConfig: Config = {
 
   // add custom headers to request
   onProxyReq: (proxyReq: ClientRequest, req: ProxyRequest) => {
-    if (req.appRole) {
-      proxyReq.setHeader('x-se-fire-department-all', req.appRole.getKibanaIndex());
+    if (req.appUserRole) {
+      proxyReq.setHeader('x-se-fire-department-all', req.appUserRole.getKibanaIndex());
     }
   },
 

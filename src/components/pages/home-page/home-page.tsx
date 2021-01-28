@@ -36,7 +36,7 @@ export const HomePage = () => {
                     </Typography>
 
                     <ul>
-                      {user.activeRole?.canViewRoster && (
+                      {user.activeRole?.role.canViewRoster && (
                         <li>
                           <Typography>
                             <strong><Link to="/roster">Roster Management</Link></strong><br />
@@ -45,7 +45,7 @@ export const HomePage = () => {
                           </Typography>
                         </li>
                       )}
-                      {user.activeRole?.canViewMuster && (
+                      {user.activeRole?.role.canViewMuster && (
                         <li>
                           <Typography>
                             <strong><Link to="/muster">Muster Snapshot</Link></strong><br />
@@ -54,7 +54,7 @@ export const HomePage = () => {
                           </Typography>
                         </li>
                       )}
-                      {user.activeRole?.workspace && (
+                      {user.activeRole?.role.workspace && (
                         <li>
                           <Typography>
                             <strong><Link href={`/dashboard?orgId=${orgId}`}>Customizable Dashboards</Link></strong><br />

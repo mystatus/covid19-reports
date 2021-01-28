@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { getManager } from 'typeorm';
 import { ApiRequest } from '../api';
 import { User } from '../api/user/user.model';
 import { Role } from '../api/role/role.model';
@@ -31,27 +32,37 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
   }
 
   let user: User | undefined;
+  let roles: Role[] = [];
+
   if (id === 'internal') {
     user = User.internal();
   } else {
     user = await User.findOne({
-      relations: ['roles', 'roles.org', 'roles.workspace', 'roles.org.contact'],
+      relations: ['userRoles', 'userRoles.role', 'userRoles.role.org', 'userRoles.role.workspace', 'userRoles.role.org.contact'],
       where: {
         edipi: id,
       },
     });
   }
 
-  if (!user) {
-    user = new User();
-    user.edipi = id;
+  if (user?.rootAdmin) {
+    roles = (await Org.find()).map(org => Role.admin(org));
   }
 
-  if (user.rootAdmin) {
-    user.roles = (await Org.find()).map(org => Role.admin(org));
-  }
+  await getManager().transaction(async manager => {
+    if (!user) {
+      user = manager.create<User>('User', {
+        edipi: id,
+      });
+    }
 
-  req.appUser = user;
+    if (user.rootAdmin) {
+      await user.addRoles(manager, roles);
+      user = await manager.save(user);
+    }
+
+    req.appUser = user;
+  });
 
   next();
 }
@@ -94,11 +105,11 @@ export async function requireOrgAccess(req: any, res: Response, next: NextFuncti
   }
   const user: User = req.appUser;
   if (orgId && user) {
-    const orgRole = user.roles!.find(role => role.org!.id === orgId);
-    if (orgRole) {
-      req.appOrg = orgRole.org;
-      req.appRole = orgRole;
-      req.appWorkspace = orgRole.workspace;
+    const orgUserRole = user.userRoles.find(userRole => userRole.role.org!.id === orgId);
+    if (orgUserRole) {
+      req.appOrg = orgUserRole.role.org;
+      req.appUserRole = orgUserRole;
+      req.appWorkspace = orgUserRole.role.workspace;
     } else if (user.rootAdmin) {
       const org = await Org.findOne({
         where: {
@@ -107,7 +118,7 @@ export async function requireOrgAccess(req: any, res: Response, next: NextFuncti
       });
       if (org) {
         req.appOrg = org;
-        req.appRole = Role.admin(org);
+        req.appUserRole = Role.admin(org);
       } else {
         throw new NotFoundError('Organization was not found.');
       }
@@ -128,7 +139,7 @@ export function requireWorkspaceAccess(req: any, res: Response, next: NextFuncti
 
 export function requireRolePermission(action: (role: Role) => boolean) {
   return async (req: ApiRequest, res: Response, next: NextFunction) => {
-    if (req.appRole && action(req.appRole)) {
+    if (req.appUserRole && action(req.appUserRole.role)) {
       return next();
     }
     throw new ForbiddenError('User does not have sufficient privileges to perform this action.');

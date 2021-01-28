@@ -1,9 +1,9 @@
 import { User } from '../actions/user.actions';
-import { ApiRole, ApiUser } from '../models/api-response';
+import { ApiUser, ApiUserRole } from '../models/api-response';
 import { getLoggedInState } from '../utility/user-utils';
 
 export interface UserState extends ApiUser {
-  activeRole?: ApiRole
+  activeRole?: ApiUserRole
   isLoggedIn: boolean
 }
 
@@ -16,7 +16,7 @@ export const userInitialState: UserState = {
   email: '',
   rootAdmin: false,
   isRegistered: false,
-  roles: [],
+  userRoles: [],
   isLoggedIn: false,
 };
 
@@ -42,10 +42,10 @@ export function userReducer(state = userInitialState, action: any): UserState {
       return userInitialState;
     case User.Actions.ChangeOrg.type: {
       const orgId = (action as User.Actions.ChangeOrg).payload.orgId;
-      const activeRole = state.roles?.find(role => role.org?.id === orgId);
+      const userRole = state.userRoles?.find(ur => ur.role.org?.id === orgId);
       return {
         ...state,
-        activeRole,
+        activeRole: userRole,
       };
     }
     default:

@@ -58,7 +58,7 @@ export namespace Roster {
     console.log('file', file);
 
     const appState = getState();
-    const orgId = appState.user.activeRole?.org?.id;
+    const orgId = appState.user.activeRole?.role.org?.id;
 
     if (!appState.user.activeRole || !orgId) {
       console.log('User has no active role for orgId, cannot upload roster.');

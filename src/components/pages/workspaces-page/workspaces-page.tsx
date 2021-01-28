@@ -17,13 +17,12 @@ import CheckIcon from '@material-ui/icons/Check';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PageHeader from '../../page-header/page-header';
 import useStyles from './workspaces-page.styles';
-import { UserState } from '../../../reducers/user.reducer';
-import { AppState } from '../../../store';
 import { ApiWorkspace, ApiWorkspaceTemplate } from '../../../models/api-response';
 import { EditWorkspaceDialog, EditWorkspaceDialogProps } from './edit-workspace-dialog';
 import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
 import { formatMessage } from '../../../utility/errors';
+import { UserSelector } from '../../../selectors/user.selector';
 
 interface WorkspaceMenuState {
   anchor: HTMLElement | null,
@@ -39,7 +38,7 @@ export const WorkspacesPage = () => {
   const [editWorkspaceDialogProps, setEditWorkspaceDialogProps] = useState<EditWorkspaceDialogProps>({ open: false });
   const [workspaceMenu, setWorkspaceMenu] = React.useState<WorkspaceMenuState>({ anchor: null });
 
-  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole?.org?.id;
+  const orgId = useSelector(UserSelector.orgId);
 
   const initializeTable = React.useCallback(async () => {
     const ws = (await axios.get(`api/workspace/${orgId}`)).data as ApiWorkspace[];

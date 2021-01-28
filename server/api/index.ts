@@ -13,7 +13,7 @@ import musterRoutes from './muster';
 import exportRoutes from './export';
 import { User } from './user/user.model';
 import { Org } from './org/org.model';
-import { Role } from './role/role.model';
+import { UserRole } from './user/user-role.model';
 import { Workspace } from './workspace/workspace.model';
 
 const router = express.Router();
@@ -33,7 +33,7 @@ router.use('/reingest', reingestRoutes);
 export interface ApiRequest<ReqParams = object, ReqBody = object, ReqQuery = object, ResBody = object> extends Request<ReqParams, ResBody, ReqBody, ReqQuery> {
   appUser: User,
   appOrg?: Org,
-  appRole?: Role,
+  appUserRole?: UserRole,
   appWorkspace?: Workspace,
   kibanaApi?: KibanaApi,
 }
