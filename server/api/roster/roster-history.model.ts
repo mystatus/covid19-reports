@@ -1,9 +1,10 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
-  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { RosterEntity } from './roster-entity';
+import { timestampColumnTransformer } from '../../util/util';
 
 export enum ChangeType {
   Added = 'added',
@@ -14,7 +15,10 @@ export enum ChangeType {
 @Entity()
 export class RosterHistory extends RosterEntity {
 
-  @Column()
+  @CreateDateColumn({
+    type: 'timestamp',
+    transformer: timestampColumnTransformer,
+  })
   timestamp!: Date;
 
   @Column({
