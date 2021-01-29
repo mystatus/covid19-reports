@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { getManager } from 'typeorm';
-import { ApiRequest } from '../api';
+import {
+  ApiRequest,
+  OrgParam,
+} from '../api';
+import { UserRole } from '../api/user/user-role.model';
 import { User } from '../api/user/user.model';
 import { Role } from '../api/role/role.model';
 import {
@@ -38,7 +42,14 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
     user = User.internal();
   } else {
     user = await User.findOne({
-      relations: ['userRoles', 'userRoles.role', 'userRoles.role.org', 'userRoles.role.workspace', 'userRoles.role.org.contact'],
+      relations: [
+        'userRoles',
+        'userRoles.role',
+        'userRoles.role.org',
+        'userRoles.role.workspace',
+        'userRoles.role.org.contact',
+        'userRoles.user',
+      ],
       where: {
         edipi: id,
       },
@@ -88,7 +99,11 @@ export async function requireRootAdmin(req: ApiRequest, res: Response, next: Nex
   throw new ForbiddenError('User does not have sufficient privileges to perform this action.');
 }
 
-export async function requireOrgAccess(req: any, res: Response, next: NextFunction) {
+export async function requireOrgAccess(reqAny: any, res: Response, next: NextFunction) {
+  // HACK: For some reason express won't let us use ApiRequest here, so just cast it afterward for now. We should make
+  //       another pass on the core express types to get this working properly.
+  const req = reqAny as ApiRequest<OrgParam, null, { orgId?: string }>;
+
   let orgId: number | undefined;
   if (req.params.orgId) {
     orgId = parseInt(req.params.orgId);
@@ -109,7 +124,7 @@ export async function requireOrgAccess(req: any, res: Response, next: NextFuncti
     if (orgUserRole) {
       req.appOrg = orgUserRole.role.org;
       req.appUserRole = orgUserRole;
-      req.appWorkspace = orgUserRole.role.workspace;
+      req.appWorkspace = orgUserRole.role.workspace!;
     } else if (user.rootAdmin) {
       const org = await Org.findOne({
         where: {
@@ -118,7 +133,7 @@ export async function requireOrgAccess(req: any, res: Response, next: NextFuncti
       });
       if (org) {
         req.appOrg = org;
-        req.appUserRole = Role.admin(org);
+        req.appUserRole = UserRole.admin(org, user);
       } else {
         throw new NotFoundError('Organization was not found.');
       }
@@ -130,7 +145,11 @@ export async function requireOrgAccess(req: any, res: Response, next: NextFuncti
   throw new ForbiddenError('User does not have sufficient privileges to perform this action.');
 }
 
-export function requireWorkspaceAccess(req: any, res: Response, next: NextFunction) {
+export function requireWorkspaceAccess(reqAny: any, res: Response, next: NextFunction) {
+  // HACK: For some reason express won't let us use ApiRequest here, so just cast it afterward for now. We should make
+  //       another pass on the core express types to get this working properly.
+  const req = reqAny as ApiRequest;
+
   if (req.appWorkspace) {
     return next();
   }

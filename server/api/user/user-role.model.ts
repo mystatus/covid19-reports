@@ -5,6 +5,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { User } from './user.model';
 import { escapeRegExp } from '../../util/util';
@@ -54,4 +55,14 @@ export class UserRole extends BaseEntity {
     }
     return 'kibana_ro_strict';
   }
+
+  static admin(org: Org, user: User) {
+    const userRole = new UserRole();
+    userRole.id = 0;
+    userRole.user = user;
+    userRole.role = Role.admin(org);
+    userRole.indexPrefix = '*';
+    return userRole;
+  }
+
 }
