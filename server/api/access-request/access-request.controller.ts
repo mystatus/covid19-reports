@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { getConnection } from 'typeorm';
+import { getManager } from 'typeorm';
 import { BadRequestError, NotFoundError, UnauthorizedError } from '../../util/error-types';
 import { ApiRequest, OrgParam } from '../index';
 import { Org } from '../org/org.model';
@@ -54,22 +54,20 @@ class AccessRequestController {
     });
 
     let newRequest: AccessRequest | null = null;
-    await getConnection().transaction(async manager => {
-      if (request) {
-        if (request.status === AccessRequestStatus.Denied) {
-          // Remove the denied request so that we can issue a new one.
-          await manager.remove(request);
-        } else {
-          throw new BadRequestError('The access request has already been issued.');
-        }
+    if (request) {
+      if (request.status === AccessRequestStatus.Denied) {
+        // Remove the denied request so that we can issue a new one.
+        await request.remove();
+      } else {
+        throw new BadRequestError('The access request has already been issued.');
       }
+    }
 
-      request = new AccessRequest();
-      request.user = req.appUser;
-      request.org = org;
-      request.requestDate = new Date();
-      newRequest = await manager.save(request);
-    });
+    request = new AccessRequest();
+    request.user = req.appUser;
+    request.org = org;
+    request.requestDate = new Date();
+    newRequest = await request.save();
 
     res.status(201);
     res.json(newRequest);
@@ -149,21 +147,14 @@ class AccessRequestController {
       throw new NotFoundError('Role was not found');
     }
 
-    if (!req.appRole || !req.appRole.isSupersetOf(role)) {
+    if (!req.appUserRole || !req.appUserRole.role.isSupersetOf(role)) {
       throw new UnauthorizedError('Unable to assign a role with greater permissions than your current role.');
     }
 
     const user = await User.findOne({
-      relations: ['roles'],
+      relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
       where: {
         edipi: accessRequest.user!.edipi,
-      },
-      join: {
-        alias: 'user',
-        leftJoinAndSelect: {
-          roles: 'user.roles',
-          org: 'roles.org',
-        },
       },
     });
 
@@ -171,18 +162,20 @@ class AccessRequestController {
       throw new NotFoundError('User was not found');
     }
 
-    const existingRole = user.roles!.find(userRole => userRole.org!.id === orgId);
-
-    if (existingRole) {
+    const userRole = user.userRoles.find(ur => ur.role.org!.id === orgId);
+    if (userRole?.role) {
       await accessRequest.remove();
       throw new BadRequestError('User already has a role in the organization');
     }
 
-    user.roles!.push(role);
+    let processedRequest: AccessRequest | null = null;
 
-    await user.save();
+    await getManager().transaction(async manager => {
+      await user.addRole(manager, role);
+      await manager.save(user);
 
-    const processedRequest = await accessRequest.remove();
+      processedRequest = await manager.remove(accessRequest);
+    });
 
     res.json({
       success: true,

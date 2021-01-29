@@ -24,6 +24,7 @@ server/.env
 
 # ide files
 /.idea
+.vscode/launch.json
 
 # logs
 npm-debug.log*

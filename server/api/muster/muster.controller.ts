@@ -46,7 +46,7 @@ class MusterController {
 
     const individuals = await getRosterMusterStats({
       org: req.appOrg!,
-      role: req.appRole!,
+      userRole: req.appUserRole!,
       interval,
       intervalCount,
       unitId: req.query.unitId || undefined,
@@ -70,7 +70,7 @@ class MusterController {
     const monthsCount = parseInt(req.query.monthsCount ?? '6');
 
     const unitTrends = await getUnitMusterStats({
-      role: req.appRole!,
+      userRole: req.appUserRole!,
       weeksCount,
       monthsCount,
     });
