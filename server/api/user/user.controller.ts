@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { getManager } from 'typeorm';
 import { AccessRequest } from '../access-request/access-request.model';
 import { ApiRequest, OrgEdipiParams, OrgParam } from '../index';
 import { User } from './user.model';
@@ -52,7 +53,7 @@ class UserController {
 
     const updatedUser = await user.save();
 
-    await res.status(201).json(updatedUser);
+    res.status(201).json(updatedUser);
   }
 
   async upsertUser(req: ApiRequest<OrgParam, UpsertUserBody>, res: Response) {
@@ -81,86 +82,60 @@ class UserController {
       throw new NotFoundError('The role was not found in the organization.');
     }
 
-    if (edipi === req.appUser.edipi && req.appRole?.id !== roleId) {
+    if (edipi === req.appUser.edipi && req.appUserRole?.role.id !== roleId) {
       throw new BadRequestError('You may not edit your own role.');
     }
 
-    let newUser = false;
     let user = await User.findOne({
-      relations: ['roles'],
+      relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
       where: {
         edipi,
       },
-      join: {
-        alias: 'user',
-        leftJoinAndSelect: {
-          roles: 'user.roles',
-          org: 'roles.org',
-        },
-      },
     });
 
-    if (!user) {
-      user = new User();
-      user.edipi = edipi;
-      newUser = true;
-    }
+    let newUser = false;
+    let savedUser: User | null = null;
 
-    if (!user.roles) {
-      user.roles = [];
-    }
+    await getManager().transaction(async manager => {
+      if (!user) {
+        user = manager.create<User>('User', {
+          edipi,
+        });
+        newUser = true;
+      }
 
-    const orgRoleIndex = user.roles.findIndex(userRole => userRole.org!.id === org.id);
+      if (firstName) {
+        user.firstName = firstName;
+      }
+      if (lastName) {
+        user.lastName = lastName;
+      }
 
-    if (orgRoleIndex >= 0) {
-      user.roles.splice(orgRoleIndex, 1);
-    }
+      if (newUser) {
+        await user.addRole(manager, role);
+      } else {
+        await user.changeRole(manager, role);
+      }
+      savedUser = await manager.save(user);
+    });
 
-    user.roles.push(role);
-
-    if (firstName) {
-      user.firstName = firstName;
-    }
-
-    if (lastName) {
-      user.lastName = lastName;
-    }
-
-    const updatedUser = await user.save();
-
-    await res.status(newUser ? 201 : 200).json(updatedUser);
+    res.status(newUser ? 201 : 200).json(savedUser ?? {});
   }
 
   async getOrgUsers(req: ApiRequest<OrgParam>, res: Response) {
-    // TODO: This could potentially be optimized with something like this:
-    // SELECT "user".*
-    //   FROM role
-    // INNER JOIN user_roles
-    //   ON role.id = user_roles.role
-    // INNER JOIN "user"
-    //   ON user_roles."user" = "user"."EDIPI"
-    // WHERE role.org_id=1
-
+    const orgUsers: User[] = [];
     const roles = await Role.find({
+      relations: ['userRoles', 'userRoles.user', 'userRoles.user.userRoles', 'userRoles.user.userRoles.role'],
       where: {
-        org: req.appOrg!.id,
+        org: req.appOrg,
       },
     });
-
-    const users: User[] = [];
     for (const role of roles) {
-      const roleUsers = await User.createQueryBuilder('user')
-        .innerJoin('user.roles', 'role')
-        .where('role.id = :id', { id: role.id })
-        .getMany();
-
-      roleUsers.forEach(user => {
-        user.roles = [role];
-        users.push(user);
-      });
+      for (const userRole of (role.userRoles ?? [])) {
+        orgUsers.push(userRole.user);
+      }
     }
-
-    res.json(users);
+    res.json(orgUsers);
   }
 
   async removeUserFromGroup(req: ApiRequest<OrgEdipiParams>, res: Response) {
@@ -171,20 +146,22 @@ class UserController {
     }
 
     const user = await User.findOne({
-      relations: ['roles', 'roles.org'],
+      relations: ['userRoles', 'userRoles.role', 'userRoles.role.org'],
       where: {
         edipi: userEDIPI,
       },
     });
 
-    const roleIndex = (user?.roles ?? []).findIndex(userRole => userRole.org!.id === req.appOrg!.id);
+    let savedUser: User | null = null;
+    const userRole = user?.userRoles.find(ur => ur.role.org!.id === req.appOrg!.id);
 
-    if (roleIndex !== -1) {
-      user!.roles!.splice(roleIndex, 1);
-      res.json(await user!.save());
-    } else {
-      res.json({});
+    if (user && userRole) {
+      await getManager().transaction(async manager => {
+        await user.removeRole(manager, userRole.role);
+        savedUser = await manager.save(user);
+      });
     }
+    res.json(savedUser ?? {});
   }
 
   async getAccessRequests(req: ApiRequest, res: Response) {

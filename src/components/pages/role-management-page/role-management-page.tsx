@@ -115,7 +115,7 @@ export const RoleManagementPage = () => {
         </ButtonSet>
         <div className={classes.accordionHeader}>
           <Typography>Role Name</Typography>
-          <Typography>Unit Filter</Typography>
+          <Typography>Default Unit Filter</Typography>
           <Typography>Analytics Workspace</Typography>
         </div>
         {roles.map((row, index) => (
@@ -130,7 +130,7 @@ export const RoleManagementPage = () => {
               id={`role${row.id}_header`}
             >
               <Typography className={classes.nameColumn}>{row.name}</Typography>
-              <Typography className={classes.indexPrefixColumn}>{row.indexPrefix}</Typography>
+              <Typography className={classes.indexPrefixColumn}>{row.defaultIndexPrefix}</Typography>
               <Typography>{row.workspace ? row.workspace.name : 'None'}</Typography>
             </AccordionSummary>
             <AccordionDetails>
