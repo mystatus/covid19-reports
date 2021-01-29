@@ -41,7 +41,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     open, orgId, rosterColumnInfos, onClose, onError,
   } = props;
 
-  const hiddenEditFields = ['unit', 'lastReported'];
+  const hiddenEditFields = ['unit'];
 
   const existingRosterEntry: boolean = !!props.rosterEntry;
   const [formDisabled, setFormDisabled] = useState(false);
@@ -82,15 +82,24 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     updateRosterEntryProperty('unit', event.target.value);
   };
 
+  const getUnitName = (unitId: string) => {
+    for (const unit of units) {
+      if (unit.id === unitId) {
+        return unit.name;
+      }
+    }
+    return 'Unknown';
+  };
+
   const checkSave = async () => {
     if (existingRosterEntry && rosterEntry.unit !== originalUnit) {
       setUnitChangedPromptOpen(true);
     } else {
-      await onSave(false);
+      await onSave();
     }
   };
 
-  const onSave = async (movedUnit: boolean) => {
+  const onSave = async () => {
     setFormDisabled(true);
     try {
       setSaveRosterEntryLoading(true);
@@ -101,9 +110,6 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
         data.unit = units[0].id;
       }
       if (existingRosterEntry) {
-        if (movedUnit) {
-          data.movedUnit = true;
-        }
         await axios.put(`api/roster/${orgId}/${rosterEntry!.id}`, data);
       } else {
         await axios.post(`api/roster/${orgId}`, data);
@@ -356,17 +362,14 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
       <Dialog maxWidth="md" open={unitChangedPromptOpen}>
         <DialogTitle id="unit-changed">Unit Changed</DialogTitle>
         <DialogContent>
-          Is this unit change a correction, or has the individual moved to the new unit?
+          Are you sure you want to move the individual to {getUnitName(rosterEntry.unit)}?
         </DialogContent>
         <DialogActions className={classes.unitChangedDialogActions}>
-          <Button onClick={() => onSave(false)} color="primary">
-            This is a Correction
-          </Button>
-          <Button onClick={() => onSave(true)} color="primary">
-            Individual Moved to New Unit
+          <Button onClick={() => onSave()} color="primary">
+            Yes
           </Button>
           <Button variant="outlined" onClick={cancelUnitChangedDialog} color="primary">
-            Cancel
+            No
           </Button>
         </DialogActions>
       </Dialog>

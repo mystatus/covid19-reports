@@ -1,31 +1,29 @@
 import { Response } from 'express';
 import csv from 'csvtojson';
 import fs from 'fs';
-import moment, { Moment } from 'moment';
 import { getConnection, In, OrderByCondition } from 'typeorm';
 import _ from 'lodash';
 import {
   ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams, PagedQuery,
 } from '../index';
+import { Roster } from './roster.model';
 import {
-  baseRosterColumns,
-  Roster,
-} from './roster.model';
-import {
-  BadRequestError, NotFoundError, RosterUploadError, RosterUploadErrorInfo, UnprocessableEntity,
+  BadRequestError,
+  NotFoundError,
+  RosterUploadError,
+  RosterUploadErrorInfo,
+  UnprocessableEntity,
 } from '../../util/error-types';
 import {
-  BaseType, getOptionalParam, getRequiredParam, dateFromString,
+  BaseType, dateFromString, getOptionalParam, getRequiredParam,
 } from '../../util/util';
 import { Org } from '../org/org.model';
 import { CustomColumnConfig, CustomRosterColumn } from './custom-roster-column.model';
 import { Unit } from '../unit/unit.model';
-import {
-  CustomColumnValue,
-  RosterColumnInfo,
-  RosterColumnType,
-} from './roster.types';
-import { Role } from '../role/role.model';
+import { CustomColumnValue, RosterColumnInfo, RosterColumnType } from './roster.types';
+import { UserRole } from '../user/user-role.model';
+import { ChangeType, RosterHistory } from './roster-history.model';
+import { baseRosterColumns } from './roster-entity';
 
 class RosterController {
 
@@ -103,7 +101,7 @@ class RosterController {
   }
 
   async getRosterTemplate(req: ApiRequest, res: Response) {
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
+    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
     const headers: string[] = ['unit'];
     const example: string[] = ['unit1'];
     columns.forEach(column => {
@@ -140,11 +138,11 @@ class RosterController {
   }
 
   async getRoster(req: ApiRequest<OrgParam, any, GetRosterQuery>, res: Response) {
-    res.json(await internalSearchRoster(req.query, req.appOrg!, req.appRole!));
+    res.json(await internalSearchRoster(req.query, req.appOrg!, req.appUserRole!));
   }
 
   async searchRoster(req: ApiRequest<OrgParam, SearchRosterBody, GetRosterQuery>, res: Response) {
-    res.json(await internalSearchRoster(req.query, req.appOrg!, req.appRole!, req.body));
+    res.json(await internalSearchRoster(req.query, req.appOrg!, req.appUserRole!, req.body));
   }
 
   async uploadRosterEntries(req: ApiRequest<OrgParam>, res: Response) {
@@ -171,7 +169,7 @@ class RosterController {
       },
     });
 
-    const columns = await Roster.getAllowedColumns(org, req.appRole!);
+    const columns = await Roster.getAllowedColumns(org, req.appUserRole!.role);
     const errors: RosterUploadErrorInfo[] = [];
     const existingEntries = await Roster.find({
       where: {
@@ -253,7 +251,7 @@ class RosterController {
   }
 
   async getRosterInfo(req: ApiRequest<OrgParam>, res: Response) {
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
+    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
     res.json(columns);
   }
 
@@ -262,15 +260,25 @@ class RosterController {
     if (!reportDate) {
       throw new BadRequestError('Missing reportDate.');
     }
-    const entries = (await Roster.find({
-      relations: ['unit', 'unit.org'],
-      where: {
-        edipi: req.params.edipi,
-      },
-    })).filter(entry => isActiveOnRoster(entry, reportDate));
+    const timestamp = reportDate.getTime() / 1000;
+    const entries = await RosterHistory.createQueryBuilder('roster')
+      .leftJoinAndSelect('roster.unit', 'unit')
+      .leftJoinAndSelect('unit.org', 'org')
+      .where('roster.edipi = :edipi', { edipi: req.params.edipi })
+      .andWhere('roster.timestamp <= to_timestamp(:timestamp)', { timestamp })
+      .select()
+      .distinctOn(['roster.unit_id', 'roster.unit_org'])
+      .orderBy('roster.unit_id')
+      .addOrderBy('roster.unit_org')
+      .addOrderBy('roster.timestamp', 'DESC')
+      .getMany();
 
     const responseData: RosterInfo[] = [];
     for (const roster of entries) {
+      if (roster.changeType === ChangeType.Deleted) {
+        continue;
+      }
+
       const columns = (await Roster.getColumns(roster.unit.org!.id)).map(column => ({
         ...column,
         value: roster.getColumnValue(column),
@@ -278,7 +286,6 @@ class RosterController {
 
       const rosterInfo: RosterInfo = {
         unit: roster.unit,
-        id: roster.id,
         columns,
       };
       responseData.push(rosterInfo);
@@ -291,19 +298,7 @@ class RosterController {
 
   async addRosterEntry(req: ApiRequest<OrgParam, RosterEntryData>, res: Response) {
     const edipi = req.body.edipi as string;
-    const rosterEntries = await Roster.find({
-      relations: ['unit'],
-      where: (qb: any) => {
-        qb.where({ edipi })
-          .andWhere('unit_org = :orgId', { orgId: req.appOrg!.id });
-      },
-    });
 
-    const now = new Date();
-
-    if (rosterEntries.some(roster => isActiveOnRoster(roster, now))) {
-      throw new BadRequestError('The individual is already in the roster.');
-    }
     if (!req.body.unit) {
       throw new BadRequestError('A unit must be supplied when adding a roster entry.');
     }
@@ -319,9 +314,21 @@ class RosterController {
       throw new NotFoundError(`Unit with ID ${req.body.unit} could not be found.`);
     }
 
+    const rosterEntries = await Roster.find({
+      relations: ['unit'],
+      where: {
+        edipi,
+        unit: unit.id,
+      },
+    });
+
+    if (rosterEntries) {
+      throw new BadRequestError('The individual is already in the roster.');
+    }
+
     const entry = new Roster();
     entry.unit = unit;
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
+    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
     await setRosterParamsFromBody(req.appOrg!, entry, req.body, columns, true);
     const newRosterEntry = await entry.save();
 
@@ -331,7 +338,7 @@ class RosterController {
   async getRosterEntry(req: ApiRequest<OrgRosterParams>, res: Response) {
     const rosterId = req.params.rosterId;
 
-    const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appRole!);
+    const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appUserRole!);
     const rosterEntry = await queryBuilder
       .andWhere('roster.id=\':id\'', {
         id: rosterId,
@@ -379,45 +386,26 @@ class RosterController {
         throw new NotFoundError('User could not be found.');
       }
 
-      let startDateOverride: Date | undefined;
-      if (req.body.unit) {
+      if (req.body.unit && req.body.unit !== entry.unit!.id) {
+        // If the unit changed, delete the individual from the old unit's roster.
         const unit = await Unit.findOne({
           relations: ['org'],
           where: {
-            org: req.appOrg?.id,
+            org: req.appOrg!.id,
             id: req.body.unit,
           },
         });
         if (!unit) {
           throw new NotFoundError(`Unit with ID ${req.body.unit} could not be found.`);
         }
-        if (req.body.movedUnit) {
-          const newEntry = copyRosterEntry(entry);
-          const value = getOptionalParam('startDate', req.body, 'string') as string;
-          let startDate: Moment | undefined;
-          if (value) {
-            startDate = moment(dateFromString(value)).startOf('day');
-          }
-          if (!startDate || startDate.isSame(moment(entry.startDate).startOf('day'))) {
-            // Start date wasn't updated, use today as the new unit start date
-            startDate = moment();
-            startDateOverride = startDate.toDate();
-          }
-          entry.endDate = startDate.subtract(1, 'day').toDate();
-          if (entry.startDate && entry.endDate.getTime() <= entry.startDate.getTime()) {
-            throw new BadRequestError('Invalid start and end date for previous unit.');
-          }
-          await manager.save(entry);
-          entry = newEntry;
-        }
+        const newEntry = copyRosterEntry(entry);
+        await manager.delete(Roster, entry.id);
+        entry = newEntry;
         entry.unit = unit;
       }
 
-      const columns = await Roster.getAllowedColumns(req.appOrg!, req.appRole!);
+      const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
       await setRosterParamsFromBody(req.appOrg!, entry, req.body, columns);
-      if (startDateOverride) {
-        entry.startDate = startDateOverride;
-      }
       const updatedRosterEntry = await manager.save(entry);
       res.json(updatedRosterEntry);
     });
@@ -425,12 +413,12 @@ class RosterController {
 
 }
 
-async function internalSearchRoster(query: GetRosterQuery, org: Org, role: Role, searchParams?: SearchRosterBody) {
+async function internalSearchRoster(query: GetRosterQuery, org: Org, userRole: UserRole, searchParams?: SearchRosterBody) {
   const limit = parseInt(query.limit ?? '100');
   const page = parseInt(query.page ?? '0');
   const orderBy = query.orderBy || 'edipi';
   const sortDirection = query.sortDirection || 'ASC';
-  const rosterColumns = await Roster.getAllowedColumns(org, role);
+  const rosterColumns = await Roster.getAllowedColumns(org, userRole.role);
 
   const columns: RosterColumnInfo[] = [{
     name: 'unit',
@@ -445,7 +433,7 @@ async function internalSearchRoster(query: GetRosterQuery, org: Org, role: Role,
 
   async function makeQueryBuilder() {
     if (!searchParams) {
-      return Roster.queryAllowedRoster(org, role);
+      return Roster.queryAllowedRoster(org, userRole);
     }
     return Object.keys(searchParams)
       .reduce((queryBuilder, key) => {
@@ -497,7 +485,7 @@ async function internalSearchRoster(query: GetRosterQuery, org: Org, role: Role,
         }
 
         throw new BadRequestError('Malformed search query. Received unexpected value for "op".');
-      }, await Roster.queryAllowedRoster(org, role));
+      }, await Roster.queryAllowedRoster(org, userRole));
   }
 
   const queryBuilder = await makeQueryBuilder();
@@ -532,9 +520,6 @@ function copyRosterEntry(roster: Roster) {
   newEntry.unit = roster.unit;
   newEntry.firstName = roster.firstName;
   newEntry.lastName = roster.lastName;
-  newEntry.startDate = roster.startDate;
-  newEntry.endDate = roster.endDate;
-  newEntry.lastReported = roster.lastReported;
   newEntry.customColumns = _.cloneDeep(roster.customColumns);
   return newEntry;
 }
@@ -561,11 +546,6 @@ function setCustomColumnFromBody(column: CustomRosterColumn, body: CustomColumnD
   if (body.config != null) {
     column.config = body.config;
   }
-}
-
-function isActiveOnRoster(entry: Roster, date: Date) {
-  return (!entry.startDate || entry.startDate.getTime() <= date.getTime())
-    && (!entry.endDate || entry.endDate.getTime() >= date.getTime());
 }
 
 async function setRosterParamsFromBody(org: Org, entry: Roster, body: RosterEntryData, columns: RosterColumnInfo[], newEntry: boolean = false) {
@@ -666,7 +646,6 @@ interface RosterColumnWithValue extends RosterColumnInfo {
 
 interface RosterInfo {
   unit: Unit,
-  id: number,
   columns: RosterColumnInfo[],
 }
 
@@ -693,7 +672,6 @@ type RosterFileRow = {
 };
 
 export type RosterEntryData = {
-  movedUnit?: boolean,
   [key: string]: CustomColumnValue | undefined
 };
 

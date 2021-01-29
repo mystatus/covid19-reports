@@ -83,7 +83,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
 
   useEffect(() => {
     setMusterConfiguration(musterRows(overrideDefault ? unit?.musterConfiguration : undefined) || []);
-  }, [musterRows, overrideDefault, unit?.musterConfiguration]);
+  }, [musterRows, overrideDefault, unit]);
 
   if (!open) {
     return <></>;

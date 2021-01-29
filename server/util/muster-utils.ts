@@ -5,7 +5,7 @@ import {
 import moment from 'moment-timezone';
 import { Like } from 'typeorm';
 import { Org } from '../api/org/org.model';
-import { Role } from '../api/role/role.model';
+import { UserRole } from '../api/user/user-role.model';
 import { Roster } from '../api/roster/roster.model';
 import {
   MusterConfiguration,
@@ -26,18 +26,18 @@ import {
  */
 export async function getRosterMusterStats(args: {
   org: Org
-  role: Role
+  userRole: UserRole
   interval: TimeInterval
   intervalCount: number
   unitId?: string
 }) {
-  const { org, role, interval, intervalCount, unitId } = args;
+  const { org, userRole, interval, intervalCount, unitId } = args;
 
   // Send ES request.
   let response: SearchResponse<never>;
   try {
     response = await elasticsearch.search({
-      index: role.getKibanaIndexForMuster(unitId),
+      index: userRole.getKibanaIndexForMuster(unitId),
       body: buildIndividualsMusterBody({
         interval,
         intervalCount,
@@ -72,13 +72,14 @@ export async function getRosterMusterStats(args: {
     rosterEntriesByEdipi[e.edipi] = e;
   });
 
-  const allowedRosterColumns = await Roster.getAllowedColumns(org, role);
+  const allowedRosterColumns = await Roster.getAllowedColumns(org, userRole.role);
 
   // Collect reports and reports missed.
   const individualStats: IndividualStats = {};
 
-  const aggs = response.aggregations as IndividualsMusterAggregations;
-  for (const bucket of aggs.muster.buckets) {
+  const aggs = response.aggregations as IndividualsMusterAggregations | undefined;
+  const buckets = aggs?.muster.buckets ?? [];
+  for (const bucket of buckets) {
     const { edipi, reported } = bucket.key;
 
     if (!individualStats[edipi]) {
@@ -150,17 +151,17 @@ export async function getRosterMusterStats(args: {
  * Get aggregated unit muster stats over the given weeks/months.
  */
 export async function getUnitMusterStats(args: {
-  role: Role
+  userRole: UserRole
   weeksCount: number
   monthsCount: number
 }) {
-  const { role, weeksCount, monthsCount } = args;
+  const { userRole, weeksCount, monthsCount } = args;
 
   // Get unit names.
-  const unitIdFilter = role.getUnitFilter().replace('*', '%');
+  const unitIdFilter = userRole.getUnitFilter().replace('*', '%');
   const units = await Unit.find({
     where: {
-      org: role.org,
+      org: userRole.role.org,
       id: Like(unitIdFilter),
     },
   });
@@ -170,7 +171,7 @@ export async function getUnitMusterStats(args: {
   //
   // Build elastcisearch multisearch queries.
   //
-  const index = role.getKibanaIndexForMuster();
+  const index = userRole.getKibanaIndexForMuster();
   const esBody = [
     { index },
     buildMusterEsBody({
@@ -197,8 +198,8 @@ export async function getUnitMusterStats(args: {
   //
   // Organize and return data.
   //
-  const weeklyAggs = response.responses![0].aggregations as MusterAggregation;
-  const monthlyAggs = response.responses![1].aggregations as MusterAggregation;
+  const weeklyAggs = response.responses![0].aggregations as MusterAggregation | undefined;
+  const monthlyAggs = response.responses![1].aggregations as MusterAggregation | undefined;
 
   return {
     weekly: buildUnitStats({
@@ -451,7 +452,7 @@ function buildMusterEsBody({
 }
 
 function buildUnitStats(args: {
-  aggregations: MusterAggregation,
+  aggregations: MusterAggregation | undefined,
   unitNames: string[]
   interval: TimeInterval
   intervalCount: number
@@ -481,7 +482,8 @@ function buildUnitStats(args: {
   }
 
   // Collect reports and reports missed.
-  for (const bucket of aggregations.muster.buckets) {
+  const buckets = aggregations?.muster.buckets ?? [];
+  for (const bucket of buckets) {
     const { date, unit, reported } = bucket.key;
 
     if (unitStats[date][unit] == null) {

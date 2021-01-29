@@ -46,6 +46,7 @@ import { Unit } from '../../../actions/unit.actions';
 import { DataExportIcon } from '../../icons/data-export-icon';
 import { Modal } from '../../../actions/modal.actions';
 import { formatMessage } from '../../../utility/errors';
+import { UserSelector } from '../../../selectors/user.selector';
 
 interface TimeRange {
   interval: 'day' | 'hour'
@@ -68,7 +69,7 @@ export const MusterPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
   const units = useSelector(UnitSelector.all);
-  const user = useSelector((state: AppState) => state.user);
+  const user = useSelector<AppState, UserState>(state => state.user);
 
   const maxNumColumnsToShow = 6;
   const maxTopUnitsCount = 5;
@@ -123,8 +124,9 @@ export const MusterPage = () => {
   const [monthlyTrendData, setMonthlyTrendData] = useState<Plotly.Data[]>([]);
   const [individualsData, setIndividualsData] = useState<ApiMusterIndividuals>({ rows: [], totalRowsCount: 0 });
 
-  const orgId = useSelector<AppState, UserState>(state => state.user).activeRole!.org!.id;
-  const orgName = useSelector<AppState, UserState>(state => state.user).activeRole!.org!.name;
+  const org = useSelector(UserSelector.org);
+  const orgId = org?.id;
+  const orgName = org?.name;
   const isPageLoading = useSelector<AppState, boolean>(state => state.appFrame.isPageLoading);
 
   //
@@ -344,7 +346,6 @@ export const MusterPage = () => {
       'firstName',
       'lastName',
       'unitId',
-      'lastReported',
       'nonMusterPercent',
     ]).slice(0, maxNumColumnsToShow);
   };
@@ -382,7 +383,7 @@ export const MusterPage = () => {
 
         <Grid container spacing={3}>
           {/* Table */}
-          {user.activeRole?.canViewPII && (
+          {user.activeRole?.role.canViewPII && (
             <Grid item xs={12}>
               <Paper>
                 <TableContainer>
@@ -438,9 +439,6 @@ export const MusterPage = () => {
                       noDataText={isPageLoading ? 'Loading...' : 'All Individuals Compliant'}
                       rowOptions={{
                         renderCell: (row, column) => {
-                          if (column.name === 'lastReported') {
-                            return moment(row[column.name]).format('YYYY-MM-DD, HH:mm');
-                          }
                           const value = row[column.name];
                           if (column.name === 'unitId') {
                             return units.find(unit => unit.id === value)?.name || value;

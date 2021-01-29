@@ -47,7 +47,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   const existingRole: boolean = !!role;
   const [name, setName] = useState(role?.name || '');
   const [description, setDescription] = useState(role?.description || '');
-  const [indexPrefix, setIndexPrefix] = useState(role?.indexPrefix || '');
+  const [defaultIndexPrefix, setDefaultIndexPrefix] = useState(role?.defaultIndexPrefix || '');
   const [workspaceId, setWorkspaceId] = useState(role?.workspace?.id || -1);
   const [allowedRosterColumns, setAllowedRosterColumns] = useState(parsePermissions(rosterColumns || [], role?.allowedRosterColumns));
   const [allowedNotificationEvents, setAllowedNotificationEvents] = useState(parsePermissions(notifications?.map(notification => {
@@ -115,26 +115,24 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
     });
   };
 
-  const filterAllowedRosterColumns = (viewMuster: boolean) => {
+  const filterAllowedRosterColumns = () => {
     const allowedColumns: RolePermissions = {};
     rosterColumns!.forEach(column => {
       const allowed = columnAllowed(column);
       const previousValue = allowedRosterColumns[column.name];
       allowedColumns[column.name] = previousValue && allowed;
     });
-    allowedColumns.lastReported = viewMuster;
     return allowedColumns;
   };
 
   const onSave = async () => {
     setSaveRoleLoading(true);
     setFormDisabled(true);
-    const viewMuster = canManageGroup || canViewMuster;
-    const allowedColumns = filterAllowedRosterColumns(viewMuster);
+    const allowedColumns = filterAllowedRosterColumns();
     const body = {
       name,
       description,
-      indexPrefix,
+      defaultIndexPrefix,
       workspaceId: workspaceId < 0 ? null : workspaceId,
       allowedRosterColumns: permissionsToArray(allowedColumns),
       allowedNotificationEvents: permissionsToArray(allowedNotificationEvents),
@@ -142,7 +140,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
       canManageRoster: canManageGroup || canManageRoster,
       canManageWorkspace: canManageGroup || canManageWorkspace,
       canViewRoster: canManageGroup || canManageRoster || canViewRoster,
-      canViewMuster: viewMuster,
+      canViewMuster: canManageGroup || canViewMuster,
       canViewPII: canViewPII || canViewPHI,
       canViewPHI,
     };
@@ -174,8 +172,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   };
 
   const buildRosterColumnRows = () => {
-    const columns = rosterColumns?.filter(column => column.name !== 'lastReported');
-    return columns?.map(column => (
+    return rosterColumns?.map(column => (
       <TableRow key={column.name}>
         <TableCell>
           {column.displayName}
@@ -262,13 +259,13 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
             <Typography className={classes.workspaceDescription}>{getWorkspaceDescription()}</Typography>
           </Grid>
           <Grid item xs={6}>
-            <Typography className={classes.roleHeader}>Unit Filter:</Typography>
+            <Typography className={classes.roleHeader}>Default Unit Filter:</Typography>
             <TextField
               className={classes.textField}
               id="role-index-prefix"
               disabled={formDisabled}
-              value={indexPrefix}
-              onChange={onInputChanged(setIndexPrefix)}
+              value={defaultIndexPrefix}
+              onChange={onInputChanged(setDefaultIndexPrefix)}
             />
           </Grid>
           <Grid item xs={6}>
