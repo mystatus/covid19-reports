@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { Brackets } from 'typeorm';
 import { NotFoundError } from '../../util/error-types';
 import {
   buildMusterWindow,
@@ -27,7 +28,6 @@ import {
   assertRequestQuery,
   TimeInterval,
 } from '../../util/util';
-import { Brackets } from 'typeorm';
 
 class MusterController {
 

@@ -3,10 +3,9 @@ import {
 } from 'typeorm';
 import { Role } from '../role/role.model';
 
-const internalUserEdipi = 'internal';
-
 @Entity()
 export class User extends BaseEntity {
+  static internalUserEdipi = '_internal_';
 
   @PrimaryColumn({
     length: 10,
@@ -61,12 +60,12 @@ export class User extends BaseEntity {
   isRegistered?: boolean;
 
   public isInternal() {
-    return this.edipi === internalUserEdipi;
+    return this.edipi === User.internalUserEdipi;
   }
 
   static internal() {
     const internalUser = new User();
-    internalUser.edipi = internalUserEdipi;
+    internalUser.edipi = User.internalUserEdipi;
     internalUser.firstName = 'Internal';
     internalUser.lastName = 'User';
     internalUser.email = 'internal@statusengine.com';

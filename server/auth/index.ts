@@ -21,7 +21,7 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
     }
   } else if (req.header(internalAccessHeader)
     && process.env.INTERNAL_ACCESS_KEY === req.header(internalAccessHeader)) {
-    id = 'internal';
+    id = User.internalUserEdipi;
   } else if (process.env.NODE_ENV === 'development') {
     id = process.env.USER_EDIPI;
   }
@@ -31,7 +31,9 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
   }
 
   let user: User | undefined;
-  if (id === 'internal') {
+  let roles: Role[] = [];
+
+  if (id === User.internalUserEdipi) {
     user = User.internal();
   } else {
     user = await User.findOne({
