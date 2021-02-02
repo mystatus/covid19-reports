@@ -7,7 +7,7 @@ import { UserRole } from './user-role.model';
 
 @Entity()
 export class User extends BaseEntity {
-  static internalUserEdipi = '_internal_';
+  static internalUserEdipi = 'internal';
 
   @PrimaryColumn({
     length: 10,
@@ -135,6 +135,7 @@ export class User extends BaseEntity {
     internalUser.enabled = true;
     internalUser.isRegistered = true;
     internalUser.rootAdmin = true;
+    internalUser.userRoles = [];
 
     return internalUser;
   }
