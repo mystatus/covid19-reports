@@ -23,6 +23,7 @@ import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
 import { formatMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
+import { WorkspacesPagesHelp } from './workspaces-pages-help';
 
 interface WorkspaceMenuState {
   anchor: HTMLElement | null,
@@ -118,7 +119,13 @@ export const WorkspacesPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <PageHeader title="Workspaces" />
+        <PageHeader
+          title="Workspaces"
+          help={{
+            contentComponent: WorkspacesPagesHelp,
+            cardId: 'workspacesPage',
+          }}
+        />
         <ButtonSet>
           <Button
             size="large"

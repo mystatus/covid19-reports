@@ -21,13 +21,20 @@ import {
   TableRow,
   Typography,
 } from '@material-ui/core';
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
+import {
+  useDispatch,
+  useSelector,
+} from 'react-redux';
 import moment from 'moment-timezone';
 import axios from 'axios';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
+import { UnitsPageHelp } from './units-page-help';
 import useStyles from './units-page.styles';
 import { ApiUnit, MusterConfiguration } from '../../../models/api-response';
 import { EditUnitDialog, EditUnitDialogProps } from './edit-unit-dialog';
@@ -159,7 +166,13 @@ export const UnitsPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <PageHeader title="Unit Management" />
+        <PageHeader
+          title="Unit Management"
+          help={{
+            contentComponent: UnitsPageHelp,
+            cardId: 'unitsPage',
+          }}
+        />
         <Card>
           <CardHeader title="Default Muster Requirements" />
           <CardContent>

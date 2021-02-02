@@ -23,6 +23,7 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ReportProblemOutlinedIcon from '@material-ui/icons/ReportProblemOutlined';
 import client, { AccessRequestClient, UserClient } from '../../../client';
 import PageHeader from '../../page-header/page-header';
+import { UsersPageHelp } from './users-page-help';
 import useStyles from './users-page.styles';
 import { ApiRole, ApiUser, ApiAccessRequest } from '../../../models/api-response';
 import { AppFrame } from '../../../actions/app-frame.actions';
@@ -193,8 +194,13 @@ export const UsersPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <PageHeader title="Users" />
-
+        <PageHeader
+          title="Users"
+          help={{
+            contentComponent: UsersPageHelp,
+            cardId: 'usersPage',
+          }}
+        />
         {accessRequests.length > 0 && (
           <TableContainer className={classes.table} component={Paper}>
             <Table aria-label="access requests table">

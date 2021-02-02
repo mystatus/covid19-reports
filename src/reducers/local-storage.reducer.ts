@@ -1,11 +1,14 @@
+import { HelpCard } from '../actions/help-card.actions';
 import { User } from '../actions/user.actions';
+import { Dict } from '../utility/typescript-utils';
 import { getLoggedInState } from '../utility/user-utils';
 
 // We need to be careful about what goes into local storage due to security concerns. So make sure not to add anything
-// that is clearly identifying, such as PII/PHI data, group name, etc.
+// that is clearly identifying of groups, units, or individuals, such as PII/PHI data, group name, etc.
 
 export interface LocalStorageState {
   orgId?: number
+  hideHelpCard?: Dict<boolean>
 }
 
 export const localStorageInitialState: LocalStorageState = {};
@@ -36,6 +39,16 @@ export function localStorageReducer(state = localStorageInitialState, action: an
       return {
         ...state,
         orgId,
+      };
+    }
+    case HelpCard.Actions.Hide.type: {
+      const { helpCardId } = (action as HelpCard.Actions.Hide).payload;
+      return {
+        ...state,
+        hideHelpCard: {
+          ...state.hideHelpCard,
+          [helpCardId]: true,
+        },
       };
     }
     default:

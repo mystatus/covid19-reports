@@ -56,6 +56,11 @@ theme.overrides = {
       boxShadow: 'none',
     },
   },
+  MuiButton: {
+    root: {
+      textTransform: 'none',
+    },
+  },
   MuiButtonBase: {
     root: {
       '&.MuiButton-text.MuiButton-textSizeLarge': {
@@ -211,12 +216,18 @@ theme.overrides = {
       },
     },
   },
+  MuiTooltip: {
+    tooltip: {
+      fontSize: '12px',
+    },
+  },
 };
 
 theme.props = {
   MuiButton: {
     color: 'primary',
     variant: 'contained',
+    disableElevation: true,
   },
   MuiIconButton: {
     color: 'primary',
@@ -231,6 +242,9 @@ theme.props = {
     InputLabelProps: {
       shrink: true,
     },
+  },
+  MuiTooltip: {
+    arrow: true,
   },
 };
 

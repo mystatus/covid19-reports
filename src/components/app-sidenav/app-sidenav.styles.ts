@@ -16,7 +16,7 @@ export default makeStyles((theme: Theme) => createStyles({
   expander: {
     position: 'fixed',
     top: '79px',
-    zIndex: 10000,
+    zIndex: theme.zIndex.drawer + 1,
     left: sidenavWidthExpanded - expanderRadius - 5,
     backgroundColor: theme.palette.background.default,
     width: expanderRadius + 5,

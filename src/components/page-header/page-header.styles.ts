@@ -1,4 +1,7 @@
-import { Theme, createStyles } from '@material-ui/core';
+import {
+  Theme,
+  createStyles,
+} from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 
 export default makeStyles((theme: Theme) => createStyles({
@@ -13,6 +16,9 @@ export default makeStyles((theme: Theme) => createStyles({
   },
   info: {
     color: theme.palette.text.hint,
+    marginTop: theme.spacing(2),
+  },
+  helpCardContainer: {
     marginTop: theme.spacing(2),
   },
 }));
