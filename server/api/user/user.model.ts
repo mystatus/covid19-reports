@@ -57,7 +57,9 @@ export class User extends BaseEntity {
         indexPrefix: indexPrefix || role.defaultIndexPrefix,
       });
       this.userRoles.push(userRole);
-      await manager.save(userRole);
+      if (this.edipi !== User.internalUserEdipi) {
+        await manager.save(userRole);
+      }
     }
     return this;
   }
