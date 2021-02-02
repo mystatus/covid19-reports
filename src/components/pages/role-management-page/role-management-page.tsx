@@ -13,6 +13,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import PageHeader from '../../page-header/page-header';
+import { RoleManagementPageHelp } from './role-management-page-help';
 import useStyles from './role-management-page.styles';
 import { EditRoleDialog, EditRoleDialogProps } from './edit-role-dialog';
 import { AppFrame } from '../../../actions/app-frame.actions';
@@ -101,7 +102,13 @@ export const RoleManagementPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <PageHeader title="Group Roles" />
+        <PageHeader
+          title="Group Roles"
+          help={{
+            contentComponent: RoleManagementPageHelp,
+            cardId: 'roleManagementPage',
+          }}
+        />
         <ButtonSet>
           <Button
             size="large"

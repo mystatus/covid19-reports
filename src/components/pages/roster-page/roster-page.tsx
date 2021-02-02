@@ -33,6 +33,7 @@ import { getNewPageIndex } from '../../../utility/table';
 import PageHeader from '../../page-header/page-header';
 import { SortDirection, TableColumn, TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
+import { RosterPageHelp } from './roster-page-help';
 import useStyles from './roster-page.styles';
 import {
   ApiRosterColumnInfo,
@@ -386,7 +387,13 @@ export const RosterPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth={false}>
-        <PageHeader title="Roster" />
+        <PageHeader
+          title="Roster"
+          help={{
+            contentComponent: RosterPageHelp,
+            cardId: 'rosterPage',
+          }}
+        />
 
         <ButtonSet>
           <input

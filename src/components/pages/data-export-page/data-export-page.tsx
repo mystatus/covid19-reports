@@ -24,6 +24,7 @@ import { getLineCount } from '../../../utility/string-utils';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { LinearProgressWithPercent } from '../../linear-progress-with-label/linear-progress-with-label';
 import PageHeader from '../../page-header/page-header';
+import { DataExportPageHelp } from './data-export-page-help';
 import useStyles from './data-export-page.styles';
 
 export const DataExportPage = () => {
@@ -109,7 +110,10 @@ export const DataExportPage = () => {
       <Container maxWidth="md">
         <PageHeader
           title="Data Export"
-          info="Export your group data quickly and easily."
+          help={{
+            contentComponent: DataExportPageHelp,
+            cardId: 'dataExportPage',
+          }}
         />
 
         <Grid container spacing={3}>

@@ -30,6 +30,7 @@ import { getMaxPageIndex, getNewPageIndex, columnInfosOrdered } from '../../../u
 import PageHeader from '../../page-header/page-header';
 import { TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
+import { MusterPageHelp } from './muster-page-help';
 import useStyles from './muster-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
@@ -379,7 +380,13 @@ export const MusterPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <PageHeader title="Muster Non-Compliance" />
+        <PageHeader
+          title="Muster Non-Compliance"
+          help={{
+            contentComponent: MusterPageHelp,
+            cardId: 'musterPage',
+          }}
+        />
 
         <Grid container spacing={3}>
           {/* Table */}

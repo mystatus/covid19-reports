@@ -1,7 +1,11 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import {
-  Card, CardContent, Container, Grid, Typography,
+  Card,
+  CardContent,
+  Container,
+  Grid,
+  Typography,
 } from '@material-ui/core';
 import { UserSelector } from '../../../selectors/user.selector';
 import { Link } from '../../link/link';

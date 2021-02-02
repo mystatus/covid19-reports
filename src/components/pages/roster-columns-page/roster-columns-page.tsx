@@ -17,12 +17,19 @@ import {
   TableHead,
   TableRow,
 } from '@material-ui/core';
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
+import {
+  useDispatch,
+  useSelector,
+} from 'react-redux';
 import axios from 'axios';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PageHeader from '../../page-header/page-header';
+import { RosterColumnsPageHelp } from './roster-columns-page-help';
 import useStyles from './roster-columns-page.styles';
 import { ApiRosterColumnInfo, rosterColumnTypeDisplayName } from '../../../models/api-response';
 import { EditColumnDialog, EditColumnDialogProps } from './edit-column-dialog';
@@ -127,7 +134,13 @@ export const RosterColumnsPage = () => {
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
-        <PageHeader title="Custom Roster Columns" />
+        <PageHeader
+          title="Custom Roster Columns"
+          help={{
+            contentComponent: RosterColumnsPageHelp,
+            cardId: 'rosterColumnsPage',
+          }}
+        />
         <ButtonSet>
           <Button
             size="large"
