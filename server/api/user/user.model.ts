@@ -5,10 +5,9 @@ import { NotFoundError } from '../../util/error-types';
 import { Role } from '../role/role.model';
 import { UserRole } from './user-role.model';
 
-const internalUserEdipi = 'internal';
-
 @Entity()
 export class User extends BaseEntity {
+  static internalUserEdipi = 'internal';
 
   @PrimaryColumn({
     length: 10,
@@ -58,7 +57,9 @@ export class User extends BaseEntity {
         indexPrefix: indexPrefix || role.defaultIndexPrefix,
       });
       this.userRoles.push(userRole);
-      await manager.save(userRole);
+      if (this.edipi !== User.internalUserEdipi) {
+        await manager.save(userRole);
+      }
     }
     return this;
   }
@@ -120,12 +121,12 @@ export class User extends BaseEntity {
   }
 
   public isInternal() {
-    return this.edipi === internalUserEdipi;
+    return this.edipi === User.internalUserEdipi;
   }
 
   static internal() {
     const internalUser = new User();
-    internalUser.edipi = internalUserEdipi;
+    internalUser.edipi = User.internalUserEdipi;
     internalUser.firstName = 'Internal';
     internalUser.lastName = 'User';
     internalUser.email = 'internal@statusengine.com';
@@ -134,6 +135,7 @@ export class User extends BaseEntity {
     internalUser.enabled = true;
     internalUser.isRegistered = true;
     internalUser.rootAdmin = true;
+    internalUser.userRoles = [];
 
     return internalUser;
   }
