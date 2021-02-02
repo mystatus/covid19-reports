@@ -26,7 +26,7 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
     }
   } else if (req.header(internalAccessHeader)
     && process.env.INTERNAL_ACCESS_KEY === req.header(internalAccessHeader)) {
-    id = 'internal';
+    id = User.internalUserEdipi;
   } else if (process.env.NODE_ENV === 'development') {
     id = process.env.USER_EDIPI;
   }
@@ -38,7 +38,7 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
   let user: User | undefined;
   let roles: Role[] = [];
 
-  if (id === 'internal') {
+  if (id === User.internalUserEdipi) {
     user = User.internal();
   } else {
     user = await User.findOne({
@@ -60,20 +60,17 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
     roles = (await Org.find()).map(org => Role.admin(org));
   }
 
-  await getManager().transaction(async manager => {
-    if (!user) {
-      user = manager.create<User>('User', {
-        edipi: id,
-      });
-    }
+  if (!user) {
+    user = User.create({
+      edipi: id,
+    });
+  }
 
-    if (user.rootAdmin) {
-      await user.addRoles(manager, roles);
-      user = await manager.save(user);
-    }
+  if (user.rootAdmin) {
+    await user.addRoles(getManager(), roles);
+  }
 
-    req.appUser = user;
-  });
+  req.appUser = user;
 
   next();
 }
