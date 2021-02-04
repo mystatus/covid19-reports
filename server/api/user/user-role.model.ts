@@ -16,11 +16,15 @@ export class UserRole extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, user => user.userRoles)
+  @ManyToOne(() => User, user => user.userRoles, {
+    onDelete: 'CASCADE',
+    nullable: false,
+  })
   user!: User;
 
   @ManyToOne(() => Role, role => role.userRoles, {
     onDelete: 'RESTRICT',
+    nullable: false,
   })
   role!: Role;
 

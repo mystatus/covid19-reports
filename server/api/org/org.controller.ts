@@ -39,7 +39,7 @@ class OrgController {
     res.json(req.appOrg);
   }
 
-  async addOrg(req: ApiRequest<null, AddOrgBody>, res: Response) {
+  async addOrg(req: ApiRequest<null, OrgBody>, res: Response) {
     if (!req.body.name) {
       throw new BadRequestError('An organization name must be supplied when adding an organization.');
     }
@@ -51,6 +51,7 @@ class OrgController {
     const org = new Org();
     org.name = req.body.name;
     org.description = req.body.description;
+    org.reportingGroup = req.body.reportingGroup;
     const newOrg = await org.save();
 
     await res.status(201).json(newOrg);
@@ -66,9 +67,10 @@ class OrgController {
     res.json(removedOrg);
   }
 
-  async updateOrg(req: ApiRequest<OrgParam, UpdateOrgBody>, res: Response) {
+  async updateOrg(req: ApiRequest<OrgParam, OrgBody>, res: Response) {
     const name = req.body.name;
     const description = req.body.description;
+    const reportingGroup = req.body.reportingGroup;
 
     if (!req.appOrg) {
       throw new NotFoundError('Organization could not be found.');
@@ -80,6 +82,10 @@ class OrgController {
 
     if (description) {
       req.appOrg.description = description;
+    }
+
+    if (reportingGroup) {
+      req.appOrg.reportingGroup = reportingGroup;
     }
 
     const updatedOrg = await req.appOrg.save();
@@ -99,12 +105,11 @@ class OrgController {
 
 }
 
-type AddOrgBody = {
-  name: string
-  description: string
+type OrgBody = {
+  name?: string
+  description?: string
+  reportingGroup?: string
 };
-
-type UpdateOrgBody = AddOrgBody;
 
 type UpdateOrgDefaultMusterBody = {
   defaultMusterConfiguration: MusterConfiguration[]
