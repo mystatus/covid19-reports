@@ -91,7 +91,7 @@ class RoleController {
 
     const userCount = await UserRole.count({
       where: {
-        roleId,
+        role: roleId,
       },
     });
 
