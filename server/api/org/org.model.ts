@@ -25,6 +25,11 @@ export class Org extends BaseEntity {
   })
   indexPrefix!: string;
 
+  @Column({
+    nullable: true,
+  })
+  reportingGroup?: string;
+
   @ManyToOne(() => User, user => user.edipi, {
     onDelete: 'RESTRICT',
     nullable: false,
