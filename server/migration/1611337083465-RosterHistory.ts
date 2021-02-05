@@ -52,9 +52,8 @@ export class RosterHistory1611337083465 implements MigrationInterface {
       for (const row of unitHistory) {
         await queryRunner.query(`
           INSERT INTO roster_history (unit_id, unit_org, edipi, first_name, last_name, custom_columns, change_type, timestamp)
-          VALUES ('${row.unit_id}', ${row.unit_org}, '${row.edipi}', '${escapeStr(row.first_name)}', '${escapeStr(row.last_name)}',
-            '${JSON.stringify(row.custom_columns)}', '${row.change_type}', to_timestamp(${row.timestamp.getTime() / 1000}))
-        `);
+          VALUES ($1, $2, $3, $4, $5, $6, $7, to_timestamp($8))
+        `, [row.unit_id, row.unit_org, row.edipi, row.first_name, row.last_name, row.custom_columns, row.change_type, row.timestamp.getTime() / 1000]);
       }
     }
 
@@ -83,10 +82,6 @@ export class RosterHistory1611337083465 implements MigrationInterface {
     await queryRunner.query(`DROP TYPE "roster_history_change_type_enum"`);
   }
 
-}
-
-function escapeStr(str: string) {
-  return str.replace(`'`, `\\'`);
 }
 
 const rosterAuditTrigger = `
