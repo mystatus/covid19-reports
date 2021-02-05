@@ -1,7 +1,12 @@
 import { Response } from 'express';
 import csv from 'csvtojson';
 import fs from 'fs';
-import { getConnection, In, OrderByCondition } from 'typeorm';
+import {
+  getConnection,
+  getManager,
+  In,
+  OrderByCondition,
+} from 'typeorm';
 import _ from 'lodash';
 import {
   ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams, PagedQuery,
@@ -240,8 +245,14 @@ class RosterController {
     });
   }
 
-  async deleteRosterEntries(req: ApiRequest<OrgParam>, res: Response) {
-    await Roster.clear();
+  async deleteRosterEntries(req: ApiRequest, res: Response) {
+    const unitIdFilter = req.appUserRole!.getUnitFilter().replace('*', '%');
+    await getManager().createQueryBuilder(Roster, 'roster')
+      .delete()
+      .where('unit_org = :orgId', { orgId: req.appOrg!.id })
+      .andWhere('unit_id LIKE :unitIdFilter', { unitIdFilter })
+      .execute();
+
     res.status(200).send();
   }
 
