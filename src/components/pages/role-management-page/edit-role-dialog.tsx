@@ -47,7 +47,6 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   const existingRole: boolean = !!role;
   const [name, setName] = useState(role?.name || '');
   const [description, setDescription] = useState(role?.description || '');
-  const [defaultIndexPrefix, setDefaultIndexPrefix] = useState(role?.defaultIndexPrefix || '');
   const [workspaceId, setWorkspaceId] = useState(role?.workspace?.id || -1);
   const [allowedRosterColumns, setAllowedRosterColumns] = useState(parsePermissions(rosterColumns || [], role?.allowedRosterColumns));
   const [allowedNotificationEvents, setAllowedNotificationEvents] = useState(parsePermissions(notifications?.map(notification => {
@@ -132,7 +131,6 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
     const body = {
       name,
       description,
-      defaultIndexPrefix,
       workspaceId: workspaceId < 0 ? null : workspaceId,
       allowedRosterColumns: permissionsToArray(allowedColumns),
       allowedNotificationEvents: permissionsToArray(allowedNotificationEvents),
@@ -234,52 +232,35 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
               onChange={onInputChanged(setDescription)}
             />
           </Grid>
-          <Grid item xs={6}>
-            <Typography className={classes.roleHeader}>Analytics Workspace:</Typography>
-            <Select
-              className={classes.workspaceSelect}
-              native
-              disabled={formDisabled}
-              value={workspaceId}
-              onChange={onWorkspaceChanged}
-              inputProps={{
-                name: 'template',
-                id: 'template-select',
-              }}
-            >
-              <option key={-1} value={-1}>None</option>
-              {workspaces && workspaces.map(workspace => (
-                <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
-              ))}
-            </Select>
-          </Grid>
-
-          <Grid item xs={6}>
-            <Typography className={classes.roleHeader}>Workspace Description:</Typography>
-            <Typography className={classes.workspaceDescription}>{getWorkspaceDescription()}</Typography>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography className={classes.roleHeader}>Default Unit Filter:</Typography>
-            <TextField
-              className={classes.textField}
-              id="role-index-prefix"
-              disabled={formDisabled}
-              value={defaultIndexPrefix}
-              onChange={onInputChanged(setDefaultIndexPrefix)}
-            />
+          <Grid item container xs={6}>
+            <Grid item xs={12}>
+              <Typography className={classes.roleHeader}>Analytics Workspace:</Typography>
+              <Select
+                className={classes.workspaceSelect}
+                native
+                disabled={formDisabled}
+                value={workspaceId}
+                onChange={onWorkspaceChanged}
+                inputProps={{
+                  name: 'template',
+                  id: 'template-select',
+                }}
+              >
+                <option key={-1} value={-1}>None</option>
+                {workspaces && workspaces.map(workspace => (
+                  <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
+                ))}
+              </Select>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography className={classes.roleHeader}>Workspace Description:</Typography>
+              <Typography className={classes.workspaceDescription}>{getWorkspaceDescription()}</Typography>
+            </Grid>
           </Grid>
           <Grid item xs={6}>
             <Typography className={classes.roleHeader}>Allowed Notifications:</Typography>
             <EditableBooleanTable aria-label="Notifications">
               {buildNotificationEventRows()}
-            </EditableBooleanTable>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography className={classes.roleHeader}>
-              {`Viewable Roster Columns: ${workspaceId >= 0 ? '(Set by Workspace)' : ''}`}
-            </Typography>
-            <EditableBooleanTable aria-label="Roster Columns">
-              {buildRosterColumnRows()}
             </EditableBooleanTable>
           </Grid>
           <Grid item xs={6}>
@@ -368,6 +349,14 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
                   />
                 </TableCell>
               </TableRow>
+            </EditableBooleanTable>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography className={classes.roleHeader}>
+              {`Viewable Roster Columns: ${workspaceId >= 0 ? '(Set by Workspace)' : ''}`}
+            </Typography>
+            <EditableBooleanTable aria-label="Roster Columns">
+              {buildRosterColumnRows()}
             </EditableBooleanTable>
           </Grid>
         </Grid>

@@ -5,6 +5,7 @@ import { ApiRequest, OrgEdipiParams, OrgParam } from '../index';
 import { User } from './user.model';
 import { Role } from '../role/role.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
+import { Unit } from '../unit/unit.model';
 
 class UserController {
 
@@ -62,6 +63,7 @@ class UserController {
     const edipi = req.body.edipi;
     const firstName = req.body.firstName;
     const lastName = req.body.lastName;
+    const unitFilter = req.body.unitFilter;
 
     if (roleId == null) {
       throw new BadRequestError('A role id must be supplied when adding a user.');
@@ -69,6 +71,10 @@ class UserController {
 
     if (edipi == null) {
       throw new BadRequestError('An EDIPI must be supplied when adding a user.');
+    }
+
+    if (unitFilter == null) {
+      throw new BadRequestError('A unit filter must be supplied when adding a user.');
     }
 
     const role = await Role.findOne({
@@ -80,6 +86,18 @@ class UserController {
 
     if (!role) {
       throw new NotFoundError('The role was not found in the organization.');
+    }
+
+    const unitIdFilter = unitFilter.replace('*', '%');
+
+    const units = await Unit.createQueryBuilder()
+      .select()
+      .where('org_id = :orgId', { orgId: org.id })
+      .andWhere('id LIKE :unitIdFilter', { unitIdFilter })
+      .getMany();
+
+    if (units.length === 0) {
+      throw new NotFoundError('No matching units were found');
     }
 
     if (edipi === req.appUser.edipi && req.appUserRole?.role.id !== roleId) {
@@ -112,9 +130,9 @@ class UserController {
       }
 
       if (newUser) {
-        await user.addRole(manager, role);
+        await user.addRole(manager, role, unitFilter);
       } else {
-        await user.changeRole(manager, role);
+        await user.changeRole(manager, org.id, role, unitFilter);
       }
       savedUser = await manager.save(user);
     });
@@ -135,6 +153,7 @@ class UserController {
         orgUsers.push(userRole.user);
       }
     }
+    orgUsers.sort((a, b) => a.edipi.localeCompare(b.edipi));
     res.json(orgUsers);
   }
 
@@ -186,6 +205,7 @@ type UpsertUserBody = {
   role: string
   firstName: string
   lastName: string
+  unitFilter: string
 };
 
 type RegisterUserBody = {

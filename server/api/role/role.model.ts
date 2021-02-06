@@ -39,11 +39,6 @@ export class Role extends BaseEntity {
   })
   workspace?: Workspace | null;
 
-  @Column({
-    default: '',
-  })
-  defaultIndexPrefix!: string;
-
   @Column('simple-array', {
     default: '',
   })
@@ -110,7 +105,6 @@ export class Role extends BaseEntity {
     adminRole.name = 'Admin';
     adminRole.description = 'Site Administrator';
     adminRole.org = org;
-    adminRole.defaultIndexPrefix = '*';
     adminRole.allowedNotificationEvents = ['*'];
     adminRole.allowedRosterColumns = ['*'];
 

@@ -51,7 +51,7 @@ const TextSection = ({ text, ...rest }: TextSectionProps) => (
 );
 
 export type RoleInfoPanelProps = {
-  hideUnitFilter?: boolean
+  hideDescription?: boolean
   hideWorkspaceDescription?: boolean
   hideWorkspaceName?: boolean
   role?: ApiRole
@@ -64,7 +64,7 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
   const availableNotifications = useSelector(NotificationSelector.all);
   const rosterColumns = useSelector(RosterSelector.columns);
   const {
-    hideUnitFilter = false,
+    hideDescription = false,
     hideWorkspaceDescription = false,
     hideWorkspaceName = false,
     role,
@@ -96,8 +96,7 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
   return (
     <NegativeMarginScrollFix spacing={scrollFix ? gridSpacing : 0}>
       <Grid container spacing={gridSpacing}>
-        <TextSection full={hideUnitFilter} text={role.description} title="Description" />
-        <TextSection text={role.defaultIndexPrefix} title="Default Unit Filter" visible={!hideUnitFilter} />
+        <TextSection full text={role.description} title="Role Description" visible={!hideDescription} />
         <Grid item container xs={6}>
           <TextSection
             full
@@ -121,14 +120,6 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
             extractValue={notification => role.allowedNotificationEvents.some(event => event === '*' || event === notification.id) && <CheckIcon />}
           />
         </Section>
-        <Section title="Viewable Roster Columns">
-          <RoleDataTable
-            aria-label="Roster Columns"
-            data={rosterColumns}
-            extractLabel="displayName"
-            extractValue={column => columnAllowed(column) && <CheckIcon />}
-          />
-        </Section>
         <Section title="Permissions">
           <RoleDataTable
             aria-label="Permissions"
@@ -143,6 +134,14 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
             ]}
             extractLabel="label"
             extractValue={({ value }) => value && <CheckIcon />}
+          />
+        </Section>
+        <Section title="Viewable Roster Columns">
+          <RoleDataTable
+            aria-label="Roster Columns"
+            data={rosterColumns}
+            extractLabel="displayName"
+            extractValue={column => columnAllowed(column) && <CheckIcon />}
           />
         </Section>
       </Grid>

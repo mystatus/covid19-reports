@@ -1,7 +1,7 @@
-import { createStyles, Theme } from '@material-ui/core';
+import { createStyles } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 
-export default makeStyles((theme: Theme) => createStyles({
+export default makeStyles(() => createStyles({
   dialogTitle: {
     paddingTop: 0,
   },
@@ -10,26 +10,6 @@ export default makeStyles((theme: Theme) => createStyles({
     marginBottom: '15px',
     marginTop: '15px',
     width: '100%',
-  },
-  rolePermissionHeader: {
-    padding: '3px 16px',
-    backgroundColor: '#DEDEDE',
-  },
-  rolePermissionCell: {
-    padding: '0px 16px',
-    height: '32px',
-    backgroundColor: '#F0F1F1',
-  },
-  rolePermissionIconCell: {
-    padding: '0px 16px',
-    height: '32px',
-    textAlign: 'center',
-    backgroundColor: '#EAEAEA',
-    '& svg': {
-      position: 'relative',
-      top: '3px',
-      color: theme.palette.primary.light,
-    },
   },
   roleDialogActions: {
     justifyContent: 'center',

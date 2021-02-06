@@ -154,9 +154,6 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
       role.workspace = workspace;
     }
   }
-  if (body.defaultIndexPrefix != null) {
-    role.defaultIndexPrefix = body.defaultIndexPrefix;
-  }
   if (body.canManageGroup != null) {
     role.canManageGroup = body.canManageGroup;
   }
@@ -205,7 +202,6 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
 type RoleBody = {
   name?: string
   description?: string
-  defaultIndexPrefix?: string
   workspaceId?: number | null
   allowedRosterColumns?: string[]
   allowedNotificationEvents?: string[]
