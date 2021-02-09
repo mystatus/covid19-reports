@@ -37,6 +37,7 @@
     "http-proxy-middleware": "^0.20.0",
     "json-2-csv": "^3.7.8",
     "lodash": "^4.17.20",
+    "material-ui-phone-number": "^2.2.6",
     "moment": "^2.29.1",
     "moment-timezone": "^0.5.32",
     "morgan": "^1.10.0",
