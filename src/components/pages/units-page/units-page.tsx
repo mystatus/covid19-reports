@@ -94,6 +94,7 @@ export const UnitsPage = () => {
     setEditUnitDialogProps({
       open: true,
       orgId,
+      defaultMusterConfiguration,
       onClose: async () => {
         setEditUnitDialogProps({ open: false });
         await initializeTable();
@@ -110,6 +111,7 @@ export const UnitsPage = () => {
       setEditUnitDialogProps({
         open: true,
         unit: unitMenu.unit,
+        defaultMusterConfiguration,
         orgId,
         onClose: async () => {
           setEditUnitDialogProps({ open: false });
