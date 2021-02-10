@@ -10,6 +10,21 @@ export default makeStyles((theme: Theme) => createStyles({
       width: '100%',
     },
   },
+  atAGlance: {
+    maxHeight: '200px',
+    overflowY: 'auto',
+  },
+  noUnits: {
+    color: '#A9AEB1',
+  },
+  unitsContainer: {
+    columns: '150px auto',
+    overflow: 'hidden',
+    '& > div': {
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+  },
   textField: {
     width: '100%',
     margin: 0,
@@ -30,6 +45,9 @@ export default makeStyles((theme: Theme) => createStyles({
   textCell: {
     width: '70%',
     backgroundColor: '#F0F1F1',
+  },
+  noMusterConfiguration: {
+    marginTop: theme.spacing(2),
   },
   addMusterButton: {
     margin: '10px 0px 20px 0px',
