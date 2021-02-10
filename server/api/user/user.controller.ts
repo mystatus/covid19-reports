@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { getManager } from 'typeorm';
+import { getManager, Like } from 'typeorm';
 import { AccessRequest } from '../access-request/access-request.model';
 import { ApiRequest, OrgEdipiParams, OrgParam } from '../index';
 import { User } from './user.model';
@@ -90,13 +90,14 @@ class UserController {
 
     const unitIdFilter = unitFilter.replace('*', '%');
 
-    const units = await Unit.createQueryBuilder()
-      .select()
-      .where('org_id = :orgId', { orgId: org.id })
-      .andWhere('id LIKE :unitIdFilter', { unitIdFilter })
-      .getMany();
+    const unitsCount = await Unit.count({
+      where: {
+        org: req.appOrg!,
+        id: Like(unitIdFilter),
+      },
+    });
 
-    if (units.length === 0) {
+    if (unitsCount === 0) {
       throw new NotFoundError('No matching units were found');
     }
 

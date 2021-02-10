@@ -303,7 +303,7 @@ export const UsersPage = () => {
                     onClose={handleUserMoreClose}
                   >
                     <MenuItem onClick={handleRemoveFromGroup}>Remove from Group</MenuItem>
-                    <MenuItem onClick={handleChangeRole}>Change Role</MenuItem>
+                    <MenuItem onClick={handleChangeRole}>Change Role/Unit</MenuItem>
                   </Menu>
                 </TableCell>
               </TableRow>

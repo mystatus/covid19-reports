@@ -87,7 +87,7 @@ const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props:
   return (
     <Dialog onClose={onCancel} open={Boolean(open)} maxWidth="md" fullWidth>
       <DialogTitle>
-        Role Assignment for <b>{`${user?.firstName} ${user?.lastName}`}</b>
+        Role and Unit Assignment for <b>{`${user?.firstName} ${user?.lastName}`}</b>
       </DialogTitle>
       <DialogContent>
         <Grid container spacing={3}>

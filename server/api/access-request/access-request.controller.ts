@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { getManager } from 'typeorm';
+import { getManager, Like } from 'typeorm';
 import { BadRequestError, NotFoundError, UnauthorizedError } from '../../util/error-types';
 import { ApiRequest, OrgParam } from '../index';
 import { Org } from '../org/org.model';
@@ -154,13 +154,14 @@ class AccessRequestController {
 
     const unitIdFilter = req.body.unitFilter.replace('*', '%');
 
-    const units = await Unit.createQueryBuilder()
-      .select()
-      .where('org_id = :orgId', { orgId: req.appOrg!.id })
-      .andWhere('id LIKE :unitIdFilter', { unitIdFilter })
-      .getMany();
+    const unitsCount = await Unit.count({
+      where: {
+        org: req.appOrg!,
+        id: Like(unitIdFilter),
+      },
+    });
 
-    if (units.length === 0) {
+    if (unitsCount === 0) {
       throw new NotFoundError('No matching units were found');
     }
 
