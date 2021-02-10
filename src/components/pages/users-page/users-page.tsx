@@ -32,6 +32,8 @@ import SelectRoleDialog, { SelectRoleDialogProps } from './select-role-dialog';
 import { formatMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
 import { Modal } from '../../../actions/modal.actions';
+import { UnitSelector } from '../../../selectors/unit.selector';
+import { Unit } from '../../../actions/unit.actions';
 
 
 enum AccessRequestState {
@@ -59,6 +61,7 @@ type UserMoreMenuState = {
 export const UsersPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
+  const units = useSelector(UnitSelector.all);
   const [userRows, setUserRows] = useState<ApiUser[]>([]);
   const [accessRequests, setAccessRequests] = useState<AccessRequestRow[]>([]);
   const [userMoreMenu, setUserMenu] = React.useState<UserMoreMenuState | undefined>();
@@ -70,6 +73,7 @@ export const UsersPage = () => {
     if (orgId) {
       try {
         dispatch(AppFrame.setPageLoading(true));
+        dispatch(Unit.fetch(orgId));
         const [users, requests] = await Promise.all([
           UserClient.fetchAll(orgId!),
           AccessRequestClient.fetchAll(orgId!),
@@ -119,11 +123,12 @@ export const UsersPage = () => {
     setSelectRoleDialogProps({
       confirmButtonText: 'Confirm Role Change',
       loading: Boolean(userMoreMenu?.loading),
+      units,
       onCancel: () => {
         patchMoreMenuState({ showChangeUserRole: false });
         setSelectRoleDialogProps(undefined);
       },
-      onChange: async (role: ApiRole) => {
+      onChange: async (role: ApiRole, unitFilter: string) => {
         try {
           patchMoreMenuState({ loading: true });
           await client.post(`user/${orgId}`, {
@@ -131,6 +136,7 @@ export const UsersPage = () => {
             lastName: userMoreMenu!.user.lastName,
             edipi: userMoreMenu!.user.edipi,
             role: role.id,
+            unitFilter,
           });
         } catch (error) {
           showAlertDialog(error, 'Change User Role', 'Unable to change role');
@@ -156,16 +162,18 @@ export const UsersPage = () => {
     setAccessRequestState(request, AccessRequestState.Selected);
     setSelectRoleDialogProps({
       confirmButtonText: 'Finalize Approval',
+      units,
       onCancel: () => {
         setAccessRequestState(request, undefined);
         setSelectRoleDialogProps(undefined);
       },
-      onChange: async (role: ApiRole) => {
+      onChange: async (role: ApiRole, unitFilter: string) => {
         try {
           setAccessRequestState(request, AccessRequestState.ApprovePending);
           await client.post(`access-request/${orgId}/approve`, {
             requestId: request.id,
             roleId: role.id,
+            unitFilter,
           });
         } catch (error) {
           showAlertDialog(error, 'Approve Access Request', 'Error while approving accessing request');
@@ -175,6 +183,19 @@ export const UsersPage = () => {
       open: true,
       user: request.user,
     });
+  }
+
+  function getUserRole(user: ApiUser) {
+    // Ever user will have exactly one role for the current org, roles for other orgs are not returned to the client
+    return user.userRoles![0].role.name;
+  }
+
+  function getUserUnit(user: ApiUser) {
+    const unitFilter = user.userRoles![0].indexPrefix;
+    if (unitFilter && unitFilter === '*') {
+      return 'All Units';
+    }
+    return units.find(unit => unit.id === unitFilter)?.name || unitFilter;
   }
 
   async function denyRequest(request: AccessRequestRow) {
@@ -269,10 +290,10 @@ export const UsersPage = () => {
               <TableRow>
                 <TableCell>Name</TableCell>
                 <TableCell>EDIPI</TableCell>
-                <TableCell>Service</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Phone</TableCell>
                 <TableCell>Role</TableCell>
+                <TableCell>Unit</TableCell>
                 <TableCell>
                   <Menu
                     id="user-more-menu"
@@ -282,7 +303,7 @@ export const UsersPage = () => {
                     onClose={handleUserMoreClose}
                   >
                     <MenuItem onClick={handleRemoveFromGroup}>Remove from Group</MenuItem>
-                    <MenuItem onClick={handleChangeRole}>Change Role</MenuItem>
+                    <MenuItem onClick={handleChangeRole}>Change Role/Unit</MenuItem>
                   </Menu>
                 </TableCell>
               </TableRow>
@@ -294,14 +315,14 @@ export const UsersPage = () => {
                     {`${row.firstName} ${row.lastName}`}
                   </TableCell>
                   <TableCell>{row.edipi}</TableCell>
-                  <TableCell>{row.service}</TableCell>
                   <TableCell>
                     <IconButton aria-label="expand row" size="small" href={`mailto:${row.email}`}>
                       <MailOutlineIcon />
                     </IconButton>
                   </TableCell>
                   <TableCell>{row.phone}</TableCell>
-                  <TableCell>{row.userRoles?.length ? row.userRoles[0].role.name : 'Unknown'}</TableCell>
+                  <TableCell>{getUserRole(row)}</TableCell>
+                  <TableCell>{getUserUnit(row)}</TableCell>
                   <TableCell align="right" padding="none" size="small">
                     <IconButton
                       aria-label="more"

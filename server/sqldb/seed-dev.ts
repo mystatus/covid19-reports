@@ -51,6 +51,7 @@ async function generateOrg(manager: EntityManager, orgNum: number, admin: User, 
     description: `Group ${orgNum} for testing.`,
     contact: admin,
     indexPrefix: `testgroup${orgNum}`,
+    reportingGroup: `test${orgNum}`,
     defaultMusterConfiguration: [],
   });
   org = await manager.save(org);
@@ -66,10 +67,22 @@ async function generateOrg(manager: EntityManager, orgNum: number, admin: User, 
   });
   customColumn = await manager.save(customColumn);
 
+  const units: Unit[] = [];
+  for (let i = 1; i <= 5; i++) {
+    let unit = manager.create(Unit, {
+      org,
+      name: `Unit ${i} : Group ${orgNum}`,
+      id: `unit${i}`,
+      musterConfiguration: [],
+    });
+    unit = await manager.save(unit);
+    units.push(unit);
+  }
+
   let groupAdminRole = createGroupAdminRole(manager, org);
   groupAdminRole = await manager.save(groupAdminRole);
   await admin.addRole(manager, groupAdminRole, '*');
-  admin = await manager.save(admin);
+  await manager.save(admin);
 
   let groupUserRole = createGroupUserRole(manager, org);
   groupUserRole.allowedRosterColumns.push(customColumn.name);
@@ -87,18 +100,6 @@ async function generateOrg(manager: EntityManager, orgNum: number, admin: User, 
     });
     user = await manager.save(user);
     await user.addRole(manager, groupUserRole, 'unit1');
-  }
-
-  const units: Unit[] = [];
-  for (let i = 1; i <= 5; i++) {
-    let unit = manager.create(Unit, {
-      org,
-      name: `Unit ${i} : Group ${orgNum}`,
-      id: `unit${i}`,
-      musterConfiguration: [],
-    });
-    unit = await manager.save(unit);
-    units.push(unit);
   }
 
   for (let i = 0; i < numRosterEntries; i++) {
@@ -126,11 +127,10 @@ function randomNumber(min: number, max: number) {
 }
 
 function createGroupAdminRole(manager: EntityManager, org: Org, workspace?: Workspace) {
-  const role = manager.create(Role, {
+  return manager.create(Role, {
     name: `Group Admin : Group ${org.id}`,
     description: 'For managing the group.',
     org,
-    defaultIndexPrefix: '*',
     allowedRosterColumns: ['*'],
     allowedNotificationEvents: ['*'],
     canManageGroup: true,
@@ -141,15 +141,13 @@ function createGroupAdminRole(manager: EntityManager, org: Org, workspace?: Work
     canViewRoster: true,
     workspace,
   });
-  return role;
 }
 
 function createGroupUserRole(manager: EntityManager, org: Org, workspace?: Workspace) {
-  const role = manager.create(Role, {
+  return manager.create(Role, {
     name: `Group User : Group ${org.id}`,
     description: `Basic role for all Group ${org.id} users.`,
     org,
-    defaultIndexPrefix: 'unit1',
     allowedRosterColumns: ['edipi', 'firstName', 'lastName'],
     allowedNotificationEvents: [],
     canManageRoster: true,
@@ -157,5 +155,4 @@ function createGroupUserRole(manager: EntityManager, org: Org, workspace?: Works
     canViewMuster: true,
     workspace,
   });
-  return role;
 }

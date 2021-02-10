@@ -122,8 +122,7 @@ export const RoleManagementPage = () => {
         </ButtonSet>
         <div className={classes.accordionHeader}>
           <Typography>Role Name</Typography>
-          <Typography>Default Unit Filter</Typography>
-          <Typography>Analytics Workspace</Typography>
+          <Typography>Description</Typography>
         </div>
         {roles.map((row, index) => (
           <Accordion
@@ -137,11 +136,10 @@ export const RoleManagementPage = () => {
               id={`role${row.id}_header`}
             >
               <Typography className={classes.nameColumn}>{row.name}</Typography>
-              <Typography className={classes.indexPrefixColumn}>{row.defaultIndexPrefix}</Typography>
-              <Typography>{row.workspace ? row.workspace.name : 'None'}</Typography>
+              <Typography className={classes.descriptionColumn}>{row.description}</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <RoleInfoPanel role={row} hideUnitFilter hideWorkspaceName />
+              <RoleInfoPanel role={row} hideDescription />
             </AccordionDetails>
             <AccordionActions className={classes.roleButtons}>
               <Button

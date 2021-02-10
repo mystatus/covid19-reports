@@ -11,6 +11,7 @@ export const UsersPageHelp = () => {
       `}
       bullets={[
         'Change a user’s role within the group',
+        'Change the units a user has access to',
         'Delete a user from the group',
         'View all user access requests (when applicable)',
         'Approve or Deny user access requests (when applicable)',

@@ -37,8 +37,8 @@ export default makeStyles((theme: Theme) => createStyles({
     flexShrink: 0,
     fontWeight: 600,
   },
-  indexPrefixColumn: {
-    flexBasis: '33.33%',
+  descriptionColumn: {
+    flexBasis: '66.66%',
     flexShrink: 0,
   },
   roleButtons: {

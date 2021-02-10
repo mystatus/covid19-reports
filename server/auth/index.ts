@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { getManager } from 'typeorm';
 import {
   ApiRequest,
   OrgParam,
@@ -36,7 +35,6 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
   }
 
   let user: User | undefined;
-  let roles: Role[] = [];
 
   if (id === User.internalUserEdipi) {
     user = User.internal();
@@ -57,17 +55,13 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
   }
 
   if (user?.rootAdmin) {
-    roles = (await Org.find()).map(org => Role.admin(org));
+    user.userRoles = (await Org.find()).map(org => UserRole.admin(org, user!));
   }
 
   if (!user) {
     user = User.create({
       edipi: id,
     });
-  }
-
-  if (user.rootAdmin) {
-    await user.addRoles(getManager(), roles);
   }
 
   req.appUser = user;
@@ -121,7 +115,7 @@ export async function requireOrgAccess(reqAny: any, res: Response, next: NextFun
     if (orgUserRole) {
       req.appOrg = orgUserRole.role.org;
       req.appUserRole = orgUserRole;
-      req.appWorkspace = orgUserRole.role.workspace!;
+      req.appWorkspace = orgUserRole.role.workspace || undefined;
     } else if (user.rootAdmin) {
       const org = await Org.findOne({
         where: {

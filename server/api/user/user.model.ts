@@ -48,25 +48,18 @@ export class User extends BaseEntity {
   @OneToMany(() => UserRole, userRole => userRole.user)
   userRoles!: UserRole[];
 
-  async addRole(manager: EntityManager, role: Role, indexPrefix?: string): Promise<User> {
+  async addRole(manager: EntityManager, role: Role, indexPrefix: string): Promise<User> {
     let userRole = await this.findUserRole(role);
     if (!userRole) {
       userRole = manager.create<UserRole>('UserRole', {
         user: this,
         role,
-        indexPrefix: indexPrefix || role.defaultIndexPrefix,
+        indexPrefix,
       });
       this.userRoles.push(userRole);
       if (this.edipi !== User.internalUserEdipi) {
         await manager.save(userRole);
       }
-    }
-    return this;
-  }
-
-  async addRoles(manager: EntityManager, roles: Role[]): Promise<User> {
-    for (const role of roles) {
-      await this.addRole(manager, role);
     }
     return this;
   }
@@ -85,35 +78,38 @@ export class User extends BaseEntity {
     return this;
   }
 
-  async changeRole(manager: EntityManager, role: Role, indexPrefix?: string): Promise<User> {
-    let userRole = await this.findUserRole(role);
-    if (!userRole) {
-      if (this.userRoles.length === 1) {
-        await this.removeRole(manager, undefined, this.userRoles[0]);
-      }
-      userRole = manager.create<UserRole>('UserRole', {
-        user: this,
-        role,
-        indexPrefix: indexPrefix || role.defaultIndexPrefix,
-      });
-      this.userRoles.push(userRole);
-      await manager.save(userRole);
+  async changeRole(manager: EntityManager, orgId: number, role: Role, indexPrefix: string): Promise<User> {
+    if (!this.userRoles) {
+      await this.refreshUserRoles();
+    }
+    const orgRole = this.userRoles.find(userRole => userRole.role.org!.id === orgId);
+    if (!orgRole) {
+      throw new NotFoundError('The user does not have a role in the given group.');
+    }
+    if (orgRole.role.id !== role.id || orgRole.indexPrefix !== indexPrefix) {
+      orgRole.role = role;
+      orgRole.indexPrefix = indexPrefix;
+      await manager.save(orgRole);
     }
     return this;
   }
 
+  protected async refreshUserRoles() {
+    if (!this.hasId()) {
+      this.userRoles = [];
+    } else {
+      this.userRoles = await UserRole.find({
+        relations: ['role', 'role.org'],
+        where: {
+          user: this,
+        },
+      });
+    }
+  }
+
   protected async findUserRole(role: Role): Promise<UserRole | undefined> {
     if (!this.userRoles) {
-      if (!this.hasId()) {
-        this.userRoles = [];
-      } else {
-        this.userRoles = await UserRole.find({
-          relations: ['role', 'role.org'],
-          where: {
-            user: this,
-          },
-        });
-      }
+      await this.refreshUserRoles();
     }
     return this.userRoles.find(userRole => {
       return userRole.role.id === role.id;
