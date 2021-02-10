@@ -105,7 +105,9 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
   const [name, setName] = useState(unit?.name || '');
   const [errorMessage, setErrorMessage] = React.useState<null | string>(null);
   const [musterConfigMode, setMusterConfigMode] = useState(getModeFromData(unit?.musterConfiguration));
-  const [musterConfiguration, setMusterConfiguration] = useState<MusterConfigurationRow[]>(musterRows(getDataFromMode(musterConfigMode, unit?.musterConfiguration, defaultMusterConfiguration)!));
+  const [musterConfiguration, setMusterConfiguration] = useState<MusterConfigurationRow[]>(
+    musterRows(getDataFromMode(musterConfigMode, unit?.musterConfiguration, defaultMusterConfiguration)!)
+  );
 
   useEffect(() => {
     const defaultOrNone = defaultMusterConfiguration?.length ? defaultMusterConfiguration : [];
@@ -117,7 +119,9 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
     return null;
   }
 
-  const showNoneMessage = (musterConfigMode === MusterConfigMode.Custom && !musterConfiguration.length) || musterConfigMode === MusterConfigMode.None || (musterConfigMode === MusterConfigMode.Default && defaultMusterConfiguration.length === 0);
+  const showNoneMessage = (musterConfigMode === MusterConfigMode.Custom && !musterConfiguration.length)
+    || musterConfigMode === MusterConfigMode.None
+    || (musterConfigMode === MusterConfigMode.Default && defaultMusterConfiguration.length === 0);
 
   const onUnitChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
     setId(event.target.value.replace(/[^a-z0-9_]/gi, '').toLowerCase());
@@ -276,14 +280,16 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
     const body = {
       id,
       name,
-      musterConfiguration: musterConfigMode === MusterConfigMode.None ? [] : musterConfigMode === MusterConfigMode.Default ? null : musterConfiguration.map(muster => {
-        return {
-          days: muster.days,
-          startTime: muster.startTime,
-          timezone: muster.timezone,
-          durationMinutes: muster.durationMinutes,
-        };
-      }),
+      musterConfiguration: musterConfigMode === MusterConfigMode.None
+        ? []
+        : musterConfigMode === MusterConfigMode.Default
+          ? null
+          : musterConfiguration.map(muster => ({
+              days: muster.days,
+              startTime: muster.startTime,
+              timezone: muster.timezone,
+              durationMinutes: muster.durationMinutes,
+          })),
     };
     try {
       if (existingUnit) {
@@ -367,7 +373,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
               <p>
                 This unit is not required to muster.
                 {musterConfigMode === MusterConfigMode.Default && (
-                  <em> * using default muster requirements</em>
+                  <em> (using default muster requirements)</em>
                 )}
               </p>
             )}

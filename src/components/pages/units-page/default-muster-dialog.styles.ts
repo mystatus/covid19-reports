@@ -23,7 +23,7 @@ export default makeStyles((theme: Theme) => createStyles({
     '& > div': {
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
-    }
+    },
   },
   textField: {
     width: '100%',
