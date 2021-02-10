@@ -192,7 +192,7 @@ export interface ApiUnit {
   id: string,
   name: string,
   org?: ApiOrg,
-  musterConfiguration: MusterConfiguration[],
+  musterConfiguration?: MusterConfiguration[],
 }
 
 export interface ApiError {

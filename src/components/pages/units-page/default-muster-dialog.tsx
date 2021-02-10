@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Avatar,
+  Box,
   Button,
   Dialog,
   DialogActions,
@@ -28,10 +29,12 @@ import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import { useSelector } from 'react-redux';
 import useStyles from './default-muster-dialog.styles';
 import { MusterConfiguration } from '../../../models/api-response';
-import {
-  dayIsIn, DaysOfTheWeek, nextDay, oneDaySeconds,
-} from '../../../utility/days';
+import { DaysOfTheWeek } from '../../../utility/days';
 import { UserSelector } from '../../../selectors/user.selector';
+import MusterConfigReadable from './muster-config-readable';
+import { validateMusterConfiguration } from '../../../utility/muster-utils';
+import { HelpCard } from '../../help/help-card/help-card';
+import { UnitSelector } from '../../../selectors/unit.selector';
 
 export interface DefaultMusterDialogProps {
   open: boolean,
@@ -45,15 +48,12 @@ interface MusterConfigurationRow extends MusterConfiguration {
   startTimeDate: Date,
 }
 
-interface MusterWindow {
-  start: number,
-  end: number,
-}
-
 export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
   const classes = useStyles();
   const [formDisabled, setFormDisabled] = useState(false);
   const org = useSelector(UserSelector.org);
+  const units = useSelector(UnitSelector.all)
+    .filter(unit => unit.musterConfiguration === null);
   const orgId = org?.id;
   const defaultMusterConfiguration = org?.defaultMusterConfiguration;
   const {
@@ -81,9 +81,15 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
   const [musterConfiguration, setMusterConfiguration] = useState<MusterConfigurationRow[]>(musterRows(defaultMusterConfiguration) || []);
   const [errorMessage, setErrorMessage] = React.useState<null | string>(null);
 
+  const hasChanges = React.useCallback(() => {
+    return JSON.stringify(defaultMusterConfiguration) !== JSON.stringify(musterConfiguration.map(({ durationHours, rowKey, startTimeDate, ...muster }) => muster));
+  }, [defaultMusterConfiguration, musterConfiguration]);
+
   if (!open) {
     return null;
   }
+
+  const hasDefaultMuster = musterConfiguration.length > 0;
 
   const addMusterWindow = () => {
     const configuration = [...musterConfiguration, {
@@ -168,55 +174,11 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
   };
 
   const validateMusterWindows = () => {
-    if (musterConfiguration.find(muster => muster.days === DaysOfTheWeek.None)) {
-      setErrorMessage('Please select one or more days.');
+    const validation = validateMusterConfiguration(musterConfiguration);
+    if (validation) {
+      setErrorMessage(validation);
       return false;
     }
-
-    const windows: MusterWindow[] = [];
-    // Go through each configuration and add the time ranges for muster windows over a test week
-    musterConfiguration.forEach(muster => {
-      // Parse the start time
-      const musterTime = moment(muster.startTime, 'HH:mm');
-      // Get the unix timestamp of the first possible muster window of the week
-      let current = moment()
-        .tz(muster.timezone)
-        .startOf('week')
-        .add(musterTime.hours(), 'hours')
-        .add(musterTime.minutes(), 'minutes')
-        .unix();
-      const firstWindowIndex = windows.length;
-      // Loop through each day and add any that are set in this muster configuration
-      for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday; day = nextDay(day)) {
-        if (dayIsIn(day, muster.days)) {
-          windows.push({
-            start: current,
-            end: current + muster.durationMinutes * 60,
-          });
-        }
-        current += oneDaySeconds;
-      }
-
-      // Add the first window of next week to make sure we don't overlap over the week boundary
-      windows.push({
-        start: windows[firstWindowIndex].start + oneDaySeconds * 7,
-        end: windows[firstWindowIndex].end + oneDaySeconds * 7,
-      });
-    });
-
-    // Sort all muster windows by start time
-    windows.sort((a: MusterWindow, b: MusterWindow) => {
-      return a.start - b.start;
-    });
-
-    // Make sure none overlap
-    for (let i = 0; i < windows.length - 1; i++) {
-      if (windows[i].end > windows[i + 1].start) {
-        setErrorMessage('Unable to use overlapping muster windows.');
-        return false;
-      }
-    }
-
     return true;
   };
 
@@ -254,7 +216,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
   };
 
   const canSave = () => {
-    return !formDisabled;
+    return !formDisabled && !validateMusterConfiguration(musterConfiguration) && hasChanges();
   };
 
   const dayButtonClass = (muster: MusterConfigurationRow, day: DaysOfTheWeek) => {
@@ -270,10 +232,39 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
     <Dialog className={classes.root} maxWidth="md" onClose={onCancel} open={open}>
       <DialogTitle id="alert-dialog-title">Default Muster Requirements</DialogTitle>
       <DialogContent>
-        <Typography variant="subtitle1">
-          By creating a default muster requirement you can quickly apply shared requirements across all new and existing units within a group. If a unit needs a unique requirement, you can disable the default group muster requirement by individually editing the unit.
-        </Typography>
-        {musterConfiguration.length > 0 && (
+        <HelpCard helpCardId="default-muster-dialog">
+          <Typography>
+            By configuring the default muster requirements you can quickly apply shared requirements across all new and existing units within a group. This setting can be overridden for the unique requirements of each unit.
+          </Typography>
+        </HelpCard>
+        <Grid container spacing={3}>
+          <Grid item xs={6}>
+            <Typography variant="subtitle2">
+              Current Requirements
+            </Typography>
+            <Box className={classes.atAGlance}>
+              <MusterConfigReadable musterConfiguration={musterConfiguration} />
+            </Box>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="subtitle2">
+              Affected Units
+            </Typography>
+
+            <Box className={classes.atAGlance}>
+              {units?.length ? (
+                <div className={classes.unitsContainer}>
+                  {units.map(unit => <div key={unit.id}>{unit.name}</div>)}
+                </div>
+              ) : (
+                <Typography className={classes.noUnits}>
+                  None of your units use the default.
+                </Typography>
+              )}
+            </Box>
+          </Grid>
+        </Grid>
+        {hasDefaultMuster && (
           <Table aria-label="muster table" className={classes.musterTable}>
             <TableHead>
               <TableRow>
@@ -393,7 +384,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
           startIcon={<AddCircleIcon />}
           onClick={addMusterWindow}
         >
-          Add New Requirement
+          {hasDefaultMuster ? 'Add Another Requirement' : 'Add Muster Requirements'}
         </Button>
       </DialogContent>
       <DialogActions className={classes.dialogActions}>

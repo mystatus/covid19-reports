@@ -29,24 +29,24 @@ import {
   useDispatch,
   useSelector,
 } from 'react-redux';
-import moment from 'moment-timezone';
 import axios from 'axios';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import { UnitsPageHelp } from './units-page-help';
 import useStyles from './units-page.styles';
-import { ApiUnit, MusterConfiguration } from '../../../models/api-response';
+import { ApiUnit } from '../../../models/api-response';
 import { EditUnitDialog, EditUnitDialogProps } from './edit-unit-dialog';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { Unit } from '../../../actions/unit.actions';
 import PageHeader from '../../page-header/page-header';
-import { daysToString } from '../../../utility/days';
+import { musterConfigurationToString } from '../../../utility/muster-utils';
 import { Modal } from '../../../actions/modal.actions';
 import { formatMessage } from '../../../utility/errors';
 import { DefaultMusterDialog, DefaultMusterDialogProps } from './default-muster-dialog';
 import { User } from '../../../actions/user.actions';
 import { UserSelector } from '../../../selectors/user.selector';
+import MusterConfigReadable from './muster-config-readable';
 
 interface UnitMenuState {
   anchor: HTMLElement | null,
@@ -54,18 +54,16 @@ interface UnitMenuState {
 }
 
 export const UnitsPage = () => {
+  const { id: orgId, defaultMusterConfiguration = [] } = useSelector(UserSelector.org) ?? {};
+  const initialEditUnitState = { open: false, defaultMusterConfiguration };
   const classes = useStyles();
   const dispatch = useDispatch();
   const units = useSelector(UnitSelector.all);
   const [unitToDelete, setUnitToDelete] = useState<null | ApiUnit>(null);
-  const [editUnitDialogProps, setEditUnitDialogProps] = useState<EditUnitDialogProps>({ open: false });
+  const [editUnitDialogProps, setEditUnitDialogProps] = useState<EditUnitDialogProps>(initialEditUnitState);
   const [defaultMusterDialogProps, setDefaultMusterDialogProps] = useState<DefaultMusterDialogProps>({ open: false });
   const [unitMenu, setUnitMenu] = React.useState<UnitMenuState>({ anchor: null });
   const [defaultMusterSaved, setDefaultMusterSaved] = React.useState(false);
-
-  const org = useSelector(UserSelector.org);
-  const orgId = org?.id;
-  const defaultMusterConfiguration = org?.defaultMusterConfiguration ?? [];
 
   const initializeTable = React.useCallback(async () => {
     if (orgId) {
@@ -96,7 +94,7 @@ export const UnitsPage = () => {
       orgId,
       defaultMusterConfiguration,
       onClose: async () => {
-        setEditUnitDialogProps({ open: false });
+        setEditUnitDialogProps(initialEditUnitState);
         await initializeTable();
       },
       onError: (message: string) => {
@@ -114,7 +112,7 @@ export const UnitsPage = () => {
         defaultMusterConfiguration,
         orgId,
         onClose: async () => {
-          setEditUnitDialogProps({ open: false });
+          setEditUnitDialogProps(initialEditUnitState);
           await initializeTable();
         },
         onError: (message: string) => {
@@ -144,13 +142,6 @@ export const UnitsPage = () => {
     await initializeTable();
   };
 
-  const musterConfigurationToString = (muster: MusterConfiguration) => {
-    const today = moment().format('Y-M-D');
-    const time = moment.tz(`${today} ${muster.startTime}`, 'Y-M-D h:mm', muster.timezone).format('h:mm A z');
-    const duration = muster.durationMinutes / 60;
-    return `${daysToString(muster.days)} at ${time} for ${duration} hours`;
-  };
-
   const cancelDeleteUnitDialog = () => {
     setUnitToDelete(null);
   };
@@ -178,14 +169,7 @@ export const UnitsPage = () => {
         <Card>
           <CardHeader title="Default Muster Requirements" />
           <CardContent>
-            <div className={classes.musterConfiguration}>
-              {defaultMusterConfiguration.map((muster, index) => (
-                <div key={JSON.stringify({ muster, index })}>
-                  {musterConfigurationToString(muster)}
-                </div>
-              ))}
-            </div>
-            {!defaultMusterConfiguration?.length && <span>No default requirements found.</span>}
+            <MusterConfigReadable className={classes.musterConfiguration} musterConfiguration={defaultMusterConfiguration} />
             <CardActions>
               <Button
                 size="large"
@@ -230,7 +214,7 @@ export const UnitsPage = () => {
                     <TableRow key={unit.id}>
                       <TableCell>{unit.id}</TableCell>
                       <TableCell>{unit.name}</TableCell>
-                      {unit.musterConfiguration?.length > 0 && (
+                      {!!unit.musterConfiguration?.length && (
                         <TableCell className={classes.musterConfiguration}>
                           {unit.musterConfiguration.map((muster, index) => (
                             <div key={JSON.stringify({ muster, index })}>
@@ -241,10 +225,10 @@ export const UnitsPage = () => {
                       )}
                       {!unit.musterConfiguration?.length && (
                         <TableCell className={classes.noMusterConfiguration}>
-                          {(defaultMusterConfiguration?.length !== 0 && unit.musterConfiguration === null) ? (
-                            <span>* Using default muster requirements</span>
+                          {(unit.musterConfiguration === null) ? (
+                            <span>default</span>
                           ) : (
-                            <span>No configured muster requirements</span>
+                            <span>none</span>
                           )}
                         </TableCell>
                       )}
