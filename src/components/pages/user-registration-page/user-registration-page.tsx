@@ -188,12 +188,6 @@ export const UserRegistrationPage = () => {
                 required
                 {...getInputValidation('phone')}
               />
-              {/* <TextField
-                id="phone"
-                label="Phone number"
-                required
-                onChange={e => handleInputChange('phone', e)}
-              /> */}
             </div>
             <div>
               <TextField
