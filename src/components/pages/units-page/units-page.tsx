@@ -203,7 +203,6 @@ export const UnitsPage = () => {
               <Table aria-label="unit table">
                 <TableHead>
                   <TableRow>
-                    <TableCell>ID</TableCell>
                     <TableCell>Name</TableCell>
                     <TableCell>Muster Requirements</TableCell>
                     <TableCell />
@@ -212,7 +211,6 @@ export const UnitsPage = () => {
                 <TableBody>
                   {units.map(unit => (
                     <TableRow key={unit.id}>
-                      <TableCell>{unit.id}</TableCell>
                       <TableCell>{unit.name}</TableCell>
                       {!!unit.musterConfiguration?.length && (
                         <TableCell className={classes.musterConfiguration}>

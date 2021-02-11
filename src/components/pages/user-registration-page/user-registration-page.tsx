@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import {
   Icon, MenuItem, Paper, TextField,
 } from '@material-ui/core';
@@ -5,7 +6,6 @@ import {
   AssignmentOutlined, DoneAll, FavoriteBorder, LocalHospital, Timeline,
 } from '@material-ui/icons';
 import MuiPhoneNumber from 'material-ui-phone-number';
-import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { User, UserRegisterData } from '../../../actions/user.actions';
 import { UserState } from '../../../reducers/user.reducer';
@@ -26,6 +26,7 @@ function validatePhone(phone: string) {
 }
 
 type UserRegisterDataWithValidation = {
+  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
   [key in keyof UserRegisterData]: {
     hasBlurred: boolean;
     hasChanged: boolean;
