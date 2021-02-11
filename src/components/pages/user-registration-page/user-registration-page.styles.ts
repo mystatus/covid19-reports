@@ -63,7 +63,7 @@ export default makeStyles((theme: Theme) => createStyles({
   form: {
     '& > div': {
       display: 'flex',
-      alignItems: 'center',
+      alignItems: 'flex-start',
 
       '& > *': {
         flex: 1,

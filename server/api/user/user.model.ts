@@ -1,5 +1,5 @@
 import {
-  Entity, PrimaryColumn, Column, BaseEntity, OneToMany, EntityManager,
+  BeforeInsert, BeforeUpdate, Entity, PrimaryColumn, Column, BaseEntity, OneToMany, EntityManager,
 } from 'typeorm';
 import { NotFoundError } from '../../util/error-types';
 import { Role } from '../role/role.model';
@@ -47,6 +47,15 @@ export class User extends BaseEntity {
 
   @OneToMany(() => UserRole, userRole => userRole.user)
   userRoles!: UserRole[];
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  formatPhoneNumber() {
+    const phone = this.phone.replace(/\D/g, '');
+    if (phone.length === 10) {
+      this.phone = `${phone.slice(0, 3)}-${phone.slice(3, 6)}-${phone.slice(6)}`;
+    }
+  }
 
   async addRole(manager: EntityManager, role: Role, indexPrefix: string): Promise<User> {
     let userRole = await this.findUserRole(role);
