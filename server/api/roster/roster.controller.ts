@@ -325,15 +325,14 @@ class RosterController {
       throw new NotFoundError(`Unit with ID ${req.body.unit} could not be found.`);
     }
 
-    const rosterEntries = await Roster.find({
-      relations: ['unit'],
+    const rosterEntry = await Roster.findOne({
       where: {
         edipi,
         unit: unit.id,
       },
     });
 
-    if (rosterEntries) {
+    if (rosterEntry) {
       throw new BadRequestError('The individual is already in the roster.');
     }
 
