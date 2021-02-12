@@ -8,6 +8,7 @@ import {
   OrderByCondition,
 } from 'typeorm';
 import _ from 'lodash';
+import moment from 'moment';
 import {
   ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams, PagedQuery,
 } from '../index';
@@ -454,9 +455,31 @@ async function internalSearchRoster(query: GetRosterQuery, org: Org, userRole: U
         }
 
         const { op, value } = searchParams[key];
-        const needsQuotedValue = column.type === RosterColumnType.Date || column.type === RosterColumnType.DateTime;
-        const maybeQuote = (v: CustomColumnValue) => (v !== null && needsQuotedValue ? `'${v}'` : v);
-        const columnName = Roster.getColumnSelect(column);
+        const isDate = RosterColumnType.Date === column.type || RosterColumnType.DateTime === column.type;
+        const shouldLowerCase = column.type === RosterColumnType.String;
+        let columnName = Roster.getColumnSelect(column);
+        columnName = shouldLowerCase ? `LOWER(${columnName})` : columnName;
+
+        if (column.type === RosterColumnType.String) {
+          columnName = `LOWER(${columnName})`;
+        } else if (RosterColumnType.DateTime === column.type) {
+          columnName = `date_trunc('minute', (${columnName})::TIMESTAMP)`;
+        } else if (RosterColumnType.Date === column.type) {
+          columnName = `date_trunc('day', (${columnName})::TIMESTAMP)`;
+        }
+
+        const formatValue = (val: CustomColumnValue) => {
+          if (val === null) {
+            return val;
+          }
+          if (isDate) {
+            const date = moment.utc(val.toString());
+            return column.type === RosterColumnType.Date
+              ? `'${date.format('YYYY-MM-DD')} 00:00:00.000000'`
+              : `'${date.format('YYYY-MM-DD HH:mm')}:00.000000'`;
+          }
+          return shouldLowerCase ? val.toString().toLowerCase() : val;
+        };
 
         if (op === 'between' || op === 'in') {
           if (!Array.isArray(value)) {
@@ -465,14 +488,16 @@ async function internalSearchRoster(query: GetRosterQuery, org: Org, userRole: U
 
           if (op === 'in') {
             return queryBuilder.andWhere(`${columnName} ${op} (:...${key})`, {
-              [key]: value,
+              [key]: value.map(formatValue),
             });
           }
 
           if (op === 'between') {
-            return queryBuilder.andWhere(`${columnName} >= (:${key}Min) and ${columnName} <= (:${key}Max)`, {
-              [`${key}Min`]: maybeQuote(value[0]),
-              [`${key}Max`]: maybeQuote(value[1]),
+            const maxKey = `${key}Max`;
+            const minKey = `${key}Min`;
+            return queryBuilder.andWhere(`${columnName} BETWEEN (:${minKey}) AND (:${maxKey})`, {
+              [minKey]: formatValue(value[0]),
+              [maxKey]: formatValue(value[1]),
             });
           }
         }
@@ -482,16 +507,22 @@ async function internalSearchRoster(query: GetRosterQuery, org: Org, userRole: U
         }
 
         if (op === '=' || op === '<>' || op === '>' || op === '<') {
+          console.log({
+            op, value, key, columnName, formatValue: formatValue(value), type: typeof value,
+          });
           return queryBuilder.andWhere(`${columnName} ${op} :${key}`, {
-            [key]: maybeQuote(value),
+            [key]: formatValue(value),
           });
         }
 
         if (op === '~' || op === 'startsWith' || op === 'endsWith') {
+          if (column.type !== RosterColumnType.String) {
+            throw new BadRequestError('Malformed search query. Expected string value.');
+          }
           const prefix = op !== 'startsWith' ? '%' : '';
           const suffix = op !== 'endsWith' ? '%' : '';
-          return queryBuilder.andWhere(`${columnName} like :${key}`, {
-            [key]: `${prefix}${value}${suffix}`,
+          return queryBuilder.andWhere(`${columnName} LIKE :${key}`, {
+            [key]: `${prefix}${value}${suffix}`.toLowerCase(),
           });
         }
 
