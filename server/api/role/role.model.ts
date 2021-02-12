@@ -22,7 +22,7 @@ export class Role extends BaseEntity {
   description!: string;
 
   @ManyToOne(() => Org, {
-    cascade: true,
+    onDelete: 'CASCADE',
     nullable: false,
   })
   @JoinColumn({
@@ -33,7 +33,10 @@ export class Role extends BaseEntity {
   @OneToMany(() => UserRole, userRole => userRole.role)
   userRoles?: UserRole[];
 
-  @ManyToOne(() => Workspace, { cascade: true, onDelete: 'RESTRICT', nullable: true })
+  @ManyToOne(() => Workspace, {
+    onDelete: 'RESTRICT',
+    nullable: true,
+  })
   @JoinColumn({
     name: 'workspace_id',
   })

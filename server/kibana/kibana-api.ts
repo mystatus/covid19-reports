@@ -5,6 +5,7 @@ import tough from 'tough-cookie';
 import * as https from 'https';
 import { ApiRequest } from '../api';
 import config from '../config';
+import { Log } from '../util/log';
 import { buildJWT } from './dashboard/read-only-rest.controller';
 
 export class KibanaApi {
@@ -55,11 +56,11 @@ export class KibanaApi {
         const setCookie = axiosError.response.headers['set-cookie'] as string[] | undefined;
         const rorCookieExists = setCookie?.some(cookie => cookie.indexOf('rorCookie=') >= 0);
         if (!rorCookieExists) {
-          console.error(err);
+          Log.error(err);
           throw new Error('Failed to login to Kibana API. Kibana appears to be running, but ROR cookie was not found.');
         }
       } else {
-        console.error(err);
+        Log.error(err);
         throw new Error('Failed to login to Kibana API. Make sure that Kibana is running.');
       }
     }

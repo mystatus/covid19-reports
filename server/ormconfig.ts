@@ -13,6 +13,7 @@ import { CustomRosterColumn } from './api/roster/custom-roster-column.model';
 import { Notification } from './api/notification/notification.model';
 import { UserNotificationSetting } from './api/notification/user-notification-setting.model';
 import { UserRole } from './api/user/user-role.model';
+import { env } from './util/env';
 
 export const ormConfig: PostgresConnectionOptions = {
   type: 'postgres',
@@ -37,6 +38,6 @@ export const ormConfig: PostgresConnectionOptions = {
     UserNotificationSetting,
   ],
   namingStrategy: new SnakeNamingStrategy(),
-  synchronize: (process.env.NODE_ENV === 'development' && process.env.SYNC_DATABASE === 'true'),
+  synchronize: (env.isDev && process.env.SYNC_DATABASE === 'true'),
   logging: false,
 };

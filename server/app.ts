@@ -13,98 +13,99 @@ import kibanaDashboard from './kibana/dashboard';
 import database from './sqldb';
 import config from './config';
 import { requireOrgAccess, requireUserAuth } from './auth';
+import { env } from './util/env';
 import { errorHandler } from './util/error-handler';
+import { Log } from './util/log';
 
-database.then(() => {
-  console.log('Database ready');
-}).catch(err => {
-  console.log('Database connection failed: ', err);
-});
+const start = async () => {
+  try {
+    await database;
+    Log.info('Database ready');
+  } catch (err) {
+    Log.error('Database connection failed: ', err);
+  }
 
-if (process.env.NODE_ENV === 'development') {
-  require('dotenv').config();
-}
+  if (env.isDev) {
+    require('dotenv').config();
+  }
 
-const app = express();
+  const app = express();
 
-//
-// Middlware
-//
+  //
+  // Middlware
+  //
 
-app.use(requireUserAuth);
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(passport.initialize());
-if (process.env.NODE_ENV !== 'test') {
-  app.use(morgan((tokens, req: any, res: any) => {
-    return [
-      req.appUser.edipi,
-      tokens.method(req, res),
-      tokens.url(req, res),
-      tokens.status(req, res),
-      tokens.res(req, res, 'content-length'), '-',
-      tokens['response-time'](req, res), 'ms',
-    ].join(' ');
-  }));
-}
+  app.use(requireUserAuth);
+  app.use(cookieParser());
+  app.use(express.static(path.join(__dirname, 'public')));
+  app.use(passport.initialize());
+  if (!env.isTest) {
+    app.use(morgan((tokens, req: any, res: any) => {
+      return [
+        req.appUser.edipi,
+        tokens.method(req, res),
+        tokens.url(req, res),
+        tokens.status(req, res),
+        tokens.res(req, res, 'content-length'), '-',
+        tokens['response-time'](req, res), 'ms',
+      ].join(' ');
+    }));
+  }
 
-//
-// Routes
-//
-app.get('/heartbeat', (req: Request, res: Response) => {
-  res.status(204).send();
-});
-
-app.use('/api', apiRoutes);
-app.use(
-  '/dashboard',
-  requireOrgAccess,
-  kibanaDashboard,
-);
-
-app.use(
-  config.kibana.basePath,
-  kibanaProxy,
-);
-
-app.get('/*', (req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Not found
-app.all('*', (req: Request, res: Response) => {
-  res.status(404).send({
-    error: {
-      message: 'Not found.',
-      type: 'NotFound',
-    },
+  //
+  // Routes
+  //
+  app.get('/heartbeat', (req: Request, res: Response) => {
+    res.status(204).send();
   });
-});
 
-// Error handler
-app.use(errorHandler);
+  app.use('/api', apiRoutes);
+  app.use(
+    '/dashboard',
+    requireOrgAccess,
+    kibanaDashboard,
+  );
 
-//
-// Start the server
-//
-const PORT = process.env.PORT || 4000;
+  app.use(
+    config.kibana.basePath,
+    kibanaProxy,
+  );
 
-if (process.env.SERVER_KEY && process.env.SERVER_CERT) {
-  const opts = {
-    key: fs.readFileSync(process.env.SERVER_KEY),
-    cert: fs.readFileSync(process.env.SERVER_CERT),
-  };
-  https.createServer(opts, app).listen(PORT, () => {
-    if (process.env.NODE_ENV !== 'test') {
-      console.log(`🚀 Server ready at https://127.0.0.1:${PORT}`);
-    }
+  app.get('/*', (req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
   });
-} else {
-  app.listen(PORT, () => {
-    if (process.env.NODE_ENV !== 'test') {
-      console.log(`🚀 Server ready at http://127.0.0.1:${PORT}`);
-    }
-  });
-}
 
-export default app;
+  // Not found
+  app.all('*', (req: Request, res: Response) => {
+    res.status(404).send({
+      error: {
+        message: 'Not found.',
+        type: 'NotFound',
+      },
+    });
+  });
+
+  // Error handler
+  app.use(errorHandler);
+
+  //
+  // Start the server
+  //
+  const PORT = process.env.PORT || 4000;
+
+  if (process.env.SERVER_KEY && process.env.SERVER_CERT) {
+    const opts = {
+      key: fs.readFileSync(process.env.SERVER_KEY),
+      cert: fs.readFileSync(process.env.SERVER_CERT),
+    };
+    https.createServer(opts, app).listen(PORT, () => {
+      Log.info(`🚀 Server ready at https://127.0.0.1:${PORT}`);
+    });
+  } else {
+    app.listen(PORT, () => {
+      Log.info(`🚀 Server ready at http://127.0.0.1:${PORT}`);
+    });
+  }
+};
+
+export default start();

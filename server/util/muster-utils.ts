@@ -13,6 +13,7 @@ import {
 } from '../api/unit/unit.model';
 import elasticsearch from '../elasticsearch/elasticsearch';
 import { InternalServerError } from './error-types';
+import { Log } from './log';
 import {
   getElasticsearchDateFormat,
   getElasticsearchTimeInterval,
@@ -44,7 +45,7 @@ export async function getRosterMusterStats(args: {
       }),
     });
   } catch (err) {
-    console.error(err);
+    Log.error(err);
     throw new InternalServerError(`Elasticsearch: ${err.message}`);
   }
 
@@ -191,7 +192,7 @@ export async function getUnitMusterStats(args: {
   try {
     response = await elasticsearch.msearch({ body: esBody });
   } catch (err) {
-    console.error(err);
+    Log.error(err);
     throw new InternalServerError(`Elasticsearch: ${err.message}`);
   }
 
@@ -226,7 +227,7 @@ export function calcNonMusterPercent(mustersReported: number, mustersNotReported
   const nonMusterPercent = (mustersNotReported / totalReports) * 100;
 
   if (nonMusterPercent < 0 || nonMusterPercent > 100) {
-    console.warn(`Invalid non-muster percent (${nonMusterPercent}). It should be between 0 and 100.`);
+    Log.warn(`Invalid non-muster percent (${nonMusterPercent}). It should be between 0 and 100.`);
   }
 
   return nonMusterPercent;

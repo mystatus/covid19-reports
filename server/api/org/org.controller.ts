@@ -5,6 +5,7 @@ import {
   OrgParam,
   OrgPrefixParam,
 } from '../index';
+import { User } from '../user/user.model';
 import { Org } from './org.model';
 import {
   BadRequestError,
@@ -39,7 +40,7 @@ class OrgController {
     res.json(req.appOrg);
   }
 
-  async addOrg(req: ApiRequest<null, OrgBody>, res: Response) {
+  async addOrg(req: ApiRequest<null, AddOrgBody>, res: Response) {
     if (!req.body.name) {
       throw new BadRequestError('An organization name must be supplied when adding an organization.');
     }
@@ -48,9 +49,15 @@ class OrgController {
       throw new BadRequestError('An organization description must be supplied when adding an organization.');
     }
 
+    const contact = await User.findOne(req.body.contactEdipi);
+    if (!contact) {
+      throw new NotFoundError('Contact user was not found.');
+    }
+
     const org = new Org();
     org.name = req.body.name;
     org.description = req.body.description;
+    org.contact = contact;
     org.reportingGroup = req.body.reportingGroup;
     const newOrg = await org.save();
 
@@ -109,6 +116,10 @@ type OrgBody = {
   name?: string
   description?: string
   reportingGroup?: string
+};
+
+type AddOrgBody = OrgBody & {
+  contactEdipi: string
 };
 
 type UpdateOrgDefaultMusterBody = {

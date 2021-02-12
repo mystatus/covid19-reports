@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import path from 'path';
+import { env } from './env';
 import { BadRequestError, RequestError } from './error-types';
+import { Log } from './log';
 
 export function errorHandler(error: any, req: Request, res: Response, next: NextFunction) {
   // Send an error response if one hasn't already been sent. Otherwise the reqeust will
@@ -9,7 +11,7 @@ export function errorHandler(error: any, req: Request, res: Response, next: Next
     return;
   }
 
-  console.error(error);
+  Log.error(error);
 
   let statusCode;
   let errors;
@@ -28,7 +30,7 @@ export function errorHandler(error: any, req: Request, res: Response, next: Next
       message = error;
     }
 
-    if (process.env.NODE_ENV === 'development') {
+    if (!env.isProd) {
       errors = [{
         message: message || 'An unknown error occurred!',
         type: type || 'InternalServerError',
@@ -40,14 +42,14 @@ export function errorHandler(error: any, req: Request, res: Response, next: Next
         type: type || 'InternalServerError',
       }];
       if (!(error instanceof RequestError) || error instanceof BadRequestError) {
-        console.log('Unknown Internal Server Error: ', error);
+        Log.info('Unknown Internal Server Error: ', error);
       }
     }
   }
 
   res.status(statusCode || 500);
 
-  if (error.showErrorPage && error.errorPage) {
+  if (error.showErrorPage && error.errorPage && !env.isTest) {
     res.sendFile(path.join(__dirname, '../public', error.errorPage));
   } else {
     res.send({ errors });

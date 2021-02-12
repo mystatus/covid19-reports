@@ -43,12 +43,4 @@ router.delete(
   controller.removeUserFromGroup,
 );
 
-// router.put(
-//   '/:orgId/:edipi',
-//   bodyParser.json(),
-//   requireOrgAccess,
-//   requireRolePermission((role) => role.canManageGroup),
-//   controller.updateUser
-// );
-
 export default router;

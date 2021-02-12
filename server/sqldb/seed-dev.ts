@@ -9,15 +9,17 @@ import { Workspace } from '../api/workspace/workspace.model';
 import { Roster } from '../api/roster/roster.model';
 import { CustomRosterColumn } from '../api/roster/custom-roster-column.model';
 import { Unit } from '../api/unit/unit.model';
+import { env } from '../util/env';
+import { Log } from '../util/log';
 
 require('dotenv').config();
 
 export default (async function() {
-  if (process.env.NODE_ENV !== 'development') {
+  if (!env.isDev) {
     throw new Error('You can only seed the database in a development environment.');
   }
 
-  console.log('Seeding database...');
+  Log.info('Seeding database...');
 
   const connection = await database;
 
@@ -41,7 +43,7 @@ export default (async function() {
   });
 
   await connection.close();
-  console.log('Finished!');
+  Log.info('Finished!');
 }());
 
 

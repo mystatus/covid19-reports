@@ -7,6 +7,7 @@ import {
   ForbiddenError,
   InternalServerError,
 } from '../../util/error-types';
+import { Log } from '../../util/log';
 import { getRosterMusterStats } from '../../util/muster-utils';
 import {
   assertRequestQuery,
@@ -114,7 +115,7 @@ class ExportController {
     try {
       csv = await json2csvAsync(rosterData);
     } catch (err) {
-      console.error('Failed to convert roster json data to CSV string.');
+      Log.error('Failed to convert roster json data to CSV string.');
       throw new InternalServerError('Failed to export Roster data to CSV.');
     }
 

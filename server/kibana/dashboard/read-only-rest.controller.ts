@@ -4,6 +4,7 @@ import { User } from '../../api/user/user.model';
 import { UserRole } from '../../api/user/user-role.model';
 import { Workspace } from '../../api/workspace/workspace.model';
 import config from '../../config';
+import { Log } from '../../util/log';
 
 const nJwt = require('njwt');
 
@@ -12,10 +13,10 @@ class ReadOnlyRestController {
   // Redirects user to Kibana login page. By attaching the rorJWT this will effectively log in the user seamlessly,
   // and store rorCookie in the browser.
   login(req: ApiRequest<null, null, LoginQuery>, res: Response) {
-    console.log('ror login()');
+    Log.info('ror login()');
 
     const rorJwt = buildJWT(req.appUser, req.appUserRole!, req.appWorkspace!);
-    console.log('ror jwt', rorJwt);
+    Log.info('ror jwt', rorJwt);
 
     res.cookie('orgId', req.appOrg!.id, { httpOnly: true });
 
@@ -29,7 +30,7 @@ class ReadOnlyRestController {
 
   // Logs out of a Kibana session by clearing the rorCookie.
   logout(req: ApiRequest, res: Response, next: NextFunction) {
-    console.log('ror logout()');
+    Log.info('ror logout()');
 
     res.clearCookie('rorCookie');
     res.clearCookie('orgId');
@@ -40,7 +41,7 @@ class ReadOnlyRestController {
 
 // Builds ReadOnlyRest JWT token.
 export function buildJWT(user: User, userRole: UserRole, workspace: Workspace) {
-  console.log('ror buildJWT()');
+  Log.info('ror buildJWT()');
 
   const claims = {
     sub: user.edipi,
@@ -49,7 +50,7 @@ export function buildJWT(user: User, userRole: UserRole, workspace: Workspace) {
     workspace_id: `${workspace!.id}`,
   };
 
-  console.log('ror claims', claims);
+  Log.info('ror claims', claims);
 
   const jwt = nJwt.create(claims, config.ror.secret);
   jwt.setExpiration(new Date().getTime() + (86400 * 1000 * 30)); // 30d
