@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { seedOrgContact } from '../../util/test-utils/seed';
 import { Org } from '../org/org.model';
-import { seedOrg } from '../org/org.model.mock';
 import { User } from '../user/user.model';
 import { seedUser } from '../user/user.model.mock';
 import { seedNotification } from './notification.model.mock';

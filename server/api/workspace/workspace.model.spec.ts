@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { seedOrgContact } from '../../util/test-utils/seed';
-import { WorkspaceTemplate } from './workspace-template.model';
 import { seedWorkspaceTemplate } from './workspace-template.model.mock';
 import { Workspace } from './workspace.model';
 import { seedWorkspace } from './workspace.model.mock';

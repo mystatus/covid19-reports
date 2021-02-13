@@ -11,7 +11,6 @@ import {
 } from 'typeorm';
 import _ from 'lodash';
 import moment from 'moment';
-import { Log } from '../../util/log';
 import {
   ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams, PagedQuery,
 } from '../index';

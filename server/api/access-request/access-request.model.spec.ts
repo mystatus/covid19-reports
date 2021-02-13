@@ -3,9 +3,6 @@ import {
   seedOrgContactRoles,
   seedOrgContact,
 } from '../../util/test-utils/seed';
-import { seedOrg } from '../org/org.model.mock';
-import { Role } from '../role/role.model';
-import { UserRole } from '../user/user-role.model';
 import {
   seedUser,
 } from '../user/user.model.mock';

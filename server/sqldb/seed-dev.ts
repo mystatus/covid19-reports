@@ -1,4 +1,3 @@
-import process from 'process';
 import { getManager, EntityManager } from 'typeorm';
 import database from '.';
 import { Org } from '../api/org/org.model';
