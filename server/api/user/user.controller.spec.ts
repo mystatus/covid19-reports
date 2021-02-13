@@ -9,7 +9,6 @@ import { TestRequest } from '../../util/test-utils/test-request';
 import {
   uniqueEdipi,
   uniqueEmail,
-  uniquePhone,
   uniqueString,
 } from '../../util/test-utils/unique';
 import { seedAccessRequest } from '../access-request/access-request.mock';
@@ -206,6 +205,3 @@ describe(`User Controller`, () => {
   });
 
 });
-
-// HACK: Workaround for tsconfig "isolatedModules"
-export const dummy = 0;

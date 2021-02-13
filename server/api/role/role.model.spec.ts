@@ -46,6 +46,3 @@ describe(`Role Model`, () => {
   });
 
 });
-
-// HACK: Workaround for tsconfig "isolatedModules"
-export const dummy = 0;

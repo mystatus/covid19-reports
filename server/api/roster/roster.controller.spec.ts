@@ -500,6 +500,3 @@ describe(`Roster Controller`, () => {
   // TODO: '/:orgId/:rosterId' : put
 
 });
-
-// HACK: Workaround for tsconfig "isolatedModules"
-export const dummy = 0;

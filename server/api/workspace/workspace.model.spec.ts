@@ -48,6 +48,3 @@ describe(`Workspace Model`, () => {
   });
 
 });
-
-// HACK: Workaround for tsconfig "isolatedModules"
-export const dummy = 0;
