@@ -46,7 +46,7 @@ export function buildJWT(user: User, userRole: UserRole, workspace: Workspace) {
     sub: user.edipi,
     iss: 'https://statusengine.mysymptoms.mil',
     roles: userRole.getKibanaRoles(),
-    firecares_id: `${workspace!.id}`, // TODO: Rename 'firecares_id'.
+    workspace_id: `${workspace!.id}`,
   };
 
   console.log('ror claims', claims);
