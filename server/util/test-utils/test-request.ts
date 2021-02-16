@@ -18,7 +18,7 @@ export class TestRequest {
     this.client = axios.create({
       baseURL: `${this.baseUrl}${basePath}`,
     });
-    this.mock = new MockAdapter(this.client, {
+    this.mock = new MockAdapter(axios, {
       onNoMatch: 'passthrough',
     });
   }
