@@ -13,6 +13,7 @@ import { AppState } from '../../../store';
 import useStyles from './user-registration-page.styles';
 import services from '../../../data/services';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
+import { Link } from '../../link/link';
 
 // from: https://stackoverflow.com/questions/46155/how-to-validate-an-email-address-in-javascript
 function validateEmail(email: string) {
@@ -147,7 +148,7 @@ export const UserRegistrationPage = () => {
             <p>
               Please take a moment to create your account. Once you have created an account you will be able to request
               access to your group. If you have any questions about the onboarding process please visit this
-              <a target="_blank" rel="noreferrer" href={onboardingUrl}> page</a> for more information.
+              <Link target="_blank" rel="noopener noreferrer" href={onboardingUrl}> page</Link> for more information.
             </p>
           </header>
 
