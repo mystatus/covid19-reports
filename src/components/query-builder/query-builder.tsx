@@ -11,7 +11,7 @@ import useStyles from './query-builder.styles';
 import useDebounced from '../../hooks/use-debounced';
 import useDeepEquality from '../../hooks/use-deep-equality';
 
-const toDate = (date: Moment) => date.format('Y-M-D');
+const toDate = (date: Moment) => date.format('YYYY-MM-DD');
 
 export enum QueryFieldType {
   String = 'string',
