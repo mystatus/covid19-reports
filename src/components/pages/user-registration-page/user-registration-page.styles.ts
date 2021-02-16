@@ -59,6 +59,11 @@ export default makeStyles((theme: Theme) => createStyles({
 
     '& *:nth-child(1)': theme.typography.h1,
     '& *:nth-child(2)': theme.typography.subtitle1,
+    '& a:nth-child(1)': {
+      ...theme.typography.subtitle1,
+      fontWeight: theme.typography.fontWeightBold,
+
+    },
   },
   form: {
     '& > div': {

@@ -14,6 +14,7 @@ import AssignmentIndIcon from '@material-ui/icons/AssignmentInd';
 import SupervisorAccountIcon from '@material-ui/icons/SupervisorAccount';
 import GroupWorkIcon from '@material-ui/icons/GroupWork';
 import SecurityIcon from '@material-ui/icons/Security';
+import HelpIcon from '@material-ui/icons/Help';
 import ViewWeekOutlinedIcon from '@material-ui/icons/ViewWeekOutlined';
 import DashboardOutlinedIcon from '@material-ui/icons/DashboardOutlined';
 import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
@@ -184,6 +185,26 @@ export const AppSidenav = () => {
             </List>
           </>
         )}
+
+        <>
+          <div className={clsx(classes.header, {
+            [classes.headerExpanded]: appFrame.sidenavExpanded,
+            [classes.headerCollapsed]: !appFrame.sidenavExpanded,
+          })}
+          >
+            Help & Resources
+          </div>
+
+          <List>
+            <SidenavLink
+              href={`${process.env.REACT_APP_ONBOARDING_LINK}`}
+              target="_blank"
+              rel="noreferrer"
+              name="Onboarding"
+              icon={(<HelpIcon />)}
+            />
+          </List>
+        </>
       </Drawer>
     </div>
   );

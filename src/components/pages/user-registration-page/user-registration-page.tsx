@@ -38,6 +38,7 @@ export const UserRegistrationPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
   const user = useSelector<AppState, UserState>(state => state.user);
+  const onboardingUrl = `${process.env.REACT_APP_ONBOARDING_LINK}`;
   const [registerUserLoading, setRegisterUserLoading] = useState(false);
   const [inputData, setInputData] = useState<UserRegisterDataWithValidation>({
     firstName: { hasBlurred: false, hasChanged: false, helperText: '', value: '' },
@@ -145,7 +146,8 @@ export const UserRegistrationPage = () => {
             <div>Welcome to Status Engine!</div>
             <p>
               Please take a moment to create your account. Once you have created an account you will be able to request
-              access to your group.
+              access to your group. If you have any questions about the onboarding process please visit this
+              <a target="_blank" rel="noreferrer" href={onboardingUrl}> page</a> for more information.
             </p>
           </header>
 
