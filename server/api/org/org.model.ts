@@ -51,25 +51,15 @@ export class Org extends BaseEntity {
   })
   defaultMusterConfiguration: MusterConfiguration[] = [];
 
-  async getUsers() {
-    const orgUsers: User[] = [];
-
-    const roles = await Role.find({
-      relations: ['userRoles', 'userRoles.user', 'userRoles.user.userRoles', 'userRoles.user.userRoles.role'],
-      where: {
-        org: this,
-      },
-    });
-
-    for (const role of roles) {
-      for (const userRole of (role.userRoles ?? [])) {
-        orgUsers.push(userRole.user);
-      }
-    }
-
-    orgUsers.sort((a, b) => a.edipi.localeCompare(b.edipi));
-
-    return orgUsers;
+  getUsers() {
+    return User.createQueryBuilder('user')
+      .leftJoinAndSelect('user.userRoles', 'userRoles')
+      .leftJoinAndSelect('userRoles.role', 'role')
+      .where('role.org_id = :orgId', {
+        orgId: this.id,
+      })
+      .orderBy('edipi', 'ASC')
+      .getMany();
   }
 
 }
