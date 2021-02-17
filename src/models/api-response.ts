@@ -144,6 +144,10 @@ export interface ApiRosterEntry {
   [key: string]: string | boolean | number | null,
 }
 
+export interface ApiOrphanedRecord {
+  edipi: string,
+}
+
 export interface ApiWorkspaceTemplate {
   id: number,
   name: string,

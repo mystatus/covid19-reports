@@ -41,6 +41,7 @@ import {
   ApiRosterEnumColumnConfig,
   ApiRosterEntry,
   ApiRosterPaginated,
+  ApiOrphanedRecord,
 } from '../../../models/api-response';
 import { EditRosterEntryDialog, EditRosterEntryDialogProps } from './edit-roster-entry-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
@@ -81,6 +82,7 @@ export const RosterPage = () => {
 
   const maxNumColumnsToShow = 5;
 
+  const [orphanedRecords, setOrphanedRecords] = useState<ApiOrphanedRecord[]>([]);
   const [rows, setRows] = useState<ApiRosterEntry[]>([]);
   const [page, setPage] = useState(0);
   const initialLoad = useRef(true);
@@ -156,6 +158,15 @@ export const RosterPage = () => {
     }
   }, [dispatch, orgId]);
 
+  const initializeOrphanedRecords = useCallback(async () => {
+    try {
+      const records = (await axios.get(`api/orphaned-record/${orgId}`)).data as ApiOrphanedRecord[];
+      setOrphanedRecords(records);
+    } catch (error) {
+      dispatch(Modal.alert('Get Orphaned Records', formatMessage(error, 'Failed to get orphaned records')));
+    }
+  }, [dispatch, orgId]);
+
   const initializeTable = useCallback(async () => {
     dispatch(AppFrame.setPageLoading(initialLoad.current));
     if (orgId) {
@@ -163,9 +174,10 @@ export const RosterPage = () => {
     }
     await initializeRosterColumnInfo();
     await reloadTable();
+    await initializeOrphanedRecords();
     dispatch(AppFrame.setPageLoading(false));
     initialLoad.current = false;
-  }, [dispatch, orgId, initializeRosterColumnInfo, reloadTable]);
+  }, [dispatch, orgId, initializeRosterColumnInfo, reloadTable, initializeOrphanedRecords]);
 
   const sortRosterColumns = (columns: ApiRosterColumnInfo[]) => {
     const columnPriority: {
