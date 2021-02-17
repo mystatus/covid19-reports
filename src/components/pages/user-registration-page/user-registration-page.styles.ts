@@ -57,8 +57,11 @@ export default makeStyles((theme: Theme) => createStyles({
   welcomeHeader: {
     padding: theme.spacing(3),
 
-    '& *:nth-child(1)': theme.typography.h1,
-    '& *:nth-child(2)': theme.typography.subtitle1,
+    '& > *:nth-child(1)': theme.typography.h1,
+    '& > *:nth-child(2)': theme.typography.subtitle1,
+    '& a': {
+      fontWeight: theme.typography.fontWeightBold,
+    },
   },
   form: {
     '& > div': {

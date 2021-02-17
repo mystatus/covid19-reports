@@ -13,6 +13,7 @@ import { AppState } from '../../../store';
 import useStyles from './user-registration-page.styles';
 import services from '../../../data/services';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
+import { Link } from '../../link/link';
 
 // from: https://stackoverflow.com/questions/46155/how-to-validate-an-email-address-in-javascript
 function validateEmail(email: string) {
@@ -38,6 +39,7 @@ export const UserRegistrationPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
   const user = useSelector<AppState, UserState>(state => state.user);
+  const onboardingUrl = `${process.env.REACT_APP_ONBOARDING_LINK}`;
   const [registerUserLoading, setRegisterUserLoading] = useState(false);
   const [inputData, setInputData] = useState<UserRegisterDataWithValidation>({
     firstName: { hasBlurred: false, hasChanged: false, helperText: '', value: '' },
@@ -145,7 +147,8 @@ export const UserRegistrationPage = () => {
             <div>Welcome to Status Engine!</div>
             <p>
               Please take a moment to create your account. Once you have created an account you will be able to request
-              access to your group.
+              access to your group. If you have any questions about the onboarding process please visit this
+              <Link target="_blank" rel="noopener noreferrer" href={onboardingUrl}> page</Link> for more information.
             </p>
           </header>
 
