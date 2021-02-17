@@ -142,20 +142,16 @@ class UserController {
   }
 
   async getOrgUsers(req: ApiRequest<OrgParam>, res: Response) {
-    const orgUsers: User[] = [];
-    const roles = await Role.find({
-      relations: ['userRoles', 'userRoles.user', 'userRoles.user.userRoles', 'userRoles.user.userRoles.role'],
-      where: {
-        org: req.appOrg,
-      },
-    });
-    for (const role of roles) {
-      for (const userRole of (role.userRoles ?? [])) {
-        orgUsers.push(userRole.user);
-      }
-    }
-    orgUsers.sort((a, b) => a.edipi.localeCompare(b.edipi));
-    res.json(orgUsers);
+    const users = await User.createQueryBuilder('user')
+      .leftJoinAndSelect('user.userRoles', 'userRoles')
+      .leftJoinAndSelect('userRoles.role', 'role')
+      .where('role.org_id = :orgId', {
+        orgId: req.appOrg!.id,
+      })
+      .orderBy('edipi', 'ASC')
+      .getMany();
+
+    res.json(users);
   }
 
   async removeUserFromGroup(req: ApiRequest<OrgEdipiParams>, res: Response) {
