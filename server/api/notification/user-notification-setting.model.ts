@@ -17,7 +17,6 @@ export class UserNotificationSetting extends BaseEntity {
 
   @ManyToOne(() => User, user => user.edipi, {
     onDelete: 'CASCADE',
-    cascade: true,
   })
   @JoinColumn({
     name: 'user_edipi',

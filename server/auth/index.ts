@@ -6,10 +6,12 @@ import {
 import { UserRole } from '../api/user/user-role.model';
 import { User } from '../api/user/user.model';
 import { Role } from '../api/role/role.model';
+import { env } from '../util/env';
 import {
   BadRequestError, ForbiddenError, NotFoundError, UnauthorizedError,
 } from '../util/error-types';
 import { Org } from '../api/org/org.model';
+import { TestRequest } from '../util/test-utils/test-request';
 
 const sslHeader = 'ssl-client-subject-dn';
 const internalAccessHeader = 'status-engine-internal-access-key';
@@ -26,8 +28,10 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
   } else if (req.header(internalAccessHeader)
     && process.env.INTERNAL_ACCESS_KEY === req.header(internalAccessHeader)) {
     id = User.internalUserEdipi;
-  } else if (process.env.NODE_ENV === 'development') {
+  } else if (env.isDev) {
     id = process.env.USER_EDIPI;
+  } else if (env.isTest) {
+    id = req.header(TestRequest.edipiHeader);
   }
 
   if (!id) {

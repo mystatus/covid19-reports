@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { Log } from '../../util/log';
 import {
   ApiRequest, OrgParam, OrgUnitParams,
 } from '../index';
@@ -105,7 +106,7 @@ class UnitController {
           },
         });
       } catch (err) {
-        console.log(err);
+        Log.info(err);
         throw new InternalServerError('Unit was updated, but there was an error updating elasticsearch documents.');
       }
     }

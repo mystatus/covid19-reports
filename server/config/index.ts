@@ -1,3 +1,4 @@
+import { env } from '../util/env';
 import devConfig from './development';
 import prodConfig from './production';
 import testConfig from './test';
@@ -29,17 +30,17 @@ const baseConfig = {
 
 // Merge current environment config.
 let config: Config = baseConfig;
-if (process.env.NODE_ENV === 'development') {
+if (env.isDev) {
   config = {
     ...config,
     ...devConfig,
   };
-} else if (process.env.NODE_ENV === 'production') {
+} else if (env.isProd) {
   config = {
     ...config,
     ...prodConfig,
   };
-} else if (process.env.NODE_ENV === 'test') {
+} else if (env.isTest) {
   config = {
     ...config,
     ...testConfig,

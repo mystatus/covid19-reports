@@ -1,6 +1,12 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, JoinColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  BaseEntity,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Role } from '../role/role.model';
 import { MusterConfiguration } from '../unit/unit.model';
 import { User } from '../user/user.model';
 
@@ -44,4 +50,16 @@ export class Org extends BaseEntity {
     default: '[]',
   })
   defaultMusterConfiguration: MusterConfiguration[] = [];
+
+  getUsers() {
+    return User.createQueryBuilder('user')
+      .leftJoinAndSelect('user.userRoles', 'userRoles')
+      .leftJoinAndSelect('userRoles.role', 'role')
+      .where('role.org_id = :orgId', {
+        orgId: this.id,
+      })
+      .orderBy('edipi', 'ASC')
+      .getMany();
+  }
+
 }

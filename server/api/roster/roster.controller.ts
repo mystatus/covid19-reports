@@ -91,7 +91,7 @@ class RosterController {
     res.json(updatedColumn);
   }
 
-  async deleteCustomColumn(req: ApiRequest<OrgColumnNameParams, CustomColumnData>, res: Response) {
+  async deleteCustomColumn(req: ApiRequest<OrgColumnNameParams>, res: Response) {
     const existingColumn = await CustomRosterColumn.findOne({
       relations: ['org'],
       where: {

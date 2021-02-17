@@ -76,8 +76,22 @@ into a usable state.
 
 ### Testing
 
-```
+- To run backend tests, you'll need to have an instance of Postgres running.
+- When initially running tests, a `dds_test` database will automatically be created in Postgres.
+- The test database is cleared **_before_** each test, meaning you can potentially run a single test and look at the 
+  database to help debug issues.
+
+```bash
 npm test
+# or
+./run-tests.sh
+````
+
+By default, tests will hide any logs not using the `test` log level. To run tests with full output, run the following:
+```bash
+npm test -- --debug
+# or
+./run-tests.sh --debug
 ```
 
 ### Notes

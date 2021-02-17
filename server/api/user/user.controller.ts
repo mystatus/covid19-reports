@@ -142,15 +142,7 @@ class UserController {
   }
 
   async getOrgUsers(req: ApiRequest<OrgParam>, res: Response) {
-    const users = await User.createQueryBuilder('user')
-      .leftJoinAndSelect('user.userRoles', 'userRoles')
-      .leftJoinAndSelect('userRoles.role', 'role')
-      .where('role.org_id = :orgId', {
-        orgId: req.appOrg!.id,
-      })
-      .orderBy('edipi', 'ASC')
-      .getMany();
-
+    const users = await req.appOrg!.getUsers();
     res.json(users);
   }
 

@@ -22,7 +22,7 @@ export class AccessRequest extends BaseEntity {
   id!: number;
 
   @ManyToOne(() => User, user => user.edipi, {
-    cascade: true,
+    onDelete: 'CASCADE',
   })
   @JoinColumn({
     name: 'user_edipi',
@@ -30,7 +30,7 @@ export class AccessRequest extends BaseEntity {
   user?: User;
 
   @ManyToOne(() => Org, org => org.id, {
-    cascade: true,
+    onDelete: 'CASCADE',
   })
   @JoinColumn({
     name: 'org_id',

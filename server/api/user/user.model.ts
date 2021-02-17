@@ -44,7 +44,6 @@ export class User extends BaseEntity {
   })
   isRegistered?: boolean;
 
-
   @OneToMany(() => UserRole, userRole => userRole.user)
   userRoles!: UserRole[];
 

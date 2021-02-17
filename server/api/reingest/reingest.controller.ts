@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import AWS from 'aws-sdk';
+import { Log } from '../../util/log';
 import { ApiRequest, EdipiParam } from '../index';
 import config from '../../config';
 import { dateFromString } from '../../util/util';
@@ -71,7 +72,7 @@ class ReingestController {
         'lambda-invoke-count': lambdaInvocationCount,
       });
     } catch (err) {
-      console.log('Reingest Failed: ', err.message);
+      Log.info('Reingest Failed: ', err.message);
       throw new InternalServerError(`Error during reingest request: ${err.message}`);
     }
   }

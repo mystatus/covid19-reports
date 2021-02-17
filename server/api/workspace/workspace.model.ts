@@ -16,13 +16,18 @@ export class Workspace extends BaseEntity {
   @Column()
   description!: string;
 
-  @ManyToOne(() => Org, { cascade: true, nullable: false })
+  @ManyToOne(() => Org, {
+    onDelete: 'CASCADE',
+    nullable: false,
+  })
   @JoinColumn({
     name: 'org_id',
   })
   org?: Org;
 
-  @ManyToOne(() => WorkspaceTemplate, { cascade: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => WorkspaceTemplate, {
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({
     name: 'workspace_template_id',
   })

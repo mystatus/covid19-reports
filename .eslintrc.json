@@ -7,7 +7,8 @@
     "es6": true,
     "jquery": true,
     "node": true,
-    "browser": true
+    "browser": true,
+    "mocha": true
   },
   "globals": {},
   "plugins": [
@@ -15,10 +16,12 @@
     "jsx-a11y",
     "react",
     "react-hooks",
-    "import"
+    "import",
+    "chai-friendly"
   ],
   "rules": {
     "@typescript-eslint/lines-between-class-members": "off",
+    "@typescript-eslint/no-unused-expressions": "off",
     "@typescript-eslint/no-use-before-define": "off",
     "@typescript-eslint/quotes": ["error", "single", { "allowTemplateLiterals": true }],
     "@typescript-eslint/space-before-function-paren": ["error", {
@@ -28,6 +31,7 @@
     }],
     "arrow-body-style": "off",
     "arrow-parens": ["error", "as-needed", { "requireForBlockBody": false }],
+    "chai-friendly/no-unused-expressions": ["error", { "allowShortCircuit": true }],
     "class-methods-use-this": "off",
     "curly": ["error", "all"],
     "func-names": "off",
@@ -63,6 +67,7 @@
       }
     ],
     "no-underscore-dangle": "off",
+    "no-unused-expressions": "off",
     "no-use-before-define": "off",
     "object-curly-newline": ["error", { "consistent": true }],
     "padded-blocks": "off",

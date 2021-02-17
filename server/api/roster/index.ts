@@ -2,17 +2,16 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import bodyParser from 'body-parser';
+import { Log } from '../../util/log';
 import controller from './roster.controller';
 import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth';
 
 const rosterUpload = multer({
   storage: multer.diskStorage({
     destination: (req: any, file: any, cb: any) => {
-      console.log('destination');
       cb(null, path.join(__dirname, 'uploads'));
     },
     filename: (req: any, file: any, cb: any) => {
-      console.log('filename');
       cb(null, `${file.fieldname}-${Date.now()}-${file.originalname}`);
     },
   }),
