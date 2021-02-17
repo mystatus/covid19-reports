@@ -9,11 +9,9 @@ import { requireInternalUser, requireOrgAccess, requireRolePermission } from '..
 const rosterUpload = multer({
   storage: multer.diskStorage({
     destination: (req: any, file: any, cb: any) => {
-      Log.info('destination');
       cb(null, path.join(__dirname, 'uploads'));
     },
     filename: (req: any, file: any, cb: any) => {
-      Log.info('filename');
       cb(null, `${file.fieldname}-${Date.now()}-${file.originalname}`);
     },
   }),

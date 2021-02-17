@@ -18,9 +18,9 @@ export SQL_DATABASE="dds_test"
 export LOG_LEVEL="$LOG_LEVEL"
 
 # Create test database if it doesn't exist.
-if [ "$(psql -tAc "SELECT 1 FROM pg_database WHERE datname='$SQL_DATABASE'" -h "$SQL_HOST" -p "$SQL_PORT" -U "$SQL_USER")" != '1' ]; then
+if ! psql -lqt | cut -d \| -f 1 | grep -qw "$SQL_DATABASE"; then
   echo -n "Creating '$SQL_DATABASE' database... "
-  createdb -h "$SQL_HOST" -p "$SQL_PORT" -U "$SQL_USER" "$SQL_DATABASE" || {
+  createdb "$SQL_DATABASE" || {
     echo "failed to create '$SQL_DATABASE' database. Aborting..."
     exit
   }
