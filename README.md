@@ -87,12 +87,12 @@ npm test
 ./run-tests.sh
 ````
 
-By default, tests will hide any logs not using the `test` log level. To run tests with full output, run the following:
-```bash
-npm test -- --debug
-# or
-./run-tests.sh --debug
-```
+#### Test Options
+`--debug` - Prints all logs rather than only 'test' level logs.
+
+`--clean` - Drops and recreates the test database before running tests.
+
+`--skip-migration` - Skips the migration step before tests in order to run more quickly.
 
 ### Notes
 
