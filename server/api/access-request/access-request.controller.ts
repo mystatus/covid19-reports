@@ -222,7 +222,7 @@ class AccessRequestController {
     }
 
     request.status = AccessRequestStatus.Denied;
-    const deniedRequest = request.save();
+    const deniedRequest = await request.save();
 
     res.json(deniedRequest);
   }
