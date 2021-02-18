@@ -87,7 +87,7 @@ npm test
 ./run-tests.sh
 ````
 
-#### Test Options
+#### Options
 `--debug` - Prints all logs rather than only 'test' level logs.
 
 `--clean` - Drops and recreates the test database before running tests.
