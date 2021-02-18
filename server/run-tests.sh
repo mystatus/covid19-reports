@@ -35,9 +35,11 @@ export PGPASSWORD=$SQL_PASSWORD
 
 # If the clean flag is passed in, drop the database to start fresh.
 if [ "$CLEAN" == true ]; then
-  echo -n "Dropping '$SQL_DATABASE' database... "
-  dropdb -h "$SQL_HOST" -p "$SQL_PORT" -U "$SQL_USER" "$SQL_DATABASE"
-  echo "success!"
+  if psql -h "$SQL_HOST" -p "$SQL_PORT" -U "$SQL_USER" -lqt | cut -d \| -f 1 | grep -qw "$SQL_DATABASE"; then
+    echo -n "Dropping '$SQL_DATABASE' database... "
+    dropdb -h "$SQL_HOST" -p "$SQL_PORT" -U "$SQL_USER" "$SQL_DATABASE"
+    echo "success!"
+  fi
 fi
 
 # Create test database if it doesn't exist.
