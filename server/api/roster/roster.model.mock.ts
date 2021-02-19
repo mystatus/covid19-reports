@@ -44,7 +44,7 @@ export function mockRosterUploadCsv(args: {
   for (let i = 0; i < rosterCount; i++) {
     const entry = mockRosterEntry(unit);
     const entryData = {
-      unit: entry.unit.id,
+      unit: entry.unit.name,
       edipi: entry.edipi,
       firstName: entry.firstName,
       lastName: entry.lastName,

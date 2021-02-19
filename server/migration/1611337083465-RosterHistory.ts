@@ -65,7 +65,7 @@ export class RosterHistory1611337083465 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "roster" DROP COLUMN "end_date"`);
     await queryRunner.query(`ALTER TABLE "roster" ADD CONSTRAINT "UQ_ce01434bd61ca4cdb9527b8f1fa" UNIQUE ("edipi", "unit_id", "unit_org")`);
 
-    await queryRunner.query(rosterAuditTrigger);
+    await queryRunner.query(RosterHistory1611337083465.rosterAuditTrigger);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
@@ -82,53 +82,53 @@ export class RosterHistory1611337083465 implements MigrationInterface {
     await queryRunner.query(`DROP TYPE "roster_history_change_type_enum"`);
   }
 
+  static rosterAuditTrigger = `
+    CREATE OR REPLACE FUNCTION roster_audit_func() RETURNS TRIGGER AS $body$
+      BEGIN
+        IF (TG_OP = 'UPDATE') THEN
+          INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
+          VALUES (NEW.edipi, NEW.first_name, NEW.last_name, NEW.custom_columns, now(), 'changed', NEW.unit_id, NEW.unit_org);
+          RETURN NEW;
+        ELSIF (TG_OP = 'DELETE') THEN
+          INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
+          VALUES (OLD.edipi, OLD.first_name, OLD.last_name, OLD.custom_columns, now(), 'deleted', OLD.unit_id, OLD.unit_org);
+          RETURN OLD;
+        ELSIF (TG_OP = 'INSERT') THEN
+          INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
+          VALUES (NEW.edipi, NEW.first_name, NEW.last_name, NEW.custom_columns, now(), 'added', NEW.unit_id, NEW.unit_org);
+          RETURN NEW;
+        END IF;
+        RETURN NULL;
+      END;
+    $body$
+    LANGUAGE plpgsql;
+
+    CREATE OR REPLACE FUNCTION roster_truncate_func() RETURNS TRIGGER AS $body$
+      BEGIN
+        IF (TG_OP = 'TRUNCATE') THEN
+          INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
+          SELECT edipi, first_name, last_name, custom_columns, now(), 'deleted', unit_id, unit_org
+            FROM roster;
+        END IF;
+        RETURN NULL;
+      END;
+    $body$
+    LANGUAGE plpgsql;
+
+    DROP TRIGGER IF EXISTS roster_audit ON roster;
+
+    CREATE TRIGGER roster_audit
+      AFTER INSERT OR UPDATE OR DELETE ON roster
+      FOR EACH ROW EXECUTE PROCEDURE roster_audit_func();
+
+    DROP TRIGGER IF EXISTS roster_truncate ON roster;
+
+    CREATE TRIGGER roster_truncate
+      BEFORE TRUNCATE ON roster
+      EXECUTE PROCEDURE roster_truncate_func();
+  `;
+
 }
-
-const rosterAuditTrigger = `
-  CREATE OR REPLACE FUNCTION roster_audit_func() RETURNS TRIGGER AS $body$
-    BEGIN
-      IF (TG_OP = 'UPDATE') THEN
-        INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
-        VALUES (NEW.edipi, NEW.first_name, NEW.last_name, NEW.custom_columns, now(), 'changed', NEW.unit_id, NEW.unit_org);
-        RETURN NEW;
-      ELSIF (TG_OP = 'DELETE') THEN
-        INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
-        VALUES (OLD.edipi, OLD.first_name, OLD.last_name, OLD.custom_columns, now(), 'deleted', OLD.unit_id, OLD.unit_org);
-        RETURN OLD;
-      ELSIF (TG_OP = 'INSERT') THEN
-        INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
-        VALUES (NEW.edipi, NEW.first_name, NEW.last_name, NEW.custom_columns, now(), 'added', NEW.unit_id, NEW.unit_org);
-        RETURN NEW;
-      END IF;
-      RETURN NULL;
-    END;
-  $body$
-  LANGUAGE plpgsql;
-
-  CREATE OR REPLACE FUNCTION roster_truncate_func() RETURNS TRIGGER AS $body$
-    BEGIN
-      IF (TG_OP = 'TRUNCATE') THEN
-        INSERT INTO roster_history (edipi, first_name, last_name, custom_columns, "timestamp", change_type, unit_id, unit_org)
-        SELECT edipi, first_name, last_name, custom_columns, now(), 'deleted', unit_id, unit_org
-          FROM roster;
-      END IF;
-      RETURN NULL;
-    END;
-  $body$
-  LANGUAGE plpgsql;
-
-  DROP TRIGGER IF EXISTS roster_audit ON roster;
-
-  CREATE TRIGGER roster_audit
-    AFTER INSERT OR UPDATE OR DELETE ON roster
-    FOR EACH ROW EXECUTE PROCEDURE roster_audit_func();
-
-  DROP TRIGGER IF EXISTS roster_truncate ON roster;
-
-  CREATE TRIGGER roster_truncate
-    BEFORE TRUNCATE ON roster
-    EXECUTE PROCEDURE roster_truncate_func();
-`;
 
 interface CustomColumns {
   [key: string]: CustomColumnValue
