@@ -493,7 +493,7 @@ function findColumnByName(name: string, columns: RosterColumnInfo[]) {
       custom: false,
       phi: false,
       pii: false,
-      type: RosterColumnType.String,
+      type: RosterColumnType.Number,
       updatable: false,
       required: false,
     };

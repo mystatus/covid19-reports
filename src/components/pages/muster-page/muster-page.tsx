@@ -113,7 +113,7 @@ export const MusterPage = () => {
   };
 
   const [individualsTimeRangeString, setIndividualsTimeRangeString] = useState(timeRangeToString({ interval: 'day', intervalCount: 1 }));
-  const [individualsUnitId, setIndividualsUnitId] = useState<number | null>(null);
+  const [individualsUnitId, setIndividualsUnitId] = useState<number>(-1);
   const [individualsPage, setIndividualsPage] = useState(0);
   const [individualsRowsPerPage, setIndividualsRowsPerPage] = useState(10);
   const [exportLoading, setExportLoading] = useState(false);
@@ -152,7 +152,7 @@ export const MusterPage = () => {
         params: {
           interval,
           intervalCount,
-          unitId: individualsUnitId,
+          unitId: individualsUnitId >= 0 ? individualsUnitId : null,
           page: individualsPage,
           limit: individualsRowsPerPage,
         },
@@ -298,7 +298,7 @@ export const MusterPage = () => {
         params: {
           interval,
           intervalCount,
-          unitId: individualsUnitId,
+          unitId: individualsUnitId >= 0 ? individualsUnitId : null,
         },
         method: 'GET',
         responseType: 'blob',
@@ -306,7 +306,7 @@ export const MusterPage = () => {
 
       const startDate = moment().startOf('day').subtract(intervalCount, 'days').format('YYYY-MM-DD');
       const endDate = moment().startOf('day').format('YYYY-MM-DD');
-      const unitId = individualsUnitId !== null ? `${individualsUnitId}` : 'all-units';
+      const unitId = individualsUnitId >= 0 ? `${individualsUnitId}` : 'all-units';
       const filename = `${_.kebabCase(orgName)}_${unitId}_muster-noncompliance_${startDate}_to_${endDate}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
@@ -360,7 +360,7 @@ export const MusterPage = () => {
 
   const handleIndividualsUnitChange = (event: ChangeEvent<{ name?: string, value: unknown }>) => {
     const unitId = event.target.value as number;
-    setIndividualsUnitId(unitId >= 0 ? unitId : null);
+    setIndividualsUnitId(unitId);
   };
 
   const timeRangeToggleButton = (timeRange: TimeRange) => {
