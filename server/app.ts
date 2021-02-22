@@ -67,6 +67,13 @@ const start = async () => {
   );
 
   app.use(
+    '/onboarding-doc',
+    (req: Request, res: Response) => {
+      res.redirect(`${config.links.onboarding}`);
+    }
+  );
+
+  app.use(
     config.kibana.basePath,
     kibanaProxy,
   );

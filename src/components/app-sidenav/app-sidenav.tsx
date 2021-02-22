@@ -197,7 +197,7 @@ export const AppSidenav = () => {
 
           <List>
             <SidenavLink
-              href={`${process.env.REACT_APP_ONBOARDING_LINK}`}
+              href="/onboarding-doc"
               target="_blank"
               rel="noreferrer"
               name="Onboarding"

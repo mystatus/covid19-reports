@@ -148,7 +148,7 @@ export const UserRegistrationPage = () => {
             <p>
               Please take a moment to create your account. Once you have created an account you will be able to request
               access to your group. If you have any questions about the onboarding process please visit this
-              <Link target="_blank" rel="noopener noreferrer" href={onboardingUrl}> page</Link> for more information.
+              <Link target="_blank" rel="noopener noreferrer" href="/onboarding-doc"> page</Link> for more information.
             </p>
           </header>
 
