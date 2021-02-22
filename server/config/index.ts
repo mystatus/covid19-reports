@@ -26,6 +26,9 @@ const baseConfig = {
     symptomIndex: process.env.DYNAMO_SYMPTOM_INDEX || 'EDIPI-Timestamp-index',
     symptomLambda: process.env.DYNAMO_SYMPTOM_LAMBDA || 'symptom_message_handler',
   },
+  links: {
+    onboarding: process.env.REACT_APP_ONBOARDING_LINK || 'https://dev.welcome.statusengine.mystatus.mil/CustomerOnboarding.pdf',
+  },
 };
 
 // Merge current environment config.
