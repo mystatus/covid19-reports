@@ -27,7 +27,7 @@ const baseConfig = {
     symptomLambda: process.env.DYNAMO_SYMPTOM_LAMBDA || 'symptom_message_handler',
   },
   links: {
-    onboarding: process.env.REACT_APP_ONBOARDING_LINK || 'https://dev.welcome.statusengine.mystatus.mil/CustomerOnboarding.pdf',
+    onboarding: process.env.ONBOARDING_LINK || 'https://dev.welcome.statusengine.mystatus.mil/CustomerOnboarding.pdf',
   },
 };
 
