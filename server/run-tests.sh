@@ -6,19 +6,15 @@ SKIP_MIGRATION=false
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
-  --debug)
-    LOG_LEVEL="debug"
-    ;;
-  esac
-  case $1 in
-  --clean)
-    CLEAN=true
-    ;;
-  esac
-  case $1 in
-  --skip-migration)
-    SKIP_MIGRATION=true
-    ;;
+    --debug)
+      LOG_LEVEL="debug"
+      ;;
+    --clean)
+      CLEAN=true
+      ;;
+    --skip-migration)
+      SKIP_MIGRATION=true
+      ;;
   esac
   shift
 done
