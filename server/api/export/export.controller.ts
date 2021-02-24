@@ -20,6 +20,7 @@ import {
 } from '../index';
 import { RosterEntryData } from '../roster/roster.controller';
 import { Roster } from '../roster/roster.model';
+import { Unit } from '../unit/unit.model';
 
 class ExportController {
 
@@ -34,7 +35,7 @@ class ExportController {
     //
     // Get ES data and stream to client.
     //
-    const index = req.appUserRole!.getKibanaIndex();
+    const index = req.appUserRole!.getKibanaIndices();
     const scrollQueue = [] as SearchResponse<any>[];
     try {
       scrollQueue.push(await elasticsearch.search({
@@ -110,10 +111,27 @@ class ExportController {
       })
       .getRawMany<RosterEntryData>();
 
+
+    const unitIdNameMap: {[key: number]: string} = {};
+    const units = await Unit.find({
+      where: {
+        org: orgId,
+      },
+    });
+
+    units.forEach(unit => {
+      unitIdNameMap[unit.id] = unit.name;
+    });
+
     // convert data to csv format and download
     let csv: string;
     try {
-      csv = await json2csvAsync(rosterData);
+      csv = await json2csvAsync(rosterData.map(roster => {
+        return {
+          ...roster,
+          unit: unitIdNameMap[roster.unit!],
+        };
+      }));
     } catch (err) {
       Log.error('Failed to convert roster json data to CSV string.');
       throw new InternalServerError('Failed to export Roster data to CSV.');
@@ -165,7 +183,7 @@ type ExportOrgQuery = {
 type ExportMusterIndividualsQuery = {
   interval: TimeInterval
   intervalCount: string
-  unitId?: string
+  unitId?: number
 } & PagedQuery;
 
 export default new ExportController();

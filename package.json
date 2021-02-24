@@ -127,7 +127,8 @@
     "typeorm": "ts-node --project ./server/tsconfig.json ./node_modules/.bin/typeorm",
     "migration-create": "./migration-create.sh",
     "migration-generate": "./migration-generate.sh",
-    "migration-run": "./migration-run.sh"
+    "migration-run": "./migration-run.sh",
+    "migration-revert": "./migration-revert.sh"
   },
   "eslintConfig": {
     "extends": "react-app"

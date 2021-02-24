@@ -79,10 +79,10 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   };
 
   const onUnitChanged = (event: React.ChangeEvent<{ value: unknown }>) => {
-    updateRosterEntryProperty('unit', event.target.value);
+    updateRosterEntryProperty('unit', parseInt(event.target.value as string));
   };
 
-  const getUnitName = (unitId: string) => {
+  const getUnitName = (unitId: number) => {
     for (const unit of units) {
       if (unit.id === unitId) {
         return unit.name;

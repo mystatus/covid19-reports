@@ -1,11 +1,10 @@
 import { expect } from 'chai';
-import { Like } from 'typeorm';
+import _ from 'lodash';
 import { expectNoErrors } from '../../util/test-utils/expect';
 import { seedOrgContactRoles } from '../../util/test-utils/seed';
 import { TestRequest } from '../../util/test-utils/test-request';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
-import { Unit } from '../unit/unit.model';
 import { seedUnit } from '../unit/unit.model.mock';
 import { UserRole } from '../user/user-role.model';
 import { User } from '../user/user.model';
@@ -114,7 +113,9 @@ describe(`AccessRequest Controller`, () => {
       const users = await seedUsers({ count: 2 });
       const accessRequest = await seedAccessRequest(users[0], org);
       await seedAccessRequest(users[1], org);
-      const unit = await seedUnit(org);
+      const unit1 = await seedUnit(org);
+      await seedUnit(org);
+      const unit3 = await seedUnit(org);
 
       const accessRequestsBefore = await AccessRequest.find({
         where: { org },
@@ -130,7 +131,8 @@ describe(`AccessRequest Controller`, () => {
       const body = {
         requestId: accessRequest.id,
         roleId: roleAdmin.id,
-        unitFilter: unit.id,
+        units: [unit1.id, unit3.id],
+        allUnits: false,
       };
       const res = await req.post(`/${org.id}/approve`, body);
 
@@ -144,18 +146,69 @@ describe(`AccessRequest Controller`, () => {
       expect(accessRequestsAfterIds).not.to.include(accessRequest.id);
 
       const userRole = (await UserRole.findOne({
+        relations: ['role', 'role.org', 'units'],
         where: { user: accessRequest.user },
       }))!;
       expect(userRole).to.exist;
 
-      const units = await Unit.find({
-        where: {
-          org,
-          id: Like(userRole.getUnitFilter()),
-        },
+      const units = _.sortBy(await userRole.getUnits(), 'id');
+      expect(units).to.have.lengthOf(2);
+      expect(units[0].id).to.equal(unit1.id);
+      expect(units[1].id).to.equal(unit3.id);
+
+      const orgUsersAfter = await org.getUsers();
+      expect(orgUsersAfter).to.have.lengthOf(orgUsersBefore.length + 1);
+      const orgUsersAfterEdipis = orgUsersAfter.map(x => x.edipi);
+      expect(orgUsersAfterEdipis).to.include(users[0].edipi);
+    });
+
+    it(`adds user to the org with access to all units and deletes access request`, async () => {
+      const users = await seedUsers({ count: 2 });
+      const accessRequest = await seedAccessRequest(users[0], org);
+      await seedAccessRequest(users[1], org);
+      const unit1 = await seedUnit(org);
+      const unit2 = await seedUnit(org);
+      const unit3 = await seedUnit(org);
+
+      const accessRequestsBefore = await AccessRequest.find({
+        where: { org },
       });
-      expect(units).to.have.lengthOf(1);
-      expect(units[0].id).to.equal(unit.id);
+      const accessRequestsBeforeIds = accessRequestsBefore.map(x => x.id);
+      expect(accessRequestsBeforeIds).to.include(accessRequest.id);
+
+      const orgUsersBefore = await org.getUsers();
+      const orgUsersBeforeEdipis = orgUsersBefore.map(x => x.edipi);
+      expect(orgUsersBeforeEdipis).not.to.include(users[0].edipi);
+
+      req.setUser(contact);
+      const body = {
+        requestId: accessRequest.id,
+        roleId: roleAdmin.id,
+        units: [],
+        allUnits: true,
+      };
+      const res = await req.post(`/${org.id}/approve`, body);
+
+      expectNoErrors(res);
+
+      const accessRequestsAfter = await AccessRequest.find({
+        where: { org },
+      });
+      expect(accessRequestsAfter).to.have.lengthOf(accessRequestsBefore.length - 1);
+      const accessRequestsAfterIds = accessRequestsAfter.map(x => x.id);
+      expect(accessRequestsAfterIds).not.to.include(accessRequest.id);
+
+      const userRole = (await UserRole.findOne({
+        relations: ['role', 'role.org', 'units'],
+        where: { user: accessRequest.user },
+      }))!;
+      expect(userRole).to.exist;
+
+      const units = _.sortBy(await userRole.getUnits(), 'id');
+      expect(units).to.have.lengthOf(3);
+      expect(units[0].id).to.equal(unit1.id);
+      expect(units[1].id).to.equal(unit2.id);
+      expect(units[2].id).to.equal(unit3.id);
 
       const orgUsersAfter = await org.getUsers();
       expect(orgUsersAfter).to.have.lengthOf(orgUsersBefore.length + 1);

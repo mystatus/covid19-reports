@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Like } from 'typeorm';
+import _ from 'lodash';
 import { expectNoErrors } from '../../util/test-utils/expect';
 import {
   seedOrgContactRoles,
@@ -14,7 +14,6 @@ import {
 import { seedAccessRequest } from '../access-request/access-request.mock';
 import { AccessRequest } from '../access-request/access-request.model';
 import { addUserToOrg } from '../org/org.model.mock';
-import { Unit } from '../unit/unit.model';
 import { seedUnit } from '../unit/unit.model.mock';
 import { User } from './user.model';
 import { seedUser } from './user.model.mock';
@@ -108,7 +107,8 @@ describe(`User Controller`, () => {
 
     it(`updates user role and name`, async () => {
       const { org, contact, roleUser, roleAdmin } = await seedOrgContactRoles();
-      const unit = await seedUnit(org);
+      const unit1 = await seedUnit(org);
+      const unit2 = await seedUnit(org);
       const user = await seedUser();
       await addUserToOrg(user, roleUser);
 
@@ -116,10 +116,18 @@ describe(`User Controller`, () => {
         relations: [
           'userRoles',
           'userRoles.role',
+          'userRoles.role.org',
+          'userRoles.units',
         ],
       }))!;
       expect(userBefore.userRoles).to.have.lengthOf(1);
       expect(userBefore.userRoles[0].role.id).to.equal(roleUser.id);
+      expect(userBefore.userRoles[0].units).to.have.lengthOf(0);
+      const beforeUnits = _.sortBy(await userBefore.userRoles[0].getUnits(), 'id');
+      expect(beforeUnits).to.have.lengthOf(2);
+      expect(beforeUnits[0].id).to.equal(unit1.id);
+      expect(beforeUnits[1].id).to.equal(unit2.id);
+      expect(userBefore.userRoles[0].allUnits).to.equal(true);
 
       const userCountBefore = await User.count();
 
@@ -129,7 +137,8 @@ describe(`User Controller`, () => {
         role: roleAdmin.id,
         firstName: uniqueString(),
         lastName: uniqueString(),
-        unitFilter: unit.id,
+        units: [unit1.id],
+        allUnits: false,
       };
       const res = await req.post(`/${org.id}`, body);
 
@@ -139,21 +148,16 @@ describe(`User Controller`, () => {
         relations: [
           'userRoles',
           'userRoles.role',
+          'userRoles.units',
         ],
       }))!;
       expect(userAfter.userRoles).to.have.lengthOf(1);
       expect(userAfter.userRoles[0].role.id).to.equal(roleAdmin.id);
       expect(userAfter.firstName).to.equal(body.firstName);
       expect(userAfter.lastName).to.equal(body.lastName);
-
-      const units = await Unit.find({
-        where: {
-          org,
-          id: Like(userAfter.userRoles[0].getUnitFilter()),
-        },
-      });
-      expect(units).to.have.lengthOf(1);
-      expect(units[0].id).to.equal(unit.id);
+      expect(userAfter.userRoles[0].units).to.have.lengthOf(1);
+      expect(userAfter.userRoles[0].units[0].id).to.equal(unit1.id);
+      expect(userAfter.userRoles[0].allUnits).to.equal(false);
 
       expect(await User.count()).to.equal(userCountBefore);
     });
