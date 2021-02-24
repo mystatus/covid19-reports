@@ -28,6 +28,7 @@ export SQL_PORT=${SQL_PORT:=5432}
 export SQL_USER=${SQL_USER:=postgres}
 export SQL_PASSWORD=${SQL_PASSWORD:=postgres}
 export PGPASSWORD=$SQL_PASSWORD
+export TYPEORM_CACHE=false
 
 # If the clean flag is passed in, drop the database to start fresh.
 if [ "$CLEAN" == true ]; then
