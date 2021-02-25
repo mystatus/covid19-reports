@@ -30,6 +30,44 @@ import { CustomColumnValue, RosterColumnInfo, RosterColumnType } from './roster.
 import { UserRole } from '../user/user-role.model';
 import { ChangeType, RosterHistory } from './roster-history.model';
 import { baseRosterColumns } from './roster-entity';
+import { Role } from '../role/role.model';
+
+export async function addRosterEntry(org: Org, role: Role, rosterEntryData: RosterEntryData) {
+  const edipi = rosterEntryData.edipi as string;
+
+  if (!rosterEntryData.unit) {
+    throw new BadRequestError('A unit must be supplied when adding a roster entry.');
+  }
+
+  const unit = await Unit.findOne({
+    relations: ['org'],
+    where: {
+      org: org.id,
+      id: rosterEntryData.unit,
+    },
+  });
+  if (!unit) {
+    throw new NotFoundError(`Unit with ID ${rosterEntryData.unit} could not be found.`);
+  }
+
+  const rosterEntry = await Roster.findOne({
+    where: {
+      edipi,
+      unit: unit.id,
+    },
+  });
+
+  if (rosterEntry) {
+    throw new BadRequestError('The individual is already in the roster.');
+  }
+
+  const entry = new Roster();
+  entry.unit = unit;
+  const columns = await Roster.getAllowedColumns(org, role);
+  await setRosterParamsFromBody(org, entry, rosterEntryData, columns, true);
+  const newRosterEntry = await entry.save();
+  return newRosterEntry;
+}
 
 class RosterController {
 
@@ -303,34 +341,7 @@ class RosterController {
   }
 
   async addRosterEntry(req: ApiRequest<OrgParam, RosterEntryData>, res: Response) {
-    const edipi = req.body.edipi as string;
-
-    if (!req.body.unit) {
-      throw new BadRequestError('A unit must be supplied when adding a roster entry.');
-    }
-
-    const unit = await req.appUserRole?.getUnit(req.body.unit);
-    if (!unit) {
-      throw new NotFoundError(`Unit with ID ${req.body.unit} could not be found.`);
-    }
-
-    const rosterEntry = await Roster.findOne({
-      where: {
-        edipi,
-        unit: unit.id,
-      },
-    });
-
-    if (rosterEntry) {
-      throw new BadRequestError('The individual is already in the roster.');
-    }
-
-    const entry = new Roster();
-    entry.unit = unit;
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
-    await setRosterParamsFromBody(req.appOrg!, entry, req.body, columns, true);
-    const newRosterEntry = await entry.save();
-
+    const newRosterEntry = await addRosterEntry(req.appOrg!, req.appUserRole!.role, req.body);
     res.status(201).json(newRosterEntry);
   }
 
