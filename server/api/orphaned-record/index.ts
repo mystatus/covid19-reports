@@ -1,5 +1,4 @@
 import express from 'express';
-import bodyParser from 'body-parser';
 import controller from './orphaned-record.controller';
 import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth';
 
@@ -9,43 +8,37 @@ const router = express.Router() as any;
 router.get(
   '/:orgId',
   requireOrgAccess,
+  requireRolePermission(role => role.canManageRoster),
   controller.getOrphanedRecords,
 );
 
 router.put(
   '/',
   requireInternalUser,
+  requireOrgAccess,
   controller.addOrphanedRecord,
 );
 
-// router.post(
-//   '/:orgId',
-//   requireOrgAccess,
-//   requireRolePermission(role => role.canManageGroup),
-//   bodyParser.json(),
-//   controller.addUnit,
-// );
+router.delete(
+  '/:orgId/:id',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageRoster),
+  controller.deleteOrphanedRecord,
+);
 
-// router.put(
-//   '/:orgId/:unitId',
-//   requireOrgAccess,
-//   requireRolePermission(role => role.canManageGroup),
-//   bodyParser.json(),
-//   controller.updateUnit,
-// );
+router.put(
+  '/:orgId/:id/resolve',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageRoster),
+  controller.resolveOrphanedRecord,
+);
 
-// router.delete(
-//   '/:orgId/:unitId',
-//   requireOrgAccess,
-//   requireRolePermission(role => role.canManageGroup),
-//   controller.deleteUnit,
-// );
+router.put(
+  '/:orgId/:id/action',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageRoster),
+  controller.addOrphanedRecordAction,
+);
 
-// router.get(
-//   '/:orgId/:unitId/roster',
-//   requireInternalUser,
-//   requireOrgAccess,
-//   controller.getUnitRoster,
-// );
 
 export default router;

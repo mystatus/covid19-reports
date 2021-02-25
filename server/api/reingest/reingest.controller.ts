@@ -7,65 +7,93 @@ import { dateFromString } from '../../util/util';
 import { BadRequestError, InternalServerError } from '../../util/error-types';
 
 
+export function makeDocumentIdQuery(documentId: string): AWS.DynamoDB.QueryInput {
+  return {
+    TableName: config.dynamo.symptomTable,
+    IndexName: config.dynamo.symptomIndex,
+    KeyConditions: {
+      ID: {
+        ComparisonOperator: 'EQ',
+        AttributeValueList: [
+          {
+            S: documentId,
+          },
+        ],
+      },
+    },
+  };
+}
+
+export function makeEdipiAndRangeQuery(edipi: string, startTime?: string | number | Date, endTime?: string | number | Date): AWS.DynamoDB.QueryInput {
+  let startDate = 0;
+  let endDate = Date.now();
+  if (startTime) {
+    startDate = convertDateParam(startTime);
+  }
+
+  if (endTime) {
+    endDate = convertDateParam(endTime);
+  }
+
+  return {
+    TableName: config.dynamo.symptomTable,
+    IndexName: config.dynamo.symptomIndex,
+    KeyConditions: {
+      EDIPI: {
+        ComparisonOperator: 'EQ',
+        AttributeValueList: [
+          {
+            S: edipi,
+          },
+        ],
+      },
+      Timestamp: {
+        ComparisonOperator: 'BETWEEN',
+        AttributeValueList: [
+          {
+            N: startDate.toString(),
+          },
+          {
+            N: endDate.toString(),
+          },
+        ],
+      },
+    },
+  };
+}
+
+export async function reingest(queryInput: AWS.DynamoDB.QueryInput) {
+  const dynamoDB = new AWS.DynamoDB();
+  const data = await dynamoDB.query(queryInput).promise();
+  const { payloads, recordsIngested } = buildPayloadsFromData(data);
+  const lambda = new AWS.Lambda();
+  let lambdaInvocationCount = 0;
+  for (const lambdaPayload of payloads) {
+    const lambdaParams = {
+      FunctionName: config.dynamo.symptomLambda,
+      Payload: Buffer.from(JSON.stringify(lambdaPayload)),
+      InvocationType: 'Event',
+    };
+    lambda.invoke(lambdaParams);
+    lambdaInvocationCount += 1;
+  }
+  return {
+    lambdaInvocationCount,
+    recordsIngested,
+  };
+}
+
 const maxPayloadSize = 100;
 class ReingestController {
 
   async reingestSymptomRecords(req: ApiRequest<EdipiParam, TimestampData>, res: Response) {
-
-    let startDate = 0;
-    let endDate = Date.now();
-    if (req.body.startTime) {
-      startDate = convertDateParam(req.body.startTime);
-    }
-
-    if (req.body.endTime) {
-      endDate = convertDateParam(req.body.endTime);
-    }
-
-    const dynamoDB = new AWS.DynamoDB();
-    const queryInput = {
-      TableName: config.dynamo.symptomTable,
-      IndexName: config.dynamo.symptomIndex,
-      KeyConditions: {
-        EDIPI: {
-          ComparisonOperator: 'EQ',
-          AttributeValueList: [
-            {
-              S: req.params.edipi,
-            },
-          ],
-        },
-        Timestamp: {
-          ComparisonOperator: 'BETWEEN',
-          AttributeValueList: [
-            {
-              N: startDate.toString(),
-            },
-            {
-              N: endDate.toString(),
-            },
-          ],
-        },
-      },
-
-    };
+    const queryInput = makeEdipiAndRangeQuery(req.params.edipi, req.body.startTime, req.body.endTime);
 
     try {
-      const data = await dynamoDB.query(queryInput).promise();
-
-      const { payloads, recordsIngested } = buildPayloadsFromData(data);
-
-      const lambda = new AWS.Lambda();
-      let lambdaInvocationCount = 0;
-      for (const lambdaPayload of payloads) {
-        const lambdaParams = {
-          FunctionName: config.dynamo.symptomLambda,
-          Payload: Buffer.from(JSON.stringify(lambdaPayload)),
-          InvocationType: 'Event',
-        };
-        lambda.invoke(lambdaParams);
-        lambdaInvocationCount += 1;
-      }
+      const {
+        lambdaInvocationCount,
+        recordsIngested,
+      } = await reingest(queryInput);
 
       res.status(201).json({
         'reingest-count': recordsIngested,
@@ -118,7 +146,7 @@ function buildPayloadsFromData(data: AWS.DynamoDB.QueryOutput) {
   };
 }
 
-function convertDateParam(date: string | number | Date): number {
+export function convertDateParam(date: string | number | Date): number {
   if (typeof date === 'string') {
     const convertedDate = dateFromString(date);
     if (!convertedDate) {

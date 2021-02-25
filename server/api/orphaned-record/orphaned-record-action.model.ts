@@ -5,6 +5,8 @@ import {
   BaseEntity,
   JoinColumn,
   ManyToOne,
+  BeforeInsert,
+  PrimaryColumn,
 } from 'typeorm';
 import { timestampColumnTransformer } from '../../util/util';
 import { Org } from '../org/org.model';
@@ -17,12 +19,8 @@ export enum ActionType {
 
 @Entity()
 export class OrphanedRecordAction extends BaseEntity {
-  @Column({
-    nullable: false,
-    length: 10,
-    primary: true,
-  })
-  edipi!: string;
+  @PrimaryColumn()
+  id!: string;
 
   @ManyToOne(() => User, user => user.edipi, {
     cascade: true,
@@ -33,14 +31,6 @@ export class OrphanedRecordAction extends BaseEntity {
   })
   user?: User;
 
-  @ManyToOne(() => Org, org => org.id, {
-    cascade: true,
-  })
-  @JoinColumn({
-    name: 'org_id',
-  })
-  org?: Org;
-
   @CreateDateColumn({
     type: 'timestamp',
     transformer: timestampColumnTransformer,
@@ -50,6 +40,7 @@ export class OrphanedRecordAction extends BaseEntity {
   @Column({
     type: 'timestamp',
     transformer: timestampColumnTransformer,
+    default: () => `now() + interval '1 day'`,
   })
   expiresOn!: Date;
 

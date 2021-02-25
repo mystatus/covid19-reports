@@ -1,21 +1,26 @@
 import { Response } from 'express';
+import { getConnection } from 'typeorm';
 import {
   ApiRequest, OrgParam,
 } from '../index';
-import { OrphanedRecord, IngestProcessor, applicationMapping } from './orphaned-record.model';
+import { OrphanedRecord } from './orphaned-record.model';
 import { ActionType, OrphanedRecordAction } from './orphaned-record-action.model';
 import { Org } from '../org/org.model';
 import { BadRequestError } from '../../util/error-types';
+import { convertDateParam, makeDocumentIdQuery, reingest } from '../reingest/reingest.controller';
+import { RosterHistory } from '../roster/roster-history.model';
+import { addRosterEntry, RosterEntryData } from '../roster/roster.controller';
 
 interface OrphanedRecordResult {
   edipi: string;
-  createdOn: Date;
+  earliestReportDate: Date;
+  phone: string;
   unit: string;
-  phoneNumber: string;
+  count: number;
   claimedUntil?: Date;
 }
 
-function getVisibleOrphanedRecords(userEdipi: string, orgId: number) {
+function getVisibleOrphanedRecordResults(userEdipi: string, orgId: number) {
   const params = {
     now: new Date(),
     orgId,
@@ -23,46 +28,42 @@ function getVisibleOrphanedRecords(userEdipi: string, orgId: number) {
   };
   return OrphanedRecord
     .createQueryBuilder('orphan')
-    .leftJoinAndMapMany('orphan.actions', OrphanedRecordAction, 'action', 'action.org_id=:orgId AND (action.expires_on IS NULL OR action.expires_on > :now) AND (action.type=\'claim\' OR (action.user_edipi=:userEdipi AND action.type=\'ignore\'))', params)
+    .leftJoin(OrphanedRecordAction, 'action', `action.id=orphan.join_key AND action.expires_on > :now AND (action.type='claim' OR (action.user_edipi=:userEdipi AND action.type='ignore'))`, params)
     .where('orphan.org_id=:orgId', params)
+    .andWhere('orphan.deleted_on IS NULL')
     .andWhere(`(action.type IS NULL OR (action.type='claim' AND action.user_edipi=:userEdipi))`, params)
-    .addSelect('action.expires_on', 'claimed_until')
-    .orderBy('orphan.createdOn', 'DESC')
-    .getRawMany();
-}
-
-function mapToOrphanedRecordResult(orphanish: any) {
-  const symptomObservationReport = orphanish.orphan_report as IngestProcessor.SymptomObservationReport;
-  return {
-    edipi: orphanish.orphan_edipi,
-    createdOn: orphanish.orphan_createdOn,
-    unit: symptomObservationReport?.Details?.Unit,
-    phoneNumber: symptomObservationReport?.Details?.PhoneNumber,
-    claimedUntil: orphanish.claimed_until,
-  } as OrphanedRecordResult;
-}
-
-function projectToOrphanedRecordResult(orphanedRecords: OrphanedRecord[]) {
-  return orphanedRecords.map(mapToOrphanedRecordResult);
+    .select('orphan.edipi', 'edipi')
+    .addSelect('orphan.unit', 'unit')
+    .addSelect('orphan.phone', 'phone')
+    .addSelect('action.expires_on', 'claimedUntil')
+    .addSelect('MIN(orphan.timestamp)', 'earliestReportDate')
+    .addSelect('COUNT(*)::INTEGER', 'count')
+    .groupBy('orphan.edipi')
+    .addGroupBy('orphan.unit')
+    .addGroupBy('orphan.phone')
+    .addGroupBy('action.expires_on')
+    .getRawMany<OrphanedRecordResult>();
 }
 
 class OrphanedRecordController {
   async getOrphanedRecords(req: ApiRequest<OrgParam>, res: Response) {
-    const orphanedRecords = await getVisibleOrphanedRecords(req.appUser!.edipi, req.appOrg!.id);
-    const orphanedRecordResults = projectToOrphanedRecordResult(orphanedRecords);
-    res.json(orphanedRecordResults);
+    const orphanedRecords = await getVisibleOrphanedRecordResults(req.appUser!.edipi, req.appOrg!.id);
+
+    console.log(orphanedRecords);
+    res.json(orphanedRecords);
   }
 
   async addOrphanedRecord(req: ApiRequest<null, OrphanedRecordData>, res: Response) {
-    const report = req.body.report;
-    const reportingGroup = report.ReportingGroup ?? (report.Client?.Application && applicationMapping[report.Client?.Application]);
     const orphanedRecord = new OrphanedRecord();
-    orphanedRecord.report = report;
-    orphanedRecord.edipi = report.EDIPI;
+    orphanedRecord.documentId = req.body.documentId;
+    orphanedRecord.timestamp = new Date(convertDateParam(req.body.timestamp));
+    orphanedRecord.edipi = req.body.edipi;
+    orphanedRecord.phone = req.body.phone;
+    orphanedRecord.unit = req.body.unit;
 
-    if (reportingGroup) {
+    if (req.body.reportingGroup) {
       orphanedRecord.org = await Org.createQueryBuilder('org')
-        .where('org.reportingGroup=:reportingGroup', { reportingGroup })
+        .where('org.reportingGroup=:reportingGroup', { reportingGroup: req.body.reportingGroup })
         .select('org.id', 'id')
         .getOne();
     }
@@ -71,41 +72,133 @@ class OrphanedRecordController {
     res.status(201).json(newOrphanedRecord);
   }
 
-  async recordAction(req: ApiRequest<OrgParam, OrphanedRecordActionData>, res: Response) {
-    if (!req.body.edipi) {
-      throw new BadRequestError('EDIPI is required.');
+  async deleteOrphanedRecord(req: ApiRequest<OrphanedRecordActionParam>, res: Response) {
+    const orphanedRecords = await OrphanedRecord
+      .createQueryBuilder('orphan')
+      .where('orphan.joinKey=:joinKey', { joinKey: req.params.id })
+      .getMany();
+
+    if (orphanedRecords.length === 0) {
+      throw new BadRequestError(`Unable to locate orphaned record with id: ${req.params.id}`);
+    }
+
+    const now = new Date();
+    const result = Promise.all(orphanedRecords.map(orphanedRecord => {
+      orphanedRecord.deletedOn = now;
+      return orphanedRecord.save();
+    }));
+    res.json(result);
+  }
+
+  async resolveOrphanedRecord(req: ApiRequest<OrphanedRecordActionParam, RosterEntryData>, res: Response<OrphanedRecordResolveResponse>) {
+    const orphanedRecords = await OrphanedRecord
+      .createQueryBuilder('orphan')
+      .where('orphan.joinKey=:joinKey', { joinKey: req.params.id })
+      .andWhere('orphan.deletedOn IS NULL')
+      .getMany();
+
+    if (orphanedRecords.length === 0) {
+      throw new BadRequestError(`Unable to locate orphaned record with id: ${req.params.id}`);
+    }
+
+    const [edipi] = req.params.id.split(';');
+    const resultRecords: OrphanedRecordResolveItem[] = [];
+    let lambdaInvocationCount = 0;
+    let recordsIngested = 0;
+
+    await getConnection().transaction(async manager => {
+      // If the roster entry already exists, backdate the timestamp column
+      // of the corresponding  'added' record in he roster history.
+      // Otherwise, add a new roster entry.
+      const rosterHistory = await manager
+        .createQueryBuilder(RosterHistory, 'roster')
+        .where('roster.edipi=:edipi', { edipi })
+        .andWhere(`roster.change_type='added'`)
+        .getOne();
+
+      if (rosterHistory) {
+        // Backdate the timestamp to the earliest orphaned record time.
+        rosterHistory.timestamp = orphanedRecords.map(({ timestamp }) => timestamp).sort()[0];
+        rosterHistory.save();
+      } else {
+        // Add a new roster entry
+        addRosterEntry(req.appOrg!, req.appUserRole!.role, req.body);
+      }
+
+      for (const orphanedRecord of orphanedRecords) {
+        // Remove the orphan record entry
+        const newOrphanedRecord = await orphanedRecord.remove();
+
+        // Request a reingestion of a single document
+        const queryInput = makeDocumentIdQuery(orphanedRecord.documentId);
+        const reingestResult = await reingest(queryInput);
+
+        // Delete any outstanding actions
+        await OrphanedRecordAction
+          .createQueryBuilder()
+          .delete()
+          .where(`id=:id`, { id: req.params.id })
+          .orWhere('expires_on < now()')
+          .execute();
+
+        // Track the individual ingestion and postgres save() results
+        resultRecords.push({
+          ...reingestResult,
+          orphanedRecord: newOrphanedRecord,
+        });
+
+        // Keep track of our aggregate totals
+        lambdaInvocationCount += reingestResult.lambdaInvocationCount;
+        recordsIngested += reingestResult.recordsIngested;
+      }
+    });
+
+    res.json({
+      items: resultRecords,
+      lambdaInvocationCount,
+      recordsIngested,
+    });
+  }
+
+  async addOrphanedRecordAction(req: ApiRequest<OrphanedRecordActionParam, OrphanedRecordActionData>, res: Response) {
+    if (!req.params.id) {
+      throw new BadRequestError(`Param 'id' is required.`);
+    }
+    if (req.params.id.split(';').length !== 4) {
+      throw new BadRequestError(`Param 'id' is malformed. ${req.params.id}`);
     }
     if (!req.body.action) {
-      throw new BadRequestError('Action is required.');
+      throw new BadRequestError(`Expected 'action' in payload.`);
     }
     if (!(req.body.timeToLiveMs > 0)) {
-      throw new BadRequestError('EDIPI is required.');
+      throw new BadRequestError(`Expected 'timeToLiveMs' in payload.`);
     }
+
     const existingAction = await OrphanedRecordAction.findOne({
       where: {
         user_edipi: req.appUser.edipi,
-        edipi: req.body.edipi,
+        id: req.params.id,
       },
     });
     if (existingAction) {
       await existingAction.remove();
     }
 
-    const orphanedRecord = await OrphanedRecord
+    const orphanedRecords = await OrphanedRecord
       .createQueryBuilder('orphan')
-      .where('orphan.edipi=:edipi', { edipi: req.body.edipi })
-      .limit(1)
-      .getOne();
+      .where('orphan.joinKey=:joinKey', { joinKey: req.params.id })
+      .getMany();
 
-    if (!orphanedRecord) {
-      throw new BadRequestError(`Unable to locate orphaned record for edipi: ${req.body.edipi}`);
+    if (orphanedRecords.length === 0) {
+      throw new BadRequestError(`Unable to locate orphaned record with id: ${req.params.id}`);
     }
+
+    // 1231231231;17035813720;unit;1
 
     const now = Date.now();
     const orphanedRecordAction = new OrphanedRecordAction();
-    orphanedRecordAction.edipi = req.body.edipi;
+    orphanedRecordAction.id = req.params.id;
     orphanedRecordAction.type = req.body.action;
-    orphanedRecordAction.org = req.appOrg;
     orphanedRecordAction.user = req.appUser;
     orphanedRecordAction.createdOn = new Date(now);
     orphanedRecordAction.expiresOn = new Date(now + req.body.timeToLiveMs);
@@ -115,13 +208,33 @@ class OrphanedRecordController {
   }
 }
 
+export interface OrphanedRecordActionParam extends OrgParam {
+  orgId: string;
+  id: string;
+}
+
+export interface OrphanedRecordResolveItem {
+  lambdaInvocationCount: number;
+  recordsIngested: number;
+  orphanedRecord: OrphanedRecord;
+}
+
+export interface OrphanedRecordResolveResponse {
+  lambdaInvocationCount: number;
+  recordsIngested: number;
+  items: OrphanedRecordResolveItem[];
+}
 
 export interface OrphanedRecordData {
-  report: IngestProcessor.BaseReport
+  documentId: string,
+  timestamp: number,
+  edipi: string,
+  phone: string,
+  reportingGroup: string,
+  unit: string,
 }
 
 export interface OrphanedRecordActionData {
-  edipi: string,
   action: ActionType,
   timeToLiveMs: number
 }
