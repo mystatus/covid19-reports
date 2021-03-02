@@ -3,7 +3,6 @@ import bodyParser from 'body-parser';
 import controller from './unit.controller';
 import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth';
 
-
 const router = express.Router() as any;
 
 router.get(

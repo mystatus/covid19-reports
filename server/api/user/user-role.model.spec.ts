@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { seedOrgContactRoles } from '../../util/test-utils/seed';
-import { addUserToOrg } from '../org/org.model.mock';
 import { UserRole } from './user-role.model';
+import { seedUserRole } from './user-role.model.mock';
 import { seedUser } from './user.model.mock';
 
 describe(`UserRole Model`, () => {
@@ -11,7 +11,7 @@ describe(`UserRole Model`, () => {
     it(`user`, async () => {
       const { roleUser } = await seedOrgContactRoles();
       const user = await seedUser();
-      const userRole = await addUserToOrg(user, roleUser);
+      const userRole = await seedUserRole(user, roleUser);
 
       const userRoleExisting = await UserRole.findOne(userRole.id);
       expect(userRoleExisting).to.exist;
@@ -29,7 +29,7 @@ describe(`UserRole Model`, () => {
     it(`role`, async () => {
       const { roleUser } = await seedOrgContactRoles();
       const user = await seedUser();
-      await addUserToOrg(user, roleUser);
+      await seedUserRole(user, roleUser);
 
       await expect(roleUser.remove()).to.be.rejected;
 

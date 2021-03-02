@@ -6,9 +6,9 @@ import {
 } from '../../util/test-utils/seed';
 import { TestRequest } from '../../util/test-utils/test-request';
 import { uniqueString } from '../../util/test-utils/unique';
+import { seedUserRole } from '../user/user-role.model.mock';
 import { seedUser } from '../user/user.model.mock';
 import { Org } from './org.model';
-import { addUserToOrg } from './org.model.mock';
 
 describe(`Org Controller`, () => {
 
@@ -152,7 +152,7 @@ describe(`Org Controller`, () => {
     it(`updates the org's default muster configuration`, async () => {
       const { org, roleAdmin } = await seedOrgContactRoles();
       const user = await seedUser();
-      await addUserToOrg(user, roleAdmin);
+      await seedUserRole(user, roleAdmin);
 
       const orgBefore = (await Org.findOne(org.id))!;
       expect(orgBefore.defaultMusterConfiguration).to.eql(org.defaultMusterConfiguration);

@@ -1,6 +1,6 @@
+import _ from 'lodash';
 import { Response } from 'express';
 import { Log } from '../../util/log';
-import _ from 'lodash';
 import {
   ApiRequest, OrgParam, OrgUnitParams,
 } from '../index';
@@ -9,7 +9,7 @@ import {
   BadRequestError, InternalServerError, NotFoundError,
 } from '../../util/error-types';
 import { Roster } from '../roster/roster.model';
-import elasticsearch from '../../elasticsearch/elasticsearch';
+import { elasticsearch } from '../../elasticsearch/elasticsearch';
 import { ChangeType, RosterHistory } from '../roster/roster-history.model';
 
 class UnitController {

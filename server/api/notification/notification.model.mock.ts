@@ -4,8 +4,8 @@ import {
 } from '../../util/test-utils/unique';
 import { Notification } from './notification.model';
 
-export async function seedNotification() {
-  const notification = Notification.create({
+export function mockNotification() {
+  return Notification.create({
     id: uniqueString(),
     uiSort: uniqueInt(),
     uiName: uniqueString(),
@@ -19,5 +19,8 @@ export async function seedNotification() {
     defaultMinMinutesBetweenAlerts: uniqueInt(),
     dashboardUuid: uniqueString(),
   });
-  return notification.save();
+}
+
+export function seedNotification() {
+  return mockNotification().save();
 }

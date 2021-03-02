@@ -7,8 +7,8 @@ import { User } from '../user/user.model';
 import { Notification } from './notification.model';
 import { UserNotificationSetting } from './user-notification-setting.model';
 
-export async function seedUserNotificationSetting(user: User, org: Org, notification: Notification) {
-  const userNotificationSetting = UserNotificationSetting.create({
+export function mockUserNotificationSetting(user: User, org: Org, notification: Notification) {
+  return UserNotificationSetting.create({
     user,
     org,
     notification,
@@ -20,5 +20,8 @@ export async function seedUserNotificationSetting(user: User, org: Org, notifica
     emailEnabled: true,
     lastNotifiedDate: uniqueDate(),
   });
-  return userNotificationSetting.save();
+}
+
+export function seedUserNotificationSetting(user: User, org: Org, notification: Notification) {
+  return mockUserNotificationSetting(user, org, notification).save();
 }

@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { json2csvAsync } from 'json-2-csv';
 import { uniqueString } from '../../util/test-utils/unique';
 import { Unit } from '../unit/unit.model';
@@ -15,23 +16,21 @@ export function mockRosterEntry(unit: Unit) {
   });
 }
 
-export async function seedRosterEntry(unit: Unit) {
+export function seedRosterEntry(unit: Unit) {
   return mockRosterEntry(unit).save();
 }
 
-export async function seedRosterEntries(args: {
-  unit: Unit
+export async function seedRosterEntries(unit: Unit, options: {
   count: number
 }) {
-  const { unit, count } = args;
+  const { count } = options;
 
   const entries = [] as Roster[];
   for (let i = 0; i < count; i++) {
-    const entry = await seedRosterEntry(unit);
-    entries.push(entry);
+    entries.push(mockRosterEntry(unit));
   }
 
-  return entries;
+  return Roster.save(entries);
 }
 
 export function mockRosterUploadCsv(args: {

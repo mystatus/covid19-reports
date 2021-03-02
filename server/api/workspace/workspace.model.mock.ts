@@ -3,8 +3,8 @@ import { Org } from '../org/org.model';
 import { WorkspaceTemplate } from './workspace-template.model';
 import { Workspace } from './workspace.model';
 
-export async function seedWorkspace(org: Org, workspaceTemplate: WorkspaceTemplate) {
-  const workspace = Workspace.create({
+export function mockWorkspace(org: Org, workspaceTemplate: WorkspaceTemplate) {
+  return Workspace.create({
     name: uniqueString(),
     description: uniqueString(),
     org,
@@ -12,5 +12,21 @@ export async function seedWorkspace(org: Org, workspaceTemplate: WorkspaceTempla
     pii: true,
     phi: true,
   });
-  return workspace.save();
+}
+
+export function seedWorkspace(org: Org, workspaceTemplate: WorkspaceTemplate) {
+  return mockWorkspace(org, workspaceTemplate).save();
+}
+
+export function seedWorkspaces(org: Org, workspaceTemplate: WorkspaceTemplate, options: {
+  count: number
+}) {
+  const { count } = options;
+  const workspaces = [] as Workspace[];
+
+  for (let i = 0; i < count; i++) {
+    workspaces.push(mockWorkspace(org, workspaceTemplate));
+  }
+
+  return Workspace.save(workspaces);
 }

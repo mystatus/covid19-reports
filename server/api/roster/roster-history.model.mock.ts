@@ -8,8 +8,8 @@ import {
   RosterHistory,
 } from './roster-history.model';
 
-export async function seedRosterHistory(unit: Unit) {
-  const rosterHistory = RosterHistory.create({
+export function mockRosterHistory(unit: Unit) {
+  return RosterHistory.create({
     unit,
     edipi: uniqueString(),
     firstName: uniqueString(),
@@ -20,5 +20,8 @@ export async function seedRosterHistory(unit: Unit) {
     timestamp: uniqueDate(),
     changeType: ChangeType.Changed,
   });
-  return rosterHistory.save();
+}
+
+export function seedRosterHistory(unit: Unit) {
+  return mockRosterHistory(unit).save();
 }

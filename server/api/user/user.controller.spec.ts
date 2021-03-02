@@ -11,10 +11,10 @@ import {
   uniqueEmail,
   uniqueString,
 } from '../../util/test-utils/unique';
-import { seedAccessRequest } from '../access-request/access-request.mock';
+import { seedAccessRequest } from '../access-request/access-request.model.mock';
 import { AccessRequest } from '../access-request/access-request.model';
-import { addUserToOrg } from '../org/org.model.mock';
 import { seedUnit } from '../unit/unit.model.mock';
+import { seedUserRole } from './user-role.model.mock';
 import { User } from './user.model';
 import { seedUser } from './user.model.mock';
 
@@ -110,7 +110,7 @@ describe(`User Controller`, () => {
       const unit1 = await seedUnit(org);
       const unit2 = await seedUnit(org);
       const user = await seedUser();
-      await addUserToOrg(user, roleUser);
+      await seedUserRole(user, roleUser);
 
       const userBefore = (await User.findOne(user.edipi, {
         relations: [
@@ -169,7 +169,7 @@ describe(`User Controller`, () => {
     it(`gets the users in the org`, async () => {
       const { contact, org, roleUser } = await seedOrgContactRoles();
       const user = await seedUser();
-      await addUserToOrg(user, roleUser);
+      await seedUserRole(user, roleUser);
 
       req.setUser(contact);
       const res = await req.get(`/${org.id}`);
@@ -188,7 +188,7 @@ describe(`User Controller`, () => {
     it(`removed the user from the org`, async () => {
       const { contact, org, roleUser } = await seedOrgContactRoles();
       const user = await seedUser();
-      await addUserToOrg(user, roleUser);
+      await seedUserRole(user, roleUser);
 
       let orgUsers = await org.getUsers();
       expect(orgUsers).to.have.lengthOf(2);

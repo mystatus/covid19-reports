@@ -5,7 +5,6 @@ import {
   getConnection,
   In,
   OrderByCondition,
-  QueryBuilder,
   SelectQueryBuilder,
 } from 'typeorm';
 import _ from 'lodash';
@@ -340,9 +339,7 @@ class RosterController {
 
     const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appUserRole!);
     const rosterEntry = await queryBuilder
-      .andWhere('roster.id=\':id\'', {
-        id: rosterId,
-      })
+      .andWhere('roster.id = :rosterId', { rosterId })
       .getRawOne<RosterEntryData>();
 
     if (!rosterEntry) {

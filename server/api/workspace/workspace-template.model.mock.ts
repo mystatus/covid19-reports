@@ -4,8 +4,8 @@ import {
 } from '../../util/test-utils/unique';
 import { WorkspaceTemplate } from './workspace-template.model';
 
-export async function seedWorkspaceTemplate() {
-  const workspaceTemplate = WorkspaceTemplate.create({
+export function mockWorkspaceTemplate() {
+  return WorkspaceTemplate.create({
     id: uniqueInt(),
     name: uniqueString(),
     description: uniqueString(),
@@ -15,5 +15,21 @@ export async function seedWorkspaceTemplate() {
       stuff: uniqueString(),
     } as any,
   });
-  return workspaceTemplate.save();
+}
+
+export function seedWorkspaceTemplate() {
+  return mockWorkspaceTemplate().save();
+}
+
+export function seedWorkspaceTemplates(options: {
+  count: number
+}) {
+  const { count } = options;
+  const workspaceTemplates = [] as WorkspaceTemplate[];
+
+  for (let i = 0; i < count; i++) {
+    workspaceTemplates.push(mockWorkspaceTemplate());
+  }
+
+  return WorkspaceTemplate.save(workspaceTemplates);
 }
