@@ -14,9 +14,9 @@ export class MultipleUnitSupport1613436966607 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "roster_history" ADD "new_unit_id" integer NOT NULL DEFAULT 0`);
     await queryRunner.query(`ALTER TABLE "roster" ADD "new_unit_id" integer NOT NULL DEFAULT 0`);
     await queryRunner.query('DROP TRIGGER IF EXISTS roster_audit ON roster');
-    await queryRunner.query('DROP FUNCTION IF EXISTS roster_audit_func');
+    await queryRunner.query('DROP FUNCTION IF EXISTS roster_audit_func()');
     await queryRunner.query('DROP TRIGGER IF EXISTS roster_truncate ON roster');
-    await queryRunner.query('DROP FUNCTION IF EXISTS roster_truncate_func');
+    await queryRunner.query('DROP FUNCTION IF EXISTS roster_truncate_func()');
 
     const orgs = await queryRunner.query(`SELECT id FROM "org"`);
     for (const org of orgs) {
@@ -71,9 +71,9 @@ export class MultipleUnitSupport1613436966607 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query('DROP TRIGGER IF EXISTS roster_audit ON roster');
-    await queryRunner.query('DROP FUNCTION IF EXISTS roster_audit_func');
+    await queryRunner.query('DROP FUNCTION IF EXISTS roster_audit_func()');
     await queryRunner.query('DROP TRIGGER IF EXISTS roster_truncate ON roster');
-    await queryRunner.query('DROP FUNCTION IF EXISTS roster_truncate_func');
+    await queryRunner.query('DROP FUNCTION IF EXISTS roster_truncate_func()');
     await queryRunner.query(`DROP TABLE "query-result-cache"`);
     await queryRunner.query(`ALTER TABLE "user_role_unit" DROP CONSTRAINT "FK_b44564e0f78b5335fd9d6939f55"`);
     await queryRunner.query(`ALTER TABLE "user_role_unit" DROP CONSTRAINT "FK_97020bc8ce123b5a4a27e739629"`);

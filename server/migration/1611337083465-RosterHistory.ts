@@ -70,9 +70,9 @@ export class RosterHistory1611337083465 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query('DROP TRIGGER IF EXISTS roster_audit ON roster');
-    await queryRunner.query('DROP FUNCTION IF EXISTS roster_audit_func');
+    await queryRunner.query('DROP FUNCTION IF EXISTS roster_audit_func()');
     await queryRunner.query('DROP TRIGGER IF EXISTS roster_truncate ON roster');
-    await queryRunner.query('DROP FUNCTION IF EXISTS roster_truncate_func');
+    await queryRunner.query('DROP FUNCTION IF EXISTS roster_truncate_func()');
     await queryRunner.query(`ALTER TABLE "roster_history" DROP CONSTRAINT "FK_34e597fefbd4b9d5600513023fd"`);
     await queryRunner.query(`ALTER TABLE "roster" DROP CONSTRAINT "UQ_ce01434bd61ca4cdb9527b8f1fa"`);
     await queryRunner.query(`ALTER TABLE "roster" ADD "end_date" date`);
