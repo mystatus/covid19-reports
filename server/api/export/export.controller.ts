@@ -2,7 +2,7 @@ import { SearchResponse } from 'elasticsearch';
 import { Response } from 'express';
 import { json2csvAsync } from 'json-2-csv';
 import moment from 'moment';
-import elasticsearch from '../../elasticsearch/elasticsearch';
+import { elasticsearch } from '../../elasticsearch/elasticsearch';
 import {
   ForbiddenError,
   InternalServerError,

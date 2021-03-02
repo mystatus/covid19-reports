@@ -10,7 +10,7 @@ import {
   MusterConfiguration,
   Unit,
 } from '../api/unit/unit.model';
-import elasticsearch from '../elasticsearch/elasticsearch';
+import { elasticsearch } from '../elasticsearch/elasticsearch';
 import { InternalServerError } from './error-types';
 import { Log } from './log';
 import {

@@ -77,7 +77,10 @@ into a usable state.
 ### Testing
 
 - To run backend tests, you'll need to have an instance of Postgres running.
-- When initially running tests, a `dds_test` database will automatically be created in Postgres.
+- When initially running tests, a `dds_test` database will automatically be created in Postgres and migrations will be 
+  run on it.
+- After the initial run, tests will not run migrations by default, for the sake of speed. If you have migrations you 
+  want to run, you can pass the `--clean` flag.
 - The test database is cleared **_before_** each test, meaning you can potentially run a single test and look at the 
   database to help debug issues.
 
@@ -90,9 +93,7 @@ npm test
 #### Options
 `--debug` - Prints all logs rather than only 'test' level logs.
 
-`--clean` - Drops and recreates the test database before running tests.
-
-`--skip-migration` - Skips the migration step before tests in order to run more quickly.
+`--clean` - Drops, recreates, and migrates the test database before running tests.
 
 ### Notes
 

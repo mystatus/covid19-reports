@@ -11,9 +11,9 @@ import {
   uniqueString,
 } from '../../util/test-utils/unique';
 import { Org } from '../org/org.model';
-import { addUserToOrg } from '../org/org.model.mock';
 import { seedRoleAdmin } from '../role/role.model.mock';
 import { seedUnit } from '../unit/unit.model.mock';
+import { seedUserRole } from '../user/user-role.model.mock';
 import { User } from '../user/user.model';
 import {
   seedUser,
@@ -430,30 +430,26 @@ describe(`Roster Controller`, () => {
     it(`deletes all roster entries visible to the user in the org`, async () => {
       // Unit that should have its roster deleted.
       const unitToBeCleared = await seedUnit(org);
-      const rosterEntriesToBeDeleted = await seedRosterEntries({
-        unit: unitToBeCleared,
-        count: 3,
-      });
+      const rosterEntriesToBeDeleted = await seedRosterEntries(unitToBeCleared, { count: 3 });
 
       // User who can only see the one unit.
       const user = await seedUser();
       const role = await seedRoleAdmin(org);
-      await addUserToOrg(user, role, [unitToBeCleared], false);
+      await seedUserRole(user, role, {
+        customData: {
+          units: [unitToBeCleared],
+          allUnits: false,
+        },
+      });
 
       // Unit in same org, that should be untouched.
       const otherUnit = await seedUnit(org);
-      await seedRosterEntries({
-        unit: otherUnit,
-        count: 2,
-      });
+      await seedRosterEntries(otherUnit, { count: 2 });
 
       // Unit in other org, that should be untouched.
       const { org: otherOrg } = await seedOrgContact();
       const otherOrgUnit = await seedUnit(otherOrg);
-      await seedRosterEntries({
-        unit: otherOrgUnit,
-        count: 2,
-      });
+      await seedRosterEntries(otherOrgUnit, { count: 2 });
 
       const rosterCountBefore = await Roster.count();
 
@@ -495,8 +491,83 @@ describe(`Roster Controller`, () => {
 
   });
 
-  // TODO: '/:orgId/:rosterId' : get
-  // TODO: '/:orgId/:rosterId' : delete
-  // TODO: '/:orgId/:rosterId' : put
+  describe(`${basePath}/:orgId/:rosterId : get`, () => {
+
+    it(`gets a roster entry in the org`, async () => {
+      const unit = await seedUnit(org);
+      const rosterEntries = [
+        await seedRosterEntry(unit),
+        await seedRosterEntry(unit),
+      ];
+
+      const res = await req.get(`/${org.id}/${rosterEntries[0].id}`);
+
+      expectNoErrors(res);
+      expect(res.data).to.containSubset({
+        id: rosterEntries[0].id,
+        edipi: rosterEntries[0].edipi,
+        firstName: rosterEntries[0].firstName,
+        lastName: rosterEntries[0].lastName,
+      });
+
+    });
+
+  });
+
+  describe(`${basePath}/:orgId/:rosterId : delete`, () => {
+
+    it(`deletes a roster entry in the org`, async () => {
+      const unit = await seedUnit(org);
+      const rosterEntries = [
+        await seedRosterEntry(unit),
+        await seedRosterEntry(unit),
+      ];
+
+      const rosterEntriesCountBefore = await Roster.count();
+
+      const rosterEntry0Before = await Roster.findOne(rosterEntries[0].id);
+      expect(rosterEntry0Before).to.exist;
+
+      const rosterEntry1Before = await Roster.findOne(rosterEntries[1].id);
+      expect(rosterEntry1Before).to.exist;
+
+      const res = await req.delete(`/${org.id}/${rosterEntries[0].id}`);
+
+      expectNoErrors(res);
+
+      expect(await Roster.count()).to.equal(rosterEntriesCountBefore - 1);
+
+      const rosterEntry0After = await Roster.findOne(rosterEntries[0].id);
+      expect(rosterEntry0After).not.to.exist;
+
+      const rosterEntry1After = await Roster.findOne(rosterEntries[1].id);
+      expect(rosterEntry1After).to.exist;
+    });
+
+  });
+
+  describe(`${basePath}/:orgId/:rosterId : put`, () => {
+
+    it(`updates a roster entry in the org`, async () => {
+      const unit = await seedUnit(org);
+      const rosterEntries = [
+        await seedRosterEntry(unit),
+        await seedRosterEntry(unit),
+      ];
+
+      const body = {
+        firstName: uniqueString(),
+        lastName: uniqueString(),
+      };
+      const res = await req.put(`/${org.id}/${rosterEntries[0].id}`, body);
+
+      expectNoErrors(res);
+
+      const rosterEntry0After = (await Roster.findOne(rosterEntries[0].id))!;
+      expect(rosterEntry0After.firstName).to.equal(body.firstName);
+      expect(rosterEntry0After.lastName).to.equal(body.lastName);
+    });
+
+  });
 
 });

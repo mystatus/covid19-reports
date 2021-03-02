@@ -15,7 +15,7 @@ import {
 import {
   seedAccessRequest,
   seedAccessRequests,
-} from './access-request.mock';
+} from './access-request.model.mock';
 import {
   AccessRequest,
   AccessRequestStatus,

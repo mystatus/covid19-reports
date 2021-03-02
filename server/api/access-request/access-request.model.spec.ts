@@ -8,7 +8,7 @@ import {
 } from '../user/user.model.mock';
 import {
   seedAccessRequest,
-} from './access-request.mock';
+} from './access-request.model.mock';
 import { AccessRequest } from './access-request.model';
 
 describe(`AccessRequest Model`, () => {

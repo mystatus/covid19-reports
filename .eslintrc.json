@@ -17,7 +17,8 @@
     "react",
     "react-hooks",
     "import",
-    "chai-friendly"
+    "chai-friendly",
+    "mocha-no-only"
   ],
   "rules": {
     "@typescript-eslint/lines-between-class-members": "off",
@@ -42,6 +43,7 @@
     "jsx-a11y/label-has-associated-control": "off",
     "max-classes-per-file": "off",
     "max-len": "off",
+    "mocha-no-only/mocha-no-only": ["error"],
     "no-await-in-loop": "off",
     "no-console": "off",
     "no-continue": "off",

@@ -21,19 +21,17 @@ export function mockUser(userData?: Partial<User>) {
   });
 }
 
-export async function seedUsers(args: {
+export function seedUsers(options: {
   count: number,
 }) {
-  const { count } = args;
+  const { count } = options;
   const users = [] as User[];
 
   for (let i = 0; i < count; i++) {
     users.push(mockUser());
   }
 
-  await User.save(users);
-
-  return users;
+  return User.save(users);
 }
 
 export async function seedUser(customData?: Partial<User>) {

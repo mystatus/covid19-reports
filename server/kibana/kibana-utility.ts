@@ -1,7 +1,7 @@
 import { Role } from '../api/role/role.model';
 import { Workspace } from '../api/workspace/workspace.model';
 import { KibanaApi } from './kibana-api';
-import elasticsearch from '../elasticsearch/elasticsearch';
+import { elasticsearch } from '../elasticsearch/elasticsearch';
 import { InternalServerError } from '../util/error-types';
 import { WorkspaceTemplate } from '../api/workspace/workspace-template.model';
 

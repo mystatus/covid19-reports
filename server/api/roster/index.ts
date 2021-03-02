@@ -2,7 +2,6 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import bodyParser from 'body-parser';
-import { Log } from '../../util/log';
 import controller from './roster.controller';
 import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth';
 

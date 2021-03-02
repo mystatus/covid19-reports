@@ -2,10 +2,21 @@ import { Role } from '../role/role.model';
 import { UserRole } from './user-role.model';
 import { User } from './user.model';
 
-export async function seedUserRole(user: User, role: Role) {
-  const userRole = UserRole.create({
+export function mockUserRole(user: User, role: Role, options?: {
+  customData?: Partial<UserRole>
+}) {
+  const { customData } = options ?? {};
+
+  return UserRole.create({
     user,
     role,
+    allUnits: true,
+    ...customData,
   });
-  return userRole.save();
+}
+
+export function seedUserRole(user: User, role: Role, options?: {
+  customData?: Partial<UserRole>
+}) {
+  return mockUserRole(user, role, options).save();
 }

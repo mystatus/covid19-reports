@@ -2,7 +2,6 @@
 
 LOG_LEVEL="test"
 CLEAN=false
-SKIP_MIGRATION=false
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -11,9 +10,6 @@ while [[ "$#" -gt 0 ]]; do
       ;;
     --clean)
       CLEAN=true
-      ;;
-    --skip-migration)
-      SKIP_MIGRATION=true
       ;;
   esac
   shift
@@ -47,9 +43,7 @@ if ! psql -h "$SQL_HOST" -p "$SQL_PORT" -U "$SQL_USER" -lqt | cut -d \| -f 1 | g
     exit
   }
   echo "success!"
-fi
 
-if [ "$SKIP_MIGRATION" == false ]; then
   ../migration-run.sh
 fi
 
