@@ -13,6 +13,7 @@ RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > /usr/src/covid19-report
 COPY package.json /usr/src/covid19-reports/
 COPY package-lock.json /usr/src/covid19-reports/
 
+RUN npm install -g npm
 RUN npm install
 
 # Copy rest of src over
