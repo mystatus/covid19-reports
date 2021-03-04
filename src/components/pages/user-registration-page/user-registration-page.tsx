@@ -39,7 +39,6 @@ export const UserRegistrationPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
   const user = useSelector<AppState, UserState>(state => state.user);
-  const onboardingUrl = `${process.env.REACT_APP_ONBOARDING_LINK}`;
   const [registerUserLoading, setRegisterUserLoading] = useState(false);
   const [inputData, setInputData] = useState<UserRegisterDataWithValidation>({
     firstName: { hasBlurred: false, hasChanged: false, helperText: '', value: '' },

@@ -52,7 +52,7 @@ export class RosterHistory1611337083465 implements MigrationInterface {
       for (const row of unitHistory) {
         await queryRunner.query(`
           INSERT INTO roster_history (unit_id, unit_org, edipi, first_name, last_name, custom_columns, change_type, timestamp)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, to_timestamp($8))
+          VALUES ($1, $2, $3, $4, $5, $6, $7, to_timestamp($8) AT TIME ZONE '+0')
         `, [row.unit_id, row.unit_org, row.edipi, row.first_name, row.last_name, row.custom_columns, row.change_type, row.timestamp.getTime() / 1000]);
       }
     }

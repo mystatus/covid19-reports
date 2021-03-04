@@ -1,8 +1,9 @@
 import { expect } from 'chai';
 import { stub } from 'sinon';
 import { In } from 'typeorm';
+import moment from 'moment';
 import { elasticsearch } from '../../elasticsearch/elasticsearch';
-import { expectNoErrors } from '../../util/test-utils/expect';
+import { expectError, expectNoErrors } from '../../util/test-utils/expect';
 import {
   seedOrgContact,
   seedOrgContactRoles,
@@ -71,11 +72,13 @@ describe(`Unit Controller`, () => {
           startTime: uniqueDate().toISOString(),
           timezone: uniqueString(),
           durationMinutes: uniqueInt(),
+          reportId: 'es6ddssymptomobs',
         }, {
           days: uniqueInt(),
           startTime: uniqueDate().toISOString(),
           timezone: uniqueString(),
           durationMinutes: uniqueInt(),
+          reportId: 'es6ddssymptomobs',
         }],
       } as UnitData;
 
@@ -130,11 +133,13 @@ describe(`Unit Controller`, () => {
           startTime: uniqueDate().toISOString(),
           timezone: uniqueString(),
           durationMinutes: uniqueInt(),
+          reportId: 'es6ddssymptomobs',
         }, {
           days: uniqueInt(),
           startTime: uniqueDate().toISOString(),
           timezone: uniqueString(),
           durationMinutes: uniqueInt(),
+          reportId: 'es6ddssymptomobs',
         }],
       } as UnitData;
 
@@ -154,6 +159,30 @@ describe(`Unit Controller`, () => {
       expect(unitAfter.musterConfiguration).to.eql(body.musterConfiguration);
 
       expect(elasticsearchUpdateByQueryStub.callCount).to.eql(1);
+    });
+
+    it(`throws an error if the muster configuration is missing a report ID`, async () => {
+      const unit = await seedUnit(org);
+
+      const body = {
+        name: uniqueString(),
+        musterConfiguration: [{
+          days: uniqueInt(),
+          startTime: uniqueDate().toISOString(),
+          timezone: uniqueString(),
+          durationMinutes: uniqueInt(),
+        }, {
+          days: uniqueInt(),
+          startTime: uniqueDate().toISOString(),
+          timezone: uniqueString(),
+          durationMinutes: uniqueInt(),
+          reportId: 'es6ddssymptomobs',
+        }],
+      } as UnitData;
+
+      const res = await req.put(`/${org.id}/${unit.id}`, body);
+
+      expectError(res, 'Unrecognized report type');
     });
 
   });
@@ -192,18 +221,18 @@ describe(`Unit Controller`, () => {
       const { org: otherOrg } = await seedOrgContact();
       const units = await seedUnits(org, { count: 2 });
       const otherOrgUnit = await seedUnit(otherOrg);
-      const unit0RosterEntries = await seedRosterEntries(units[0], { count: 4 });
-      const unit1RosterEntries = await seedRosterEntries(units[1], { count: 2 });
+      await seedRosterEntries(units[0], { count: 4 });
+      await seedRosterEntries(units[1], { count: 2 });
       const otherOrgUnitRosterEntries = await seedRosterEntries(otherOrgUnit, { count: 2 });
 
       // Manually set the timestamps in the roster history to keep things consistent.
       const unit0RosterHistory = await RosterHistory.find({
-        where: { firstName: In(unit0RosterEntries.map(x => x.firstName)) },
+        where: { unit: units[0].id },
       });
 
       let ms = 1000;
       for (const historyEntry of unit0RosterHistory) {
-        historyEntry.timestamp = new Date(ms);
+        historyEntry.timestamp = moment.utc(ms).toDate();
         await historyEntry.save();
         ms += 1000;
       }
@@ -211,7 +240,7 @@ describe(`Unit Controller`, () => {
       const timestampSeconds = 2;
 
       const unit1RosterHistory = await RosterHistory.find({
-        where: { firstName: In(unit1RosterEntries.map(x => x.firstName)) },
+        where: { unit: units[1].id },
       });
 
       for (const historyEntry of unit1RosterHistory) {

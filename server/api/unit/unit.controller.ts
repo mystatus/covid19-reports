@@ -11,6 +11,7 @@ import {
 import { Roster } from '../roster/roster.model';
 import { elasticsearch } from '../../elasticsearch/elasticsearch';
 import { ChangeType, RosterHistory } from '../roster/roster-history.model';
+import { ReportSchema } from '../report-schema/report-schema.model';
 
 class UnitController {
 
@@ -40,7 +41,7 @@ class UnitController {
 
     const unit = new Unit();
     unit.org = req.appOrg;
-    setUnitFromBody(unit, req.body);
+    await setUnitFromBody(req.appOrg!.id, unit, req.body);
 
     const newUnit = await unit.save();
     res.status(201).json(newUnit);
@@ -54,7 +55,7 @@ class UnitController {
 
     const rename = req.body.name && (req.body.name !== existingUnit.name);
 
-    setUnitFromBody(existingUnit, req.body);
+    await setUnitFromBody(req.appOrg!.id, existingUnit, req.body);
     const updatedUnit: Unit = await existingUnit.save();
 
     // Rename elasticsearch documents
@@ -101,14 +102,15 @@ class UnitController {
 
   async getUnitRoster(req: ApiRequest<OrgUnitParams, null, GetUnitRosterQuery>, res: Response) {
     const timestamp = parseInt(req.query.timestamp);
+    const unitId = parseInt(req.params.unitId);
 
     const roster = await RosterHistory.createQueryBuilder('roster')
       .leftJoin('roster.unit', 'u')
       .select('roster.edipi', 'edipi')
       .addSelect('roster.change_type', 'changeType')
       .where('u.org_id = :orgId', { orgId: req.appOrg!.id })
-      .andWhere('u.id = :unitId', { unitId: req.params.unitId })
-      .andWhere('roster.timestamp <= to_timestamp(:timestamp)', { timestamp })
+      .andWhere('u.id = :unitId', { unitId })
+      .andWhere(`roster.timestamp <= to_timestamp(:timestamp) AT TIME ZONE '+0'`, { timestamp })
       .distinctOn(['roster.edipi'])
       .orderBy('roster.edipi')
       .addOrderBy('roster.timestamp', 'DESC')
@@ -119,11 +121,24 @@ class UnitController {
 }
 
 
-function setUnitFromBody(unit: Unit, body: UnitData) {
+async function setUnitFromBody(orgId: number, unit: Unit, body: UnitData) {
   if (body.name) {
     unit.name = body.name;
   }
   if (body.musterConfiguration !== undefined) {
+    if (body.musterConfiguration !== null) {
+      const reports = await ReportSchema.find({
+        where: {
+          org: orgId,
+        },
+      });
+      for (const muster of body.musterConfiguration) {
+        if (!reports.some(report => report.id === muster.reportId)) {
+          throw new BadRequestError(`Unrecognized report type: ${muster.reportId}`);
+        }
+      }
+    }
+
     unit.musterConfiguration = body.musterConfiguration;
   }
 }

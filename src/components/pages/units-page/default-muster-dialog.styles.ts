@@ -110,11 +110,14 @@ export default makeStyles((theme: Theme) => createStyles({
     color: theme.palette.text.primary,
     backgroundColor: 'white',
   },
+  reportCell: {
+    width: '20%',
+  },
   durationCell: {
-    width: '17%',
+    width: '12%',
   },
   timeZoneCell: {
-    width: '30%',
+    width: '20%',
     '& .MuiAutocomplete-inputRoot': {
       padding: '8px 12px',
       '& > input': {

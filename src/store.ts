@@ -29,6 +29,10 @@ import {
   rosterReducer,
 } from './reducers/roster.reducer';
 import {
+  reportSchemaInitialState,
+  reportSchemaReducer,
+} from './reducers/report-schema.reducer';
+import {
   localStorageInitialState,
   localStorageReducer,
 } from './reducers/local-storage.reducer';
@@ -55,6 +59,7 @@ export const initialState = {
   modal: modalInitialState,
   role: roleInitialState,
   unit: unitInitialState,
+  reportSchema: reportSchemaInitialState,
   roster: rosterInitialState,
   user: userInitialState,
   workspace: workspaceInitialState,
@@ -120,6 +125,7 @@ export const configureStore = () => {
         role: roleReducer,
         unit: unitReducer,
         roster: rosterReducer,
+        reportSchema: reportSchemaReducer,
         user: userReducer,
         workspace: workspaceReducer,
         localStorage: localStorageReducer,

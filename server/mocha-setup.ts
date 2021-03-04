@@ -16,6 +16,7 @@ import { Notification } from './api/notification/notification.model';
 import { WorkspaceTemplate } from './api/workspace/workspace-template.model';
 import { Workspace } from './api/workspace/workspace.model';
 import server from './app';
+import { ReportSchema } from './api/report-schema/report-schema.model';
 
 chai.use(chaiAsPromised);
 chai.use(chaiSubset);
@@ -37,6 +38,7 @@ beforeEach(async () => {
     await CustomRosterColumn.delete({});
     await Roster.delete({});
     await RosterHistory.delete({});
+    await ReportSchema.delete({});
     await Unit.delete({});
     await UserNotificationSetting.delete({});
     await Notification.delete({});

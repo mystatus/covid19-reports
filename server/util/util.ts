@@ -111,7 +111,7 @@ export const timestampColumnTransformer: ValueTransformer = {
     return value ? moment.utc(value).toDate() : value;
   },
   to: value => {
-    return value ? moment(value).toISOString() : value;
+    return value ? moment.utc(value).format('YYYY-MM-DD HH:mm:ss.SSS') : value;
   },
 };
 

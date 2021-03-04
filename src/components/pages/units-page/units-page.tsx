@@ -40,13 +40,15 @@ import { EditUnitDialog, EditUnitDialogProps } from './edit-unit-dialog';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { Unit } from '../../../actions/unit.actions';
 import PageHeader from '../../page-header/page-header';
-import { musterConfigurationToString } from '../../../utility/muster-utils';
+import { musterConfigurationsToStrings } from '../../../utility/muster-utils';
 import { Modal } from '../../../actions/modal.actions';
 import { formatMessage } from '../../../utility/errors';
 import { DefaultMusterDialog, DefaultMusterDialogProps } from './default-muster-dialog';
 import { User } from '../../../actions/user.actions';
 import { UserSelector } from '../../../selectors/user.selector';
 import MusterConfigReadable from './muster-config-readable';
+import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
+import { ReportSchema } from '../../../actions/report-schema.actions';
 
 interface UnitMenuState {
   anchor: HTMLElement | null,
@@ -55,10 +57,11 @@ interface UnitMenuState {
 
 export const UnitsPage = () => {
   const { id: orgId, defaultMusterConfiguration = [] } = useSelector(UserSelector.org) ?? {};
-  const initialEditUnitState = { open: false, defaultMusterConfiguration };
   const classes = useStyles();
   const dispatch = useDispatch();
   const units = useSelector(UnitSelector.all);
+  const reports = useSelector(ReportSchemaSelector.all);
+  const initialEditUnitState = { open: false, defaultMusterConfiguration };
   const [unitToDelete, setUnitToDelete] = useState<null | ApiUnit>(null);
   const [editUnitDialogProps, setEditUnitDialogProps] = useState<EditUnitDialogProps>(initialEditUnitState);
   const [defaultMusterDialogProps, setDefaultMusterDialogProps] = useState<DefaultMusterDialogProps>({ open: false });
@@ -68,6 +71,7 @@ export const UnitsPage = () => {
   const initializeTable = React.useCallback(async () => {
     if (orgId) {
       await dispatch(Unit.fetch(orgId));
+      await dispatch(ReportSchema.fetch(orgId));
     }
   }, [orgId, dispatch]);
 
@@ -169,7 +173,11 @@ export const UnitsPage = () => {
         <Card>
           <CardHeader title="Default Muster Requirements" />
           <CardContent>
-            <MusterConfigReadable className={classes.musterConfiguration} musterConfiguration={defaultMusterConfiguration} />
+            <MusterConfigReadable
+              className={classes.musterConfiguration}
+              reports={reports}
+              musterConfiguration={defaultMusterConfiguration}
+            />
             <CardActions>
               <Button
                 size="large"
@@ -214,9 +222,9 @@ export const UnitsPage = () => {
                       <TableCell>{unit.name}</TableCell>
                       {!!unit.musterConfiguration?.length && (
                         <TableCell className={classes.musterConfiguration}>
-                          {unit.musterConfiguration.map((muster, index) => (
+                          {musterConfigurationsToStrings(unit.musterConfiguration, reports).map((muster, index) => (
                             <div key={JSON.stringify({ muster, index })}>
-                              {musterConfigurationToString(muster)}
+                              {muster}
                             </div>
                           ))}
                         </TableCell>

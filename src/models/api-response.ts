@@ -186,6 +186,12 @@ export interface MusterConfiguration {
   startTime: string,
   timezone: string,
   durationMinutes: number,
+  reportId: string,
+}
+
+export interface ApiReportSchema {
+  id: string,
+  name: string,
 }
 
 export interface ApiUnit {
