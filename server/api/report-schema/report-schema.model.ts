@@ -42,7 +42,7 @@ export interface SchemaColumn {
   phi: boolean
 }
 
-export const defaultReportScehmas: Partial<ReportSchema>[] = [{
+export const defaultReportSchemas: Partial<ReportSchema>[] = [{
   id: 'es6ddssymptomobs',
   name: 'Symptom Observation Report',
   columns: [{

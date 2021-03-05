@@ -11,7 +11,7 @@ import { Unit } from '../api/unit/unit.model';
 import { env } from '../util/env';
 import { Log } from '../util/log';
 import { RosterHistory } from '../api/roster/roster-history.model';
-import { defaultReportScehmas, ReportSchema } from '../api/report-schema/report-schema.model';
+import { defaultReportSchemas, ReportSchema } from '../api/report-schema/report-schema.model';
 
 require('dotenv').config();
 
@@ -66,7 +66,7 @@ async function generateOrg(manager: EntityManager, orgNum: number, admin: User, 
   });
   org = await manager.save(org);
 
-  const reportSchemas = manager.create(ReportSchema, defaultReportScehmas);
+  const reportSchemas = manager.create(ReportSchema, defaultReportSchemas);
   for (const report of reportSchemas) {
     report.org = org;
   }

@@ -9,7 +9,7 @@ export class AddReportSchemas1614813673069 implements MigrationInterface {
     for (const org of orgs) {
       await queryRunner.query(
         `INSERT INTO "report_schema"("id", "name", "columns", "org_id") VALUES ($1, $2, $3, $4)`,
-        [defaultReportScehma.id, defaultReportScehma.name, JSON.stringify(defaultReportScehma.columns), org.id],
+        [defaultReportSchema.id, defaultReportSchema.name, JSON.stringify(defaultReportSchema.columns), org.id],
       );
       const orgUnits = await queryRunner.query(`SELECT id, muster_configuration FROM unit WHERE org_id=${org.id}`) as { id: number, muster_configuration: MusterConfiguration[] }[];
       for (const unit of orgUnits) {
@@ -17,7 +17,7 @@ export class AddReportSchemas1614813673069 implements MigrationInterface {
           continue;
         }
         for (const musterConfiguration of unit.muster_configuration) {
-          musterConfiguration.reportId = defaultReportScehma.id;
+          musterConfiguration.reportId = defaultReportSchema.id;
         }
         await queryRunner.query(
           `UPDATE "unit" SET muster_configuration=$1 WHERE id=${unit.id}`,
@@ -46,7 +46,7 @@ export interface MusterConfiguration {
 }
 
 
-const defaultReportScehma = {
+const defaultReportSchema = {
   id: 'es6ddssymptomobs',
   name: 'Symptom Observation Report',
   columns: [{

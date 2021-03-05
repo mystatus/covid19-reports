@@ -6,14 +6,10 @@ import { ReportSchema, SchemaColumn } from './report-schema.model';
 class ReportSchemaController {
 
   async getOrgReports(req: ApiRequest, res: Response) {
-    if (!req.appOrg || !req.appUserRole) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
     const reports = await ReportSchema.find({
       relations: ['org'],
       where: {
-        org: req.appOrg.id,
+        org: req.appOrg!.id,
       },
       order: {
         id: 'ASC',
@@ -23,7 +19,7 @@ class ReportSchemaController {
     res.json(reports);
   }
 
-  async addReport(req: ApiRequest<OrgParam, ReportBody>, res: Response) {
+  async addReport(req: ApiRequest<OrgParam, AddReportBody>, res: Response) {
     if (!req.appOrg) {
       throw new NotFoundError('Organization was not found.');
     }
@@ -43,7 +39,8 @@ class ReportSchemaController {
     const report = new ReportSchema();
     report.id = req.body.id;
     report.org = req.appOrg;
-    await setReportFromBody(report, req.body);
+    report.name = req.body.name;
+    report.columns = req.body.columns;
 
     const newReport = await report.save();
 
@@ -51,15 +48,11 @@ class ReportSchemaController {
   }
 
   async getReport(req: ApiRequest<OrgReportParams>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
     const report = await ReportSchema.findOne({
       relations: ['org'],
       where: {
         id: req.params.reportId,
-        org: req.appOrg.id,
+        org: req.appOrg!.id,
       },
     });
 
@@ -71,15 +64,11 @@ class ReportSchemaController {
   }
 
   async deleteReport(req: ApiRequest<OrgReportParams>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
     const report = await ReportSchema.findOne({
       relations: ['org'],
       where: {
         id: req.params.reportId,
-        org: req.appOrg.id,
+        org: req.appOrg!.id,
       },
     });
 
@@ -91,16 +80,12 @@ class ReportSchemaController {
     res.json(removedReport);
   }
 
-  async updateReport(req: ApiRequest<OrgReportParams, ReportBody>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
+  async updateReport(req: ApiRequest<OrgReportParams, UpdateReportBody>, res: Response) {
     const report = await ReportSchema.findOne({
       relations: ['org'],
       where: {
         id: req.params.reportId,
-        org: req.appOrg.id,
+        org: req.appOrg!.id,
       },
     });
 
@@ -108,29 +93,26 @@ class ReportSchemaController {
       throw new NotFoundError('Report could not be found.');
     }
 
-    await setReportFromBody(report, req.body);
+    if (req.body.name != null) {
+      report.name = req.body.name;
+    }
+
+    if (req.body.columns != null) {
+      report.columns = req.body.columns;
+    }
 
     const updatedReport = await report.save();
 
     res.json(updatedReport);
   }
-
 }
 
-async function setReportFromBody(report: ReportSchema, body: ReportBody) {
-  if (body.name != null) {
-    report.name = body.name;
-  }
-
-  if (body.columns != null) {
-    report.columns = body.columns;
-  }
-}
-
-export type ReportBody = {
-  id?: string
-  name?: string
-  columns?: SchemaColumn[]
+export type AddReportBody = {
+  id: string
+  name: string
+  columns: SchemaColumn[]
 };
+
+export type UpdateReportBody = Partial<AddReportBody>;
 
 export default new ReportSchemaController();

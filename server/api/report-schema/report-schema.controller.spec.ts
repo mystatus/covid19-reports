@@ -10,8 +10,8 @@ import {
 import { Org } from '../org/org.model';
 import { User } from '../user/user.model';
 import { seedReport, seedReports } from './report-schema.model.mock';
-import { defaultReportScehmas, ReportSchema } from './report-schema.model';
-import { ReportBody } from './report-schema.controller';
+import { defaultReportSchemas, ReportSchema } from './report-schema.model';
+import { AddReportBody, UpdateReportBody } from './report-schema.controller';
 
 describe(`Report Schema Controller`, () => {
 
@@ -35,9 +35,9 @@ describe(`Report Schema Controller`, () => {
 
       expectNoErrors(res);
       expect(res.data).to.be.array();
-      expect(res.data).to.have.lengthOf(reports.length + defaultReportScehmas.length);
+      expect(res.data).to.have.lengthOf(reports.length + defaultReportSchemas.length);
       const dataIds = res.data.map((x: ReportSchema) => x.id);
-      for (const defaultReport of defaultReportScehmas) {
+      for (const defaultReport of defaultReportSchemas) {
         expect(dataIds).to.include(defaultReport.id);
       }
       expect(dataIds).to.include(reports[0].id);
@@ -54,15 +54,16 @@ describe(`Report Schema Controller`, () => {
         where: { org },
       });
 
-      const body = {
+      const body: AddReportBody = {
         id: uniqueString(),
         name: uniqueString(),
         columns: [{
           keyPath: [uniqueString(), uniqueString()],
           phi: false,
           pii: false,
+          type: 'string',
         }],
-      } as ReportBody;
+      };
 
       const res = await req.post(`/${org.id}`, body);
 
@@ -102,14 +103,15 @@ describe(`Report Schema Controller`, () => {
     it(`updates a report in an org`, async () => {
       const report = await seedReport(org);
 
-      const body = {
+      const body: UpdateReportBody = {
         name: uniqueString(),
         columns: [...report.columns, {
           keyPath: [uniqueString(), uniqueString()],
           phi: false,
           pii: false,
+          type: 'string',
         }],
-      } as ReportBody;
+      };
 
       const res = await req.put(`/${org.id}/${report.id}`, body);
 
