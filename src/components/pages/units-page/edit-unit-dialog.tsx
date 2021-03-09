@@ -2,12 +2,15 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   Avatar,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   Grid,
-  IconButton, Select,
+  IconButton,
+  Select,
   Table,
   TableBody,
   TableCell,
@@ -16,8 +19,6 @@ import {
   TextField,
   Typography,
 } from '@material-ui/core';
-import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
-import ToggleButton from '@material-ui/lab/ToggleButton';
 import clsx from 'clsx';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
@@ -25,122 +26,129 @@ import axios from 'axios';
 import moment from 'moment-timezone';
 import { v4 as uuidv4 } from 'uuid';
 import { Autocomplete } from '@material-ui/lab';
-import { MuiPickersUtilsProvider, TimePicker } from '@material-ui/pickers';
+import { DatePicker, MuiPickersUtilsProvider, TimePicker } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import { useSelector } from 'react-redux';
 import useStyles from './edit-unit-dialog.styles';
 import { ApiUnit, MusterConfiguration } from '../../../models/api-response';
-import {
-  DaysOfTheWeek,
-} from '../../../utility/days';
+import { DaysOfTheWeek } from '../../../utility/days';
 import { formatMessage } from '../../../utility/errors';
 import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
-import { validateMusterConfiguration } from '../../../utility/muster-utils';
+import { mustersConfigurationsAreEqual, validateMusterConfiguration } from '../../../utility/muster-utils';
 
 export interface EditUnitDialogProps {
-  open: boolean,
-  orgId?: number,
-  unit?: ApiUnit,
-  defaultMusterConfiguration: MusterConfiguration[],
-  onClose?: () => void,
-  onError?: (error: string) => void,
+  open: boolean;
+  orgId?: number;
+  unit?: ApiUnit;
+  defaultMusterConfiguration: MusterConfiguration[];
+  onClose?: () => void;
+  onError?: (error: string) => void;
 }
 
 interface MusterConfigurationRow extends MusterConfiguration {
-  rowKey: string,
-  durationHours: number,
-  startTimeDate: Date,
+  rowKey: string;
+  durationHours: number;
+  startTimeDate: Date;
+  isOneTime: boolean;
 }
 
-enum MusterConfigMode {
-  Default,
-  Custom,
-  None
-}
+// enum MusterConfigMode {
+//   Default,
+//   Custom,
+//   None
+// }
 
-function getModeFromData(unitConfig: MusterConfiguration[] | undefined) {
-  if (unitConfig && unitConfig.length > 0) {
-    return MusterConfigMode.Custom;
-  }
-  if (unitConfig && unitConfig.length === 0) {
-    return MusterConfigMode.None;
-  }
-  return MusterConfigMode.Default;
-}
+// function getModeFromData(unitConfig: MusterConfiguration[] | undefined) {
+//   if (unitConfig && unitConfig.length > 0) {
+//     return MusterConfigMode.Custom;
+//   }
+//   if (unitConfig && unitConfig.length === 0) {
+//     return MusterConfigMode.None;
+//   }
+//   return MusterConfigMode.Default;
+// }
 
-function getDataFromMode(mode: MusterConfigMode, unitConfig: MusterConfiguration[] | undefined, defaultConfig: MusterConfiguration[] | null = null) {
-  if (mode === MusterConfigMode.Default) {
-    return defaultConfig;
-  }
-  if (mode === MusterConfigMode.Custom) {
-    return unitConfig;
-  }
-  return [];
-}
+// function getDataFromMode(mode: MusterConfigMode, unitConfig: MusterConfiguration[] | undefined, defaultConfig: MusterConfiguration[] | null = null) {
+//   if (mode === MusterConfigMode.Default) {
+//     return defaultConfig;
+//   }
+//   if (mode === MusterConfigMode.Custom) {
+//     return unitConfig;
+//   }
+//   return [];
+// }
 
 export const EditUnitDialog = (props: EditUnitDialogProps) => {
+  const { defaultMusterConfiguration, open, orgId, unit, onClose, onError } = props;
   const classes = useStyles();
   const reports = useSelector(ReportSchemaSelector.all);
   const [formDisabled, setFormDisabled] = useState(false);
-  const {
-    defaultMusterConfiguration, open, orgId, unit, onClose, onError,
-  } = props;
-
-  const musterRows = useCallback((musterConfiguration?: MusterConfiguration[]) => {
-    const today = moment().format('Y-M-D');
-    return (musterConfiguration ?? defaultMusterConfiguration ?? [{}]).map(muster => {
-      return {
-        ...muster,
-        durationHours: muster.durationMinutes / 60,
-        rowKey: uuidv4(),
-        startTimeDate: moment(`${today} ${muster.startTime}`, 'Y-M-D h:mm').toDate(),
-      };
-    });
-  }, [defaultMusterConfiguration]);
-
   const existingUnit: boolean = !!unit;
   const [name, setName] = useState(unit?.name || '');
   const [errorMessage, setErrorMessage] = React.useState<null | string>(null);
-  const [musterConfigMode, setMusterConfigMode] = useState(getModeFromData(unit?.musterConfiguration));
+  const [includeDefault, setIncludeDefault] = useState(!unit || unit.includeDefaultConfig);
+
+  const musterRows = useCallback((musterConfiguration?: MusterConfiguration[]) => {
+    const today = moment().format('Y-M-D');
+    return (musterConfiguration ?? []).map(muster => {
+      const isOneTime = (muster as MusterConfigurationRow)?.isOneTime ?? !muster.days;
+      const startTimeDate = isOneTime
+        ? moment(muster.startTime).toDate()
+        : moment(`${today} ${muster.startTime}`, 'Y-M-D HH:mm').toDate();
+      return {
+        ...muster,
+        startTime: isOneTime ? startTimeDate.toISOString() : muster.startTime,
+        isOneTime,
+        startTimeDate,
+        rowKey: uuidv4(),
+        durationHours: muster.durationMinutes / 60,
+      };
+    });
+  }, []);
+
   const [musterConfiguration, setMusterConfiguration] = useState<MusterConfigurationRow[]>(
-    musterRows(getDataFromMode(musterConfigMode, unit?.musterConfiguration, defaultMusterConfiguration)!),
+    musterRows(unit?.musterConfiguration)!,
   );
 
+  const [combinedConfiguration, setCombinedConfiguration] = useState<MusterConfigurationRow[]>([]);
+
   useEffect(() => {
-    const defaultOrNone = defaultMusterConfiguration?.length ? defaultMusterConfiguration : [];
-    const customOrDefault = unit?.musterConfiguration?.length ? unit?.musterConfiguration : defaultOrNone;
-    setMusterConfiguration(musterRows(musterConfigMode === MusterConfigMode.Custom ? customOrDefault : undefined));
-  }, [defaultMusterConfiguration, musterRows, musterConfigMode, unit]);
+    const defaultOrEmpty = includeDefault ? defaultMusterConfiguration : [];
+    const combined = musterRows(defaultOrEmpty).concat(musterConfiguration.map(t => ({ ...t })));
+    setCombinedConfiguration(combined);
+  }, [defaultMusterConfiguration, includeDefault, unit, musterConfiguration, musterRows]);
 
   if (!open) {
     return null;
   }
 
-  const showNoneMessage = (musterConfigMode === MusterConfigMode.Custom && !musterConfiguration.length)
-    || musterConfigMode === MusterConfigMode.None
-    || (musterConfigMode === MusterConfigMode.Default && defaultMusterConfiguration.length === 0);
-
   const onInputChanged = (func: (f: string) => any) => (event: React.ChangeEvent<HTMLInputElement>) => {
     func(event.target.value);
   };
 
-  const addMusterWindow = () => {
+  const addMusterWindow = (recurring: boolean) => {
     if (reports == null || reports.length === 0) {
       setErrorMessage('No report types have been added to this group.');
       return;
     }
-    const configuration = [...musterConfiguration, {
-      days: DaysOfTheWeek.None,
-      startTime: '00:00',
+    const start = moment(`${moment().format('Y-M-D')} 00:00`, 'Y-M-D HH:mm');
+    const row = {
+      startTime: recurring ? start.format('HH:mm') : start.toISOString(),
       timezone: moment.tz.guess(),
       durationMinutes: 120,
       durationHours: 2,
       reportId: reports[0].id,
       rowKey: uuidv4(),
-      startTimeDate: moment(`${moment().format('Y-M-D')} 00:00`, 'Y-M-D h:mm').toDate(),
-    }];
-    setMusterConfiguration(configuration);
+      startTimeDate: start.toDate(),
+      isOneTime: !recurring,
+    } as MusterConfigurationRow;
+
+    if (recurring) {
+      row.days = DaysOfTheWeek.None;
+    }
+
+    setMusterConfiguration([...musterConfiguration, row]);
   };
 
   const resetErrorMessage = () => {
@@ -149,92 +157,70 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
     }
   };
 
-  const setMusterTimezone = (rowKey: string) => (_: any, timezone: string) => {
-    const configuration = [...musterConfiguration];
-    const index = configuration.findIndex(muster => muster.rowKey === rowKey);
-    if (index >= 0) {
-      configuration[index].timezone = timezone;
+  const combinedToMusterAdjust = includeDefault ? defaultMusterConfiguration.length : 0;
+
+  const updateState = (index: number, partial: Partial<MusterConfigurationRow>, resetError = true) => {
+    const adjustedIndex = index - combinedToMusterAdjust;
+    musterConfiguration[adjustedIndex] = {
+      ...musterConfiguration[adjustedIndex],
+      ...partial,
+    };
+    setMusterConfiguration([...musterConfiguration]);
+
+    if (errorMessage && resetError) {
+      validateMusterWindows();
     }
-    setMusterConfiguration(configuration);
-    resetErrorMessage();
   };
 
-  const setMusterReportId = (rowKey: string) => (event: React.ChangeEvent<{ value: unknown }>) => {
-    const configuration = [...musterConfiguration];
-    const index = configuration.findIndex(muster => muster.rowKey === rowKey);
-    if (index >= 0) {
-      configuration[index].reportId = event.target.value as string;
-    }
-    setMusterConfiguration(configuration);
-    resetErrorMessage();
+  const setMusterTimezone = (index: number) => (_: any, timezone: string) => {
+    updateState(index, { timezone });
   };
 
-  const setMusterDuration = (rowKey: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+  const setMusterReportId = (index: number) => (event: React.ChangeEvent<{ value: unknown }>) => {
+    updateState(index, {
+      reportId: event.target.value as string,
+    });
+  };
+
+  const setMusterDuration = (index: number) => (event: React.ChangeEvent<HTMLInputElement>) => {
     let value = Math.max(0.5, parseFloat(event.target.value));
     if (Number.isNaN(value)) {
       value = 0.5;
     }
-    const configuration = [...musterConfiguration];
-    const index = configuration.findIndex(muster => muster.rowKey === rowKey);
-    if (index >= 0) {
-      configuration[index].durationHours = value;
-      configuration[index].durationMinutes = value * 60;
-    }
-    setMusterConfiguration(configuration);
-    resetErrorMessage();
-  };
-
-  const setMusterStartTime = (rowKey: string) => (date: MaterialUiPickersDate) => {
-    if (!date) {
-      return;
-    }
-    const configuration = [...musterConfiguration];
-    const index = configuration.findIndex(muster => muster.rowKey === rowKey);
-    if (index >= 0) {
-      configuration[index].startTimeDate = date.toDate();
-      configuration[index].startTime = date.format('H:mm');
-    }
-    setMusterConfiguration(configuration);
-    resetErrorMessage();
-  };
-
-  const toggleMusterDay = (rowKey: string, day: DaysOfTheWeek) => () => {
-    if (musterConfigMode !== MusterConfigMode.Custom) {
-      return;
-    }
-    const configuration = [...musterConfiguration];
-    const index = configuration.findIndex(muster => muster.rowKey === rowKey);
-    if (index >= 0) {
-      // eslint-disable-next-line no-bitwise
-      configuration[index].days ^= day;
-    }
-    if (!configuration.find(muster => muster.days === DaysOfTheWeek.None)) {
-      resetErrorMessage();
-    }
-    setMusterConfiguration(configuration);
-  };
-
-  const removeMusterWindow = (rowKey: string) => {
-    setMusterConfiguration(previous => {
-      const configuration = [...previous];
-      const index = configuration.findIndex(muster => muster.rowKey === rowKey);
-      if (index >= 0) {
-        configuration.splice(index, 1);
-      }
-      return configuration;
+    updateState(index, {
+      durationHours: value,
+      durationMinutes: value * 60,
     });
   };
 
-  const validateMusterWindows = () => {
-    if (musterConfigMode !== MusterConfigMode.Custom) {
-      return true;
+  const setMusterStartTime = (index: number) => (date: MaterialUiPickersDate) => {
+    if (!date) {
+      return;
     }
-    if (musterConfiguration.find(muster => muster.days === DaysOfTheWeek.None)) {
-      setErrorMessage('Please select one or more days.');
-      return false;
-    }
+    const { isOneTime } = musterConfiguration[index - combinedToMusterAdjust];
+    updateState(index, {
+      startTimeDate: date.toDate(),
+      startTime: isOneTime ? date.toISOString() : date.format('HH:mm'),
+    });
+  };
 
-    const validation = validateMusterConfiguration(musterConfiguration);
+  const toggleMusterDay = (index: number, day: DaysOfTheWeek) => () => {
+    if (formDisabled || isDefault(index)) {
+      return;
+    }
+    updateState(index, {
+      // eslint-disable-next-line no-bitwise
+      days: musterConfiguration[index - combinedToMusterAdjust].days! ^ day,
+    });
+  };
+
+  const removeMusterWindow = (index: number) => {
+    setMusterConfiguration(musterConfiguration.filter((_, i) => i !== index - combinedToMusterAdjust));
+    resetErrorMessage();
+  };
+
+  const validateMusterWindows = () => {
+    const validation = validateMusterConfiguration(combinedConfiguration);
     if (validation) {
       setErrorMessage(validation);
       return false;
@@ -250,17 +236,14 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
     const body = {
       id: unit?.id,
       name,
-      musterConfiguration: musterConfigMode === MusterConfigMode.None
-        ? []
-        : musterConfigMode === MusterConfigMode.Default
-          ? null
-          : musterConfiguration.map(muster => ({
-            days: muster.days,
-            startTime: muster.startTime,
-            timezone: muster.timezone,
-            durationMinutes: muster.durationMinutes,
-            reportId: muster.reportId,
-          })),
+      musterConfiguration: musterConfiguration.map(muster => ({
+        days: muster.days,
+        startTime: muster.days ? muster.startTime : muster.startTimeDate,
+        timezone: muster.timezone,
+        durationMinutes: muster.durationMinutes,
+        reportId: muster.reportId,
+      })),
+      includeDefaultConfig: includeDefault,
     };
     try {
       if (existingUnit) {
@@ -281,19 +264,29 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
   };
 
   const canSave = () => {
-    return !formDisabled && name.length > 0;
+    const isValid = !formDisabled && name.length > 0 && !errorMessage;
+    if (!isValid) {
+      return false;
+    }
+    const hasChanges = name !== unit?.name
+      || includeDefault !== unit?.includeDefaultConfig
+      || !mustersConfigurationsAreEqual(musterConfiguration, unit.musterConfiguration);
+    return hasChanges;
   };
 
-  const dayButtonClass = (muster: MusterConfigurationRow, day: DaysOfTheWeek) => {
+  const isDefault = (index: number) => includeDefault && index < defaultMusterConfiguration.length;
+
+  const dayButtonClass = (muster: MusterConfigurationRow, index: number, day: DaysOfTheWeek) => {
     if (errorMessage && muster.days === DaysOfTheWeek.None) {
       return classes.dayButtonError;
     }
     // eslint-disable-next-line no-bitwise
-    const onOffClass = muster.days & day ? classes.dayButtonOn : classes.dayButtonOff;
+    const onOffClass = (muster.days ?? 0) & day ? classes.dayButtonOn : classes.dayButtonOff;
 
-    return musterConfigMode === MusterConfigMode.Custom ? onOffClass : clsx(onOffClass, classes.dayButtonDisabled);
+    return clsx(onOffClass, {
+      [classes.dayButtonDisabled]: isDefault(index),
+    });
   };
-
 
   /* eslint-disable no-bitwise */
   return (
@@ -314,35 +307,32 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
           <Grid item xs={12}>
             <Typography className={classes.headerLabel}>Muster Configuration</Typography>
             <div>
-              <ToggleButtonGroup
-                value={musterConfigMode}
-                exclusive
-                onChange={(_, value) => {
-                  if (value !== null) {
-                    setMusterConfigMode(value);
-                  }
-                }}
-                aria-label="muster configuration mode"
-              >
-                <ToggleButton value={MusterConfigMode.Default}>Default</ToggleButton>
-                <ToggleButton value={MusterConfigMode.Custom}>Custom</ToggleButton>
-                <ToggleButton value={MusterConfigMode.None}>None</ToggleButton>
-              </ToggleButtonGroup>
+              <FormControlLabel
+                control={(
+                  <Checkbox
+                    checked={includeDefault}
+                    disabled={formDisabled}
+                    onChange={(_, checked: boolean) => setIncludeDefault(checked)}
+                    color="primary"
+                  />
+                )}
+                label="Include Default"
+              />
             </div>
-            {showNoneMessage && (
+            {/* {showNoneMessage && (
               <p>
                 This unit is not required to muster.
                 {musterConfigMode === MusterConfigMode.Default && (
                   <em> (using default muster requirements)</em>
                 )}
               </p>
-            )}
-            {musterConfiguration.length > 0 && musterConfigMode !== MusterConfigMode.None && (
+            )} */}
+            {combinedConfiguration.length > 0 && (
               <Table aria-label="muster table" className={classes.musterTable}>
                 <TableHead>
                   <TableRow>
                     <TableCell>Report Type</TableCell>
-                    <TableCell>Days</TableCell>
+                    <TableCell className={classes.daysColumn}>Repeating Days / One-Time Date</TableCell>
                     <TableCell>Start Time</TableCell>
                     <TableCell>Time Zone</TableCell>
                     <TableCell>Duration (Hrs)</TableCell>
@@ -350,75 +340,90 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {musterConfiguration.map(muster => (
+                  {combinedConfiguration.map((muster, index) => (
                     <TableRow key={muster.rowKey}>
                       <TableCell className={classes.reportCell}>
                         <Select
                           id={`muster-report-type-${muster.rowKey}`}
                           native
                           value={muster.reportId}
-                          disabled={formDisabled || musterConfigMode !== MusterConfigMode.Custom}
-                          onChange={setMusterReportId(muster.rowKey)}
+                          disabled={formDisabled || isDefault(index)}
+                          onChange={setMusterReportId(index)}
                         >
-                          {reports && reports.map(report => (
-                            <option key={report.id} value={report.id}>{report.name}</option>
-                          ))}
+                          {reports
+                            && reports.map(report => (
+                              <option key={report.id} value={report.id}>
+                                {report.name}
+                              </option>
+                            ))}
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <div className={classes.dayButtons}>
-                          <Avatar
-                            className={dayButtonClass(muster, DaysOfTheWeek.Sunday)}
-                            onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Sunday)}
-                          >
-                            Su
-                          </Avatar>
-                          <Avatar
-                            className={dayButtonClass(muster, DaysOfTheWeek.Monday)}
-                            onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Monday)}
-                          >
-                            Mo
-                          </Avatar>
-                          <Avatar
-                            className={dayButtonClass(muster, DaysOfTheWeek.Tuesday)}
-                            onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Tuesday)}
-                          >
-                            Tu
-                          </Avatar>
-                          <Avatar
-                            className={dayButtonClass(muster, DaysOfTheWeek.Wednesday)}
-                            onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Wednesday)}
-                          >
-                            We
-                          </Avatar>
-                          <Avatar
-                            className={dayButtonClass(muster, DaysOfTheWeek.Thursday)}
-                            onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Thursday)}
-                          >
-                            Th
-                          </Avatar>
-                          <Avatar
-                            className={dayButtonClass(muster, DaysOfTheWeek.Friday)}
-                            onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Friday)}
-                          >
-                            Fr
-                          </Avatar>
-                          <Avatar
-                            className={dayButtonClass(muster, DaysOfTheWeek.Saturday)}
-                            onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Saturday)}
-                          >
-                            Sa
-                          </Avatar>
-                        </div>
+                        {muster.days !== undefined ? (
+                          <div className={classes.dayButtons}>
+                            <Avatar
+                              className={dayButtonClass(muster, index, DaysOfTheWeek.Sunday)}
+                              onClick={toggleMusterDay(index, DaysOfTheWeek.Sunday)}
+                            >
+                              Su
+                            </Avatar>
+                            <Avatar
+                              className={dayButtonClass(muster, index, DaysOfTheWeek.Monday)}
+                              onClick={toggleMusterDay(index, DaysOfTheWeek.Monday)}
+                            >
+                              Mo
+                            </Avatar>
+                            <Avatar
+                              className={dayButtonClass(muster, index, DaysOfTheWeek.Tuesday)}
+                              onClick={toggleMusterDay(index, DaysOfTheWeek.Tuesday)}
+                            >
+                              Tu
+                            </Avatar>
+                            <Avatar
+                              className={dayButtonClass(muster, index, DaysOfTheWeek.Wednesday)}
+                              onClick={toggleMusterDay(index, DaysOfTheWeek.Wednesday)}
+                            >
+                              We
+                            </Avatar>
+                            <Avatar
+                              className={dayButtonClass(muster, index, DaysOfTheWeek.Thursday)}
+                              onClick={toggleMusterDay(index, DaysOfTheWeek.Thursday)}
+                            >
+                              Th
+                            </Avatar>
+                            <Avatar
+                              className={dayButtonClass(muster, index, DaysOfTheWeek.Friday)}
+                              onClick={toggleMusterDay(index, DaysOfTheWeek.Friday)}
+                            >
+                              Fr
+                            </Avatar>
+                            <Avatar
+                              className={dayButtonClass(muster, index, DaysOfTheWeek.Saturday)}
+                              onClick={toggleMusterDay(index, DaysOfTheWeek.Saturday)}
+                            >
+                              Sa
+                            </Avatar>
+                          </div>
+                        ) : (
+                          <MuiPickersUtilsProvider utils={MomentUtils}>
+                            <DatePicker
+                              id={`muster-date-time-${muster.rowKey}`}
+                              disabled={formDisabled || isDefault(index)}
+                              value={muster.startTimeDate}
+                              InputProps={{ disableUnderline: true }}
+                              onChange={setMusterStartTime(index)}
+                            />
+                          </MuiPickersUtilsProvider>
+                        )}
                       </TableCell>
                       <TableCell>
                         <MuiPickersUtilsProvider utils={MomentUtils}>
                           <TimePicker
                             id={`muster-start-time-${muster.rowKey}`}
-                            disabled={formDisabled || musterConfigMode !== MusterConfigMode.Custom}
+                            disabled={formDisabled || isDefault(index)}
                             value={muster.startTimeDate}
                             InputProps={{ disableUnderline: true }}
-                            onChange={setMusterStartTime(muster.rowKey)}
+                            onChange={setMusterStartTime(index)}
                           />
                         </MuiPickersUtilsProvider>
                       </TableCell>
@@ -426,31 +431,31 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
                         <Autocomplete
                           id={`muster-timezone-${muster.rowKey}`}
                           value={muster.timezone}
-                          disabled={formDisabled || musterConfigMode !== MusterConfigMode.Custom}
+                          disabled={formDisabled || isDefault(index)}
                           disableClearable
                           options={moment.tz.names()}
                           noOptionsText="No matching time zones"
                           renderInput={params => (
                             <TextField {...params} InputProps={{ ...params.InputProps, disableUnderline: true }} />
                           )}
-                          onChange={setMusterTimezone(muster.rowKey)}
+                          onChange={setMusterTimezone(index)}
                         />
                       </TableCell>
                       <TableCell className={classes.durationCell}>
                         <TextField
-                          disabled={formDisabled || musterConfigMode !== MusterConfigMode.Custom}
-                          onChange={setMusterDuration(muster.rowKey)}
+                          disabled={formDisabled || isDefault(index)}
+                          onChange={setMusterDuration(index)}
                           value={muster.durationHours}
                           type="number"
                           inputProps={{ min: '0.5', step: '0.5' }}
                         />
                       </TableCell>
                       <TableCell className={classes.iconCell}>
-                        {musterConfigMode === MusterConfigMode.Custom && (
+                        {!isDefault(index) && (
                           <IconButton
                             aria-label="remove muster window"
-                            disabled={formDisabled}
-                            onClick={() => removeMusterWindow(muster.rowKey)}
+                            disabled={formDisabled || isDefault(index)}
+                            onClick={() => removeMusterWindow(index)}
                           >
                             <HighlightOffIcon />
                           </IconButton>
@@ -461,18 +466,26 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
                 </TableBody>
               </Table>
             )}
-            {musterConfigMode === MusterConfigMode.Custom && (
-              <Button
-                className={classes.addMusterButton}
-                color="primary"
-                variant="text"
-                size="small"
-                startIcon={<AddCircleIcon />}
-                onClick={addMusterWindow}
-              >
-                {musterConfiguration.length > 0 ? 'Add Another Requirement' : 'Add Muster Requirements'}
-              </Button>
-            )}
+            <Button
+              className={classes.addMusterButton}
+              color="primary"
+              variant="text"
+              size="small"
+              startIcon={<AddCircleIcon />}
+              onClick={() => addMusterWindow(true)}
+            >
+              Add Repeating
+            </Button>
+            <Button
+              className={classes.addMusterButton}
+              color="primary"
+              variant="text"
+              size="small"
+              startIcon={<AddCircleIcon />}
+              onClick={() => addMusterWindow(false)}
+            >
+              Add One-Time
+            </Button>
           </Grid>
           {errorMessage && (
             <Grid item xs={12} className={classes.errorMessage}>

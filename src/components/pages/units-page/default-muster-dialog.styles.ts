@@ -82,7 +82,13 @@ export default makeStyles((theme: Theme) => createStyles({
       '&:first-child': {
         borderLeft: 'none',
       },
+      '& > .MuiFormControl-root': {
+        display: 'flex',
+      },
     },
+  },
+  daysColumn: {
+    width: '266px',
   },
   dayButtons: {
     display: 'flex',

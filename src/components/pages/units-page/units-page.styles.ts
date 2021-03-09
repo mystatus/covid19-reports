@@ -33,8 +33,7 @@ export default makeStyles((theme: Theme) => createStyles({
   musterConfiguration: {
     width: '75%',
   },
-  noMusterConfiguration: {
-    width: '75%',
+  subtle: {
     color: '#A9AEB1',
   },
   iconCell: {

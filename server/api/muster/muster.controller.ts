@@ -6,7 +6,7 @@ import {
   buildMusterWindow,
   getDistanceToWindow,
   getEarliestMusterWindowTime,
-  getMusterConfig,
+  getOneTimeMusterWindowTime,
   getRosterMusterStats,
   getUnitMusterStats,
   MusterWindow,
@@ -85,12 +85,9 @@ class MusterController {
     const unitsWithMusterConfigs = await Unit
       .createQueryBuilder('unit')
       .leftJoinAndSelect('unit.org', 'org')
-      .where(new Brackets(sqb => {
-        sqb.where('unit.muster_configuration IS NOT NULL');
-        sqb.andWhere('json_array_length(unit.muster_configuration) > 0');
-      }))
+      .where('json_array_length(unit.muster_configuration) > 0')
       .orWhere(new Brackets(sqb => {
-        sqb.where('unit.muster_configuration IS NULL');
+        sqb.where('unit.include_default_config');
         sqb.andWhere('json_array_length(org.default_muster_configuration) > 0');
       }))
       .getMany();
@@ -98,22 +95,34 @@ class MusterController {
     const musterWindows: MusterWindow[] = [];
 
     for (const unit of unitsWithMusterConfigs) {
-      const musterConfig = getMusterConfig(unit)!;
+      const musterConfig = unit.combinedConfiguration();
       for (const muster of musterConfig) {
-        // Get the unix timestamp of the earliest possible muster window, it could be in the previous week if the
-        // muster window spans the week boundary.
-        let current = getEarliestMusterWindowTime(muster, since - muster.durationMinutes * 60);
         const durationSeconds = muster.durationMinutes * 60;
-        // Loop through each week
-        while (current < until) {
-          // Loop through each day of week to see if any of the windows ended in the query window
-          for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday && current < until; day = nextDay(day)) {
-            const end = current + durationSeconds;
-            // If the window ended in the query window, add it to the list
-            if (end > since && end <= until && dayIsIn(day, muster.days)) {
-              musterWindows.push(buildMusterWindow(unit, current, end, muster));
+
+        if (!muster.days) {
+          // This is a one-time muster configuration so we just need to see if
+          // the single expiration is in the range.
+          const current = getOneTimeMusterWindowTime(muster);
+          const end = current + durationSeconds;
+
+          if (end > since && end <= until) {
+            musterWindows.push(buildMusterWindow(unit, current, end, muster));
+          }
+        } else {
+          // Get the unix timestamp of the earliest possible muster window, it could be in the previous week if the
+          // muster window spans the week boundary.
+          // Loop through each week
+          let current = getEarliestMusterWindowTime(muster, since - durationSeconds);
+          while (current < until) {
+            // Loop through each day of week to see if any of the windows ended in the query window
+            for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday && current < until; day = nextDay(day)) {
+              const end = current + durationSeconds;
+              // If the window ended in the query window, add it to the list
+              if (end > since && end <= until && dayIsIn(day, muster.days)) {
+                musterWindows.push(buildMusterWindow(unit, current, end, muster));
+              }
+              current += oneDaySeconds;
             }
-            current += oneDaySeconds;
           }
         }
       }
@@ -137,7 +146,7 @@ class MusterController {
       throw new NotFoundError('The unit could not be found.');
     }
 
-    const musterConfig = getMusterConfig(unit) ?? [];
+    const musterConfig = unit.combinedConfiguration();
     let minDistance: number | null = null;
     let closestMuster: MusterConfiguration | undefined;
     let closestStart = 0;
@@ -147,44 +156,56 @@ class MusterController {
       if (muster.reportId !== req.query.reportId) {
         continue;
       }
-      if (muster.days === DaysOfTheWeek.None) {
-        continue;
-      }
-      // Get the unix timestamp of the earliest possible muster window in the week of the timestamp
-      let current = getEarliestMusterWindowTime(muster, timestamp);
       const durationSeconds = muster.durationMinutes * 60;
-      // Loop through each day of the week
-      let firstWindowStart: number = 0;
-      let lastWindowStart: number = 0;
-      for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday; day = nextDay(day)) {
-        const end = current + durationSeconds;
-        if (dayIsIn(day, muster.days)) {
-          if (firstWindowStart === 0) {
-            firstWindowStart = current;
+
+      if (muster.days) {
+        // Get the unix timestamp of the earliest possible muster window in the week of the timestamp
+        let current = getEarliestMusterWindowTime(muster, timestamp);
+        // Loop through each day of the week
+        let firstWindowStart: number = 0;
+        let lastWindowStart: number = 0;
+        for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday; day = nextDay(day)) {
+          const end = current + durationSeconds;
+          if (dayIsIn(day, muster.days)) {
+            if (firstWindowStart === 0) {
+              firstWindowStart = current;
+            }
+            lastWindowStart = current;
+            const distanceToWindow = getDistanceToWindow(current, end, timestamp);
+            // Pick the closest window, if one window ends and another starts on the same second as the timestamp, prefer
+            // the window that is starting
+            if (minDistance == null || timestamp === current || Math.abs(minDistance) > Math.abs(distanceToWindow)) {
+              minDistance = distanceToWindow;
+              closestMuster = muster;
+              closestStart = current;
+              closestEnd = end;
+            }
           }
-          lastWindowStart = current;
-          const distanceToWindow = getDistanceToWindow(current, end, timestamp);
-          // Pick the closest window, if one window ends and another starts on the same second as the timestamp, prefer
-          // the window that is starting
-          if (minDistance == null || timestamp === current || Math.abs(minDistance) > Math.abs(distanceToWindow)) {
-            minDistance = distanceToWindow;
+          current += oneDaySeconds;
+        }
+        if (firstWindowStart > timestamp || lastWindowStart! + durationSeconds < timestamp) {
+          // If the timestamp is before the first window or after the last window, we need to compare with the
+          // nearest window in the adjacent week
+          const windowStart = firstWindowStart > timestamp ? lastWindowStart - oneDaySeconds * 7 : firstWindowStart + oneDaySeconds * 7;
+          const windowEnd = windowStart + durationSeconds;
+          const distanceToWindow = getDistanceToWindow(windowStart, windowEnd, timestamp);
+          if (Math.abs(minDistance!) > Math.abs(distanceToWindow)) {
             closestMuster = muster;
-            closestStart = current;
-            closestEnd = end;
+            closestStart = windowStart;
+            closestEnd = windowEnd;
           }
         }
-        current += oneDaySeconds;
-      }
-      if (firstWindowStart > timestamp || lastWindowStart! + durationSeconds < timestamp) {
-        // If the timestamp is before the first window or after the last window, we need to compare with the
-        // nearest window in the adjacent week
-        const windowStart = firstWindowStart > timestamp ? lastWindowStart - oneDaySeconds * 7 : firstWindowStart + oneDaySeconds * 7;
-        const windowEnd = windowStart + durationSeconds;
-        const distanceToWindow = getDistanceToWindow(windowStart, windowEnd, timestamp);
-        if (Math.abs(minDistance!) > Math.abs(distanceToWindow)) {
-          closestMuster = muster;
-          closestStart = windowStart;
-          closestEnd = windowEnd;
+      } else {
+        const start = getOneTimeMusterWindowTime(muster);
+        const end = start + durationSeconds;
+
+        if (start > timestamp || end < timestamp) {
+          const distanceToWindow = getDistanceToWindow(start, end, timestamp);
+          if (minDistance === null || Math.abs(minDistance) > Math.abs(distanceToWindow)) {
+            closestMuster = muster;
+            closestStart = start;
+            closestEnd = end;
+          }
         }
       }
     }

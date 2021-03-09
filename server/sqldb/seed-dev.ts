@@ -89,6 +89,7 @@ async function generateOrg(manager: EntityManager, orgNum: number, admin: User, 
       org,
       name: `Unit ${i} : Group ${orgNum}`,
       musterConfiguration: [],
+      includeDefaultConfig: true,
     });
     unit = await manager.save(unit);
     units.push(unit);

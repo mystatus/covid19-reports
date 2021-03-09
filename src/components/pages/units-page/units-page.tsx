@@ -227,24 +227,22 @@ export const UnitsPage = () => {
                       {units.map(unit => (
                         <TableRow key={unit.id}>
                           <TableCell>{unit.name}</TableCell>
-                          {!!unit.musterConfiguration?.length && (
-                            <TableCell className={classes.musterConfiguration}>
-                              {musterConfigurationsToStrings(unit.musterConfiguration, reports).map((muster, index) => (
+                          <TableCell className={classes.musterConfiguration}>
+                            {unit.musterConfiguration.length ? musterConfigurationsToStrings(unit.musterConfiguration, reports)
+                              .map((muster, index) => (
                                 <div key={JSON.stringify({ muster, index })}>
                                   {muster}
                                 </div>
-                              ))}
-                            </TableCell>
-                          )}
-                          {!unit.musterConfiguration?.length && (
-                            <TableCell className={classes.noMusterConfiguration}>
-                              {(unit.musterConfiguration === null) ? (
-                                <span>Using default muster requirements</span>
-                              ) : (
-                                <span>None</span>
-                              )}
-                            </TableCell>
-                          )}
+                              )) : null}
+
+                            {unit.includeDefaultConfig && (
+                              <span className={classes.subtle}>Using default muster requirements.</span>
+                            )}
+
+                            {!unit.includeDefaultConfig && !unit.musterConfiguration.length && (
+                              <span className={classes.subtle}>None</span>
+                            )}
+                          </TableCell>
                           <TableCell className={classes.iconCell}>
                             <IconButton
                               aria-label="unit actions"

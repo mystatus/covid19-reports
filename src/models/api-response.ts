@@ -194,7 +194,7 @@ export interface ApiMusterTrends {
 }
 
 export interface MusterConfiguration {
-  days: DaysOfTheWeek,
+  days?: DaysOfTheWeek,
   startTime: string,
   timezone: string,
   durationMinutes: number,
@@ -210,7 +210,8 @@ export interface ApiUnit {
   id: number,
   name: string,
   org?: ApiOrg,
-  musterConfiguration?: MusterConfiguration[],
+  musterConfiguration: MusterConfiguration[],
+  includeDefaultConfig: boolean,
 }
 
 export interface ApiError {

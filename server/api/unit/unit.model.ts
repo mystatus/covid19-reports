@@ -27,14 +27,30 @@ export class Unit extends BaseEntity {
   @Column()
   name!: string;
 
-  @Column('json', {
-    nullable: true,
+  @Column({
+    default: true,
   })
-  musterConfiguration?: MusterConfiguration[];
+  includeDefaultConfig: boolean;
+
+  @Column('json', {
+    nullable: false,
+    default: '[]',
+  })
+  musterConfiguration: MusterConfiguration[] = [];
+
+  combinedConfiguration() {
+    if (this.includeDefaultConfig) {
+      if (!this.org || !Array.isArray(this.org?.defaultMusterConfiguration)) {
+        throw new Error('Unit needs the complete org entity to access the defaultMusterConfig');
+      }
+      return [...this.org?.defaultMusterConfiguration, ...this.musterConfiguration];
+    }
+    return this.musterConfiguration;
+  }
 }
 
 export interface MusterConfiguration {
-  days: number,
+  days?: number,
   startTime: string,
   timezone: string,
   durationMinutes: number,
