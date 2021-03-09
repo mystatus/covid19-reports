@@ -30,6 +30,8 @@ export interface EditRosterEntryDialogProps {
   orgId?: number,
   rosterColumnInfos?: ApiRosterColumnInfo[],
   rosterEntry?: ApiRosterEntry,
+  prepopulated?: Partial<ApiRosterEntry>,
+  onSave?: (rosterEntry: ApiRosterEntry) => void,
   onClose?: () => void,
   onError?: (error: string) => void,
 }
@@ -38,7 +40,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   const classes = useStyles();
   const units = useSelector(UnitSelector.all);
   const {
-    open, orgId, rosterColumnInfos, onClose, onError,
+    open, orgId, prepopulated, rosterColumnInfos, onClose, onError,
   } = props;
 
   const hiddenEditFields = ['unit'];
@@ -47,8 +49,9 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   const [formDisabled, setFormDisabled] = useState(false);
   const [saveRosterEntryLoading, setSaveRosterEntryLoading] = useState(false);
   const [unitChangedPromptOpen, setUnitChangedPromptOpen] = useState(false);
-  const [rosterEntry, setRosterEntryProperties] = useState(existingRosterEntry ? props.rosterEntry as ApiRosterEntry : {} as ApiRosterEntry);
-  const originalUnit = props.rosterEntry?.unit;
+  const [rosterEntry, setRosterEntryProperties] = useState(existingRosterEntry ? props.rosterEntry as ApiRosterEntry : (prepopulated ?? {}) as ApiRosterEntry);
+  const originalUnit = props.rosterEntry?.unit ?? prepopulated?.unit;
+  const orphanedRecord = !!prepopulated;
 
   if (!open) {
     return <></>;
@@ -109,7 +112,9 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
       if (!data.unit) {
         data.unit = units[0].id;
       }
-      if (existingRosterEntry) {
+      if (props.onSave) {
+        await props.onSave(data);
+      } else if (existingRosterEntry) {
         await axios.put(`api/roster/${orgId}/${rosterEntry!.id}`, data);
       } else {
         await axios.post(`api/roster/${orgId}`, data);

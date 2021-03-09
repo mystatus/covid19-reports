@@ -1,12 +1,12 @@
 import {
   Entity,
   Column,
-  CreateDateColumn,
   BaseEntity,
   JoinColumn,
   ManyToOne,
   BeforeInsert,
   PrimaryColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { timestampColumnTransformer } from '../../util/util';
 import { Org } from '../org/org.model';
@@ -16,8 +16,11 @@ export class OrphanedRecord extends BaseEntity {
   @PrimaryColumn()
   documentId!: string;
 
+  // Due to the irregular nature of the join to actions table, we
+  // define this single compositeId, used as a more efficient identifier
+  // and to allow more readable join.
   @Column()
-  joinKey!: string;
+  compositeId!: string;
 
   @Column({
     length: 10,
@@ -44,22 +47,14 @@ export class OrphanedRecord extends BaseEntity {
   })
   timestamp!: Date;
 
-  // @CreateDateColumn({
-  //   type: 'timestamp',
-  //   transformer: timestampColumnTransformer,
-  // })
-  // createdOn!: Date;
-
-  @CreateDateColumn({
+  @DeleteDateColumn({
     type: 'timestamp',
     transformer: timestampColumnTransformer,
-    nullable: true,
-    default: () => 'null',
   })
   deletedOn?: Date;
 
   @BeforeInsert()
-  setJoinKey() {
-    this.joinKey = `${this.edipi};${this.org!.id};${this.phone};${this.unit}`;
+  setCompositeId() {
+    this.compositeId = `${this.edipi};${this.org!.id};${this.phone};${this.unit}`;
   }
 }

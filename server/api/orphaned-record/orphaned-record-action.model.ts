@@ -5,11 +5,9 @@ import {
   BaseEntity,
   JoinColumn,
   ManyToOne,
-  BeforeInsert,
   PrimaryColumn,
 } from 'typeorm';
 import { timestampColumnTransformer } from '../../util/util';
-import { Org } from '../org/org.model';
 import { User } from '../user/user.model';
 
 export enum ActionType {
@@ -23,7 +21,7 @@ export class OrphanedRecordAction extends BaseEntity {
   id!: string;
 
   @ManyToOne(() => User, user => user.edipi, {
-    cascade: true,
+    onDelete: 'CASCADE',
     primary: true,
   })
   @JoinColumn({
@@ -40,7 +38,6 @@ export class OrphanedRecordAction extends BaseEntity {
   @Column({
     type: 'timestamp',
     transformer: timestampColumnTransformer,
-    default: () => `now() + interval '1 day'`,
   })
   expiresOn!: Date;
 

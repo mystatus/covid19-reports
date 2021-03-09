@@ -145,7 +145,14 @@ export interface ApiRosterEntry {
 }
 
 export interface ApiOrphanedRecord {
+  id: string,
   edipi: string,
+  phone: string,
+  unit: string,
+  count: number,
+  claimedUntil?: Date,
+  latestReportDate: Date,
+  earliestReportDate: Date,
 }
 
 export interface ApiWorkspaceTemplate {

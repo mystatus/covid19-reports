@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
+  Badge,
   Divider,
   Drawer,
   IconButton,
@@ -27,6 +28,7 @@ import { useLocation } from 'react-router-dom';
 import { AppFrameState } from '../../reducers/app-frame.reducer';
 import { UserState } from '../../reducers/user.reducer';
 import { UserSelector } from '../../selectors/user.selector';
+import { OrphanedRecordSelector } from '../../selectors/orphaned-record.selector';
 import { AppState } from '../../store';
 import { PersonCheckIcon } from '../icons/person-check-icon';
 import {
@@ -35,17 +37,23 @@ import {
 } from '../link/link';
 import useStyles from './app-sidenav.styles';
 import { AppFrame } from '../../actions/app-frame.actions';
+import { OrphanedRecord } from '../../actions/orphaned-record.actions';
 import { DataExportIcon } from '../icons/data-export-icon';
 
 type SidenavLinkProps = {
   name: string,
   icon: any,
+  badgeColor?: any,
+  badgeCount?: number,
 } & LinkProps;
 
 const SidenavLink = (props: SidenavLinkProps) => {
   const {
     name,
     icon,
+    badgeColor = 'error',
+    badgeCount = 0,
+    ...rest
   } = props;
   const classes = useStyles();
   const location = useLocation();
@@ -62,11 +70,12 @@ const SidenavLink = (props: SidenavLinkProps) => {
   return (
     <Link
       className={isActive() ? classes.activeLink : classes.inactiveLink}
-      {...props}
+      {...rest}
     >
       <ListItem button key={name}>
         <ListItemIcon>{icon}</ListItemIcon>
         <ListItemText primary={name} />
+        <Badge color={badgeColor} badgeContent={badgeCount} />
       </ListItem>
     </Link>
   );
@@ -78,10 +87,15 @@ export const AppSidenav = () => {
   const user = useSelector<AppState, UserState>(state => state.user);
   const orgId = useSelector(UserSelector.orgId);
   const appFrame = useSelector<AppState, AppFrameState>(state => state.appFrame);
+  const orphanedRecords = useSelector(OrphanedRecordSelector.all);
 
   const toggleSidenav = () => {
     dispatch(AppFrame.toggleSidenavExpanded());
   };
+
+  useEffect(() => {
+    dispatch(OrphanedRecord.fetch(orgId!));
+  }, [orgId, dispatch]);
 
   return (
     <div className={classes.root}>
@@ -142,6 +156,7 @@ export const AppSidenav = () => {
               to="/roster"
               name="Roster"
               icon={(<AssignmentIndIcon />)}
+              badgeCount={orphanedRecords.length}
             />
           )}
         </List>

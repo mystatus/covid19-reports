@@ -1,4 +1,5 @@
 import express from 'express';
+import bodyParser from 'body-parser';
 import controller from './orphaned-record.controller';
 import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth';
 
@@ -16,27 +17,30 @@ router.put(
   '/',
   requireInternalUser,
   requireOrgAccess,
+  bodyParser.json(),
   controller.addOrphanedRecord,
 );
 
 router.delete(
-  '/:orgId/:id',
+  '/:orgId/:orphanId',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),
   controller.deleteOrphanedRecord,
 );
 
 router.put(
-  '/:orgId/:id/resolve',
+  '/:orgId/:orphanId/resolve',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),
+  bodyParser.json(),
   controller.resolveOrphanedRecord,
 );
 
 router.put(
-  '/:orgId/:id/action',
+  '/:orgId/:orphanId/action',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),
+  bodyParser.json(),
   controller.addOrphanedRecordAction,
 );
 

@@ -17,6 +17,12 @@ export default makeStyles((theme: Theme) => createStyles({
       position: 'relative',
     },
   },
+  tableTitle: {
+    '& h2': {
+      margin: 0,
+      textTransform: 'none',
+    },
+  },
   sortableHeader: {
     cursor: 'pointer',
     '& > div': {

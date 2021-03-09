@@ -21,7 +21,7 @@ import {
   UnprocessableEntity,
 } from '../../util/error-types';
 import {
-  BaseType, dateFromString, getOptionalParam, getRequiredParam,
+  dateFromString, getOptionalParam, getRequiredParam,
 } from '../../util/util';
 import { Org } from '../org/org.model';
 import { CustomColumnConfig, CustomRosterColumn } from './custom-roster-column.model';
@@ -30,44 +30,8 @@ import { CustomColumnValue, RosterColumnInfo, RosterColumnType } from './roster.
 import { UserRole } from '../user/user-role.model';
 import { ChangeType, RosterHistory } from './roster-history.model';
 import { baseRosterColumns } from './roster-entity';
-import { Role } from '../role/role.model';
+import { addRosterEntry, setRosterParamsFromBody } from '../../util/roster-utils';
 
-export async function addRosterEntry(org: Org, role: Role, rosterEntryData: RosterEntryData) {
-  const edipi = rosterEntryData.edipi as string;
-
-  if (!rosterEntryData.unit) {
-    throw new BadRequestError('A unit must be supplied when adding a roster entry.');
-  }
-
-  const unit = await Unit.findOne({
-    relations: ['org'],
-    where: {
-      org: org.id,
-      id: rosterEntryData.unit,
-    },
-  });
-  if (!unit) {
-    throw new NotFoundError(`Unit with ID ${rosterEntryData.unit} could not be found.`);
-  }
-
-  const rosterEntry = await Roster.findOne({
-    where: {
-      edipi,
-      unit: unit.id,
-    },
-  });
-
-  if (rosterEntry) {
-    throw new BadRequestError('The individual is already in the roster.');
-  }
-
-  const entry = new Roster();
-  entry.unit = unit;
-  const columns = await Roster.getAllowedColumns(org, role);
-  await setRosterParamsFromBody(org, entry, rosterEntryData, columns, true);
-  const newRosterEntry = await entry.save();
-  return newRosterEntry;
-}
 
 class RosterController {
 
@@ -91,8 +55,8 @@ class RosterController {
     });
 
     if (existingColumn
-      || columnName.toLowerCase() === 'unit'
-      || baseRosterColumns.find(column => column.name.toLowerCase() === columnName.toLowerCase())) {
+        || columnName.toLowerCase() === 'unit'
+        || baseRosterColumns.find(column => column.name.toLowerCase() === columnName.toLowerCase())) {
       throw new BadRequestError('There is already a column with that name.');
     }
 
@@ -587,50 +551,6 @@ function setCustomColumnFromBody(column: CustomRosterColumn, body: CustomColumnD
   }
 }
 
-async function setRosterParamsFromBody(org: Org, entry: Roster, body: RosterEntryData, columns: RosterColumnInfo[], newEntry: boolean = false) {
-  for (const column of columns) {
-    if (newEntry || column.updatable) {
-      await getColumnFromBody(org, entry, body, column, newEntry);
-    }
-  }
-}
-
-async function getColumnFromBody(org: Org, roster: Roster, row: RosterEntryData, column: RosterColumnInfo, newEntry: boolean) {
-  let objectValue: Date | CustomColumnValue | undefined;
-  let paramType: BaseType;
-  switch (column.type) {
-    case RosterColumnType.Date:
-    case RosterColumnType.DateTime:
-    case RosterColumnType.Enum:
-      paramType = 'string';
-      break;
-    default:
-      paramType = column.type;
-  }
-  if (column.required && newEntry) {
-    objectValue = getRequiredParam(column.name, row, paramType);
-  } else {
-    objectValue = getOptionalParam(column.name, row, paramType);
-  }
-  if (objectValue !== undefined) {
-    if (objectValue === null && column.required) {
-      throw new BadRequestError(`Required column '${column.name}' cannot be null.`);
-    }
-    if (column.custom) {
-      if (!roster.customColumns) {
-        roster.customColumns = {};
-      }
-      roster.customColumns[column.name] = objectValue;
-    } else {
-      if (objectValue !== null
-        && (column.type === RosterColumnType.Date
-          || column.type === RosterColumnType.DateTime)) {
-        objectValue = dateFromString(`${objectValue}`);
-      }
-      Reflect.set(roster, column.name, objectValue !== null ? objectValue : undefined);
-    }
-  }
-}
 
 function setColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColumnInfo) {
   let stringValue: string | undefined;
@@ -688,43 +608,43 @@ interface RosterInfo {
   columns: RosterColumnInfo[],
 }
 
-type GetRosterQuery = {
-  orderBy?: string
-  sortDirection?: 'ASC' | 'DESC'
-} & PagedQuery;
+  type GetRosterQuery = {
+    orderBy?: string
+    sortDirection?: 'ASC' | 'DESC'
+  } & PagedQuery;
 
-type QueryOp = '=' | '<>' | '~' | '>' | '<' | 'startsWith' | 'endsWith' | 'in' | 'between';
+  type QueryOp = '=' | '<>' | '~' | '>' | '<' | 'startsWith' | 'endsWith' | 'in' | 'between';
 
-type SearchRosterBodyEntry = {
-  op: QueryOp
-  value: CustomColumnValue | CustomColumnValue[]
-};
+  type SearchRosterBodyEntry = {
+    op: QueryOp
+    value: CustomColumnValue | CustomColumnValue[]
+  };
 
-type SearchRosterBody = {
-  [column: string]: SearchRosterBodyEntry
-};
+  type SearchRosterBody = {
+    [column: string]: SearchRosterBodyEntry
+  };
 
-type ReportDateQuery = {
-  reportDate: string
-};
+  type ReportDateQuery = {
+    reportDate: string
+  };
 
-type RosterFileRow = {
-  [key: string]: string
-};
+  type RosterFileRow = {
+    [key: string]: string
+  };
 
 export type RosterEntryData = {
   unit?: number,
   [key: string]: CustomColumnValue | undefined
 };
 
-type CustomColumnData = {
-  name?: string,
-  displayName?: string,
-  type?: RosterColumnType,
-  pii?: boolean,
-  phi?: boolean,
-  required?: boolean,
-  config?: CustomColumnConfig,
-};
+  type CustomColumnData = {
+    name?: string,
+    displayName?: string,
+    type?: RosterColumnType,
+    pii?: boolean,
+    phi?: boolean,
+    required?: boolean,
+    config?: CustomColumnConfig,
+  };
 
 export default new RosterController();
