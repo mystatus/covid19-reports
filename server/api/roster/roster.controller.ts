@@ -272,7 +272,7 @@ class RosterController {
       .leftJoinAndSelect('roster.unit', 'unit')
       .leftJoinAndSelect('unit.org', 'org')
       .where('roster.edipi = :edipi', { edipi: req.params.edipi })
-      .andWhere('roster.timestamp <= to_timestamp(:timestamp)', { timestamp })
+      .andWhere(`roster.timestamp <= to_timestamp(:timestamp) AT TIME ZONE '+0'`, { timestamp })
       .select()
       .distinctOn(['roster.unit_id'])
       .orderBy('roster.unit_id')
@@ -378,6 +378,7 @@ class RosterController {
       },
     });
 
+    let updatedRosterEntry: Roster | null = null;
     await getConnection().transaction(async manager => {
       if (!entry) {
         throw new NotFoundError('User could not be found.');
@@ -397,9 +398,9 @@ class RosterController {
 
       const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
       await setRosterParamsFromBody(req.appOrg!, entry, req.body, columns);
-      const updatedRosterEntry = await manager.save(entry);
-      res.json(updatedRosterEntry);
+      updatedRosterEntry = await manager.save(entry);
     });
+    res.json(updatedRosterEntry);
   }
 
 }

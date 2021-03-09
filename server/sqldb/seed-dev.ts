@@ -10,6 +10,8 @@ import { CustomRosterColumn } from '../api/roster/custom-roster-column.model';
 import { Unit } from '../api/unit/unit.model';
 import { env } from '../util/env';
 import { Log } from '../util/log';
+import { RosterHistory } from '../api/roster/roster-history.model';
+import { defaultReportSchemas, ReportSchema } from '../api/report-schema/report-schema.model';
 
 require('dotenv').config();
 
@@ -39,6 +41,13 @@ export default (async function() {
     // Create Org 1 & 2 and their Users
     await generateOrg(manager, 1, groupAdmin, 5, 20);
     await generateOrg(manager, 2, groupAdmin, 5, 20);
+
+    // Set the start date on each roster entry to some time in the past to help with repeatable testing
+    await manager
+      .createQueryBuilder()
+      .update(RosterHistory)
+      .set({ timestamp: '2020-01-01 00:00:00' })
+      .execute();
   });
 
   await connection.close();
@@ -56,6 +65,12 @@ async function generateOrg(manager: EntityManager, orgNum: number, admin: User, 
     defaultMusterConfiguration: [],
   });
   org = await manager.save(org);
+
+  const reportSchemas = manager.create(ReportSchema, defaultReportSchemas);
+  for (const report of reportSchemas) {
+    report.org = org;
+  }
+  await manager.save(reportSchemas);
 
   let customColumn = manager.create(CustomRosterColumn, {
     org,

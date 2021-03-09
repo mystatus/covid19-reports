@@ -144,6 +144,9 @@ class MusterController {
     let closestEnd = 0;
 
     for (const muster of musterConfig) {
+      if (muster.reportId !== req.query.reportId) {
+        continue;
+      }
       if (muster.days === DaysOfTheWeek.None) {
         continue;
       }
@@ -209,6 +212,7 @@ type GetClosedMusterWindowsQuery = {
 
 type GetNearestMusterWindowQuery = {
   timestamp: string
+  reportId: string
 };
 
 export default new MusterController();

@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosResponse } from 'axios';
 import axiosRetry from 'axios-retry';
 import { UserRegisterData } from '../actions/user.actions';
 import {
-  ApiAccessRequest, ApiNotification, ApiRole, ApiRosterColumnInfo, ApiUnit, ApiUser, ApiWorkspace,
+  ApiAccessRequest, ApiNotification, ApiReportSchema, ApiRole, ApiRosterColumnInfo, ApiUnit, ApiUser, ApiWorkspace,
 } from '../models/api-response';
 
 const client = axios.create({
@@ -56,6 +56,12 @@ export namespace RoleClient {
 export namespace UnitClient {
   export const fetchAll = (orgId: number): Promise<ApiUnit[]> => {
     return client.get(`unit/${orgId}`);
+  };
+}
+
+export namespace ReportSchemaClient {
+  export const fetchAll = (orgId: number): Promise<ApiReportSchema[]> => {
+    return client.get(`report/${orgId}`);
   };
 }
 

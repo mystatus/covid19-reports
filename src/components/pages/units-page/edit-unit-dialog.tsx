@@ -7,7 +7,7 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
-  IconButton,
+  IconButton, Select,
   Table,
   TableBody,
   TableCell,
@@ -28,12 +28,15 @@ import { Autocomplete } from '@material-ui/lab';
 import { MuiPickersUtilsProvider, TimePicker } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
+import { useSelector } from 'react-redux';
 import useStyles from './edit-unit-dialog.styles';
 import { ApiUnit, MusterConfiguration } from '../../../models/api-response';
 import {
-  dayIsIn, DaysOfTheWeek, nextDay, oneDaySeconds,
+  DaysOfTheWeek,
 } from '../../../utility/days';
 import { formatMessage } from '../../../utility/errors';
+import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
+import { validateMusterConfiguration } from '../../../utility/muster-utils';
 
 export interface EditUnitDialogProps {
   open: boolean,
@@ -48,11 +51,6 @@ interface MusterConfigurationRow extends MusterConfiguration {
   rowKey: string,
   durationHours: number,
   startTimeDate: Date,
-}
-
-interface MusterWindow {
-  start: number,
-  end: number,
 }
 
 enum MusterConfigMode {
@@ -83,6 +81,7 @@ function getDataFromMode(mode: MusterConfigMode, unitConfig: MusterConfiguration
 
 export const EditUnitDialog = (props: EditUnitDialogProps) => {
   const classes = useStyles();
+  const reports = useSelector(ReportSchemaSelector.all);
   const [formDisabled, setFormDisabled] = useState(false);
   const {
     defaultMusterConfiguration, open, orgId, unit, onClose, onError,
@@ -127,12 +126,17 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
   };
 
   const addMusterWindow = () => {
+    if (reports == null || reports.length === 0) {
+      setErrorMessage('No report types have been added to this group.');
+      return;
+    }
     const configuration = [...musterConfiguration, {
       days: DaysOfTheWeek.None,
       startTime: '00:00',
       timezone: moment.tz.guess(),
       durationMinutes: 120,
       durationHours: 2,
+      reportId: reports[0].id,
       rowKey: uuidv4(),
       startTimeDate: moment(`${moment().format('Y-M-D')} 00:00`, 'Y-M-D h:mm').toDate(),
     }];
@@ -150,6 +154,16 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
     const index = configuration.findIndex(muster => muster.rowKey === rowKey);
     if (index >= 0) {
       configuration[index].timezone = timezone;
+    }
+    setMusterConfiguration(configuration);
+    resetErrorMessage();
+  };
+
+  const setMusterReportId = (rowKey: string) => (event: React.ChangeEvent<{ value: unknown }>) => {
+    const configuration = [...musterConfiguration];
+    const index = configuration.findIndex(muster => muster.rowKey === rowKey);
+    if (index >= 0) {
+      configuration[index].reportId = event.target.value as string;
     }
     setMusterConfiguration(configuration);
     resetErrorMessage();
@@ -220,50 +234,11 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
       return false;
     }
 
-    const windows: MusterWindow[] = [];
-    // Go through each configuration and add the time ranges for muster windows over a test week
-    musterConfiguration.forEach(muster => {
-      // Parse the start time
-      const musterTime = moment(muster.startTime, 'HH:mm');
-      // Get the unix timestamp of the first possible muster window of the week
-      let current = moment()
-        .tz(muster.timezone)
-        .startOf('week')
-        .add(musterTime.hours(), 'hours')
-        .add(musterTime.minutes(), 'minutes')
-        .unix();
-      const firstWindowIndex = windows.length;
-      // Loop through each day and add any that are set in this muster configuration
-      for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday; day = nextDay(day)) {
-        if (dayIsIn(day, muster.days)) {
-          windows.push({
-            start: current,
-            end: current + muster.durationMinutes * 60,
-          });
-        }
-        current += oneDaySeconds;
-      }
-
-      // Add the first window of next week to make sure we don't overlap over the week boundary
-      windows.push({
-        start: windows[firstWindowIndex].start + oneDaySeconds * 7,
-        end: windows[firstWindowIndex].end + oneDaySeconds * 7,
-      });
-    });
-
-    // Sort all muster windows by start time
-    windows.sort((a: MusterWindow, b: MusterWindow) => {
-      return a.start - b.start;
-    });
-
-    // Make sure none overlap
-    for (let i = 0; i < windows.length - 1; i++) {
-      if (windows[i].end > windows[i + 1].start) {
-        setErrorMessage('Unable to use overlapping muster windows.');
-        return false;
-      }
+    const validation = validateMusterConfiguration(musterConfiguration);
+    if (validation) {
+      setErrorMessage(validation);
+      return false;
     }
-
     return true;
   };
 
@@ -284,6 +259,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
             startTime: muster.startTime,
             timezone: muster.timezone,
             durationMinutes: muster.durationMinutes,
+            reportId: muster.reportId,
           })),
     };
     try {
@@ -321,7 +297,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
 
   /* eslint-disable no-bitwise */
   return (
-    <Dialog className={classes.root} maxWidth="md" onClose={onClose} open={open}>
+    <Dialog className={classes.root} maxWidth="lg" onClose={onClose} open={open}>
       <DialogTitle id="alert-dialog-title">{existingUnit ? 'Edit Unit' : 'New Unit'}</DialogTitle>
       <DialogContent>
         <Grid container spacing={3}>
@@ -365,6 +341,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
               <Table aria-label="muster table" className={classes.musterTable}>
                 <TableHead>
                   <TableRow>
+                    <TableCell>Report Type</TableCell>
                     <TableCell>Days</TableCell>
                     <TableCell>Start Time</TableCell>
                     <TableCell>Time Zone</TableCell>
@@ -375,6 +352,19 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
                 <TableBody>
                   {musterConfiguration.map(muster => (
                     <TableRow key={muster.rowKey}>
+                      <TableCell className={classes.reportCell}>
+                        <Select
+                          id={`muster-report-type-${muster.rowKey}`}
+                          native
+                          value={muster.reportId}
+                          disabled={formDisabled || musterConfigMode !== MusterConfigMode.Custom}
+                          onChange={setMusterReportId(muster.rowKey)}
+                        >
+                          {reports && reports.map(report => (
+                            <option key={report.id} value={report.id}>{report.name}</option>
+                          ))}
+                        </Select>
+                      </TableCell>
                       <TableCell>
                         <div className={classes.dayButtons}>
                           <Avatar

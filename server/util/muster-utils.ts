@@ -233,7 +233,7 @@ export function getEarliestMusterWindowTime(muster: MusterConfiguration, referen
 
 export function buildMusterWindow(unit: Unit, startTimestamp: number, endTimestamp: number, muster: MusterConfiguration): MusterWindow {
   return {
-    id: `${unit.org!.id}-${unit.id}-${moment.unix(startTimestamp).utc().format('Y-M-D-HH-mm')}`,
+    id: `${unit.org!.id}-${unit.id}-${moment.unix(startTimestamp).utc().format('Y-M-D-HH-mm')}-${muster.reportId}`,
     orgId: unit.org!.id,
     unitId: unit.id,
     unitName: unit.name,
@@ -243,6 +243,7 @@ export function buildMusterWindow(unit: Unit, startTimestamp: number, endTimesta
     startTime: muster.startTime,
     timezone: muster.timezone,
     durationMinutes: muster.durationMinutes,
+    reportId: muster.reportId,
   };
 }
 
@@ -553,4 +554,5 @@ export interface MusterWindow {
   startTime: string,
   timezone: string,
   durationMinutes: number,
+  reportId: string,
 }

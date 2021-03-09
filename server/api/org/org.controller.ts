@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { Like } from 'typeorm';
+import { getConnection, Like } from 'typeorm';
 import {
   ApiRequest,
   OrgParam,
@@ -12,6 +12,7 @@ import {
   NotFoundError,
 } from '../../util/error-types';
 import { MusterConfiguration } from '../unit/unit.model';
+import { defaultReportSchemas, ReportSchema } from '../report-schema/report-schema.model';
 
 class OrgController {
 
@@ -59,9 +60,21 @@ class OrgController {
     org.description = req.body.description;
     org.contact = contact;
     org.reportingGroup = req.body.reportingGroup;
-    const newOrg = await org.save();
 
-    await res.status(201).json(newOrg);
+    await getConnection().transaction(async manager => {
+      await manager.save(org);
+
+      // Write default report schemas
+      for (const schema of defaultReportSchemas) {
+        const reportSchema = ReportSchema.create({
+          ...schema,
+          org,
+        });
+        await manager.save(reportSchema);
+      }
+    });
+
+    await res.status(201).json(org);
   }
 
   async deleteOrg(req: ApiRequest, res: Response) {

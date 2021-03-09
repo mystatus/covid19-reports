@@ -8,7 +8,7 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
-  IconButton,
+  IconButton, Select,
   Table,
   TableBody,
   TableCell,
@@ -35,6 +35,7 @@ import MusterConfigReadable from './muster-config-readable';
 import { validateMusterConfiguration } from '../../../utility/muster-utils';
 import { HelpCard } from '../../help/help-card/help-card';
 import { UnitSelector } from '../../../selectors/unit.selector';
+import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
 
 export interface DefaultMusterDialogProps {
   open: boolean,
@@ -54,6 +55,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
   const org = useSelector(UserSelector.org);
   const units = useSelector(UnitSelector.all)
     .filter(unit => unit.musterConfiguration === null);
+  const reports = useSelector(ReportSchemaSelector.all);
   const orgId = org?.id;
   const defaultMusterConfiguration = org?.defaultMusterConfiguration;
   const {
@@ -92,6 +94,10 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
   const hasDefaultMuster = musterConfiguration.length > 0;
 
   const addMusterWindow = () => {
+    if (reports == null || reports.length === 0) {
+      setErrorMessage('No report types have been added to this group.');
+      return;
+    }
     const configuration = [...musterConfiguration, {
       days: DaysOfTheWeek.None,
       startTime: '00:00',
@@ -99,6 +105,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
       durationMinutes: 120,
       durationHours: 2,
       rowKey: uuidv4(),
+      reportId: reports[0].id,
       startTimeDate: moment(`${moment().format('Y-M-D')} 00:00`, 'Y-M-D h:mm').toDate(),
     }];
     setMusterConfiguration(configuration);
@@ -115,6 +122,16 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
     const index = configuration.findIndex(muster => muster.rowKey === rowKey);
     if (index >= 0) {
       configuration[index].timezone = timezone;
+    }
+    setMusterConfiguration(configuration);
+    resetErrorMessage();
+  };
+
+  const setMusterReportId = (rowKey: string) => (event: React.ChangeEvent<{ value: unknown }>) => {
+    const configuration = [...musterConfiguration];
+    const index = configuration.findIndex(muster => muster.rowKey === rowKey);
+    if (index >= 0) {
+      configuration[index].reportId = event.target.value as string;
     }
     setMusterConfiguration(configuration);
     resetErrorMessage();
@@ -194,6 +211,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
           startTime: muster.startTime,
           timezone: muster.timezone,
           durationMinutes: muster.durationMinutes,
+          reportId: muster.reportId,
         };
       }),
     };
@@ -229,7 +247,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
 
   /* eslint-disable no-bitwise */
   return (
-    <Dialog className={classes.root} maxWidth="md" onClose={onCancel} open={open}>
+    <Dialog className={classes.root} maxWidth="lg" onClose={onCancel} open={open}>
       <DialogTitle id="alert-dialog-title">Default Muster Requirements</DialogTitle>
       <DialogContent>
         <HelpCard helpCardId="default-muster-dialog">
@@ -243,7 +261,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
               Current Requirements
             </Typography>
             <Box className={classes.atAGlance}>
-              <MusterConfigReadable musterConfiguration={musterConfiguration} />
+              <MusterConfigReadable musterConfiguration={musterConfiguration} reports={reports} />
             </Box>
           </Grid>
           <Grid item xs={6}>
@@ -268,6 +286,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
           <Table aria-label="muster table" className={classes.musterTable}>
             <TableHead>
               <TableRow>
+                <TableCell>Report Type</TableCell>
                 <TableCell>Days</TableCell>
                 <TableCell>Start Time</TableCell>
                 <TableCell>Time Zone</TableCell>
@@ -278,6 +297,19 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
             <TableBody>
               {musterConfiguration.map(muster => (
                 <TableRow key={muster.rowKey}>
+                  <TableCell className={classes.reportCell}>
+                    <Select
+                      id={`muster-report-type-${muster.rowKey}`}
+                      native
+                      value={muster.reportId}
+                      disabled={formDisabled}
+                      onChange={setMusterReportId(muster.rowKey)}
+                    >
+                      {reports && reports.map(report => (
+                        <option key={report.id} value={report.id}>{report.name}</option>
+                      ))}
+                    </Select>
+                  </TableCell>
                   <TableCell>
                     <div className={classes.dayButtons}>
                       <Avatar

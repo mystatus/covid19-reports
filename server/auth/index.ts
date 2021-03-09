@@ -57,10 +57,6 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
       where: {
         edipi: id,
       },
-      cache: {
-        id: `user_auth_${id}`,
-        milliseconds: 30000,
-      },
     });
   }
 
