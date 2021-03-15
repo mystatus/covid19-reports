@@ -18,6 +18,13 @@ router.get(
 );
 
 router.get(
+  '/:orgId/:unitId/open',
+  requireInternalUser,
+  requireOrgAccess,
+  controller.getOpenMusterWindows,
+);
+
+router.get(
   '/:orgId/individuals',
   requireOrgAccess,
   requireRolePermission(role => role.canViewMuster),

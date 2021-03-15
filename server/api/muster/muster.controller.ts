@@ -213,6 +213,94 @@ class MusterController {
     res.json(closestMuster ? buildMusterWindow(unit, closestStart, closestEnd, closestMuster) : null);
   }
 
+  async getOpenMusterWindows(req: ApiRequest<OrgUnitParams, null, GetNearestMusterWindowQuery>, res: Response) {
+    const timestamp = parseInt(req.query.timestamp);
+
+    const unit = await Unit.findOne({
+      relations: ['org'],
+      where: {
+        id: req.params.unitId,
+        org: req.appOrg!.id,
+      },
+    });
+
+    if (!unit) {
+      throw new NotFoundError('The unit could not be found.');
+    }
+
+    const musterConfig = unit.combinedConfiguration();
+    const openWindows: Array<{
+      muster: MusterConfiguration,
+      start: number,
+      end: number,
+    }> = [];
+
+    for (const muster of musterConfig) {
+      if (muster.reportId !== req.query.reportId) {
+        continue;
+      }
+      const durationSeconds = muster.durationMinutes * 60;
+
+      if (muster.days) {
+        // Get the unix timestamp of the earliest possible muster window in the week of the timestamp
+        let current = getEarliestMusterWindowTime(muster, timestamp);
+        // Loop through each day of the week
+        let firstWindowStart: number = 0;
+        let lastWindowStart: number = 0;
+        for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday; day = nextDay(day)) {
+          const end = current + durationSeconds;
+          if (dayIsIn(day, muster.days)) {
+            if (firstWindowStart === 0) {
+              firstWindowStart = current;
+            }
+            lastWindowStart = current;
+            const distanceToWindow = getDistanceToWindow(current, end, timestamp);
+            // Pick the closest window, if one window ends and another starts on the same second as the timestamp, prefer
+            // the window that is starting
+            if (distanceToWindow === 0) {
+              openWindows.push({
+                muster,
+                start: current,
+                end,
+              });
+            }
+          }
+          current += oneDaySeconds;
+        }
+        if (firstWindowStart > timestamp || lastWindowStart! + durationSeconds < timestamp) {
+          // If the timestamp is before the first window or after the last window, we need to compare with the
+          // nearest window in the adjacent week
+          const windowStart = firstWindowStart > timestamp ? lastWindowStart - oneDaySeconds * 7 : firstWindowStart + oneDaySeconds * 7;
+          const windowEnd = windowStart + durationSeconds;
+          const distanceToWindow = getDistanceToWindow(windowStart, windowEnd, timestamp);
+          if (distanceToWindow === 0) {
+            openWindows.push({
+              muster,
+              start: windowStart,
+              end: windowEnd,
+            });
+          }
+        }
+      } else {
+        const start = getOneTimeMusterWindowTime(muster);
+        const end = start + durationSeconds;
+
+        if (start > timestamp || end < timestamp) {
+          const distanceToWindow = getDistanceToWindow(start, end, timestamp);
+          if (distanceToWindow === 0) {
+            openWindows.push({
+              muster,
+              start,
+              end,
+            });
+          }
+        }
+      }
+    }
+
+    res.json(openWindows.map(window => buildMusterWindow(unit, window.start, window.end, window.muster)));
+  }
+
 }
 
 type GetIndividualsQuery = {
