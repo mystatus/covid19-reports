@@ -419,7 +419,8 @@ export const RosterPage = () => {
   };
 
   const assignOrphanToSelfClicked = async (row: ApiOrphanedRecord) => {
-    const result = await dispatch(Modal.alert('Claim Orphaned Record', '<span>This orphaned record will be temporarily assigned to you and to you and will be hidden from other roster managers while you attempt to resolve the situation.</span><p>How long would you like to claim the record?</p>', [
+    const result = await dispatch(Modal.alert('Claim Orphaned Record', '<span>This orphaned record will be temporarily assigned to you and will be hidden from other roster managers while you attempt to resolve the situation.</span><p>How long would you like to claim the record?</p>', [
+      { text: 'Permanently', value: -1, className: classes.deleteOrphanedRecordConfirmButton },
       { text: '4 hours', value: 4 },
       { text: '1 day', value: 24 },
       { text: '1 week', value: 7 * 24 },
@@ -432,7 +433,7 @@ export const RosterPage = () => {
       setOrphanedRecordsWaiting(true);
       await axios.put(`api/orphaned-record/${orgId}/${row.id}/action`, {
         action: 'claim',
-        timeToLiveMs: result.button.value * 60 * 60 * 1000,
+        timeToLiveMs: Math.max(0, result.button.value * 60 * 60 * 1000),
       });
 
       await initializeTable();
@@ -443,8 +444,21 @@ export const RosterPage = () => {
     }
   };
 
+  const unclaimOrphanedRecord = async (row: ApiOrphanedRecord) => {
+    try {
+      setOrphanedRecordsWaiting(true);
+      await axios.delete(`api/orphaned-record/${orgId}/${row.id}/claim`);
+      await initializeTable();
+    } catch (error) {
+      dispatch(Modal.alert('Assign Orphan', formatMessage(error, 'Unable to assign claim the record')));
+    } finally {
+      setOrphanedRecordsWaiting(false);
+    }
+  };
+
   const ignoreOrphanClicked = async (row: ApiOrphanedRecord) => {
     const result = await dispatch(Modal.alert('Ignore Orphaned Record', '<span>This orphan record will be temporarily hidden from your view, but will still be visible to other roster managers.</span><p>How long should we ignore the record?</p>', [
+      { text: 'Permanently', value: -1, className: classes.deleteOrphanedRecordConfirmButton },
       { text: '4 hours', value: 4 },
       { text: '1 day', value: 24 },
       { text: '1 week', value: 7 * 24 },
@@ -457,7 +471,7 @@ export const RosterPage = () => {
       setOrphanedRecordsWaiting(true);
       await axios.put(`api/orphaned-record/${orgId}/${row.id}/action`, {
         action: 'ignore',
-        timeToLiveMs: result.button.value * 60 * 60 * 1000,
+        timeToLiveMs: Math.max(0, result.button.value * 60 * 60 * 1000),
       });
       await initializeTable();
     } catch (error) {
@@ -467,41 +481,25 @@ export const RosterPage = () => {
     }
   };
 
-  const deleteOrphanClicked = async (row: ApiOrphanedRecord) => {
-    const result = await dispatch(Modal.confirm('Permanently Delete', 'Only do this if you\'re sure this entry was created in error, is a duplicate, or is spam.', [
-      { text: 'Yes, Permanently Delete!', className: classes.deleteOrphanedRecordConfirmButton },
-      { text: 'Cancel', variant: 'outlined' },
-    ]));
-    if (result?.index !== 0) {
-      return;
-    }
-    try {
-      setOrphanedRecordsWaiting(true);
-      await axios.delete(`api/orphaned-record/${orgId}/${row.id}`);
-      await initializeTable();
-    } catch (error) {
-      dispatch(Modal.alert('Delete Orphan', formatMessage(error, 'Unable to delete the orphan')));
-    } finally {
-      setOrphanedRecordsWaiting(false);
-    }
-  };
-
   const getOrphanCellDisplayValue = (orphanedRecord: ApiOrphanedRecord, column: { name: keyof ApiOrphanedRecord }) => {
     const value = orphanedRecord[column.name];
     if (value) {
       if (column.name === 'earliestReportDate' || column.name === 'latestReportDate') {
-        const date = new Date(value as string);
-        return `${date.toLocaleTimeString()} ${date.toLocaleDateString()}`;
+        return moment(value).format('Y-M-D h:mm A z');
       }
       if (column.name === 'claimedUntil') {
-        return moment().to(value, true);
+        return moment().utc().to(moment(value), true);
       }
+    }
+
+    if (!value && orphanedRecord.action === 'claim') {
+      return 'Permanent';
     }
     return value;
   };
 
   const getOrphanRowProps = (orphanedRecord: ApiOrphanedRecord) => {
-    if (orphanedRecord.claimedUntil) {
+    if (orphanedRecord.action === 'claim') {
       return {
         className: classes.claimedOrphanRow,
       };
@@ -538,36 +536,27 @@ export const RosterPage = () => {
                 { name: 'claimedUntil', displayName: 'Remaining Claim' },
               ]}
               title={`Orphaned Records (${orphanedRecords.length})`}
-              // title={(
-              //   <>
-              //     Orphaned Records
-              //     <Badge color="error" badgeContent={orphanedRecords.length} className={classes.titleBadge} />
-              //     <span className={classes.titlePrompt}>Get it done!</span>
-              //   </>
-              // )}
               idColumn="id"
               rowOptions={{
                 menuItems: (row: ApiOrphanedRecord) => ([{
                   callback: addOrphanToRosterClicked,
                   disabled: orphanedRecordsWaiting,
-                  name: 'Add to a Roster',
+                  name: 'Add to a Roster...',
                 }, {
                   callback: assignOrphanToSelfClicked,
                   disabled: orphanedRecordsWaiting,
-                  hidden: Boolean(row?.claimedUntil),
-                  name: 'Assign to Self...',
+                  hidden: row.action === 'claim',
+                  name: 'Claim...',
+                }, {
+                  callback: unclaimOrphanedRecord,
+                  disabled: orphanedRecordsWaiting,
+                  hidden: row.action !== 'claim',
+                  name: 'Unclaim',
                 }, {
                   callback: ignoreOrphanClicked,
                   disabled: orphanedRecordsWaiting,
-                  hidden: Boolean(row?.claimedUntil),
-                  name: 'Ignore Until...',
-                }, {
-                  callback: deleteOrphanClicked,
-                  disabled: orphanedRecordsWaiting,
-                  props: {
-                    className: classes.deleteOrphanedMenuItem,
-                  },
-                  name: 'Permanently Remove',
+                  hidden: row.action === 'claim',
+                  name: 'Ignore...',
                 }]),
                 renderCell: getOrphanCellDisplayValue,
                 rowProps: getOrphanRowProps,
@@ -575,7 +564,6 @@ export const RosterPage = () => {
             />
           </TableContainer>
         )}
-
 
         <ButtonSet>
           <input

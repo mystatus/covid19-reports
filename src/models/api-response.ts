@@ -150,6 +150,7 @@ export interface ApiOrphanedRecord {
   phone: string,
   unit: string,
   count: number,
+  action?: string,
   claimedUntil?: Date,
   latestReportDate: Date,
   earliestReportDate: Date,

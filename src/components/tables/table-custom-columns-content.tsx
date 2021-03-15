@@ -1,5 +1,5 @@
 import {
-  IconButton, Menu, MenuItem, ListItemProps, Table,
+  IconButton, Menu, MenuItem, MenuItemProps, Table,
   TableBody, TableCell, TableHead, TableProps, TableRow, TableRowProps, Typography,
 } from '@material-ui/core';
 import React, { useCallback, useEffect } from 'react';
@@ -14,7 +14,7 @@ interface TableCustomColumnsMenuItem {
   name: string,
   disabled?: boolean,
   hidden?: boolean,
-  props?: any,
+  props?: MenuItemProps,
   callback: (row: any) => void,
 }
 
@@ -194,13 +194,12 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
               open={Boolean(rowMenu.row)}
               onClose={handleRowMenuClose}
             >
-              {getRowActions(rowMenu.row).map(menuItem => !menuItem.hidden && (
+              {getRowActions(rowMenu.row).filter(menuItem => !menuItem.hidden).map(menuItem => (
                 <MenuItem
                   disabled={menuItem.disabled}
-                  hidden={menuItem.hidden}
                   onClick={handleMenuItemClick(menuItem.callback)}
                   key={menuItem.name}
-                  {...(menuItem.props ?? {})}
+                  {...(menuItem.props as any ?? {})}
                 >
                   {menuItem.name}
                 </MenuItem>

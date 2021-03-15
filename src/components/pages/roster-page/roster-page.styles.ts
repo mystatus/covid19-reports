@@ -70,13 +70,4 @@ export default makeStyles((theme: Theme) => createStyles({
       backgroundColor: '#B6001D',
     },
   },
-  // titleBadge: {
-  //   marginTop: '-2px',
-  //   marginLeft: '20px',
-  // },
-  // titlePrompt: {
-  //   fontSize: '12px',
-  //   fontWeight: 'normal',
-  //   marginLeft: '32px',
-  // },
 }));

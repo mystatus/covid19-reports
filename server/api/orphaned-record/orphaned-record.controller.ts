@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { getConnection } from 'typeorm';
+import { Brackets, getConnection } from 'typeorm';
 import {
   ApiRequest, OrgParam,
 } from '../index';
@@ -18,6 +18,7 @@ interface OrphanedRecordResult {
   phone: string;
   unit: string;
   count: number;
+  action?: string;
   claimedUntil?: Date;
   latestReportDate: Date;
   earliestReportDate: Date;
@@ -31,13 +32,14 @@ function getVisibleOrphanedRecordResults(userEdipi: string, orgId: number) {
   };
   return OrphanedRecord
     .createQueryBuilder('orphan')
-    .leftJoin(OrphanedRecordAction, 'action', `action.id=orphan.composite_id AND action.expires_on > :now AND (action.type='claim' OR (action.user_edipi=:userEdipi AND action.type='ignore'))`, params)
+    .leftJoin(OrphanedRecordAction, 'action', `action.id=orphan.composite_id AND (action.expires_on > :now OR action.expires_on IS NULL) AND (action.type='claim' OR (action.user_edipi=:userEdipi AND action.type='ignore'))`, params)
     .where('orphan.org_id=:orgId', params)
     .andWhere('orphan.deleted_on IS NULL')
     .andWhere(`(action.type IS NULL OR (action.type='claim' AND action.user_edipi=:userEdipi))`, params)
     .select('orphan.edipi', 'edipi')
     .addSelect('orphan.unit', 'unit')
     .addSelect('orphan.phone', 'phone')
+    .addSelect('action.type', 'action')
     .addSelect('action.expires_on', 'claimedUntil')
     .addSelect('MAX(orphan.timestamp)', 'latestReportDate')
     .addSelect('MIN(orphan.timestamp)', 'earliestReportDate')
@@ -47,6 +49,7 @@ function getVisibleOrphanedRecordResults(userEdipi: string, orgId: number) {
     .addGroupBy('orphan.edipi')
     .addGroupBy('orphan.unit')
     .addGroupBy('orphan.phone')
+    .addGroupBy('action.type')
     .addGroupBy('action.expires_on')
     .getRawMany<OrphanedRecordResult>();
 }
@@ -173,9 +176,6 @@ class OrphanedRecordController {
     if (!req.body.action) {
       throw new BadRequestError(`Expected 'action' in payload.`);
     }
-    if (!(req.body.timeToLiveMs > 0)) {
-      throw new BadRequestError(`Expected 'timeToLiveMs' in payload.`);
-    }
 
     // Delete any existing actions for this user (or any expired ones)
     await OrphanedRecordAction
@@ -200,12 +200,42 @@ class OrphanedRecordController {
     orphanedRecordAction.id = req.params.orphanId;
     orphanedRecordAction.type = req.body.action;
     orphanedRecordAction.user = req.appUser;
-    orphanedRecordAction.expiresOn = new Date(Date.now() + req.body.timeToLiveMs);
+
+    if (req.body.timeToLiveMs) {
+      const date = new Date(Date.now() + req.body.timeToLiveMs);
+      date.setTime(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
+      orphanedRecordAction.expiresOn = date;
+    }
 
     await orphanedRecordAction.save();
     res.status(201).json(orphanedRecordAction);
   }
+
+  async deleteOrphanedRecordAction(req: ApiRequest<OrphanedRecordDeleteActionData>, res: Response) {
+    if (!req.params.orphanId) {
+      throw new BadRequestError(`Param 'id' is required.`);
+    }
+    if (!req.params.action) {
+      throw new BadRequestError(`Expected 'action' in payload.`);
+    }
+
+    // Delete any existing actions for this user (or any expired ones)
+    await OrphanedRecordAction
+      .createQueryBuilder()
+      .delete()
+      .where(new Brackets(qb => {
+        qb
+          .where(`id=:id`, { id: req.params.orphanId })
+          .andWhere('user_edipi=:userEdipi', { userEdipi: req.appUser.edipi })
+          .andWhere('type=:action', { action: req.params.action });
+      }))
+      .orWhere('expires_on < now()')
+      .execute();
+
+    res.status(204).send();
+  }
 }
+
 
 function getRosterHistoryAddedForOrphanedRecord(orphanedRecord: OrphanedRecord) {
   return RosterHistory.findOne({
@@ -244,7 +274,11 @@ export interface OrphanedRecordData {
 
 export interface OrphanedRecordActionData {
   action: ActionType,
-  timeToLiveMs: number
+  timeToLiveMs?: number
+}
+
+export interface OrphanedRecordDeleteActionData extends OrphanedRecordActionParam {
+  action: ActionType,
 }
 
 export default new OrphanedRecordController();

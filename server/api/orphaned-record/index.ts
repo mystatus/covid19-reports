@@ -16,7 +16,6 @@ router.get(
 router.put(
   '/',
   requireInternalUser,
-  requireOrgAccess,
   bodyParser.json(),
   controller.addOrphanedRecord,
 );
@@ -42,6 +41,14 @@ router.put(
   requireRolePermission(role => role.canManageRoster),
   bodyParser.json(),
   controller.addOrphanedRecordAction,
+);
+
+router.delete(
+  '/:orgId/:orphanId/:action',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageRoster),
+  bodyParser.json(),
+  controller.deleteOrphanedRecordAction,
 );
 
 

@@ -36,10 +36,11 @@ export class OrphanedRecordAction extends BaseEntity {
   createdOn!: Date;
 
   @Column({
+    nullable: true,
     type: 'timestamp',
     transformer: timestampColumnTransformer,
   })
-  expiresOn!: Date;
+  expiresOn?: Date;
 
   @Column({
     type: 'enum',

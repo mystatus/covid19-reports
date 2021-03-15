@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import {
   Badge,
+  BadgeProps,
   Divider,
   Drawer,
   IconButton,
@@ -43,8 +44,8 @@ import { DataExportIcon } from '../icons/data-export-icon';
 type SidenavLinkProps = {
   name: string,
   icon: any,
-  badgeColor?: any,
-  badgeCount?: number,
+  badgeColor?: BadgeProps['color'],
+  badgeContent?: React.ReactNode,
 } & LinkProps;
 
 const SidenavLink = (props: SidenavLinkProps) => {
@@ -52,7 +53,7 @@ const SidenavLink = (props: SidenavLinkProps) => {
     name,
     icon,
     badgeColor = 'error',
-    badgeCount = 0,
+    badgeContent = 0,
     ...rest
   } = props;
   const classes = useStyles();
@@ -75,7 +76,7 @@ const SidenavLink = (props: SidenavLinkProps) => {
       <ListItem button key={name}>
         <ListItemIcon>{icon}</ListItemIcon>
         <ListItemText primary={name} />
-        <Badge color={badgeColor} badgeContent={badgeCount} />
+        <Badge color={badgeColor} badgeContent={badgeContent} className={classes.badge} />
       </ListItem>
     </Link>
   );
@@ -156,7 +157,7 @@ export const AppSidenav = () => {
               to="/roster"
               name="Roster"
               icon={(<AssignmentIndIcon />)}
-              badgeCount={orphanedRecords.length}
+              badgeContent={orphanedRecords.length}
             />
           )}
         </List>

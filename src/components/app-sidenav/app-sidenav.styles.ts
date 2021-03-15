@@ -149,4 +149,7 @@ export default makeStyles((theme: Theme) => createStyles({
     // necessary for content to be below app bar
     ...theme.mixins.toolbar,
   },
+  badge: {
+    marginRight: '8px',
+  },
 }));
