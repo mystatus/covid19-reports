@@ -1,6 +1,6 @@
 import {
-  IconButton, Menu, MenuItem, Table,
-  TableBody, TableCell, TableHead, TableProps, TableRow, Typography,
+  IconButton, Menu, MenuItem, MenuItemProps, Table,
+  TableBody, TableCell, TableHead, TableProps, TableRow, TableRowProps, Typography,
 } from '@material-ui/core';
 import React, { useCallback, useEffect } from 'react';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
@@ -12,6 +12,9 @@ import useStyles from './table-custom-columns-content.styles';
 
 interface TableCustomColumnsMenuItem {
   name: string,
+  disabled?: boolean,
+  hidden?: boolean,
+  props?: MenuItemProps,
   callback: (row: any) => void,
 }
 
@@ -30,13 +33,15 @@ type TableCustomColumnsContentProps = OverrideType<TableProps, {
   rows: TableCustomColumnsRow[]
   columns: TableColumn[]
   rowOptions?: {
-    menuItems?: TableCustomColumnsMenuItem[]
+    menuItems?: TableCustomColumnsMenuItem[] | ((row: any) => TableCustomColumnsMenuItem[])
     renderCell?: (row: any, column: any) => void
+    rowProps?: Partial<TableRowProps> | ((row: any) => Partial<TableRowProps> | void | null | undefined)
   }
-  idColumn: string
+  idColumn: string | ((row: any) => string)
   sortable?: boolean
   onSortChange?: (column: TableColumn, direction: SortDirection) => void
   noDataText?: string
+  title?: React.ReactNode
 }>;
 
 interface RowMenuState {
@@ -56,12 +61,8 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
   const scrollRef = React.createRef<HTMLDivElement>();
 
   const {
-    rows, columns, rowOptions, idColumn, noDataText, sortable, onSortChange,
+    rows, columns, rowOptions, idColumn, noDataText, sortable, title, onSortChange,
   } = props;
-
-  const showActions = () => {
-    return Boolean(rowOptions?.menuItems?.length);
-  };
 
   const columnClicked = (column: TableColumn) => () => {
     if (!sortable) {
@@ -101,6 +102,12 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
     callback(row);
   };
 
+  const getRowId = (row: any) => (typeof idColumn === 'function' ? idColumn(row) : row[idColumn] as string);
+  const getRowProps = (row: any) => (typeof rowOptions?.rowProps === 'function' ? rowOptions?.rowProps?.(row) : rowOptions?.rowProps);
+  const getRowActions = (row: any) => (typeof rowOptions?.menuItems === 'function' ? rowOptions?.menuItems?.(row) : rowOptions?.menuItems) || [];
+  const showRowActions = (row: any) => Boolean(getRowActions(row)?.length);
+  const showActions = Boolean(rowMenu.row) && rows.some(showRowActions);
+
   useEffect(() => {
     updateScroll();
   }, [updateScroll]);
@@ -109,6 +116,13 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
     <div className={classes.tableScroll} ref={scrollRef} onScroll={updateScroll}>
       <Table>
         <TableHead>
+          {title && (
+            <TableRow className={classes.tableTitle}>
+              <TableCell colSpan={columns.length + 2}>
+                <h2>{title}</h2>
+              </TableCell>
+            </TableRow>
+          )}
           <TableRow>
             <TableCell className={classes.leftShadowCell} />
             {columns.map(column => (
@@ -130,46 +144,40 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
               </TableCell>
             ))}
 
-            {showActions() && (
-              <TableCell className={classes.iconHeader} />
-            )}
-            {!showActions() && (
-              <TableCell className={classes.rightShadowCell} />
-            )}
+            <TableCell className={showActions ? classes.iconHeader : classes.rightShadowCell} />
           </TableRow>
         </TableHead>
 
         <TableBody>
           {rows.map(row => (
-            <TableRow key={`${row[idColumn]}`}>
+            <TableRow key={getRowId(row)} {...getRowProps(row)}>
               <TableCell className={classes.leftShadowCell}>
                 {leftShadowVisible && (
                   <div className={classes.leftShadow} />
                 )}
               </TableCell>
               {columns.map(column => (
-                <TableCell key={`${column.name}-${row[idColumn]}`}>
+                <TableCell key={`${column.name}-${getRowId(row)}`}>
                   {rowOptions?.renderCell?.(row, column) || row[column.name]}
                 </TableCell>
               ))}
 
 
-              {showActions() && (
+              {showRowActions(row) ? (
                 <TableCell className={classes.iconCell}>
                   {rightShadowVisible && (
                     <div className={classes.iconShadow} />
                   )}
                   <IconButton
                     aria-label="workspace actions"
-                    aria-controls={`row-${row[idColumn]}-menu`}
+                    aria-controls={`row-${getRowId(row)}-menu`}
                     aria-haspopup="true"
                     onClick={handleRowMenuClick(row)}
                   >
                     <MoreVertIcon />
                   </IconButton>
                 </TableCell>
-              )}
-              {!showActions() && (
+              ) : (
                 <TableCell className={classes.rightShadowCell}>
                   {rightShadowVisible && (
                     <div className={classes.rightShadow} />
@@ -178,7 +186,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
               )}
             </TableRow>
           ))}
-          {showActions() && (
+          {showActions && (
             <Menu
               id="row-menu"
               anchorEl={rowMenu.anchor}
@@ -186,8 +194,15 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
               open={Boolean(rowMenu.row)}
               onClose={handleRowMenuClose}
             >
-              {rowOptions!.menuItems!.map(menuItem => (
-                <MenuItem onClick={handleMenuItemClick(menuItem.callback)} key={menuItem.name}>{menuItem.name}</MenuItem>
+              {getRowActions(rowMenu.row).filter(menuItem => !menuItem.hidden).map(menuItem => (
+                <MenuItem
+                  disabled={menuItem.disabled}
+                  onClick={handleMenuItemClick(menuItem.callback)}
+                  key={menuItem.name}
+                  {...(menuItem.props as any ?? {})}
+                >
+                  {menuItem.name}
+                </MenuItem>
               ))}
             </Menu>
           )}

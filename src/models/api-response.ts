@@ -144,6 +144,18 @@ export interface ApiRosterEntry {
   [key: string]: string | boolean | number | null,
 }
 
+export interface ApiOrphanedRecord {
+  id: string,
+  edipi: string,
+  phone: string,
+  unit: string,
+  count: number,
+  action?: string,
+  claimedUntil?: Date,
+  latestReportDate: Date,
+  earliestReportDate: Date,
+}
+
 export interface ApiWorkspaceTemplate {
   id: number,
   name: string,

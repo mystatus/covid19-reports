@@ -50,4 +50,24 @@ export default makeStyles((theme: Theme) => createStyles({
     padding: '15px 35px',
     marginTop: '20px',
   },
+  table: {
+    marginBottom: '39px',
+  },
+  claimedOrphanRow: {
+    '& td': {
+      fontWeight: 'bold',
+    },
+  },
+  deleteOrphanedMenuItem: {
+    color: theme.palette.error.main,
+    '&:hover': {
+      backgroundColor: '#B6001D20',
+    },
+  },
+  deleteOrphanedRecordConfirmButton: {
+    backgroundColor: theme.palette.error.main,
+    '&:hover': {
+      backgroundColor: '#B6001D',
+    },
+  },
 }));

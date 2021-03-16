@@ -13,6 +13,11 @@ import {
 } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import {
+  modalInitialState,
+  modalReducer,
+  modalResolverHandler,
+} from './reducers/modal.reducer';
+import {
   appFrameInitialState,
   appFrameReducer,
 } from './reducers/app-frame.reducer';
@@ -20,6 +25,10 @@ import {
   notificationInitialState,
   notificationReducer,
 } from './reducers/notification.reducer';
+import {
+  orphanedRecordInitialState,
+  orphanedRecordReducer,
+} from './reducers/orphaned-record.reducer';
 import {
   roleInitialState,
   roleReducer,
@@ -48,10 +57,7 @@ import {
   unitInitialState,
   unitReducer,
 } from './reducers/unit.reducer';
-import {
-  modalInitialState,
-  modalReducer,
-} from './reducers/modal.reducer';
+
 
 export const initialState = {
   appFrame: appFrameInitialState,
@@ -60,6 +66,7 @@ export const initialState = {
   role: roleInitialState,
   unit: unitInitialState,
   reportSchema: reportSchemaInitialState,
+  orphanedRecord: orphanedRecordInitialState,
   roster: rosterInitialState,
   user: userInitialState,
   workspace: workspaceInitialState,
@@ -126,6 +133,7 @@ export const configureStore = () => {
         unit: unitReducer,
         roster: rosterReducer,
         reportSchema: reportSchemaReducer,
+        orphanedRecord: orphanedRecordReducer,
         user: userReducer,
         workspace: workspaceReducer,
         localStorage: localStorageReducer,
@@ -134,6 +142,7 @@ export const configureStore = () => {
     initialState,
     composeEnhancers(
       applyMiddleware(
+        modalResolverHandler,
         thunk,
         createPlainObjectMiddleware(),
       ),

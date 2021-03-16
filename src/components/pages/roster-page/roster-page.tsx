@@ -27,7 +27,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import _ from 'lodash';
 import moment from 'moment';
 import { AppFrame } from '../../../actions/app-frame.actions';
+import { OrphanedRecord } from '../../../actions/orphaned-record.actions';
 import { Roster } from '../../../actions/roster.actions';
+
 import { downloadFile } from '../../../utility/download';
 import { getNewPageIndex } from '../../../utility/table';
 import PageHeader from '../../page-header/page-header';
@@ -35,17 +37,20 @@ import { SortDirection, TableColumn, TableCustomColumnsContent } from '../../tab
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
 import { RosterPageHelp } from './roster-page-help';
 import useStyles from './roster-page.styles';
+
 import {
   ApiRosterColumnInfo,
   ApiRosterColumnType,
   ApiRosterEnumColumnConfig,
   ApiRosterEntry,
   ApiRosterPaginated,
+  ApiOrphanedRecord,
 } from '../../../models/api-response';
 import { EditRosterEntryDialog, EditRosterEntryDialogProps } from './edit-roster-entry-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { Unit } from '../../../actions/unit.actions';
 import { UnitSelector } from '../../../selectors/unit.selector';
+import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
 import {
   QueryBuilder, QueryFieldPickListItem, QueryFieldType, QueryFilterState,
 } from '../../query-builder/query-builder';
@@ -77,10 +82,12 @@ export const RosterPage = () => {
   const dispatch = useDispatch();
 
   const units = useSelector(UnitSelector.all);
+  const orphanedRecords = useSelector(OrphanedRecordSelector.all);
   const fileInputRef = React.createRef<HTMLInputElement>();
 
   const maxNumColumnsToShow = 5;
 
+  const [orphanedRecordsWaiting, setOrphanedRecordsWaiting] = useState(false);
   const [rows, setRows] = useState<ApiRosterEntry[]>([]);
   const [page, setPage] = useState(0);
   const initialLoad = useRef(true);
@@ -156,6 +163,14 @@ export const RosterPage = () => {
     }
   }, [dispatch, orgId]);
 
+  const initializeOrphanedRecords = useCallback(async () => {
+    try {
+      await dispatch(OrphanedRecord.fetch(orgId!));
+    } catch (error) {
+      dispatch(Modal.alert('Get Orphaned Records', formatMessage(error, 'Failed to get orphaned records')));
+    }
+  }, [dispatch, orgId]);
+
   const initializeTable = useCallback(async () => {
     dispatch(AppFrame.setPageLoading(initialLoad.current));
     if (orgId) {
@@ -163,9 +178,10 @@ export const RosterPage = () => {
     }
     await initializeRosterColumnInfo();
     await reloadTable();
+    await initializeOrphanedRecords();
     dispatch(AppFrame.setPageLoading(false));
     initialLoad.current = false;
-  }, [dispatch, orgId, initializeRosterColumnInfo, reloadTable]);
+  }, [dispatch, orgId, initializeRosterColumnInfo, reloadTable, initializeOrphanedRecords]);
 
   const sortRosterColumns = (columns: ApiRosterColumnInfo[]) => {
     const columnPriority: {
@@ -380,6 +396,117 @@ export const RosterPage = () => {
     }
   };
 
+  const addOrphanToRosterClicked = async (row: ApiOrphanedRecord) => {
+    setEditRosterEntryDialogProps({
+      open: true,
+      orgId,
+      rosterColumnInfos,
+      prepopulated: {
+        edipi: row.edipi,
+        unit: units.find(unit => unit.name === row.unit)?.id,
+      },
+      onSave: async (body: any) => {
+        return axios.put(`api/orphaned-record/${orgId}/${row.id}/resolve`, body);
+      },
+      onClose: async () => {
+        setEditRosterEntryDialogProps({ open: false });
+        await initializeTable();
+      },
+      onError: (message: string) => {
+        dispatch(Modal.alert('Add Orphan to Roster', `Unable to add orphan to roster: ${message}`));
+      },
+    });
+  };
+
+  const assignOrphanToSelfClicked = async (row: ApiOrphanedRecord) => {
+    const result = await dispatch(Modal.alert('Claim Orphaned Record', '<span>This orphaned record will be temporarily assigned to you and will be hidden from other roster managers while you attempt to resolve the situation.</span><p>How long would you like to claim the record?</p>', [
+      { text: 'Permanently', value: -1, className: classes.deleteOrphanedRecordConfirmButton },
+      { text: '4 hours', value: 4 },
+      { text: '1 day', value: 24 },
+      { text: '1 week', value: 7 * 24 },
+      { text: 'Cancel', variant: 'outlined' },
+    ]));
+    if (!result?.button?.value) {
+      return;
+    }
+    try {
+      setOrphanedRecordsWaiting(true);
+      await axios.put(`api/orphaned-record/${orgId}/${row.id}/action`, {
+        action: 'claim',
+        timeToLiveMs: Math.max(0, result.button.value * 60 * 60 * 1000),
+      });
+
+      await initializeTable();
+    } catch (error) {
+      dispatch(Modal.alert('Assign Orphan', formatMessage(error, 'Unable to assign claim the record')));
+    } finally {
+      setOrphanedRecordsWaiting(false);
+    }
+  };
+
+  const unclaimOrphanedRecord = async (row: ApiOrphanedRecord) => {
+    try {
+      setOrphanedRecordsWaiting(true);
+      await axios.delete(`api/orphaned-record/${orgId}/${row.id}/claim`);
+      await initializeTable();
+    } catch (error) {
+      dispatch(Modal.alert('Assign Orphan', formatMessage(error, 'Unable to assign claim the record')));
+    } finally {
+      setOrphanedRecordsWaiting(false);
+    }
+  };
+
+  const ignoreOrphanClicked = async (row: ApiOrphanedRecord) => {
+    const result = await dispatch(Modal.alert('Ignore Orphaned Record', '<span>This orphan record will be temporarily hidden from your view, but will still be visible to other roster managers.</span><p>How long should we ignore the record?</p>', [
+      { text: 'Permanently', value: -1, className: classes.deleteOrphanedRecordConfirmButton },
+      { text: '4 hours', value: 4 },
+      { text: '1 day', value: 24 },
+      { text: '1 week', value: 7 * 24 },
+      { text: 'Cancel', variant: 'outlined' },
+    ]));
+    if (!result?.button?.value) {
+      return;
+    }
+    try {
+      setOrphanedRecordsWaiting(true);
+      await axios.put(`api/orphaned-record/${orgId}/${row.id}/action`, {
+        action: 'ignore',
+        timeToLiveMs: Math.max(0, result.button.value * 60 * 60 * 1000),
+      });
+      await initializeTable();
+    } catch (error) {
+      dispatch(Modal.alert('Ignore Orphan', formatMessage(error, 'Unable to ignore the record')));
+    } finally {
+      setOrphanedRecordsWaiting(false);
+    }
+  };
+
+  const getOrphanCellDisplayValue = (orphanedRecord: ApiOrphanedRecord, column: { name: keyof ApiOrphanedRecord }) => {
+    const value = orphanedRecord[column.name];
+    if (value) {
+      if (column.name === 'earliestReportDate' || column.name === 'latestReportDate') {
+        return moment(value).format('Y-M-D h:mm A z');
+      }
+      if (column.name === 'claimedUntil') {
+        return moment().utc().to(moment(value), true);
+      }
+    }
+
+    if (!value && orphanedRecord.action === 'claim') {
+      return 'Permanent';
+    }
+    return value;
+  };
+
+  const getOrphanRowProps = (orphanedRecord: ApiOrphanedRecord) => {
+    if (orphanedRecord.action === 'claim') {
+      return {
+        className: classes.claimedOrphanRow,
+      };
+    }
+    return null;
+  };
+
   //
   // Render
   //
@@ -394,6 +521,49 @@ export const RosterPage = () => {
             cardId: 'rosterPage',
           }}
         />
+
+        {orphanedRecords.length > 0 && (
+          <TableContainer component={Paper} className={classes.table}>
+            <TableCustomColumnsContent
+              rows={orphanedRecords}
+              columns={[
+                { name: 'edipi', displayName: 'Edipi' },
+                { name: 'unit', displayName: 'Unit' },
+                { name: 'phone', displayName: 'Phone' },
+                { name: 'count', displayName: 'Count' },
+                { name: 'earliestReportDate', displayName: 'First Report' },
+                { name: 'latestReportDate', displayName: 'Latest Report' },
+                { name: 'claimedUntil', displayName: 'Remaining Claim' },
+              ]}
+              title={`Orphaned Records (${orphanedRecords.length})`}
+              idColumn="id"
+              rowOptions={{
+                menuItems: (row: ApiOrphanedRecord) => ([{
+                  callback: addOrphanToRosterClicked,
+                  disabled: orphanedRecordsWaiting,
+                  name: 'Add to a Roster...',
+                }, {
+                  callback: assignOrphanToSelfClicked,
+                  disabled: orphanedRecordsWaiting,
+                  hidden: row.action === 'claim',
+                  name: 'Claim...',
+                }, {
+                  callback: unclaimOrphanedRecord,
+                  disabled: orphanedRecordsWaiting,
+                  hidden: row.action !== 'claim',
+                  name: 'Unclaim',
+                }, {
+                  callback: ignoreOrphanClicked,
+                  disabled: orphanedRecordsWaiting,
+                  hidden: row.action === 'claim',
+                  name: 'Ignore...',
+                }]),
+                renderCell: getOrphanCellDisplayValue,
+                rowProps: getOrphanRowProps,
+              }}
+            />
+          </TableContainer>
+        )}
 
         <ButtonSet>
           <input

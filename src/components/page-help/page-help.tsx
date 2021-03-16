@@ -23,7 +23,7 @@ export const PageHelp = (props: PageHelpProps) => {
 
           <Box>
             <ul>
-              {bullets.map(text => <li>{text}</li>)}
+              {bullets.map((text, index) => <li key={index}>{text}</li>)}
             </ul>
           </Box>
         </>

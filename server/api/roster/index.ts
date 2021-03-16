@@ -88,6 +88,7 @@ router.post(
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),
   bodyParser.json(),
+  // eslint-disable-next-line import/no-named-as-default-member
   controller.addRosterEntry,
 );
 

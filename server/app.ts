@@ -70,7 +70,7 @@ const start = async () => {
     '/onboarding-doc',
     (req: Request, res: Response) => {
       res.redirect(`${config.links.onboarding}`);
-    }
+    },
   );
 
   app.use(
