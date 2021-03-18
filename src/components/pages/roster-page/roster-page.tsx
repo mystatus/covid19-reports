@@ -59,6 +59,8 @@ import { ButtonSet } from '../../buttons/button-set';
 import { DataExportIcon } from '../../icons/data-export-icon';
 import { Modal } from '../../../actions/modal.actions';
 import { UserSelector } from '../../../selectors/user.selector';
+import { AppState } from '../../../store';
+import { UserState } from '../../../reducers/user.reducer';
 
 const unitColumn: ApiRosterColumnInfo = {
   name: 'unit',
@@ -109,6 +111,7 @@ export const RosterPage = () => {
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
   const [applyingFilters, setApplyingFilters] = useState(false);
   const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
+  const user = useSelector<AppState, UserState>(state => state.user);
   const org = useSelector(UserSelector.org);
   const orgId = org?.id;
   const orgName = org?.name;
@@ -163,13 +166,21 @@ export const RosterPage = () => {
     }
   }, [dispatch, orgId]);
 
+  const canManageRoster = (userState: UserState) => {
+    return Boolean(userState.activeRole?.role.canManageRoster);
+  };
+
   const initializeOrphanedRecords = useCallback(async () => {
-    try {
-      await dispatch(OrphanedRecord.fetch(orgId!));
-    } catch (error) {
-      dispatch(Modal.alert('Get Orphaned Records', formatMessage(error, 'Failed to get orphaned records')));
+    if (canManageRoster(user)) {
+      try {
+        await dispatch(OrphanedRecord.fetch(orgId!));
+      } catch (error) {
+        dispatch(Modal.alert('Get Orphaned Records', formatMessage(error, 'Failed to get orphaned records')));
+      }
+    } else {
+      dispatch(OrphanedRecord.clear());
     }
-  }, [dispatch, orgId]);
+  }, [dispatch, orgId, user]);
 
   const initializeTable = useCallback(async () => {
     dispatch(AppFrame.setPageLoading(initialLoad.current));
@@ -496,35 +507,44 @@ export const RosterPage = () => {
         )}
 
         <ButtonSet>
-          <input
-            accept="text/csv"
-            id="raised-button-file"
-            type="file"
-            style={{ display: 'none' }}
-            ref={fileInputRef}
-            onChange={handleFileInputChange}
-          />
-          <label htmlFor="raised-button-file">
-            <Button
-              size="large"
-              variant="text"
-              startIcon={<BackupIcon />}
-              component="span"
-            >
-              Upload CSV
-            </Button>
-          </label>
+          {canManageRoster(user) && (
+            <>
+              <input
+                hidden={!canManageRoster(user)}
+                accept="text/csv"
+                id="raised-button-file"
+                type="file"
+                style={{ display: 'none' }}
+                ref={fileInputRef}
+                onChange={handleFileInputChange}
+              />
+              <label
+                htmlFor="raised-button-file"
+                hidden={!canManageRoster(user)}
+              >
+                <Button
+                  size="large"
+                  variant="text"
+                  startIcon={<BackupIcon />}
+                  component="span"
+                >
+                  Upload CSV
+                </Button>
+              </label>
 
-          <ButtonWithSpinner
-            type="button"
-            size="large"
-            variant="text"
-            startIcon={<CloudDownloadIcon />}
-            onClick={() => downloadCSVTemplate()}
-            loading={downloadTemplateLoading}
-          >
-            Download CSV Template
-          </ButtonWithSpinner>
+              <ButtonWithSpinner
+                hidden={!canManageRoster(user)}
+                type="button"
+                size="large"
+                variant="text"
+                startIcon={<CloudDownloadIcon />}
+                onClick={() => downloadCSVTemplate()}
+                loading={downloadTemplateLoading}
+              >
+                Download CSV Template
+              </ButtonWithSpinner>
+            </>
+          )}
 
           <ButtonWithSpinner
             type="button"
@@ -537,25 +557,31 @@ export const RosterPage = () => {
             Export to CSV
           </ButtonWithSpinner>
 
-          <Button
-            color="primary"
-            size="large"
-            variant="text"
-            startIcon={<PersonAddIcon />}
-            onClick={addButtonClicked}
-          >
-            Add Individual
-          </Button>
+          {canManageRoster(user) && (
+            <>
+              <Button
+                hidden={!canManageRoster(user)}
+                color="primary"
+                size="large"
+                variant="text"
+                startIcon={<PersonAddIcon />}
+                onClick={addButtonClicked}
+              >
+                Add Individual
+              </Button>
 
-          <Button
-            color="primary"
-            size="large"
-            variant="text"
-            startIcon={<DeleteSweepIcon />}
-            onClick={deleteAllClicked}
-          >
-            Delete All
-          </Button>
+              <Button
+                hidden={!canManageRoster(user)}
+                color="primary"
+                size="large"
+                variant="text"
+                startIcon={<DeleteSweepIcon />}
+                onClick={deleteAllClicked}
+              >
+                Delete All
+              </Button>
+            </>
+          )}
         </ButtonSet>
 
         <TableContainer component={Paper}>
@@ -644,13 +670,13 @@ export const RosterPage = () => {
               idColumn="id"
               noDataText={applyingFilters ? 'Searching...' : 'No Data'}
               rowOptions={{
-                menuItems: [{
+                menuItems: canManageRoster(user) ? [{
                   name: 'Edit Entry',
                   callback: editButtonClicked,
                 }, {
                   name: 'Delete Entry',
                   callback: deleteButtonClicked,
-                }],
+                }] : [],
                 renderCell: getCellDisplayValue,
               }}
             />

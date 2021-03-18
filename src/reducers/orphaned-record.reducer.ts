@@ -15,6 +15,14 @@ export const orphanedRecordInitialState: OrphanedRecordState = {
 
 export function orphanedRecordReducer(state = orphanedRecordInitialState, action: any): OrphanedRecordState {
   switch (action.type) {
+    case OrphanedRecord.Actions.Clear.type: {
+      return {
+        ...state,
+        orphanedRecords: [],
+        isLoading: false,
+        lastUpdated: Date.now(),
+      };
+    }
     case OrphanedRecord.Actions.Fetch.type: {
       return {
         ...state,

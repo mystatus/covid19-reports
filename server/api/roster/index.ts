@@ -21,7 +21,7 @@ const router = express.Router() as any;
 router.get(
   '/:orgId/column',
   requireOrgAccess,
-  requireRolePermission(role => role.canManageGroup),
+  requireRolePermission(role => role.canViewRoster),
   controller.getFullRosterInfo,
 );
 
@@ -64,21 +64,21 @@ router.get(
 router.get(
   '/:orgId/info',
   requireOrgAccess,
-  requireRolePermission(role => role.canManageRoster),
+  requireRolePermission(role => role.canViewRoster),
   controller.getRosterInfo,
 );
 
 router.get(
   '/:orgId',
   requireOrgAccess,
-  requireRolePermission(role => role.canManageRoster),
+  requireRolePermission(role => role.canViewRoster),
   controller.getRoster,
 );
 
 router.post(
   '/:orgId/search',
   requireOrgAccess,
-  requireRolePermission(role => role.canManageRoster),
+  requireRolePermission(role => role.canViewRoster),
   bodyParser.json(),
   controller.searchRoster,
 );
@@ -110,7 +110,7 @@ router.delete(
 router.get(
   '/:orgId/:rosterId',
   requireOrgAccess,
-  requireRolePermission(role => role.canManageRoster),
+  requireRolePermission(role => role.canViewRoster),
   controller.getRosterEntry,
 );
 

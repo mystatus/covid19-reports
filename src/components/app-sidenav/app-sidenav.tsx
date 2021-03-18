@@ -95,8 +95,12 @@ export const AppSidenav = () => {
   };
 
   useEffect(() => {
-    dispatch(OrphanedRecord.fetch(orgId!));
-  }, [orgId, dispatch]);
+    if (user.activeRole?.role.canManageRoster) {
+      dispatch(OrphanedRecord.fetch(orgId!));
+    } else {
+      dispatch(OrphanedRecord.clear());
+    }
+  }, [orgId, dispatch, user]);
 
   return (
     <div className={classes.root}>
