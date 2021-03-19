@@ -163,11 +163,11 @@ function createGroupUserRole(manager: EntityManager, org: Org, workspace?: Works
     name: `Group User : Group ${org.id}`,
     description: `Basic role for all Group ${org.id} users.`,
     org,
-    allowedRosterColumns: ['edipi', 'firstName', 'lastName'],
+    allowedRosterColumns: ['edipi', 'lastName'],
     allowedNotificationEvents: [],
-    canManageRoster: true,
     canViewRoster: true,
     canViewMuster: true,
+    canViewPII: true,
     workspace,
   });
 }

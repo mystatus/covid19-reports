@@ -6,6 +6,11 @@ export namespace OrphanedRecord {
 
   export namespace Actions {
 
+    export class Clear {
+      static type = 'CLEAR_ORPHANED_RECORD';
+      type = Clear.type;
+    }
+
     export class Fetch {
       static type = 'FETCH_ORPHANED_RECORD';
       type = Fetch.type;
@@ -34,5 +39,9 @@ export namespace OrphanedRecord {
     } catch (error) {
       dispatch(new Actions.FetchFailure({ error }));
     }
+  };
+
+  export const clear = () => async (dispatch: Dispatch) => {
+    dispatch(new Actions.Clear());
   };
 }
