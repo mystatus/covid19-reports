@@ -53,32 +53,6 @@ interface MusterConfigurationRow extends MusterConfiguration {
   isOneTime: boolean;
 }
 
-// enum MusterConfigMode {
-//   Default,
-//   Custom,
-//   None
-// }
-
-// function getModeFromData(unitConfig: MusterConfiguration[] | undefined) {
-//   if (unitConfig && unitConfig.length > 0) {
-//     return MusterConfigMode.Custom;
-//   }
-//   if (unitConfig && unitConfig.length === 0) {
-//     return MusterConfigMode.None;
-//   }
-//   return MusterConfigMode.Default;
-// }
-
-// function getDataFromMode(mode: MusterConfigMode, unitConfig: MusterConfiguration[] | undefined, defaultConfig: MusterConfiguration[] | null = null) {
-//   if (mode === MusterConfigMode.Default) {
-//     return defaultConfig;
-//   }
-//   if (mode === MusterConfigMode.Custom) {
-//     return unitConfig;
-//   }
-//   return [];
-// }
-
 export const EditUnitDialog = (props: EditUnitDialogProps) => {
   const { defaultMusterConfiguration, open, orgId, unit, onClose, onError } = props;
   const classes = useStyles();
@@ -127,6 +101,12 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
     func(event.target.value);
   };
 
+  const resetErrorMessage = () => {
+    if (errorMessage) {
+      setErrorMessage(null);
+    }
+  };
+
   const addMusterWindow = (recurring: boolean) => {
     if (reports == null || reports.length === 0) {
       setErrorMessage('No report types have been added to this group.');
@@ -149,27 +129,19 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
     }
 
     setMusterConfiguration([...musterConfiguration, row]);
-  };
-
-  const resetErrorMessage = () => {
-    if (errorMessage) {
-      setErrorMessage(null);
-    }
+    resetErrorMessage();
   };
 
   const combinedToMusterAdjust = includeDefault ? defaultMusterConfiguration.length : 0;
 
-  const updateState = (index: number, partial: Partial<MusterConfigurationRow>, resetError = true) => {
+  const updateState = (index: number, partial: Partial<MusterConfigurationRow>) => {
     const adjustedIndex = index - combinedToMusterAdjust;
     musterConfiguration[adjustedIndex] = {
       ...musterConfiguration[adjustedIndex],
       ...partial,
     };
     setMusterConfiguration([...musterConfiguration]);
-
-    if (errorMessage && resetError) {
-      validateMusterWindows();
-    }
+    resetErrorMessage();
   };
 
   const setMusterTimezone = (index: number) => (_: any, timezone: string) => {

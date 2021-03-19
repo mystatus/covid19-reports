@@ -27,6 +27,7 @@ import { DatePicker, MuiPickersUtilsProvider, TimePicker } from '@material-ui/pi
 import MomentUtils from '@date-io/moment';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import { useSelector } from 'react-redux';
+import clsx from 'clsx';
 import useStyles from './default-muster-dialog.styles';
 import { MusterConfiguration } from '../../../models/api-response';
 import { DaysOfTheWeek } from '../../../utility/days';
@@ -48,14 +49,18 @@ interface MusterConfigurationRow extends MusterConfiguration {
   rowKey: string,
   durationHours: number,
   startTimeDate: Date,
-  isOneTime: boolean;
+  isOneTime: boolean,
 }
+
+type UnitValidationMap = {
+  [unitName: string]: string,
+};
 
 export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
   const classes = useStyles();
   const [formDisabled, setFormDisabled] = useState(false);
   const org = useSelector(UserSelector.org);
-  const units = useSelector(UnitSelector.all)
+  const affectedUnits = useSelector(UnitSelector.all)
     .filter(unit => unit.includeDefaultConfig);
   const reports = useSelector(ReportSchemaSelector.all);
   const orgId = org?.id;
@@ -89,13 +94,20 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
   }, []);
 
   const [musterConfiguration, setMusterConfiguration] = useState<MusterConfigurationRow[]>(musterRows(defaultMusterConfiguration));
-  const [errorMessage, setErrorMessage] = React.useState<null | string>(null);
+  const [errorMessage, setErrorMessage] = React.useState<null | string>(validateMusterConfiguration(defaultMusterConfiguration ?? []));
+  const [unitValidation, setUnitValidation] = React.useState<UnitValidationMap>({});
 
   if (!open) {
     return null;
   }
 
   const hasDefaultMuster = musterConfiguration.length > 0;
+
+  const resetErrorMessage = () => {
+    if (errorMessage) {
+      setErrorMessage(null);
+    }
+  };
 
   const addMusterWindow = (recurring: boolean) => {
     if (reports == null || reports.length === 0) {
@@ -105,7 +117,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
     const start = moment(`${moment().format('Y-M-D')} 00:00`, 'Y-M-D HH:mm');
 
     const row = {
-      startTime: recurring ? start.format('hh:mm') : start.toISOString(),
+      startTime: recurring ? start.format('HH:mm') : start.toISOString(),
       timezone: moment.tz.guess(),
       durationMinutes: 120,
       durationHours: 2,
@@ -120,12 +132,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
     }
 
     setMusterConfiguration([...musterConfiguration, row]);
-  };
-
-  const resetErrorMessage = () => {
-    if (errorMessage) {
-      setErrorMessage(null);
-    }
+    resetErrorMessage();
   };
 
   const setMusterTimezone = (rowKey: string) => (_: any, timezone: string) => {
@@ -209,6 +216,20 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
       setErrorMessage(validation);
       return false;
     }
+    const unitsNeedingValidation = affectedUnits.filter(unit => unit.musterConfiguration.length);
+    const unitErrors: UnitValidationMap = {};
+    for (const unit of unitsNeedingValidation) {
+      const combinedConfiguration = [...musterConfiguration, ...unit.musterConfiguration];
+      const combinedValidation = validateMusterConfiguration(combinedConfiguration);
+      if (combinedValidation) {
+        unitErrors[unit.name] = combinedValidation;
+      }
+    }
+    if (Object.keys(unitErrors).length) {
+      setUnitValidation(unitErrors);
+      setErrorMessage('The new configuration causes errors in the following units:');
+      return false;
+    }
     return true;
   };
 
@@ -254,6 +275,8 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
     return muster.days! & day ? classes.dayButtonOn : classes.dayButtonOff;
   };
 
+  const unitsWithErrors = affectedUnits.filter(unit => unitValidation[unit.name]);
+
   /* eslint-disable no-bitwise */
   return (
     <Dialog className={classes.root} maxWidth="lg" onClose={onCancel} open={open}>
@@ -279,9 +302,13 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
             </Typography>
 
             <Box className={classes.atAGlance}>
-              {units?.length ? (
+              {affectedUnits?.length ? (
                 <div className={classes.unitsContainer}>
-                  {units.map(unit => <div key={unit.id}>{unit.name}</div>)}
+                  {affectedUnits.map(unit => (
+                    <div key={unit.id} className={clsx({ [classes.unitError]: unitValidation[unit.name] })}>
+                      {unit.name}
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <Typography className={classes.noUnits}>
@@ -427,6 +454,15 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
         {errorMessage && (
           <Grid item xs={12} className={classes.errorMessage}>
             {errorMessage}
+            {unitsWithErrors.length > 0 && (
+              <ul>
+                {unitsWithErrors.map(unit => (
+                  <li key={unit.name}>
+                    <strong>{unit.name}: </strong>{unitValidation[unit.name]}
+                  </li>
+                ))}
+              </ul>
+            )}
           </Grid>
         )}
         <Button

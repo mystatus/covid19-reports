@@ -8,6 +8,12 @@ export type MusterWindow = {
   end: number,
 };
 
+export type MusterWindowTyped = MusterWindow & {
+  start: number,
+  end: number,
+  oneTime: boolean,
+};
+
 export const mustersConfigurationsAreEqual = (left?: MusterConfiguration[], right?: MusterConfiguration[]) => {
   return left && right
     && left.length === right.length
@@ -44,7 +50,7 @@ export const musterConfigurationParts = (muster: MusterConfiguration, reports: A
   } else {
     when = moment.tz(muster.startTime, muster.timezone);
     time = when.format('h:mm A z');
-    dateOrDays = when.format('Y-M-D');
+    dateOrDays = when.format('MMM D, YYYY');
   }
   const report = reports.find(r => r.id === muster.reportId)?.name ?? 'Unknown Report';
 
@@ -78,66 +84,109 @@ export const validateMusterConfiguration = (musterConfig: MusterConfiguration[])
     return 'Please select one or more days.';
   }
 
-  const windows: {[key: string]: MusterWindow[]} = {};
+  const windows: {[key: string]: MusterWindowTyped[]} = {};
+  const oneTimeWindows: {[key: string]: MusterWindow[]} = {};
+
   // Go through each configuration and add the time ranges for muster windows over a test week
   musterConfig.forEach(muster => {
     if (windows[muster.reportId] == null) {
       windows[muster.reportId] = [];
     }
 
-    if (muster.days !== undefined) {
-      // Parse the start time
-      const musterTime = moment(muster.startTime, 'HH:mm');
+    const oneTime = !muster.days;
+    let musterDays: DaysOfTheWeek;
 
-      // Get the unix timestamp of the first possible muster window of the week
-      let current = moment()
-        .tz(muster.timezone)
-        .startOf('week')
-        .add(musterTime.hours(), 'hours')
-        .add(musterTime.minutes(), 'minutes')
-        .unix();
-      const firstWindowIndex = windows[muster.reportId].length;
-      // Loop through each day and add any that are set in this muster configuration
-      for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday; day = nextDay(day)) {
-        if (muster.days !== undefined && dayIsIn(day, muster.days)) {
-          windows[muster.reportId].push({
-            start: current,
-            end: current + muster.durationMinutes * 60,
-          });
-        }
-        current += oneDaySeconds;
+    // We will parse the specified startTime according to the type of muster (one-time or repeating)
+    let musterTime: Moment;
+
+    if (oneTime) {
+      musterTime = moment(muster.startTime);
+      // eslint-disable-next-line no-bitwise
+      musterDays = (1 << musterTime.day()) as DaysOfTheWeek;
+      if (oneTimeWindows[muster.reportId] == null) {
+        oneTimeWindows[muster.reportId] = [];
       }
-
-      // Add the first window of next week to make sure we don't overlap over the week boundary
-      windows[muster.reportId].push({
-        start: windows[muster.reportId][firstWindowIndex].start + oneDaySeconds * 7,
-        end: windows[muster.reportId][firstWindowIndex].end + oneDaySeconds * 7,
-      });
-    } else {
-      const start = moment(muster.startTime).tz(muster.timezone).unix();
-      windows[muster.reportId].push({
+      const start = musterTime.unix();
+      oneTimeWindows[muster.reportId].push({
         start,
         end: start + muster.durationMinutes * 60,
       });
+    } else {
+      musterTime = moment(muster.startTime, 'HH:mm');
+      musterDays = muster.days!;
     }
-  });
 
-  // Sort all muster windows by start time
-  let errorMessage: string = '';
-  Object.keys(windows).forEach(reportId => {
-    const reportWindows = windows[reportId];
-    reportWindows.sort((a: MusterWindow, b: MusterWindow) => {
-      return a.start - b.start;
+    // Get the unix timestamp of the first possible muster window of the week
+    let current = moment()
+      .tz(muster.timezone)
+      .startOf('week')
+      .add(musterTime.hours(), 'hours')
+      .add(musterTime.minutes(), 'minutes')
+      .unix();
+
+    const firstWindowIndex = windows[muster.reportId].length;
+    // Loop through each day and add any that are set in this muster configuration
+    for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday; day = nextDay(day)) {
+      if (musterDays !== undefined && dayIsIn(day, musterDays)) {
+        windows[muster.reportId].push({
+          start: current,
+          end: current + muster.durationMinutes * 60,
+          oneTime,
+        });
+      }
+      current += oneDaySeconds;
+    }
+
+    // Add the first window of next week to make sure we don't overlap over the week boundary
+    windows[muster.reportId].push({
+      start: windows[muster.reportId][firstWindowIndex].start + oneDaySeconds * 7,
+      end: windows[muster.reportId][firstWindowIndex].end + oneDaySeconds * 7,
+      oneTime,
     });
+  });
+  for (const reportId of Object.keys(windows)) {
+    const reportWindows = windows[reportId];
+    // Sort all muster windows by start time
+    reportWindows.sort((a, b) => a.start - b.start);
 
     // Make sure none overlap
-    for (let i = 0; i < reportWindows.length - 1; i++) {
-      if (reportWindows[i].end > reportWindows[i + 1].start) {
-        errorMessage = 'Unable to use overlapping muster windows.';
-        break;
+    const count = reportWindows.length - 1;
+    for (let i = 0; i < count; i++) {
+      for (let j = i + 1; j <= count; j++) {
+        const a = reportWindows[i];
+        const b = reportWindows[j];
+        if (a.oneTime && b.oneTime) {
+          // Skip overlap validation if we're dealing with two one-time dates.
+          // This validation will happen below.
+          continue;
+        }
+        if (a.end > b.start) {
+          return 'Unable to use overlapping muster windows.';
+        }
+        console.log('repa', moment(a.start).toISOString(), a);
+        console.log('repb', moment(b.start).toISOString(), b);
+
       }
     }
-  });
+  }
 
-  return errorMessage;
+  for (const reportId of Object.keys(oneTimeWindows)) {
+    const reportWindows = oneTimeWindows[reportId];
+    // Sort all muster oneTimeWindows by start time
+    reportWindows.sort((a, b) => a.start - b.start);
+
+    // Make sure none of the oneTimeWindows overlap
+    const count = reportWindows.length - 1;
+    for (let i = 0; i < count; i++) {
+      for (let j = i + 1; j <= count; j++) {
+        const a = reportWindows[i];
+        const b = reportWindows[j];
+        if (a.end > b.start) {
+          return 'Unable to use overlapping muster windows.';
+        }
+      }
+    }
+  }
+
+  return '';
 };
