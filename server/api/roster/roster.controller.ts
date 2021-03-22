@@ -279,6 +279,7 @@ class RosterController {
       .distinctOn(['roster.unit_id'])
       .orderBy('roster.unit_id')
       .addOrderBy('roster.timestamp', 'DESC')
+      .cache(false)
       .getMany();
 
     const responseData: RosterInfo[] = [];

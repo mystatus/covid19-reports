@@ -65,7 +65,6 @@ export function convertDateParam(date: string | number | Date): number {
 function makeDocumentIdQuery(documentId: string): AWS.DynamoDB.QueryInput {
   return {
     TableName: config.dynamo.symptomTable,
-    IndexName: config.dynamo.symptomIndex,
     KeyConditions: {
       ID: {
         ComparisonOperator: 'EQ',

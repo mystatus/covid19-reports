@@ -8,6 +8,7 @@ import {
   PrimaryColumn,
   DeleteDateColumn,
 } from 'typeorm';
+import { InternalServerError } from '../../util/error-types';
 import { timestampColumnTransformer } from '../../util/util';
 import { Org } from '../org/org.model';
 
@@ -55,6 +56,10 @@ export class OrphanedRecord extends BaseEntity {
 
   @BeforeInsert()
   setCompositeId() {
+    if (!this.org?.id) {
+      throw new InternalServerError('Org with id is required when creating an OrphanedRecord.');
+    }
+
     this.compositeId = `${this.edipi};${this.org!.id};${this.phone};${this.unit}`;
   }
 }
