@@ -1,4 +1,4 @@
-import AWS from 'aws-sdk';
+import AWS, { AWSError } from 'aws-sdk';
 import config from '../config';
 import { dateFromString } from './util';
 import { BadRequestError } from './error-types';
@@ -122,14 +122,20 @@ export async function reingest(queryInput: AWS.DynamoDB.QueryInput) {
   const { payloads, recordsIngested } = buildPayloadsFromData(data);
   const lambda = new AWS.Lambda();
   let lambdaInvocationCount = 0;
+
   for (const lambdaPayload of payloads) {
-    const lambdaParams = {
-      FunctionName: config.dynamo.symptomLambda,
-      Payload: Buffer.from(JSON.stringify(lambdaPayload)),
-      InvocationType: 'Event',
-    };
-    lambda.invoke(lambdaParams);
-    lambdaInvocationCount += 1;
+    try {
+      const lambdaParams = {
+        FunctionName: config.dynamo.symptomLambda,
+        Payload: Buffer.from(JSON.stringify(lambdaPayload)),
+        InvocationType: 'Event',
+      };
+      const request = lambda.invoke(lambdaParams);
+      await request.promise();
+      lambdaInvocationCount += 1;
+    } catch (err) {
+      console.error(err);
+    }
   }
   return {
     lambdaInvocationCount,

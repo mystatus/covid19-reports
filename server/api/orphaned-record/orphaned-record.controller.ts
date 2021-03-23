@@ -166,36 +166,34 @@ class OrphanedRecordController {
       throw err;
     }
 
-    setTimeout(async () => {
-      for (let i = 0; i < orphanedRecords.length; i++) {
-        // The previous typeorm delete will strip 'documentId' from OrphanedRecord,
-        // So we use the previously saved values here.
-        const documentId = documentIds[i];
-        const orphanedRecord = {
-          ...orphanedRecords[i],
-          documentId,
-        };
+    for (let i = 0; i < orphanedRecords.length; i++) {
+      // The previous typeorm delete will strip 'documentId' from OrphanedRecord,
+      // So we use the previously saved values here.
+      const documentId = documentIds[i];
+      const orphanedRecord = {
+        ...orphanedRecords[i],
+        documentId,
+      };
 
-        // Request a reingestion of a single document
-        const reingestResult = await reingestByDocumentId(orphanedRecord.documentId);
+      // Request a reingestion of a single document
+      const reingestResult = await reingestByDocumentId(orphanedRecord.documentId);
 
-        // Track the individual ingestion and postgres updated entity
-        resultRecords.push({
-          ...reingestResult,
-          orphanedRecord,
-        });
-
-        // Keep track of our aggregate totals
-        lambdaInvocationCount += reingestResult.lambdaInvocationCount;
-        recordsIngested += reingestResult.recordsIngested;
-      }
-
-      res.json({
-        items: resultRecords,
-        lambdaInvocationCount,
-        recordsIngested,
+      // Track the individual ingestion and postgres updated entity
+      resultRecords.push({
+        ...reingestResult,
+        orphanedRecord,
       });
-    }, 1500);
+
+      // Keep track of our aggregate totals
+      lambdaInvocationCount += reingestResult.lambdaInvocationCount;
+      recordsIngested += reingestResult.recordsIngested;
+    }
+
+    res.json({
+      items: resultRecords,
+      lambdaInvocationCount,
+      recordsIngested,
+    });
   }
 
   async addOrphanedRecordAction(req: ApiRequest<OrphanedRecordActionParam, OrphanedRecordActionData>, res: Response) {
