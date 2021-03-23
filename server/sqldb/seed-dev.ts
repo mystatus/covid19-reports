@@ -141,7 +141,7 @@ function randomNumber(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function createGroupAdminRole(manager: EntityManager, org: Org, workspace?: Workspace) {
+function createGroupAdminRole(manager: EntityManager, org: Org, workspaces?: Workspace[]) {
   return manager.create(Role, {
     name: `Group Admin : Group ${org.id}`,
     description: 'For managing the group.',
@@ -154,11 +154,11 @@ function createGroupAdminRole(manager: EntityManager, org: Org, workspace?: Work
     canViewMuster: true,
     canViewPII: true,
     canViewRoster: true,
-    workspace,
+    workspaces,
   });
 }
 
-function createGroupUserRole(manager: EntityManager, org: Org, workspace?: Workspace) {
+function createGroupUserRole(manager: EntityManager, org: Org, workspaces?: Workspace[]) {
   return manager.create(Role, {
     name: `Group User : Group ${org.id}`,
     description: `Basic role for all Group ${org.id} users.`,
@@ -168,6 +168,6 @@ function createGroupUserRole(manager: EntityManager, org: Org, workspace?: Works
     canViewRoster: true,
     canViewMuster: true,
     canViewPII: true,
-    workspace,
+    workspaces,
   });
 }

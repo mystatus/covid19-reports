@@ -58,7 +58,7 @@ export const HomePage = () => {
                           </Typography>
                         </li>
                       )}
-                      {user.activeRole?.role.workspace && (
+                      {user.activeRole?.role.workspaces && (
                         <li>
                           <Typography>
                             <strong><Link href={`/dashboard?orgId=${orgId}`}>Customizable Dashboards</Link></strong><br />

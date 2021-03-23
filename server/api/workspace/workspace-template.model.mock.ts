@@ -11,9 +11,9 @@ export function mockWorkspaceTemplate() {
     description: uniqueString(),
     pii: true,
     phi: true,
-    kibanaSavedObjects: {
+    kibanaSavedObjects: [{
       stuff: uniqueString(),
-    } as any,
+    }],
   });
 }
 

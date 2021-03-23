@@ -17,7 +17,7 @@ export interface ApiOrg {
 export interface ApiRole {
   id: number,
   org?: ApiOrg,
-  workspace?: ApiWorkspace,
+  workspaces: ApiWorkspace[],
   name: string,
   description: string,
   allowedRosterColumns: string[],

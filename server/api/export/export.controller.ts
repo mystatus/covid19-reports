@@ -3,14 +3,12 @@ import { Response } from 'express';
 import { json2csvAsync } from 'json-2-csv';
 import moment from 'moment';
 import { elasticsearch } from '../../elasticsearch/elasticsearch';
-import {
-  ForbiddenError,
-  InternalServerError,
-} from '../../util/error-types';
+import { assertRequestQuery } from '../../util/api-utils';
+import { buildEsIndexPatternsForDataExport } from '../../util/elasticsearch-utils';
+import { InternalServerError } from '../../util/error-types';
 import { Log } from '../../util/log';
 import { getRosterMusterStats } from '../../util/muster-utils';
 import {
-  assertRequestQuery,
   TimeInterval,
 } from '../../util/util';
 import {
@@ -25,21 +23,16 @@ import { Unit } from '../unit/unit.model';
 class ExportController {
 
   async exportOrgToCsv(req: ApiRequest<null, null, ExportOrgQuery>, res: Response) {
-    if (!req.appWorkspace) {
-      throw new ForbiddenError('You must be assigned to a workspace to export data.');
-    }
-
     const startDate = moment(req.query.startDate ?? 0);
     const endDate = moment(req.query.endDate);
 
     //
     // Get ES data and stream to client.
     //
-    const index = req.appUserRole!.getKibanaIndices();
     const scrollQueue = [] as SearchResponse<any>[];
     try {
       scrollQueue.push(await elasticsearch.search({
-        index,
+        index: buildEsIndexPatternsForDataExport(req.appUser, req.appUserRole!),
         size: 10000,
         body: {
           query: {

@@ -3,23 +3,18 @@ import axios, {
   AxiosRequestConfig,
   AxiosResponse,
 } from 'axios';
-import MockAdapter from 'axios-mock-adapter';
 import { User } from '../../api/user/user.model';
 
 export class TestRequest {
 
   static readonly edipiHeader = 'test-edipi';
 
-  readonly baseUrl = 'http://localhost:4000';
+  readonly host = 'http://localhost:4000';
   readonly client: AxiosInstance;
-  readonly mock: MockAdapter;
 
   constructor(basePath: string) {
     this.client = axios.create({
-      baseURL: `${this.baseUrl}${basePath}`,
-    });
-    this.mock = new MockAdapter(axios, {
-      onNoMatch: 'passthrough',
+      baseURL: `${this.host}${basePath}`,
     });
   }
 

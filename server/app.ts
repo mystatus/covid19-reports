@@ -12,7 +12,11 @@ import kibanaProxy from './kibana';
 import kibanaDashboard from './kibana/dashboard';
 import database from './sqldb';
 import config from './config';
-import { requireOrgAccess, requireUserAuth } from './auth';
+import {
+  requireOrgAccess,
+  requireUserAuth,
+  requireWorkspaceAccess,
+} from './auth';
 import { env } from './util/env';
 import { errorHandler } from './util/error-handler';
 import { Log } from './util/log';
@@ -63,6 +67,7 @@ const start = async () => {
   app.use(
     '/dashboard',
     requireOrgAccess,
+    requireWorkspaceAccess,
     kibanaDashboard,
   );
 

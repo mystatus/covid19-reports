@@ -1,5 +1,8 @@
 import React, { useEffect } from 'react';
-import { Grid, Typography } from '@material-ui/core';
+import {
+  Box,
+  Typography,
+} from '@material-ui/core';
 import CheckIcon from '@material-ui/icons/Check';
 import { useDispatch, useSelector } from 'react-redux';
 import { ApiRole, ApiRosterColumnInfo } from '../../models/api-response';
@@ -11,19 +14,17 @@ import { RosterSelector } from '../../selectors/roster.selector';
 import { NotificationSelector } from '../../selectors/notification.selector';
 import { UserSelector } from '../../selectors/user.selector';
 import { RoleDataTable } from './role-table';
-import NegativeMarginScrollFix from './negative-margin-scroll-fix';
 
 const Header = ({ text }: { text: string }) => <Typography className={useStyles().roleHeader}>{text}:</Typography>;
 
 type SectionProps = ScrollHeightParam & {
   children?: React.ReactChild
-  full?: boolean
   title: string
   visible?: boolean
 };
 
 const Section = ({
-  children, full, scrollHeight, title, visible,
+  children, scrollHeight, title, visible,
 }: SectionProps) => {
   const { sectionBody } = useStyles({ scrollHeight });
 
@@ -31,12 +32,12 @@ const Section = ({
     return null;
   }
   return (
-    <Grid item xs={full ? 12 : 6}>
+    <>
       <Header text={title} />
       <div className={sectionBody}>
         {children}
       </div>
-    </Grid>
+    </>
   );
 };
 
@@ -51,25 +52,17 @@ const TextSection = ({ text, ...rest }: TextSectionProps) => (
 );
 
 export type RoleInfoPanelProps = {
-  hideDescription?: boolean
-  hideWorkspaceDescription?: boolean
-  hideWorkspaceName?: boolean
   role?: ApiRole
   scrollFix?: boolean
 };
 
 const RoleInfoPanel = (props: RoleInfoPanelProps) => {
+  const classes = useStyles();
   const dispatch = useDispatch();
   const orgId = useSelector(UserSelector.orgId);
   const availableNotifications = useSelector(NotificationSelector.all);
   const rosterColumns = useSelector(RosterSelector.columns);
-  const {
-    hideDescription = false,
-    hideWorkspaceDescription = false,
-    hideWorkspaceName = false,
-    role,
-    scrollFix,
-  } = props;
+  const { role } = props;
 
   const initializeTable = React.useCallback(async () => {
     if (orgId) {
@@ -84,7 +77,6 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
     return null;
   }
 
-  const gridSpacing = 3;
   const permissions = parsePermissions(rosterColumns, role.allowedRosterColumns);
 
   const columnAllowed = (column: ApiRosterColumnInfo) => {
@@ -94,58 +86,59 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
   };
 
   return (
-    <NegativeMarginScrollFix spacing={scrollFix ? gridSpacing : 0}>
-      <Grid container spacing={gridSpacing}>
-        <TextSection full text={role.description} title="Role Description" visible={!hideDescription} />
-        <Grid item container xs={6}>
+    <Box display="flex" width="100%">
+      <Box flex={1}>
+        <Box className={classes.section}>
           <TextSection
-            full
-            text={role.workspace?.name ?? 'None'}
-            title="Analytics Workspace"
-            visible={!hideWorkspaceName}
+            text={role.workspaces.map(x => x.name).join(', ') || 'None'}
+            title="Analytics Workspaces"
           />
-          <TextSection
-            full
-            scrollHeight="tall"
-            text={role.workspace ? role.workspace.description || 'None' : 'No workspace, users with this role will not have access to analytics dashboards.'}
-            title="Workspace Description"
-            visible={!hideWorkspaceDescription}
-          />
-        </Grid>
-        <Section title="Allowed Notifications">
-          <RoleDataTable
-            aria-label="Notifications"
-            data={availableNotifications}
-            extractLabel="name"
-            extractValue={notification => role.allowedNotificationEvents.some(event => event === '*' || event === notification.id) && <CheckIcon />}
-          />
-        </Section>
-        <Section title="Permissions">
-          <RoleDataTable
-            aria-label="Permissions"
-            data={[
-              { label: 'Manage Group', value: role.canManageGroup },
-              { label: 'Manage Roster', value: role.canManageRoster },
-              { label: 'Manage Workspace', value: role.canManageWorkspace },
-              { label: 'View Roster', value: role.canViewRoster },
-              { label: 'View Muster Reports', value: role.canViewMuster },
-              { label: 'View PII', value: role.canViewPII },
-              { label: 'View PHI', value: role.canViewPHI },
-            ]}
-            extractLabel="label"
-            extractValue={({ value }) => value && <CheckIcon />}
-          />
-        </Section>
-        <Section title="Viewable Roster Columns">
-          <RoleDataTable
-            aria-label="Roster Columns"
-            data={rosterColumns}
-            extractLabel="displayName"
-            extractValue={column => columnAllowed(column) && <CheckIcon />}
-          />
-        </Section>
-      </Grid>
-    </NegativeMarginScrollFix>
+        </Box>
+
+        <Box className={classes.section}>
+          <Section title="Permissions">
+            <RoleDataTable
+              aria-label="Permissions"
+              data={[
+                { label: 'Manage Group', value: role.canManageGroup },
+                { label: 'Manage Roster', value: role.canManageRoster },
+                { label: 'Manage Workspace', value: role.canManageWorkspace },
+                { label: 'View Roster', value: role.canViewRoster },
+                { label: 'View Muster Reports', value: role.canViewMuster },
+                { label: 'View PII', value: role.canViewPII },
+                { label: 'View PHI', value: role.canViewPHI },
+              ]}
+              extractLabel="label"
+              extractValue={({ value }) => value && <CheckIcon />}
+            />
+          </Section>
+        </Box>
+      </Box>
+
+      <Box flex={1}>
+        <Box className={classes.section}>
+          <Section title="Allowed Notifications">
+            <RoleDataTable
+              aria-label="Notifications"
+              data={availableNotifications}
+              extractLabel="name"
+              extractValue={notification => role.allowedNotificationEvents.some(event => event === '*' || event === notification.id) && <CheckIcon />}
+            />
+          </Section>
+        </Box>
+
+        <Box className={classes.section}>
+          <Section title="Viewable Roster Columns">
+            <RoleDataTable
+              aria-label="Roster Columns"
+              data={rosterColumns}
+              extractLabel="displayName"
+              extractValue={column => columnAllowed(column) && <CheckIcon />}
+            />
+          </Section>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 export default RoleInfoPanel;

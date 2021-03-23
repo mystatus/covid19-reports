@@ -8,9 +8,9 @@ export namespace User {
 
   export namespace Actions {
 
-    export class Login {
-      static type = 'USER_LOGIN';
-      type = Login.type;
+    export class Refresh {
+      static type = 'USER_REFRESH';
+      type = Refresh.type;
       constructor(public payload: {
         userData: ApiUser
         localStorage: LocalStorageState
@@ -41,14 +41,14 @@ export namespace User {
 
   }
 
-  export const login = () => async (dispatch: Dispatch<Actions.Login>, getState: () => AppState) => {
+  export const refresh = () => async (dispatch: Dispatch<Actions.Refresh>, getState: () => AppState) => {
     const userData = await UserClient.current();
 
     console.log('userData', userData);
 
     const { localStorage } = getState();
 
-    dispatch(new Actions.Login({
+    dispatch(new Actions.Refresh({
       userData,
       localStorage,
     }));

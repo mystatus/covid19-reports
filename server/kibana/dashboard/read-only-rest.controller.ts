@@ -4,6 +4,7 @@ import { User } from '../../api/user/user.model';
 import { UserRole } from '../../api/user/user-role.model';
 import { Workspace } from '../../api/workspace/workspace.model';
 import config from '../../config';
+import { getKibanaRoles } from '../../util/kibana-utils';
 import { Log } from '../../util/log';
 
 const nJwt = require('njwt');
@@ -19,6 +20,7 @@ class ReadOnlyRestController {
     Log.info('ror jwt', rorJwt);
 
     res.cookie('orgId', req.appOrg!.id, { httpOnly: true });
+    res.cookie('workspaceId', req.appWorkspace!.id, { httpOnly: true });
 
     let url = `${config.kibana.basePath}/login?jwt=${rorJwt}`;
     if (req.query.dashboardUuid) {
@@ -46,7 +48,7 @@ export function buildJWT(user: User, userRole: UserRole, workspace: Workspace) {
   const claims = {
     sub: user.edipi,
     iss: 'https://statusengine.mysymptoms.mil',
-    roles: userRole.getKibanaRoles(),
+    roles: getKibanaRoles(userRole),
     workspace_id: `${workspace!.id}`,
   };
 

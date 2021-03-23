@@ -22,19 +22,19 @@ export function seedRole(org: Org, options?: {
   return mockRole(org, options).save();
 }
 
-export function seedRoleBasicUser(org: Org, workspace?: Workspace) {
+export function seedRoleBasicUser(org: Org, workspaces?: Workspace[]) {
   return seedRole(org, {
     customData: {
       allowedRosterColumns: ['edipi', 'firstName', 'lastName'],
       allowedNotificationEvents: [],
       canViewRoster: true,
       canViewMuster: true,
-      workspace,
+      workspaces,
     },
   });
 }
 
-export function seedRoleAdmin(org: Org, workspace?: Workspace) {
+export function seedRoleAdmin(org: Org, workspaces?: Workspace[]) {
   return seedRole(org, {
     customData: {
       allowedRosterColumns: ['*'],
@@ -46,7 +46,7 @@ export function seedRoleAdmin(org: Org, workspace?: Workspace) {
       canViewMuster: true,
       canViewPII: true,
       canViewPHI: true,
-      workspace,
+      workspaces,
     },
   });
 }

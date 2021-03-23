@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Grid,
   IconButton,
   Menu,
   MenuItem,
@@ -81,7 +82,7 @@ export const UnitsPage = () => {
       onClose: async (success?: boolean) => {
         setDefaultMusterDialogProps({ open: false });
         if (success) {
-          await dispatch(User.login());
+          await dispatch(User.refresh());
           await initializeTable();
           setDefaultMusterSaved(true);
         }
@@ -170,101 +171,109 @@ export const UnitsPage = () => {
             cardId: 'unitsPage',
           }}
         />
-        <Card>
-          <CardHeader title="Default Muster Requirements" />
-          <CardContent>
-            <MusterConfigReadable
-              className={classes.musterConfiguration}
-              reports={reports}
-              musterConfiguration={defaultMusterConfiguration}
-            />
-            <CardActions>
-              <Button
-                size="large"
-                onClick={showDefaultMusterConfig}
-              >
-                Configure
-              </Button>
-              {defaultMusterSaved && (
-                <Typography variant="subtitle1" className={classes.defaultMusterSaved}>
-                  <CheckCircleIcon /> Changes saved successfully!
-                </Typography>
-              )}
-            </CardActions>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader title="Units" />
-          <CardActions>
-            <Button
-              size="large"
-              variant="text"
-              color="primary"
-              onClick={newUnit}
-              startIcon={<AddCircleIcon />}
-            >
-              Add New Unit
-            </Button>
-          </CardActions>
-          <CardContent>
-            <TableContainer className={classes.table}>
-              <Table aria-label="unit table">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Muster Requirements</TableCell>
-                    <TableCell />
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {units.map(unit => (
-                    <TableRow key={unit.id}>
-                      <TableCell>{unit.name}</TableCell>
-                      {!!unit.musterConfiguration?.length && (
-                        <TableCell className={classes.musterConfiguration}>
-                          {musterConfigurationsToStrings(unit.musterConfiguration, reports).map((muster, index) => (
-                            <div key={JSON.stringify({ muster, index })}>
-                              {muster}
-                            </div>
-                          ))}
-                        </TableCell>
-                      )}
-                      {!unit.musterConfiguration?.length && (
-                        <TableCell className={classes.noMusterConfiguration}>
-                          {(unit.musterConfiguration === null) ? (
-                            <span>Using default muster requirements</span>
-                          ) : (
-                            <span>None</span>
-                          )}
-                        </TableCell>
-                      )}
-                      <TableCell className={classes.iconCell}>
-                        <IconButton
-                          aria-label="unit actions"
-                          aria-controls={`unit-${unit.id}-menu`}
-                          aria-haspopup="true"
-                          onClick={handleUnitMenuClick(unit)}
-                        >
-                          <MoreVertIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  <Menu
-                    id="unit-menu"
-                    anchorEl={unitMenu.anchor}
-                    keepMounted
-                    open={Boolean(unitMenu.unit)}
-                    onClose={handleUnitMenuClose}
+
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Card>
+              <CardHeader title="Default Muster Requirements" />
+              <CardContent>
+                <MusterConfigReadable
+                  className={classes.musterConfiguration}
+                  reports={reports}
+                  musterConfiguration={defaultMusterConfiguration}
+                />
+                <CardActions>
+                  <Button
+                    size="large"
+                    onClick={showDefaultMusterConfig}
                   >
-                    <MenuItem onClick={editUnit}>Edit Unit</MenuItem>
-                    <MenuItem onClick={deleteUnit}>Delete Unit</MenuItem>
-                  </Menu>
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </CardContent>
-        </Card>
+                    Configure
+                  </Button>
+                  {defaultMusterSaved && (
+                    <Typography variant="subtitle1" className={classes.defaultMusterSaved}>
+                      <CheckCircleIcon /> Changes saved successfully!
+                    </Typography>
+                  )}
+                </CardActions>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Card>
+              <CardHeader title="Units" />
+              <CardActions>
+                <Button
+                  size="large"
+                  variant="text"
+                  color="primary"
+                  onClick={newUnit}
+                  startIcon={<AddCircleIcon />}
+                >
+                  Add New Unit
+                </Button>
+              </CardActions>
+              <CardContent>
+                <TableContainer className={classes.table}>
+                  <Table aria-label="unit table">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Name</TableCell>
+                        <TableCell>Muster Requirements</TableCell>
+                        <TableCell />
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {units.map(unit => (
+                        <TableRow key={unit.id}>
+                          <TableCell>{unit.name}</TableCell>
+                          {!!unit.musterConfiguration?.length && (
+                            <TableCell className={classes.musterConfiguration}>
+                              {musterConfigurationsToStrings(unit.musterConfiguration, reports).map((muster, index) => (
+                                <div key={JSON.stringify({ muster, index })}>
+                                  {muster}
+                                </div>
+                              ))}
+                            </TableCell>
+                          )}
+                          {!unit.musterConfiguration?.length && (
+                            <TableCell className={classes.noMusterConfiguration}>
+                              {(unit.musterConfiguration === null) ? (
+                                <span>Using default muster requirements</span>
+                              ) : (
+                                <span>None</span>
+                              )}
+                            </TableCell>
+                          )}
+                          <TableCell className={classes.iconCell}>
+                            <IconButton
+                              aria-label="unit actions"
+                              aria-controls={`unit-${unit.id}-menu`}
+                              aria-haspopup="true"
+                              onClick={handleUnitMenuClick(unit)}
+                            >
+                              <MoreVertIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      <Menu
+                        id="unit-menu"
+                        anchorEl={unitMenu.anchor}
+                        keepMounted
+                        open={Boolean(unitMenu.unit)}
+                        onClose={handleUnitMenuClose}
+                      >
+                        <MenuItem onClick={editUnit}>Edit Unit</MenuItem>
+                        <MenuItem onClick={deleteUnit}>Delete Unit</MenuItem>
+                      </Menu>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
       </Container>
       {Boolean(unitToDelete) && (
         <Dialog

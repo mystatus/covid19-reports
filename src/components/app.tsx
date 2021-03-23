@@ -11,6 +11,7 @@ import { UserState } from '../reducers/user.reducer';
 import { AppState } from '../store';
 import { AppSidenav } from './app-sidenav/app-sidenav';
 import { AppToolbar } from './app-toolbar/app-toolbar';
+import { AnalyticsPage } from './pages/analytics-page/analytics-page';
 import { DataExportPage } from './pages/data-export-page/data-export-page';
 import { HomePage } from './pages/home-page/home-page';
 import useStyles from './app.styles';
@@ -32,7 +33,7 @@ export const App = () => {
   const classes = useStyles();
 
   useEffect(() => {
-    dispatch(User.login());
+    dispatch(User.refresh());
   }, [dispatch]);
 
   function routes() {
@@ -116,6 +117,9 @@ export const App = () => {
               </Route>
               <Route path="/data-export">
                 <DataExportPage />
+              </Route>
+              <Route path="/analytics">
+                <AnalyticsPage />
               </Route>
               <Route path="/*">
                 <Redirect to="/home" />

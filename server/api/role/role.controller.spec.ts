@@ -4,7 +4,11 @@ import { seedOrgContactRoles } from '../../util/test-utils/seed';
 import { TestRequest } from '../../util/test-utils/test-request';
 import { uniqueString } from '../../util/test-utils/unique';
 import { seedWorkspaceTemplate } from '../workspace/workspace-template.model.mock';
-import { seedWorkspace } from '../workspace/workspace.model.mock';
+import { seedWorkspaces } from '../workspace/workspace.model.mock';
+import {
+  AddRoleBody,
+  UpdateRoleBody,
+} from './role.controller';
 import { Role } from './role.model';
 import { seedRoleBasicUser } from './role.model.mock';
 
@@ -39,7 +43,8 @@ describe(`Role Controller`, () => {
     it(`adds a role to the org`, async () => {
       const { org, contact } = await seedOrgContactRoles();
       const workspaceTemplate = await seedWorkspaceTemplate();
-      const workspace = await seedWorkspace(org, workspaceTemplate);
+      const workspaces = await seedWorkspaces(org, workspaceTemplate, { count: 2 });
+      const workspaceIds = workspaces.map(x => x.id).sort();
 
       const rolesCountBefore = await Role.count();
 
@@ -57,18 +62,22 @@ describe(`Role Controller`, () => {
         canViewPII: true,
         canViewPHI: true,
       };
-      const body = {
+      const body: AddRoleBody = {
         ...roleData,
-        workspaceId: workspace.id,
+        workspaceIds,
       };
       const res = await req.post(`/${org.id}`, body);
 
       expectNoErrors(res);
 
       const roleId = res.data.id;
-      const roleAfter = await Role.findOne(roleId);
+      const roleAfter = (await Role.findOne(roleId, {
+        relations: ['workspaces'],
+      }))!;
       expect(roleAfter).to.exist;
       expect(roleAfter).to.containSubset(roleData);
+      const roleAfterWorkspaceIds = roleAfter.workspaces!.map(x => x.id).sort();
+      expect(roleAfterWorkspaceIds).to.eql(workspaceIds);
 
       expect(await Role.count()).to.equal(rolesCountBefore + 1);
     });
@@ -122,7 +131,8 @@ describe(`Role Controller`, () => {
       const { org, contact } = await seedOrgContactRoles();
       const role = await seedRoleBasicUser(org);
       const workspaceTemplate = await seedWorkspaceTemplate();
-      const workspace = await seedWorkspace(org, workspaceTemplate);
+      const workspaces = await seedWorkspaces(org, workspaceTemplate, { count: 2 });
+      const workspaceIds = workspaces.map(x => x.id);
 
       req.setUser(contact);
       const updateRoleData = {
@@ -138,9 +148,9 @@ describe(`Role Controller`, () => {
         canViewPII: true,
         canViewPHI: true,
       };
-      const body = {
+      const body: UpdateRoleBody = {
         ...updateRoleData,
-        workspaceId: workspace.id,
+        workspaceIds,
       };
       const res = await req.put(`/${org.id}/${role.id}`, body);
 
@@ -149,9 +159,13 @@ describe(`Role Controller`, () => {
         id: role.id,
       });
 
-      const roleAfter = await Role.findOne(role.id);
+      const roleAfter = (await Role.findOne(role.id, {
+        relations: ['workspaces'],
+      }))!;
       expect(roleAfter).to.exist;
       expect(roleAfter).to.containSubset(updateRoleData);
+      const roleAfterWorkspaceIds = roleAfter.workspaces!.map(x => x.id).sort();
+      expect(roleAfterWorkspaceIds).to.eql(workspaceIds);
     });
 
   });

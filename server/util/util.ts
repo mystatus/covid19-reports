@@ -1,6 +1,5 @@
-import { ValueTransformer } from 'typeorm';
 import moment from 'moment';
-import { ApiRequest } from '../api';
+import { ValueTransformer } from 'typeorm';
 import { BadRequestError } from './error-types';
 
 
@@ -156,18 +155,3 @@ export function getMomentDateFormat(interval: TimeInterval) {
   }
 }
 
-export function assertRequestQuery<TQuery extends object>(
-  req: ApiRequest<unknown, unknown, TQuery>,
-  requiredKeys: Array<keyof TQuery>,
-) {
-  const missingKeys = getMissingKeys(req.query, requiredKeys);
-  if (missingKeys.length) {
-    throw new BadRequestError(`Missing required request query params: ${missingKeys.join(', ')}`);
-  }
-
-  return req.query;
-}
-
-function getMissingKeys<T extends object>(obj: T, keys: Array<keyof T>) {
-  return keys.filter(key => obj[key] === undefined);
-}
