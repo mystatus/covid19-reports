@@ -5,7 +5,6 @@ import {
   QueryRunner,
 } from 'typeorm';
 import { WorkspaceTemplate } from '../api/workspace/workspace-template.model';
-import { kibanaSavedObjectsMock } from '../kibana/kibana-saved-objects.mock';
 
 export class UpdateWorkspaceTemplates1616459364013 implements MigrationInterface {
   name = 'UpdateWorkspaceTemplates1616459364013';
