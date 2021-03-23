@@ -6,11 +6,12 @@ import {
 import { OrphanedRecord } from './orphaned-record.model';
 import { ActionType, OrphanedRecordAction } from './orphaned-record-action.model';
 import { Org } from '../org/org.model';
-import { BadRequestError } from '../../util/error-types';
+import { BadRequestError, InternalServerError } from '../../util/error-types';
 import { convertDateParam, reingestByDocumentId } from '../../util/reingest-utils';
 import { ChangeType, RosterHistory } from '../roster/roster-history.model';
 import { RosterEntryData } from '../roster/roster.controller';
 import { addRosterEntry } from '../../util/roster-utils';
+import { Roster } from '../roster/roster.model';
 
 interface OrphanedRecordResult {
   id: string;
@@ -61,6 +62,10 @@ class OrphanedRecordController {
   }
 
   async addOrphanedRecord(req: ApiRequest<null, OrphanedRecordData>, res: Response) {
+    if (!req.body.reportingGroup) {
+      throw new BadRequestError('Missing reportingGroup from body.');
+    }
+
     const orphanedRecord = new OrphanedRecord();
     orphanedRecord.documentId = req.body.documentId;
     orphanedRecord.timestamp = new Date(convertDateParam(req.body.timestamp));
@@ -68,13 +73,11 @@ class OrphanedRecordController {
     orphanedRecord.phone = req.body.phone;
     orphanedRecord.unit = req.body.unit;
 
-    if (req.body.reportingGroup) {
-      orphanedRecord.org = await Org.findOne({
-        where: {
-          reportingGroup: req.body.reportingGroup,
-        },
-      });
-    }
+    orphanedRecord.org = await Org.findOne({
+      where: {
+        reportingGroup: req.body.reportingGroup,
+      },
+    });
 
     await orphanedRecord.save();
     res.status(201).json(orphanedRecord);
@@ -108,59 +111,83 @@ class OrphanedRecordController {
     }
 
     const resultRecords: OrphanedRecordResolveItem[] = [];
+    const documentIds = orphanedRecords.map(orphanedRecord => orphanedRecord.documentId);
     let lambdaInvocationCount = 0;
     let recordsIngested = 0;
 
-    await getConnection().transaction(async manager => {
+    let rosterHistory = await getRosterHistoryAddedForOrphanedRecord(orphanedRecords[0]);
+    let newRosterEntry: Roster | undefined;
+    if (!rosterHistory) {
       // If the roster entry already exists, backdate the timestamp column
       // of the corresponding  'added' record in he roster history.
       // Otherwise, add the new roster entry and then update the roster history.
+      // Add a new roster entry since the orphaned record
+      // doesn't correspond to an existing roster entry
+      newRosterEntry = await addRosterEntry(req.appOrg!, req.appUserRole!.role, req.body);
+      rosterHistory = await getRosterHistoryAddedForOrphanedRecord(orphanedRecords[0]);
+    }
 
-      let rosterHistory = await getRosterHistoryAddedForOrphanedRecord(orphanedRecords[0]);
+    if (!rosterHistory) {
+      throw new InternalServerError('Unable to locate RosterHistory record.');
+    }
 
-      if (!rosterHistory) {
-        // Add a new roster entry since the orphaned record
-        // doesn't correspond to an existing roster entry
-        await addRosterEntry(req.appOrg!, req.appUserRole!.role, req.body, manager);
-        rosterHistory = await getRosterHistoryAddedForOrphanedRecord(orphanedRecords[0]);
-      }
-
-      if (rosterHistory) {
+    try {
+      await getConnection().transaction(async manager => {
         // Backdate the timestamp to the earliest orphaned record time.
-        rosterHistory.timestamp = new Date(Math.min(...[
-          rosterHistory.timestamp.getTime(),
-          ...orphanedRecords.map(x => x.timestamp.getTime()),
-        ]));
+        rosterHistory!.timestamp = new Date(
+          Math.min(...[
+            rosterHistory!.timestamp.getTime(),
+            ...orphanedRecords.map(x => x.timestamp.getTime()),
+          ]),
+        );
+
+        // Save the updated timestamp
         await manager.save(rosterHistory);
+
+        // Orphaned Record Cleanup
+        for (const orphanedRecord of orphanedRecords) {
+          // Remove the orphan record entry
+          await manager.remove(orphanedRecord);
+
+          // Delete any outstanding actions
+          await manager
+            .createQueryBuilder()
+            .delete()
+            .from(OrphanedRecordAction)
+            .where(`id=:id`, { id: req.params.orphanId })
+            .orWhere('expires_on < now()')
+            .execute();
+        }
+      });
+    } catch (err) {
+      if (newRosterEntry) {
+        await newRosterEntry.remove();
       }
+      throw err;
+    }
 
-      for (const orphanedRecord of orphanedRecords) {
-        // Remove the orphan record entry
-        await manager.remove(orphanedRecord);
+    for (let i = 0; i < orphanedRecords.length; i++) {
+      // The previous typeorm delete will strip 'documentId' from OrphanedRecord,
+      // So we use the previously saved values here.
+      const documentId = documentIds[i];
+      const orphanedRecord = {
+        ...orphanedRecords[i],
+        documentId,
+      };
 
-        // Request a reingestion of a single document
-        const reingestResult = await reingestByDocumentId(orphanedRecord.documentId);
+      // Request a reingestion of a single document
+      const reingestResult = await reingestByDocumentId(orphanedRecord.documentId);
 
-        // Delete any outstanding actions
-        await manager
-          .createQueryBuilder()
-          .delete()
-          .from(OrphanedRecordAction)
-          .where(`id=:id`, { id: req.params.orphanId })
-          .orWhere('expires_on < now()')
-          .execute();
+      // Track the individual ingestion and postgres updated entity
+      resultRecords.push({
+        ...reingestResult,
+        orphanedRecord,
+      });
 
-        // Track the individual ingestion and postgres updated entity
-        resultRecords.push({
-          ...reingestResult,
-          orphanedRecord,
-        });
-
-        // Keep track of our aggregate totals
-        lambdaInvocationCount += reingestResult.lambdaInvocationCount;
-        recordsIngested += reingestResult.recordsIngested;
-      }
-    });
+      // Keep track of our aggregate totals
+      lambdaInvocationCount += reingestResult.lambdaInvocationCount;
+      recordsIngested += reingestResult.recordsIngested;
+    }
 
     res.json({
       items: resultRecords,
@@ -254,7 +281,7 @@ export interface OrphanedRecordActionParam extends OrgParam {
 export interface OrphanedRecordResolveItem {
   lambdaInvocationCount: number;
   recordsIngested: number;
-  orphanedRecord: OrphanedRecord;
+  orphanedRecord: Partial<OrphanedRecord>;
 }
 
 export interface OrphanedRecordResolveResponse {
