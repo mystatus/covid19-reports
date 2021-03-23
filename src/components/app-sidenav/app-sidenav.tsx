@@ -28,8 +28,8 @@ import {
 import { useLocation } from 'react-router-dom';
 import { AppFrameState } from '../../reducers/app-frame.reducer';
 import { UserState } from '../../reducers/user.reducer';
-import { UserSelector } from '../../selectors/user.selector';
 import { OrphanedRecordSelector } from '../../selectors/orphaned-record.selector';
+import { UserSelector } from '../../selectors/user.selector';
 import { AppState } from '../../store';
 import { PersonCheckIcon } from '../icons/person-check-icon';
 import {
@@ -102,6 +102,11 @@ export const AppSidenav = () => {
     }
   }, [orgId, dispatch, user]);
 
+  const userHasWorkspaces = () => {
+    const workspaces = user.activeRole?.role.workspaces;
+    return (workspaces && workspaces.length > 0);
+  };
+
   return (
     <div className={classes.root}>
       <div className={clsx(classes.expander, {
@@ -135,14 +140,14 @@ export const AppSidenav = () => {
             name="Home"
             icon={(<HomeIcon />)}
           />
-          {user.activeRole?.role.workspace && (
+          {userHasWorkspaces() && (
             <SidenavLink
-              href={`/dashboard?orgId=${orgId}`}
+              to="/analytics"
               name="Analytics"
               icon={(<BarChartIcon />)}
             />
           )}
-          {user.activeRole?.role.workspace && (
+          {userHasWorkspaces() && (
             <SidenavLink
               to="/data-export"
               name="Data Export"

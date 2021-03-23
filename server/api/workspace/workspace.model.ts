@@ -1,6 +1,13 @@
 import {
-  Entity, Column, BaseEntity, PrimaryGeneratedColumn, ManyToOne, JoinColumn,
+  Entity,
+  Column,
+  BaseEntity,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+  ManyToMany,
 } from 'typeorm';
+import { Role } from '../role/role.model';
 import { WorkspaceTemplate } from './workspace-template.model';
 import { Org } from '../org/org.model';
 
@@ -38,5 +45,8 @@ export class Workspace extends BaseEntity {
 
   @Column()
   phi!: boolean;
+
+  @ManyToMany(() => Role, role => role.workspaces)
+  roles?: Role[];
 
 }

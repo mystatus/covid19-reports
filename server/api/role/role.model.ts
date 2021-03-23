@@ -1,5 +1,13 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, BaseEntity, JoinColumn, ManyToOne, OneToMany,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  BaseEntity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { Org } from '../org/org.model';
 import { Workspace } from '../workspace/workspace.model';
@@ -33,14 +41,9 @@ export class Role extends BaseEntity {
   @OneToMany(() => UserRole, userRole => userRole.role)
   userRoles?: UserRole[];
 
-  @ManyToOne(() => Workspace, {
-    onDelete: 'RESTRICT',
-    nullable: true,
-  })
-  @JoinColumn({
-    name: 'workspace_id',
-  })
-  workspace?: Workspace | null;
+  @ManyToMany(() => Workspace, workspace => workspace.roles)
+  @JoinTable()
+  workspaces?: Workspace[];
 
   @Column('simple-array', {
     default: '',

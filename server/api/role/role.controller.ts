@@ -1,8 +1,16 @@
 import { Response } from 'express';
-import { ApiRequest, OrgParam, OrgRoleParams } from '../index';
+import { In } from 'typeorm';
+import {
+  ApiRequest,
+  OrgParam,
+  OrgRoleParams,
+} from '../index';
 import { Roster } from '../roster/roster.model';
 import { Role } from './role.model';
-import { BadRequestError, NotFoundError } from '../../util/error-types';
+import {
+  BadRequestError,
+  NotFoundError,
+} from '../../util/error-types';
 import { Workspace } from '../workspace/workspace.model';
 import { Notification } from '../notification/notification.model';
 import { UserRole } from '../user/user-role.model';
@@ -15,7 +23,7 @@ class RoleController {
     }
 
     const roles = await Role.find({
-      relations: ['workspace'],
+      relations: ['workspaces'],
       where: {
         org: req.appOrg.id,
       },
@@ -27,7 +35,7 @@ class RoleController {
     res.json(roles);
   }
 
-  async addRole(req: ApiRequest<OrgParam, RoleBody>, res: Response) {
+  async addRole(req: ApiRequest<OrgParam, AddRoleBody>, res: Response) {
     if (!req.appOrg) {
       throw new NotFoundError('Organization was not found.');
     }
@@ -57,7 +65,7 @@ class RoleController {
     const roleId = parseInt(req.params.roleId);
 
     const role = await Role.findOne({
-      relations: ['workspace'],
+      relations: ['workspaces'],
       where: {
         id: roleId,
         org: req.appOrg.id,
@@ -103,7 +111,7 @@ class RoleController {
     res.json(removedRole);
   }
 
-  async updateRole(req: ApiRequest<OrgRoleParams, RoleBody>, res: Response) {
+  async updateRole(req: ApiRequest<OrgRoleParams, UpdateRoleBody>, res: Response) {
     if (!req.appOrg) {
       throw new NotFoundError('Organization was not found.');
     }
@@ -129,30 +137,30 @@ class RoleController {
 
 }
 
-async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
+async function setRoleFromBody(orgId: number, role: Role, body: UpdateRoleBody) {
   if (body.name != null) {
     role.name = body.name;
   }
   if (body.description != null) {
     role.description = body.description;
   }
-  if (body.workspaceId !== undefined) {
-    if (body.workspaceId == null) {
-      role.workspace = null;
-    } else {
-      const workspace = await Workspace.findOne({
+  if (body.workspaceIds != null) {
+    let workspaces: Workspace[] = [];
+
+    if (body.workspaceIds.length) {
+      workspaces = await Workspace.find({
         where: {
-          id: body.workspaceId,
+          id: In(body.workspaceIds),
           org: orgId,
         },
       });
 
-      if (!workspace) {
-        throw new NotFoundError('Workspace could not be found.');
+      if (workspaces.length !== body.workspaceIds.length) {
+        throw new NotFoundError('One or more workspaces could not be found.');
       }
-
-      role.workspace = workspace;
     }
+
+    role.workspaces = workspaces;
   }
   if (body.canManageGroup != null) {
     role.canManageGroup = body.canManageGroup;
@@ -199,10 +207,10 @@ async function setRoleFromBody(orgId: number, role: Role, body: RoleBody) {
   }
 }
 
-type RoleBody = {
-  name?: string
-  description?: string
-  workspaceId?: number | null
+export type AddRoleBody = {
+  name: string
+  description: string
+  workspaceIds?: number[] | null
   allowedRosterColumns?: string[]
   allowedNotificationEvents?: string[]
   canManageGroup?: boolean
@@ -213,5 +221,7 @@ type RoleBody = {
   canViewPII?: boolean
   canViewPHI?: boolean
 };
+
+export type UpdateRoleBody = Partial<AddRoleBody>;
 
 export default new RoleController();

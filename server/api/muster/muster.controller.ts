@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { Brackets } from 'typeorm';
+import { assertRequestQuery } from '../../util/api-utils';
 import { NotFoundError } from '../../util/error-types';
 import {
   buildMusterWindow,
@@ -25,7 +26,6 @@ import {
   DaysOfTheWeek,
   nextDay,
   oneDaySeconds,
-  assertRequestQuery,
   TimeInterval,
 } from '../../util/util';
 

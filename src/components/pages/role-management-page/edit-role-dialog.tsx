@@ -1,22 +1,31 @@
 import React, { useState } from 'react';
 import {
-  Button, Checkbox,
+  Box,
+  Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid, Select,
+  ListItemText,
+  MenuItem,
+  Select,
   TableCell,
-  TableRow, TextField, Typography,
+  TableRow,
+  TextField,
+  Typography,
 } from '@material-ui/core';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import useStyles from './edit-role-dialog.styles';
 import {
-  ApiRole, ApiRosterColumnInfo,
+  ApiRole,
+  ApiRosterColumnInfo,
 } from '../../../models/api-response';
 import {
-  RolePermissions, parsePermissions, permissionsToArray,
+  RolePermissions,
+  parsePermissions,
+  permissionsToArray,
 } from '../../../utility/permission-set';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
@@ -47,7 +56,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   const existingRole: boolean = !!role;
   const [name, setName] = useState(role?.name || '');
   const [description, setDescription] = useState(role?.description || '');
-  const [workspaceId, setWorkspaceId] = useState(role?.workspace?.id || -1);
+  const [selectedWorkspaces, setRoleWorkspaces] = useState(role?.workspaces ?? []);
   const [allowedRosterColumns, setAllowedRosterColumns] = useState(parsePermissions(rosterColumns || [], role?.allowedRosterColumns));
   const [allowedNotificationEvents, setAllowedNotificationEvents] = useState(parsePermissions(notifications?.map(notification => {
     return {
@@ -77,25 +86,32 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   };
 
   const onWorkspaceChanged = (event: React.ChangeEvent<{ value: unknown }>) => {
-    const newWorkspaceId = parseInt(event.target.value as string);
-    const selectedWorkspace = workspaces?.find(workspace => workspace.id === newWorkspaceId);
-    if (selectedWorkspace && rosterColumns) {
+    const newSelectedWorkspaceIds = event.target.value as number[];
+
+    const newSelectedWorkspaces = newSelectedWorkspaceIds.map(workspaceId => {
+      const workspace = workspaces.find(x => x.id === workspaceId);
+      if (!workspace) {
+        throw new Error('Unable to find workspace!');
+      }
+
+      return workspace;
+    });
+
+    const containsPii = newSelectedWorkspaces.some(x => x.pii);
+    const containsPhi = newSelectedWorkspaces.some(x => x.phi);
+
+    if (newSelectedWorkspaces.length && rosterColumns) {
       const allowedColumns: RolePermissions = {};
       rosterColumns.forEach(column => {
-        allowedColumns[column.name] = (!column.pii || selectedWorkspace.pii) && (!column.phi || selectedWorkspace.phi);
+        allowedColumns[column.name] = (!column.pii || containsPii) && (!column.phi || containsPhi);
       });
-      setCanViewPII(selectedWorkspace.pii);
-      setCanViewPHI(selectedWorkspace.phi);
       setAllowedRosterColumns(allowedColumns);
-    }
-    setWorkspaceId(newWorkspaceId);
-  };
 
-  const getWorkspaceDescription = () => {
-    const selectedWorkspace = workspaces?.find(workspace => {
-      return workspace.id === workspaceId;
-    });
-    return selectedWorkspace?.description || 'No workspace, users with this role will not have access to analytics dashboards.';
+      setCanViewPII(containsPii);
+      setCanViewPHI(containsPhi);
+    }
+
+    setRoleWorkspaces(newSelectedWorkspaces);
   };
 
   const onRosterColumnChanged = (property: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,7 +147,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
     const body = {
       name,
       description,
-      workspaceId: workspaceId < 0 ? null : workspaceId,
+      workspaceIds: selectedWorkspaces.map(x => x.id),
       allowedRosterColumns: permissionsToArray(allowedColumns),
       allowedNotificationEvents: permissionsToArray(allowedNotificationEvents),
       canManageGroup,
@@ -178,7 +194,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
         <TableCell>
           <Checkbox
             color="primary"
-            disabled={formDisabled || !columnAllowed(column) || workspaceId >= 0}
+            disabled={formDisabled || !columnAllowed(column) || selectedWorkspaces.length > 0}
             checked={allowedRosterColumns[column.name] && columnAllowed(column)}
             onChange={onRosterColumnChanged(column.name)}
           />
@@ -205,161 +221,173 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
     ));
   };
 
+  const allWorkspacesSelected = () => {
+    return selectedWorkspaces.length === workspaces.length;
+  };
+
   return (
     <Dialog className={classes.root} maxWidth="md" onClose={onClose} open={open}>
       <DialogTitle id="alert-dialog-title">{existingRole ? 'Edit Role' : 'New Role'}</DialogTitle>
       <DialogContent>
-        <Grid container spacing={3}>
-          <Grid item xs={6}>
-            <Typography className={classes.roleHeader}>Role Name:</Typography>
-            <TextField
-              className={classes.textField}
-              id="role-name"
-              disabled={formDisabled}
-              value={name}
-              onChange={onInputChanged(setName)}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <Typography className={classes.roleHeader}>Description:</Typography>
-            <TextField
-              className={classes.textField}
-              id="role-description"
-              disabled={formDisabled}
-              multiline
-              rowsMax={2}
-              value={description}
-              onChange={onInputChanged(setDescription)}
-            />
-          </Grid>
-          <Grid item container xs={6}>
-            <Grid item xs={12}>
-              <Typography className={classes.roleHeader}>Analytics Workspace:</Typography>
+        <Box display="flex">
+          <Box flex={1}>
+            <Box className={classes.section}>
+              <Typography className={classes.roleHeader}>Role Name:</Typography>
+              <TextField
+                className={classes.textField}
+                id="role-name"
+                disabled={formDisabled}
+                value={name}
+                onChange={onInputChanged(setName)}
+              />
+            </Box>
+
+            <Box className={classes.section}>
+              <Typography className={classes.roleHeader}>Analytics Workspaces:</Typography>
               <Select
                 className={classes.workspaceSelect}
-                native
+                multiple
                 disabled={formDisabled}
-                value={workspaceId}
+                value={selectedWorkspaces.map(x => x.id)}
                 onChange={onWorkspaceChanged}
-                inputProps={{
-                  name: 'template',
-                  id: 'template-select',
+                renderValue={() => selectedWorkspaces.map(x => x.name).join(', ')}
+                MenuProps={{
+                  variant: 'menu',
                 }}
               >
-                <option key={-1} value={-1}>None</option>
-                {workspaces && workspaces.map(workspace => (
-                  <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
+                {workspaces.map(workspace => (
+                  <MenuItem key={workspace.id} value={workspace.id}>
+                    <Checkbox
+                      color="primary"
+                      checked={allWorkspacesSelected() || !!selectedWorkspaces.find(x => x.id === workspace.id)}
+                    />
+                    <ListItemText primary={workspace.name} />
+                  </MenuItem>
                 ))}
               </Select>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography className={classes.roleHeader}>Workspace Description:</Typography>
-              <Typography className={classes.workspaceDescription}>{getWorkspaceDescription()}</Typography>
-            </Grid>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography className={classes.roleHeader}>Allowed Notifications:</Typography>
-            <EditableBooleanTable aria-label="Notifications">
-              {buildNotificationEventRows()}
-            </EditableBooleanTable>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography className={classes.roleHeader}>Permissions:</Typography>
-            <EditableBooleanTable aria-label="Permissions">
-              <TableRow>
-                <TableCell>Manage Group</TableCell>
-                <TableCell>
-                  <Checkbox
-                    color="primary"
-                    disabled={formDisabled}
-                    checked={canManageGroup}
-                    onChange={onPermissionChanged(setCanManageGroup)}
-                  />
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Manage Roster</TableCell>
-                <TableCell>
-                  <Checkbox
-                    color="primary"
-                    disabled={formDisabled || canManageGroup}
-                    checked={canManageGroup || canManageRoster}
-                    onChange={onPermissionChanged(setCanManageRoster)}
-                  />
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Manage Workspace</TableCell>
-                <TableCell>
-                  <Checkbox
-                    color="primary"
-                    disabled={formDisabled || canManageGroup}
-                    checked={canManageGroup || canManageWorkspace}
-                    onChange={onPermissionChanged(setCanManageWorkspace)}
-                  />
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>View Roster</TableCell>
-                <TableCell>
-                  <Checkbox
-                    color="primary"
-                    disabled={formDisabled || canManageGroup || canManageRoster}
-                    checked={canManageGroup || canManageRoster || canViewRoster}
-                    onChange={onPermissionChanged(setCanViewRoster)}
-                  />
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>View Muster Reports</TableCell>
-                <TableCell>
-                  <Checkbox
-                    color="primary"
-                    disabled={formDisabled || canManageGroup}
-                    checked={canManageGroup || canViewMuster}
-                    onChange={onPermissionChanged(setCanViewMuster)}
-                  />
-                </TableCell>
-              </TableRow>
+            </Box>
 
-              <TableRow>
-                <TableCell>
-                  {`View PII ${workspaceId >= 0 ? '(Set by Workspace)' : ''}`}
-                </TableCell>
-                <TableCell>
-                  <Checkbox
-                    color="primary"
-                    disabled={formDisabled || workspaceId >= 0 || canViewPHI}
-                    checked={canViewPII || canViewPHI}
-                    onChange={onPermissionChanged(setCanViewPII)}
-                  />
-                </TableCell>
-              </TableRow>
+            <Box className={classes.section}>
+              <Typography className={classes.roleHeader}>Permissions:</Typography>
+              <EditableBooleanTable aria-label="Permissions">
+                <TableRow>
+                  <TableCell>Manage Group</TableCell>
+                  <TableCell>
+                    <Checkbox
+                      color="primary"
+                      disabled={formDisabled}
+                      checked={canManageGroup}
+                      onChange={onPermissionChanged(setCanManageGroup)}
+                    />
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Manage Roster</TableCell>
+                  <TableCell>
+                    <Checkbox
+                      color="primary"
+                      disabled={formDisabled || canManageGroup}
+                      checked={canManageGroup || canManageRoster}
+                      onChange={onPermissionChanged(setCanManageRoster)}
+                    />
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Manage Workspace</TableCell>
+                  <TableCell>
+                    <Checkbox
+                      color="primary"
+                      disabled={formDisabled || canManageGroup}
+                      checked={canManageGroup || canManageWorkspace}
+                      onChange={onPermissionChanged(setCanManageWorkspace)}
+                    />
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>View Roster</TableCell>
+                  <TableCell>
+                    <Checkbox
+                      color="primary"
+                      disabled={formDisabled || canManageGroup || canManageRoster}
+                      checked={canManageGroup || canManageRoster || canViewRoster}
+                      onChange={onPermissionChanged(setCanViewRoster)}
+                    />
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>View Muster Reports</TableCell>
+                  <TableCell>
+                    <Checkbox
+                      color="primary"
+                      disabled={formDisabled || canManageGroup}
+                      checked={canManageGroup || canViewMuster}
+                      onChange={onPermissionChanged(setCanViewMuster)}
+                    />
+                  </TableCell>
+                </TableRow>
 
-              <TableRow>
-                <TableCell>
-                  {`View PHI ${workspaceId >= 0 ? '(Set by Workspace)' : ''}`}
-                </TableCell>
-                <TableCell>
-                  <Checkbox
-                    color="primary"
-                    disabled={formDisabled || workspaceId >= 0}
-                    checked={canViewPHI}
-                    onChange={onPermissionChanged(setCanViewPHI)}
-                  />
-                </TableCell>
-              </TableRow>
-            </EditableBooleanTable>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography className={classes.roleHeader}>
-              {`Viewable Roster Columns: ${workspaceId >= 0 ? '(Set by Workspace)' : ''}`}
-            </Typography>
-            <EditableBooleanTable aria-label="Roster Columns">
-              {buildRosterColumnRows()}
-            </EditableBooleanTable>
-          </Grid>
-        </Grid>
+                <TableRow>
+                  <TableCell>
+                    {`View PII ${selectedWorkspaces.length > 0 ? '(Set by Workspace)' : ''}`}
+                  </TableCell>
+                  <TableCell>
+                    <Checkbox
+                      color="primary"
+                      disabled={formDisabled || selectedWorkspaces.length > 0 || canViewPHI}
+                      checked={canViewPII || canViewPHI}
+                      onChange={onPermissionChanged(setCanViewPII)}
+                    />
+                  </TableCell>
+                </TableRow>
+
+                <TableRow>
+                  <TableCell>
+                    {`View PHI ${selectedWorkspaces.length > 0 ? '(Set by Workspace)' : ''}`}
+                  </TableCell>
+                  <TableCell>
+                    <Checkbox
+                      color="primary"
+                      disabled={formDisabled || selectedWorkspaces.length > 0}
+                      checked={canViewPHI}
+                      onChange={onPermissionChanged(setCanViewPHI)}
+                    />
+                  </TableCell>
+                </TableRow>
+              </EditableBooleanTable>
+            </Box>
+          </Box>
+
+          <Box flex={1}>
+            <Box className={classes.section}>
+              <Typography className={classes.roleHeader}>Description:</Typography>
+              <TextField
+                className={classes.textField}
+                id="role-description"
+                disabled={formDisabled}
+                multiline
+                rowsMax={2}
+                value={description}
+                onChange={onInputChanged(setDescription)}
+              />
+            </Box>
+
+            <Box className={classes.section}>
+              <Typography className={classes.roleHeader}>Allowed Notifications:</Typography>
+              <EditableBooleanTable aria-label="Notifications">
+                {buildNotificationEventRows()}
+              </EditableBooleanTable>
+            </Box>
+
+            <Box className={classes.section}>
+              <Typography className={classes.roleHeader}>
+                {`Viewable Roster Columns: ${selectedWorkspaces.length > 0 ? '(Set by Workspace)' : ''}`}
+              </Typography>
+              <EditableBooleanTable aria-label="Roster Columns">
+                {buildRosterColumnRows()}
+              </EditableBooleanTable>
+            </Box>
+          </Box>
+        </Box>
       </DialogContent>
       <DialogActions className={classes.roleDialogActions}>
         <Button disabled={formDisabled} variant="outlined" onClick={onClose} color="primary">

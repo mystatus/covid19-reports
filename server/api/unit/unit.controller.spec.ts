@@ -65,7 +65,7 @@ describe(`Unit Controller`, () => {
         where: { org },
       });
 
-      const body = {
+      const body: UnitData = {
         name: uniqueString(),
         musterConfiguration: [{
           days: uniqueInt(),
@@ -80,7 +80,7 @@ describe(`Unit Controller`, () => {
           durationMinutes: uniqueInt(),
           reportId: 'es6ddssymptomobs',
         }],
-      } as UnitData;
+      };
 
       const res = await req.post(`/${org.id}`, body);
 
@@ -126,7 +126,7 @@ describe(`Unit Controller`, () => {
     it(`updates the org's unit`, async () => {
       const unit = await seedUnit(org);
 
-      const body = {
+      const body: UnitData = {
         name: uniqueString(),
         musterConfiguration: [{
           days: uniqueInt(),
@@ -141,7 +141,7 @@ describe(`Unit Controller`, () => {
           durationMinutes: uniqueInt(),
           reportId: 'es6ddssymptomobs',
         }],
-      } as UnitData;
+      };
 
       const res = await req.put(`/${org.id}/${unit.id}`, body);
 

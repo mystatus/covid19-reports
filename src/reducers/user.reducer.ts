@@ -30,8 +30,8 @@ export function userReducer(state = userInitialState, action: any): UserState {
         ...loggedInState,
       };
     }
-    case User.Actions.Login.type: {
-      const { userData, localStorage } = (action as User.Actions.Login).payload;
+    case User.Actions.Refresh.type: {
+      const { userData, localStorage } = (action as User.Actions.Refresh).payload;
       const loggedInState = getLoggedInState(userData, localStorage);
       return {
         ...state,

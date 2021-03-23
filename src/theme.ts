@@ -88,11 +88,6 @@ theme.overrides = {
       },
     },
   },
-  MuiCard: {
-    root: {
-      marginBottom: theme.spacing(3),
-    },
-  },
   MuiCardActions: {
     root: {
       padding: theme.spacing(3),
@@ -104,6 +99,10 @@ theme.overrides = {
   MuiCardContent: {
     root: {
       padding: theme.spacing(4),
+
+      '&:last-child': {
+        paddingBottom: theme.spacing(4),
+      },
 
       '& header > *:nth-child(1)': theme.typography.h2,
       '& header p': theme.typography.subtitle1,

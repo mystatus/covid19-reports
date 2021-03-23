@@ -139,7 +139,7 @@ export const RoleManagementPage = () => {
               <Typography className={classes.descriptionColumn}>{row.description}</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <RoleInfoPanel role={row} hideDescription />
+              <RoleInfoPanel role={row} />
             </AccordionDetails>
             <AccordionActions className={classes.roleButtons}>
               <Button

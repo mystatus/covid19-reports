@@ -11,6 +11,7 @@ import {
   Unit,
 } from '../api/unit/unit.model';
 import { elasticsearch } from '../elasticsearch/elasticsearch';
+import { buildEsIndexPatternsForMuster } from './elasticsearch-utils';
 import { InternalServerError } from './error-types';
 import { Log } from './log';
 import {
@@ -37,7 +38,7 @@ export async function getRosterMusterStats(args: {
   let response: SearchResponse<never>;
   try {
     response = await elasticsearch.search({
-      index: userRole.getKibanaIndicesForMuster(unitId),
+      index: buildEsIndexPatternsForMuster(userRole, unitId),
       body: buildIndividualsMusterBody({
         interval,
         intervalCount,
@@ -159,7 +160,7 @@ export async function getUnitMusterStats(args: {
   //
   // Build elastcisearch multisearch queries.
   //
-  const index = userRole.getKibanaIndicesForMuster();
+  const index = buildEsIndexPatternsForMuster(userRole);
   const esBody = [
     { index },
     buildMusterEsBody({

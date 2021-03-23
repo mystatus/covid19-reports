@@ -77,38 +77,6 @@ export class UserRole extends BaseEntity {
     return this.units.find(unit => unit.id === unitId);
   }
 
-  getKibanaIndices() {
-    if (this.user.rootAdmin) {
-      return ['*'];
-    }
-    const suffix = this.role.canViewPHI ? 'phi' : (this.role.canViewPII ? 'pii' : 'base');
-    if (this.allUnits) {
-      return [this.buildIndexPattern('*', suffix)];
-    }
-    return this.units.map(unit => this.buildIndexPattern(`${unit.id}`, suffix));
-  }
-
-  getKibanaIndicesForMuster(unitId?: number) {
-    if (unitId) {
-      return [this.buildIndexPattern(`${unitId}`, 'phi')];
-    }
-    if (this.allUnits) {
-      return [this.buildIndexPattern('*', 'phi')];
-    }
-    return this.units.map(unit => this.buildIndexPattern(`${unit.id}`, 'phi'));
-  }
-
-  buildIndexPattern(unitId: string, suffix: string) {
-    return `${this.role.org!.indexPrefix}-${unitId}-${suffix}-*`;
-  }
-
-  getKibanaRoles() {
-    if (this.role.canManageWorkspace) {
-      return 'kibana_admin';
-    }
-    return 'kibana_ro_strict';
-  }
-
   static admin(org: Org, user: User) {
     const userRole = new UserRole();
     userRole.id = 0;

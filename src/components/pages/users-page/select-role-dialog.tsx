@@ -167,6 +167,9 @@ const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props:
                   name: 'unit',
                   id: 'unit-select',
                 }}
+                MenuProps={{
+                  variant: 'menu',
+                }}
               >
                 <MenuItem key="all" value={-1}>
                   <Checkbox color="primary" checked={allSelected()} />

@@ -1,11 +1,16 @@
 import { createStyles } from '@material-ui/core';
+import { Theme } from '@material-ui/core/styles';
 import { makeStyles } from '@material-ui/styles';
 
-export default makeStyles(() => createStyles({
+export default makeStyles((theme: Theme) => createStyles({
   root: {
     '& .MuiGrid-spacing-xs-3': {
       margin: '0px -12px',
     },
+  },
+  section: {
+    padding: theme.spacing(2),
+    width: '385px',
   },
   textField: {
     width: '100%',

@@ -2,6 +2,7 @@ import { ClientRequest, IncomingMessage } from 'http';
 import { Config } from 'http-proxy-middleware';
 import { ApiRequest } from '../api';
 import config from '../config';
+import { buildEsIndexPatternsForWorkspace } from '../util/elasticsearch-utils';
 
 const kibanaProxyConfig: Config = {
   target: config.kibana.uri,
@@ -17,7 +18,9 @@ const kibanaProxyConfig: Config = {
   // add custom headers to request
   onProxyReq: (proxyReq: ClientRequest, req: ProxyRequest) => {
     if (req.appUserRole) {
-      proxyReq.setHeader('x-se-indices', req.appUserRole.getKibanaIndices().join(','));
+      const indexPatterns = buildEsIndexPatternsForWorkspace(req.appUser, req.appUserRole, req.appWorkspace!)
+        .join(',');
+      proxyReq.setHeader('x-se-indices', indexPatterns);
     }
   },
 

@@ -2,13 +2,19 @@ import { Response } from 'express';
 import { getConnection } from 'typeorm';
 import { KibanaApi } from '../../kibana/kibana-api';
 import { setupKibanaWorkspace } from '../../kibana/kibana-utility';
+import { assertRequestBody } from '../../util/api-utils';
 import {
-  ApiRequest, OrgParam, OrgWorkspaceParams,
+  ApiRequest,
+  OrgParam,
+  OrgWorkspaceParams,
+  WorkspaceParam,
 } from '../index';
 import { Workspace } from './workspace.model';
-import { BadRequestError, NotFoundError } from '../../util/error-types';
+import {
+  BadRequestError,
+  NotFoundError,
+} from '../../util/error-types';
 import { WorkspaceTemplate } from './workspace-template.model';
-import { Role } from '../role/role.model';
 
 class WorkspaceController {
 
@@ -45,32 +51,16 @@ class WorkspaceController {
     res.json(templates);
   }
 
-  async addWorkspace(req: ApiRequest<OrgParam, WorkspaceBody>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
+  async addWorkspace(req: ApiRequest<OrgParam, AddWorkspaceBody>, res: Response) {
+    const { name, description, templateId } = assertRequestBody(req, [
+      'name',
+      'description',
+      'templateId',
+    ]);
 
-    if (!req.appUserRole) {
-      throw new NotFoundError('req.appUserRole is not set');
-    }
-
-    if (!req.body.name) {
-      throw new BadRequestError('A name must be supplied when adding a workspace.');
-    }
-
-    if (!req.body.description) {
-      throw new BadRequestError('A description must be supplied when adding a workspace.');
-    }
-
-    if (!req.body.templateId) {
-      throw new BadRequestError('A base template must be supplied when adding a workspace.');
-    }
-
-    const workspace = new Workspace();
-    workspace.org = req.appOrg;
     const template = await WorkspaceTemplate.findOne({
       where: {
-        id: req.body.templateId,
+        id: templateId,
       },
     });
 
@@ -78,37 +68,35 @@ class WorkspaceController {
       throw new NotFoundError('Workspace template could not be found.');
     }
 
+    const workspace = new Workspace();
+    workspace.org = req.appOrg;
     workspace.workspaceTemplate = template;
     workspace.pii = template.pii;
     workspace.phi = template.phi;
-    await setWorkspaceFromBody(workspace, req.body);
+    workspace.name = name;
+    workspace.description = description;
 
-    let newWorkspace = undefined as Workspace | undefined;
     await getConnection().transaction(async manager => {
-      newWorkspace = await manager.save(workspace);
-      req.appWorkspace = newWorkspace;
+      await manager.save(workspace);
 
       // Create new Kibana workspace.
       // NOTE: We can't connect to the Kibana API with middleware when creating a workspace, since the workspace
       // doesn't exist yet to build the JWT with. So connect manually now that it exists.
+      req.appWorkspace = workspace;
       await KibanaApi.connect(req);
-      await setupKibanaWorkspace(newWorkspace, req.appUserRole!.role, req.kibanaApi!);
+      await setupKibanaWorkspace(workspace, req.kibanaApi!);
     });
 
-    await res.status(201).json(newWorkspace);
+    await res.status(201).json(workspace);
   }
 
   async getWorkspace(req: ApiRequest<OrgWorkspaceParams>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
     const workspaceId = parseInt(req.params.workspaceId);
 
     const workspace = await Workspace.findOne({
       where: {
         id: workspaceId,
-        org: req.appOrg.id,
+        org: req.appOrg!.id,
       },
     });
 
@@ -120,16 +108,13 @@ class WorkspaceController {
   }
 
   async deleteWorkspace(req: ApiRequest<OrgWorkspaceParams>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
     const workspaceId = parseInt(req.params.workspaceId);
 
     const workspace = await Workspace.findOne({
+      relations: ['roles'],
       where: {
         id: workspaceId,
-        org: req.appOrg.id,
+        org: req.appOrg!.id,
       },
     });
 
@@ -137,13 +122,7 @@ class WorkspaceController {
       throw new NotFoundError('Workspace could not be found.');
     }
 
-    const roles = await Role.count({
-      where: {
-        workspace: workspaceId,
-      },
-    });
-
-    if (roles > 0) {
+    if (workspace.roles!.length > 0) {
       throw new BadRequestError('Cannot delete a workspace that is assigned to a role.');
     }
 
@@ -151,16 +130,14 @@ class WorkspaceController {
     res.json(removedWorkspace);
   }
 
-  async updateWorkspace(req: ApiRequest<OrgWorkspaceParams, WorkspaceBody>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found.');
-    }
+  async updateWorkspace(req: ApiRequest<WorkspaceParam, UpdateWorkspaceBody>, res: Response) {
     const workspaceId = parseInt(req.params.workspaceId);
+    const { name, description } = req.body;
 
     const workspace = await Workspace.findOne({
       where: {
         id: workspaceId,
-        org: req.appOrg.id,
+        org: req.appOrg!.id,
       },
     });
 
@@ -168,7 +145,12 @@ class WorkspaceController {
       throw new NotFoundError('Workspace could not be found.');
     }
 
-    await setWorkspaceFromBody(workspace, req.body);
+    if (name) {
+      workspace.name = name;
+    }
+    if (description) {
+      workspace.description = description;
+    }
 
     const updatedWorkspace = await workspace.save();
 
@@ -177,19 +159,15 @@ class WorkspaceController {
 
 }
 
-async function setWorkspaceFromBody(workspace: Workspace, body: WorkspaceBody) {
-  if (body.name != null) {
-    workspace.name = body.name;
-  }
-  if (body.description != null) {
-    workspace.description = body.description;
-  }
-}
+export type AddWorkspaceBody = {
+  name: string
+  description: string
+  templateId: number
+};
 
-type WorkspaceBody = {
+export type UpdateWorkspaceBody = {
   name?: string
   description?: string
-  templateId?: number
 };
 
 export default new WorkspaceController();
