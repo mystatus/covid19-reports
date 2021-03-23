@@ -179,6 +179,7 @@ export const UnitsPage = () => {
               <CardContent>
                 <MusterConfigReadable
                   className={classes.musterConfiguration}
+                  empty="Units are not required to muster."
                   reports={reports}
                   musterConfiguration={defaultMusterConfiguration}
                 />

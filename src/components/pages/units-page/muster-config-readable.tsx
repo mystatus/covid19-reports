@@ -5,13 +5,14 @@ import { musterConfigurationParts, musterConfigurationPartsToString } from '../.
 
 export type MusterConfigProps = {
   className?: string,
+  empty?: React.ReactNode,
   reports: ApiReportSchema[],
   defaultMusterConfiguration?: MusterConfiguration[],
   musterConfiguration: MusterConfiguration[],
   typographyProps?: TypographyProps,
 };
 
-export default function MusterConfigReadable({ className, reports, musterConfiguration, typographyProps }: MusterConfigProps) {
+export default function MusterConfigReadable({ className, empty = null, reports, musterConfiguration, typographyProps }: MusterConfigProps) {
   return (
     <div className={className}>
       {musterConfiguration
@@ -21,6 +22,7 @@ export default function MusterConfigReadable({ className, reports, musterConfigu
             {musterConfigurationPartsToString(dateOrDays, duration, time, report)}
           </Typography>
         ))}
+      {!musterConfiguration?.length && empty}
     </div>
   );
 }

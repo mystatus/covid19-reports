@@ -153,4 +153,9 @@ export default makeStyles((theme: Theme) => createStyles({
     backgroundColor: '#F0F1F1',
     padding: '15px 35px',
   },
+  noDefaultConfig: {
+    color: '#A9AEB1',
+    marginLeft: '32px',
+    marginTop: '-10px',
+  },
 }));

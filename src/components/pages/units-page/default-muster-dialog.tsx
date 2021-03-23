@@ -323,7 +323,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
             <TableHead>
               <TableRow>
                 <TableCell>Report Type</TableCell>
-                <TableCell className={classes.daysColumn}>Repeating Days / One-Time Date</TableCell>
+                <TableCell className={classes.daysColumn}>Schedule</TableCell>
                 <TableCell>Start Time</TableCell>
                 <TableCell>Time Zone</TableCell>
                 <TableCell>Duration (Hrs)</TableCell>

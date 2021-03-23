@@ -290,6 +290,12 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
                 )}
                 label="Include Default"
               />
+              {includeDefault && !defaultMusterConfiguration.length && (
+                <p className={classes.noDefaultConfig}>
+                  Units are not required to muster.<br />
+                  Future changes to the default will still apply to this unit.
+                </p>
+              )}
             </div>
             {/* {showNoneMessage && (
               <p>
@@ -304,7 +310,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
                 <TableHead>
                   <TableRow>
                     <TableCell>Report Type</TableCell>
-                    <TableCell className={classes.daysColumn}>Repeating Days / One-Time Date</TableCell>
+                    <TableCell className={classes.daysColumn}>Schedule</TableCell>
                     <TableCell>Start Time</TableCell>
                     <TableCell>Time Zone</TableCell>
                     <TableCell>Duration (Hrs)</TableCell>
