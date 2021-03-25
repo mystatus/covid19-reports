@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import { json2csvAsync } from 'json-2-csv';
 import { uniqueString } from '../../util/test-utils/unique';
 import { Unit } from '../unit/unit.model';

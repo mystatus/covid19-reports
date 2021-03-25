@@ -25,6 +25,9 @@ export default makeStyles((theme: Theme) => createStyles({
       whiteSpace: 'nowrap',
     },
   },
+  unitError: {
+    color: '#E41D3D',
+  },
   textField: {
     width: '100%',
     margin: 0,
@@ -82,7 +85,13 @@ export default makeStyles((theme: Theme) => createStyles({
       '&:first-child': {
         borderLeft: 'none',
       },
+      '& > .MuiFormControl-root': {
+        display: 'flex',
+      },
     },
+  },
+  daysColumn: {
+    width: '266px',
   },
   dayButtons: {
     display: 'flex',
@@ -147,8 +156,10 @@ export default makeStyles((theme: Theme) => createStyles({
     fontWeight: 500,
     fontSize: '16px',
     margin: '20px 15px',
-    textAlign: 'center',
     padding: '20px !important',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
   },
   dialogActions: {
     justifyContent: 'center',

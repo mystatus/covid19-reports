@@ -64,7 +64,13 @@ export default makeStyles((theme: Theme) => createStyles({
       '&:first-child': {
         borderLeft: 'none',
       },
+      '& > .MuiFormControl-root': {
+        display: 'flex',
+      },
     },
+  },
+  daysColumn: {
+    width: '266px',
   },
   dayButtons: {
     display: 'flex',
@@ -75,6 +81,7 @@ export default makeStyles((theme: Theme) => createStyles({
       margin: '2px',
       paddingTop: '1px',
       fontSize: '14px',
+      cursor: 'pointer',
     },
   },
   dayButtonOn: {
@@ -99,6 +106,7 @@ export default makeStyles((theme: Theme) => createStyles({
   },
   dayButtonDisabled: {
     opacity: 0.7,
+    cursor: 'not-allowed',
   },
   reportCell: {
     width: '20%',
@@ -144,5 +152,10 @@ export default makeStyles((theme: Theme) => createStyles({
     justifyContent: 'center',
     backgroundColor: '#F0F1F1',
     padding: '15px 35px',
+  },
+  noDefaultConfig: {
+    color: '#A9AEB1',
+    marginLeft: '32px',
+    marginTop: '-10px',
   },
 }));

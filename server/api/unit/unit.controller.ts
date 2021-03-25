@@ -141,12 +141,16 @@ async function setUnitFromBody(orgId: number, unit: Unit, body: UnitData) {
 
     unit.musterConfiguration = body.musterConfiguration;
   }
+  if (body.includeDefaultConfig !== undefined) {
+    unit.includeDefaultConfig = body.includeDefaultConfig;
+  }
 }
 
 
 export interface UnitData {
   name?: string,
   musterConfiguration?: MusterConfiguration[],
+  includeDefaultConfig?: boolean
 }
 
 type GetUnitRosterQuery = {

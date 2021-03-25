@@ -221,6 +221,10 @@ export function calcNonMusterPercent(mustersReported: number, mustersNotReported
   return nonMusterPercent;
 }
 
+export function getOneTimeMusterWindowTime(muster: MusterConfiguration) {
+  return moment(muster.startTime).tz(muster.timezone).unix();
+}
+
 export function getEarliestMusterWindowTime(muster: MusterConfiguration, referenceTime: number) {
   const musterTime = moment(muster.startTime, 'HH:mm');
   return moment
@@ -256,10 +260,6 @@ export function getDistanceToWindow(start: number, end: number, time: number) {
     return time - start;
   }
   return 0;
-}
-
-export function getMusterConfig(unit: Unit): MusterConfiguration[] | undefined {
-  return unit.musterConfiguration === null ? unit.org!.defaultMusterConfiguration : unit.musterConfiguration;
 }
 
 function buildIndividualsMusterBody({
