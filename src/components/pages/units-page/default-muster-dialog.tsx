@@ -397,6 +397,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
                         <DatePicker
                           id={`muster-date-time-${muster.rowKey}`}
                           disabled={formDisabled}
+                          format="MMMM D, yyyy"
                           value={muster.startTimeDate}
                           InputProps={{ disableUnderline: true }}
                           onChange={setMusterStartTime(muster.rowKey)}

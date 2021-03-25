@@ -228,6 +228,9 @@ theme.props = {
     variant: 'contained',
     disableElevation: true,
   },
+  MuiDialog: {
+    disableBackdropClick: true,
+  },
   MuiIconButton: {
     color: 'primary',
   },

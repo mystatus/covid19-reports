@@ -387,6 +387,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
                             <DatePicker
                               id={`muster-date-time-${muster.rowKey}`}
                               disabled={formDisabled || isDefault(index)}
+                              format="MMMM D, yyyy"
                               value={muster.startTimeDate}
                               InputProps={{ disableUnderline: true }}
                               onChange={setMusterStartTime(index)}
