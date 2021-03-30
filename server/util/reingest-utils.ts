@@ -1,4 +1,4 @@
-import AWS, { AWSError } from 'aws-sdk';
+import AWS from 'aws-sdk';
 import config from '../config';
 import { dateFromString } from './util';
 import { BadRequestError } from './error-types';
@@ -143,10 +143,34 @@ export async function reingest(queryInput: AWS.DynamoDB.QueryInput) {
   };
 }
 
-export async function reingestByDocumentId(documentId: string) {
-  return reingest(makeDocumentIdQuery(documentId));
+export async function reingestBroadcast(queryInput: AWS.DynamoDB.QueryInput) {
+  const tables = config.dynamo.symptomTable.split(',');
+  let lambdaInvocationCount = 0;
+  let recordsIngested = 0;
+
+  for (const table of tables) {
+    const result = await reingest({
+      ...queryInput,
+      TableName: table,
+    });
+    lambdaInvocationCount += result.lambdaInvocationCount;
+    recordsIngested += result.recordsIngested;
+
+    // Avoid additional querying since we've already hit found/processed the record.
+    if (lambdaInvocationCount || recordsIngested) {
+      break;
+    }
+  }
+  return {
+    lambdaInvocationCount,
+    recordsIngested,
+  };
 }
 
-export async function reingestByEdipi(edipi: string, startTime?: string | number | Date, endTime?: string | number | Date) {
-  return reingest(makeEdipiAndRangeQuery(edipi, startTime, endTime));
+export function reingestByDocumentId(documentId: string) {
+  return reingestBroadcast(makeDocumentIdQuery(documentId));
+}
+
+export function reingestByEdipi(edipi: string, startTime?: string | number | Date, endTime?: string | number | Date) {
+  return reingestBroadcast(makeEdipiAndRangeQuery(edipi, startTime, endTime));
 }
