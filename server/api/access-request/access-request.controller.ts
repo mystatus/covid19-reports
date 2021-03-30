@@ -248,17 +248,17 @@ class AccessRequestController {
   }
 }
 
-type AccessRequestBody = {
+export type AccessRequestBody = {
   requestId: number,
 };
 
-type ApproveAccessRequestBody = AccessRequestBody & {
+export type ApproveAccessRequestBody = AccessRequestBody & {
   roleId: number,
   unitIds: number[],
   allUnits: boolean,
 };
 
-type IssueAccessRequestBody = {
+export type IssueAccessRequestBody = {
   whatYouDo: string[]
   sponsorName: string
   sponsorEmail: string

@@ -1,8 +1,14 @@
 import { expect } from 'chai';
 import _ from 'lodash';
+import { formatPhoneNumber } from '../../util/string-utils';
 import { expectNoErrors } from '../../util/test-utils/expect';
 import { seedOrgContactRoles } from '../../util/test-utils/seed';
 import { TestRequest } from '../../util/test-utils/test-request';
+import {
+  uniqueEmail,
+  uniquePhone,
+  uniqueString,
+} from '../../util/test-utils/unique';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { seedUnit } from '../unit/unit.model.mock';
@@ -12,6 +18,7 @@ import {
   seedUser,
   seedUsers,
 } from '../user/user.model.mock';
+import { IssueAccessRequestBody } from './access-request.controller';
 import {
   seedAccessRequest,
   seedAccessRequests,
@@ -64,8 +71,16 @@ describe(`AccessRequest Controller`, () => {
         where: { org },
       });
 
+      const body: IssueAccessRequestBody = {
+        whatYouDo: [uniqueString(), uniqueString()],
+        sponsorName: uniqueString(),
+        sponsorEmail: uniqueEmail(),
+        sponsorPhone: uniquePhone(),
+        justification: uniqueString(),
+      };
+
       req.setUser(user);
-      const res = await req.post(`/${org.id}`);
+      const res = await req.post(`/${org.id}`, body);
 
       expectNoErrors(res);
 
@@ -73,7 +88,12 @@ describe(`AccessRequest Controller`, () => {
         where: { org },
       });
       expect(accessRequestsAfter).to.have.lengthOf(accessRequestsCountBefore + 1);
-      expect(accessRequestsAfter[0].status).to.equal(AccessRequestStatus.Pending);
+      const request = accessRequestsAfter[0];
+      expect(request.status).to.equal(AccessRequestStatus.Pending);
+      expect(request.whatYouDo).to.eql(body.whatYouDo);
+      expect(request.sponsorName).to.equal(body.sponsorName);
+      expect(request.sponsorEmail).to.equal(body.sponsorEmail);
+      expect(request.sponsorPhone).to.equal(formatPhoneNumber(body.sponsorPhone));
     });
 
   });
@@ -131,7 +151,7 @@ describe(`AccessRequest Controller`, () => {
       const body = {
         requestId: accessRequest.id,
         roleId: roleAdmin.id,
-        units: [unit1.id, unit3.id],
+        unitIds: [unit1.id, unit3.id],
         allUnits: false,
       };
       const res = await req.post(`/${org.id}/approve`, body);
@@ -184,7 +204,7 @@ describe(`AccessRequest Controller`, () => {
       const body = {
         requestId: accessRequest.id,
         roleId: roleAdmin.id,
-        units: [],
+        unitIds: [],
         allUnits: true,
       };
       const res = await req.post(`/${org.id}/approve`, body);
