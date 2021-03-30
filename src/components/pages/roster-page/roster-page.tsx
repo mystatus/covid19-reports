@@ -457,6 +457,8 @@ export const RosterPage = () => {
       if (column.name === 'earliestReportDate' || column.name === 'latestReportDate') {
         return moment(value).format('Y-M-D h:mm A z');
       }
+    } else if (column.name === 'phone' || column.name === 'unit') {
+      return 'none';
     }
     return value;
   };
@@ -491,7 +493,7 @@ export const RosterPage = () => {
               title={`Orphaned Records (${orphanedRecords.length})`}
               idColumn="id"
               rowOptions={{
-                menuItems: (row: ApiOrphanedRecord) => ([{
+                menuItems: [{
                   callback: addOrphanToRosterClicked,
                   disabled: orphanedRecordsWaiting,
                   name: 'Add to a Roster...',
@@ -499,7 +501,7 @@ export const RosterPage = () => {
                   callback: ignoreOrphanClicked,
                   disabled: orphanedRecordsWaiting,
                   name: 'Ignore...',
-                }]),
+                }],
                 renderCell: getOrphanCellDisplayValue,
               }}
             />

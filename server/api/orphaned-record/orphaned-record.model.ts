@@ -59,7 +59,12 @@ export class OrphanedRecord extends BaseEntity {
     if (!this.org?.id) {
       throw new InternalServerError('Org with id is required when creating an OrphanedRecord.');
     }
-
+    if (!this.phone) {
+      this.phone = '';
+    }
+    if (!this.unit) {
+      this.unit = '';
+    }
     this.compositeId = `${this.edipi};${this.org!.id};${this.phone};${this.unit}`;
   }
 }
