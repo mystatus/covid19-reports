@@ -13,12 +13,6 @@ export default makeStyles((theme: Theme) => createStyles({
   textField: {
     width: '100%',
     margin: 0,
-    '& .MuiInputBase-multiline': {
-      padding: 0,
-      '& textarea': {
-        padding: '8px 12px',
-      },
-    },
   },
   headerLabel: {
     fontWeight: 'bold',
@@ -147,11 +141,6 @@ export default makeStyles((theme: Theme) => createStyles({
     margin: '20px 15px',
     textAlign: 'center',
     padding: '20px !important',
-  },
-  dialogActions: {
-    justifyContent: 'center',
-    backgroundColor: '#F0F1F1',
-    padding: '15px 35px',
   },
   noDefaultConfig: {
     color: '#A9AEB1',

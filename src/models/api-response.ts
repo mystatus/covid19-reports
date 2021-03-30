@@ -56,6 +56,11 @@ export interface ApiAccessRequest {
   org: ApiOrg,
   requestDate: Date,
   user: ApiUser,
+  whatYouDo: string[]
+  sponsorName: string
+  sponsorEmail: string
+  sponsorPhone: string
+  justification: string
   status: 'approved' | 'pending' | 'denied',
 }
 

@@ -1,8 +1,19 @@
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import axios, {
+  AxiosError,
+  AxiosResponse,
+} from 'axios';
 import axiosRetry from 'axios-retry';
 import { UserRegisterData } from '../actions/user.actions';
 import {
-  ApiAccessRequest, ApiNotification, ApiOrphanedRecord, ApiReportSchema, ApiRole, ApiRosterColumnInfo, ApiUnit, ApiUser, ApiWorkspace,
+  ApiAccessRequest,
+  ApiNotification,
+  ApiOrphanedRecord,
+  ApiReportSchema,
+  ApiRole,
+  ApiRosterColumnInfo,
+  ApiUnit,
+  ApiUser,
+  ApiWorkspace,
 } from '../models/api-response';
 
 const client = axios.create({
@@ -38,6 +49,40 @@ axiosRetry(client, {
 export namespace AccessRequestClient {
   export const fetchAll = (orgId: number): Promise<ApiAccessRequest[]> => {
     return client.get(`access-request/${orgId}`);
+  };
+
+  export const issue = (
+    orgId: number,
+    body: {
+      whatYouDo: string[]
+      sponsorName: string
+      sponsorEmail: string
+      sponsorPhone: string
+      justification: string
+    },
+  ): Promise<ApiAccessRequest> => {
+    return client.post(`access-request/${orgId}`, body);
+  };
+
+  export const approve = (
+    orgId: number,
+    body: {
+      requestId: number
+      roleId: number
+      unitIds: number[]
+      allUnits: boolean
+    },
+  ): Promise<void> => {
+    return client.post(`access-request/${orgId}/approve`, body);
+  };
+
+  export const deny = (
+    orgId: number,
+    body: {
+      requestId: number
+    },
+  ): Promise<void> => {
+    return client.post(`access-request/${orgId}/deny`, body);
   };
 }
 

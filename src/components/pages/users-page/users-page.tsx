@@ -34,21 +34,7 @@ import { UserSelector } from '../../../selectors/user.selector';
 import { Modal } from '../../../actions/modal.actions';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { Unit } from '../../../actions/unit.actions';
-
-
-enum AccessRequestState {
-  Selected,
-  DenyPending,
-  ApprovePending,
-}
-
-interface AccessRequestRow extends ApiAccessRequest {
-  state?: AccessRequestState
-}
-
-function isWaiting(request: AccessRequestRow) {
-  return request.state === AccessRequestState.ApprovePending || request.state === AccessRequestState.DenyPending;
-}
+import { ViewAccessRequestDialog } from './view-access-request-dialog';
 
 type UserMoreMenuState = {
   element: HTMLElement
@@ -63,9 +49,14 @@ export const UsersPage = () => {
   const dispatch = useDispatch();
   const units = useSelector(UnitSelector.all);
   const [userRows, setUserRows] = useState<ApiUser[]>([]);
-  const [accessRequests, setAccessRequests] = useState<AccessRequestRow[]>([]);
+  const [accessRequests, setAccessRequests] = useState<ApiAccessRequest[]>([]);
   const [userMoreMenu, setUserMenu] = React.useState<UserMoreMenuState | undefined>();
   const [selectRoleDialogProps, setSelectRoleDialogProps] = useState<Partial<SelectRoleDialogProps> | undefined>();
+  const [viewAccessRequestDialogProps, setViewAccessRequestDialogProps] = useState({
+    open: false,
+    accessRequest: undefined as ApiAccessRequest | undefined,
+  });
+
   const { edipi: currentUserEdipi } = useSelector(UserSelector.current);
   const { id: orgId, name: orgName } = useSelector(UserSelector.org) ?? {};
 
@@ -79,17 +70,17 @@ export const UsersPage = () => {
           AccessRequestClient.fetchAll(orgId!),
         ]);
         setUserRows(users as ApiUser[]);
-        setAccessRequests(requests as AccessRequestRow[]);
+        setAccessRequests(requests);
         setSelectRoleDialogProps(undefined);
       } catch (_) {
-      // Error handling? This should probably just retry?
+        // Error handling? This should probably just retry?
       }
       dispatch(AppFrame.setPageLoading(false));
     }
   }, [orgId, dispatch]);
 
   const showAlertDialog = (error: Error, title: string, message: string) => {
-    dispatch(Modal.alert(title, formatMessage(error, message)));
+    dispatch(Modal.alert(title, formatMessage(error, message))).then();
   };
 
   const makeHandleUserMoreClick = (user: ApiUser) => (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -150,40 +141,11 @@ export const UsersPage = () => {
     });
   };
 
-  function setAccessRequestState({ id }: AccessRequestRow, state: AccessRequestState | undefined) {
-    setAccessRequests(requests => requests.map(request => {
-      if (request.id === id) {
-        request.state = state;
-      }
-      return request;
-    }));
-  }
-
-  function handleSelectRequest(request: AccessRequestRow) {
-    setAccessRequestState(request, AccessRequestState.Selected);
-    setSelectRoleDialogProps({
-      confirmButtonText: 'Finalize Approval',
-      units,
-      onCancel: () => {
-        setAccessRequestState(request, undefined);
-        setSelectRoleDialogProps(undefined);
-      },
-      onChange: async (role: ApiRole, unitIds: number[] | null) => {
-        try {
-          setAccessRequestState(request, AccessRequestState.ApprovePending);
-          await client.post(`access-request/${orgId}/approve`, {
-            requestId: request.id,
-            roleId: role.id,
-            units: unitIds == null ? [] : unitIds,
-            allUnits: unitIds == null,
-          });
-        } catch (error) {
-          showAlertDialog(error, 'Approve Access Request', 'Error while approving accessing request');
-        }
-        await initializeTable();
-      },
+  function handleViewRequestClick(accessRequest: ApiAccessRequest) {
+    setViewAccessRequestDialogProps({
+      ...viewAccessRequestDialogProps,
       open: true,
-      user: request.user,
+      accessRequest,
     });
   }
 
@@ -203,16 +165,11 @@ export const UsersPage = () => {
     return userUnits.map(unit => unit.name).sort().join(', ');
   }
 
-  async function denyRequest(request: AccessRequestRow) {
-    try {
-      setAccessRequestState(request, AccessRequestState.DenyPending);
-      await client.post(`access-request/${orgId}/deny`, {
-        requestId: request.id,
-      });
-    } catch (error) {
-      showAlertDialog(error, 'Deny Access Request', 'Error while denying accessing request');
-    }
-    await initializeTable();
+  function handleViewAccessRequestDialogClose() {
+    setViewAccessRequestDialogProps({
+      ...viewAccessRequestDialogProps,
+      open: false,
+    });
   }
 
   useEffect(() => { initializeTable().then(); }, [initializeTable]);
@@ -227,6 +184,8 @@ export const UsersPage = () => {
             cardId: 'usersPage',
           }}
         />
+
+        {/* Access Requests */}
         {accessRequests.length > 0 && (
           <TableContainer className={classes.table} component={Paper}>
             <Table aria-label="access requests table">
@@ -238,45 +197,23 @@ export const UsersPage = () => {
                 </TableRow>
                 <TableRow>
                   <TableCell>Name</TableCell>
-                  <TableCell>EDIPI</TableCell>
-                  <TableCell>Service</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Phone</TableCell>
+                  <TableCell>Sponsor</TableCell>
+                  <TableCell>Justification</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {accessRequests.map(row => (
-                  <TableRow key={row.id}>
+                {accessRequests.map(accessRequest => (
+                  <TableRow key={accessRequest.id}>
                     <TableCell component="th" scope="row">
-                      {`${row.user.firstName} ${row.user.lastName}`}
+                      {`${accessRequest.user.firstName} ${accessRequest.user.lastName}`}
                     </TableCell>
-                    <TableCell>{row.user.edipi}</TableCell>
-                    <TableCell>{row.user.service}</TableCell>
+                    <TableCell>{accessRequest.sponsorName}</TableCell>
+                    <TableCell>{accessRequest.justification}</TableCell>
                     <TableCell>
-                      <IconButton aria-label="expand row" size="small" href={`mailto:${row.user.email}`}>
-                        <MailOutlineIcon />
-                      </IconButton>
-                    </TableCell>
-                    <TableCell>{row.user.phone}</TableCell>
-                    <TableCell className={classes.accessRequestButtons}>
-                      <Button
-                        variant="contained"
-                        disabled={row.state !== undefined}
-                        className={classes.accessRequestApproveButton}
-                        onClick={() => { handleSelectRequest(row); }}
-                      >
-                        Approve
+                      <Button variant="text" onClick={() => handleViewRequestClick(accessRequest)}>
+                        View Request
                       </Button>
-                      <ButtonWithSpinner
-                        variant="contained"
-                        disabled={isWaiting(row)}
-                        className={classes.accessRequestDenyButton}
-                        onClick={async () => { await denyRequest(row); }}
-                        loading={isWaiting(row)}
-                      >
-                        Deny
-                      </ButtonWithSpinner>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -284,6 +221,8 @@ export const UsersPage = () => {
             </Table>
           </TableContainer>
         )}
+
+        {/* Users */}
         <TableContainer className={classes.table} component={Paper}>
           <Table aria-label="users table">
             <TableHead>
@@ -345,6 +284,8 @@ export const UsersPage = () => {
           </Table>
         </TableContainer>
       </Container>
+
+      {/* Remove User Dialog */}
       <Dialog onClose={cancelRemoveFromGroup} open={Boolean(userMoreMenu?.showRemoveUserFromGroup)}>
         <DialogContent className={classes.confirmRemoveFromGroupContent}>
           <ReportProblemOutlinedIcon className={classes.confirmRemoveFromGroupIcon} />
@@ -368,9 +309,19 @@ export const UsersPage = () => {
           </DialogActions>
         </DialogContent>
       </Dialog>
+
       {Boolean(selectRoleDialogProps?.open) && (
         <SelectRoleDialog
           {...(selectRoleDialogProps as SelectRoleDialogProps)}
+        />
+      )}
+
+      {viewAccessRequestDialogProps.accessRequest && (
+        <ViewAccessRequestDialog
+          onClose={handleViewAccessRequestDialogClose}
+          onComplete={initializeTable}
+          open={viewAccessRequestDialogProps.open}
+          accessRequest={viewAccessRequestDialogProps.accessRequest}
         />
       )}
     </main>

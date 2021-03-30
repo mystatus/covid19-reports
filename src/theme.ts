@@ -138,6 +138,13 @@ theme.overrides = {
       },
     },
   },
+  MuiDialogActions: {
+    root: {
+      justifyContent: 'center',
+      backgroundColor: '#F0F1F1',
+      padding: '15px 35px',
+    },
+  },
   MuiDrawer: {
     root: {
       '& .MuiDrawer-paper': {
@@ -204,6 +211,13 @@ theme.overrides = {
         padding: '8px 12px',
       },
 
+      '& .MuiInputBase-multiline': {
+        padding: 0,
+        '& textarea': {
+          padding: '8px 12px',
+        },
+      },
+
       '& label': {
         fontSize: '16px',
         fontWeight: 600,
@@ -227,6 +241,9 @@ theme.props = {
     color: 'primary',
     variant: 'contained',
     disableElevation: true,
+  },
+  MuiCheckbox: {
+    color: 'primary',
   },
   MuiDialog: {
     disableBackdropClick: true,

@@ -22,12 +22,6 @@ export default makeStyles((theme: Theme) => createStyles({
   textField: {
     width: '100%',
     margin: 0,
-    '& .MuiInputBase-multiline': {
-      padding: 0,
-      '& textarea': {
-        padding: '8px 12px',
-      },
-    },
   },
   booleanTable: {
     '&  .MuiTableCell-root': {

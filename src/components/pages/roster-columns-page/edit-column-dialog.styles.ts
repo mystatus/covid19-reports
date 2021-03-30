@@ -10,12 +10,6 @@ export default makeStyles((theme: Theme) => createStyles({
   textField: {
     width: '100%',
     margin: 0,
-    '& .MuiInputBase-multiline': {
-      padding: 0,
-      '& textarea': {
-        padding: '8px 12px',
-      },
-    },
   },
   typeText: {
     textTransform: 'capitalize',
@@ -42,11 +36,6 @@ export default makeStyles((theme: Theme) => createStyles({
     '& option, & select': {
       textTransform: 'capitalize',
     },
-  },
-  dialogActions: {
-    justifyContent: 'center',
-    backgroundColor: '#F0F1F1',
-    padding: '15px 35px',
   },
   addEnumButton: {
     borderColor: 'transparent',
