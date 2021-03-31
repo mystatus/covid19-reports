@@ -59,7 +59,11 @@ const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props:
       const userRole = user?.userRoles?.[0];
       const roleIndex = userRole ? availableRoles.findIndex(role => role.id === userRole.role.id) : 0;
       setSelectedRoleIndex(roleIndex >= 0 ? roleIndex : 0);
-      setSelectedUnits(userRole?.units?.map(unit => unit.id) ?? [-1]);
+      if (userRole?.allUnits) {
+        setSelectedUnits([-1]);
+      } else {
+        setSelectedUnits(userRole?.units?.map(unit => unit.id) ?? []);
+      }
     }
   }, [user, availableRoles]);
 
