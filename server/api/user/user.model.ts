@@ -1,7 +1,15 @@
 import {
-  BeforeInsert, BeforeUpdate, Entity, PrimaryColumn, Column, BaseEntity, OneToMany, EntityManager,
+  BeforeInsert,
+  BeforeUpdate,
+  Entity,
+  PrimaryColumn,
+  Column,
+  BaseEntity,
+  OneToMany,
+  EntityManager,
 } from 'typeorm';
 import { NotFoundError } from '../../util/error-types';
+import { formatPhoneNumber } from '../../util/string-utils';
 import { Role } from '../role/role.model';
 import { UserRole } from './user-role.model';
 import { Unit } from '../unit/unit.model';
@@ -51,10 +59,7 @@ export class User extends BaseEntity {
   @BeforeInsert()
   @BeforeUpdate()
   formatPhoneNumber() {
-    const phone = this.phone.replace(/\D/g, '');
-    if (phone.length === 10) {
-      this.phone = `${phone.slice(0, 3)}-${phone.slice(3, 6)}-${phone.slice(6)}`;
-    }
+    this.phone = formatPhoneNumber(this.phone);
   }
 
   async addRole(manager: EntityManager, role: Role, units: Unit[], allUnits: boolean): Promise<User> {

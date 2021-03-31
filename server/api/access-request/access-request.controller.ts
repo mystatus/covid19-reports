@@ -1,11 +1,22 @@
 import { Response } from 'express';
 import { getManager } from 'typeorm';
-import { BadRequestError, NotFoundError, UnauthorizedError } from '../../util/error-types';
-import { ApiRequest, OrgParam } from '../index';
+import {
+  BadRequestError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../../util/error-types';
+import { assertRequestBody } from '../../util/api-utils';
+import {
+  ApiRequest,
+  OrgParam,
+} from '../index';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { User } from '../user/user.model';
-import { AccessRequest, AccessRequestStatus } from './access-request.model';
+import {
+  AccessRequest,
+  AccessRequestStatus,
+} from './access-request.model';
 import { Unit } from '../unit/unit.model';
 
 class AccessRequestController {
@@ -26,7 +37,7 @@ class AccessRequestController {
     res.json(requests);
   }
 
-  async issueAccessRequest(req: ApiRequest<OrgParam>, res: Response) {
+  async issueAccessRequest(req: ApiRequest<OrgParam, IssueAccessRequestBody>, res: Response) {
     if (!req.appUser.isRegistered) {
       throw new BadRequestError('User is not registered');
     }
@@ -35,6 +46,14 @@ class AccessRequestController {
     if (Number.isNaN(orgId) || orgId < 0) {
       throw new BadRequestError(`Invalid organization id: ${orgId}`);
     }
+
+    const { whatYouDo, sponsorName, sponsorEmail, justification, sponsorPhone } = assertRequestBody(req, [
+      'whatYouDo',
+      'sponsorName',
+      'sponsorEmail',
+      'sponsorPhone',
+      'justification',
+    ]);
 
     const org = await Org.findOne({
       where: {
@@ -47,31 +66,34 @@ class AccessRequestController {
       throw new NotFoundError('Organization was not found.');
     }
 
-    let request = await AccessRequest.findOne({
+    const existingRequest = await AccessRequest.findOne({
       where: {
         user: req.appUser.edipi,
         org: org.id,
       },
     });
 
-    let newRequest: AccessRequest | null = null;
-    if (request) {
-      if (request.status === AccessRequestStatus.Denied) {
+    if (existingRequest) {
+      if (existingRequest.status === AccessRequestStatus.Denied) {
         // Remove the denied request so that we can issue a new one.
-        await request.remove();
+        await existingRequest.remove();
       } else {
         throw new BadRequestError('The access request has already been issued.');
       }
     }
 
-    request = new AccessRequest();
+    const request = new AccessRequest();
     request.user = req.appUser;
     request.org = org;
     request.requestDate = new Date();
-    newRequest = await request.save();
+    request.whatYouDo = whatYouDo;
+    request.sponsorName = sponsorName;
+    request.sponsorEmail = sponsorEmail;
+    request.sponsorPhone = sponsorPhone;
+    request.justification = justification;
+    await request.save();
 
-    res.status(201);
-    res.json(newRequest);
+    res.status(201).json(request);
   }
 
   async cancelAccessRequest(req: ApiRequest<OrgParam>, res: Response) {
@@ -110,29 +132,23 @@ class AccessRequestController {
     res.status(204).send();
   }
 
-  async approveAccessRequest(req: ApiRequest<OrgParam, ApproveAccessRequestBody>, res: Response) {
-    if (!req.appOrg) {
-      throw new NotFoundError('Organization was not found');
-    }
+  async approveAccessRequest(req: ApiRequest<unknown, ApproveAccessRequestBody>, res: Response) {
+    const orgId = req.appOrg!.id;
+    const { requestId, roleId, unitIds, allUnits } = assertRequestBody(req, [
+      'requestId',
+      'roleId',
+      'unitIds',
+      'allUnits',
+    ]);
 
-    const orgId = req.appOrg.id;
-
-    if (!req.body.requestId) {
-      throw new BadRequestError('Missing access request id');
-    }
-
-    if (!req.body.roleId) {
-      throw new BadRequestError('Missing role for approved access request');
-    }
-
-    if ((req.body.units == null || req.body.units.length === 0) && !req.body.allUnits) {
-      throw new BadRequestError('Missing units for approved access request');
+    if (unitIds.length === 0 && !allUnits) {
+      throw new BadRequestError('At least one unit must be set!');
     }
 
     const accessRequest = await AccessRequest.findOne({
       relations: ['user'],
       where: {
-        id: req.body.requestId,
+        id: requestId,
         org: orgId,
       },
     });
@@ -143,7 +159,7 @@ class AccessRequestController {
 
     const role = await Role.findOne({
       where: {
-        id: req.body.roleId,
+        id: roleId,
         org: orgId,
       },
     });
@@ -152,21 +168,19 @@ class AccessRequestController {
       throw new NotFoundError('Role was not found');
     }
 
-    // Null means all units are allowed
     let units: Unit[] = [];
-
-    if (req.body.units != null && !req.body.allUnits) {
+    if (!allUnits) {
       units = await Unit
         .createQueryBuilder()
         .where('org_id = :orgId', { orgId })
-        .andWhere(`id IN (${req.body.units.join(',')})`)
+        .andWhere(`id IN (${unitIds.join(',')})`)
         .getMany();
 
       if (units.length === 0) {
         throw new NotFoundError('No matching units were found');
       }
 
-      if (units.length < req.body.units.length) {
+      if (units.length < unitIds.length) {
         throw new NotFoundError('Some units could not be found.');
       }
     }
@@ -195,7 +209,7 @@ class AccessRequestController {
     let processedRequest: AccessRequest | null = null;
 
     await getManager().transaction(async manager => {
-      await user.addRole(manager, role, units, req.body.allUnits);
+      await user.addRole(manager, role, units, allUnits);
       await manager.save(user);
 
       processedRequest = await manager.remove(accessRequest);
@@ -234,14 +248,22 @@ class AccessRequestController {
   }
 }
 
-type AccessRequestBody = {
+export type AccessRequestBody = {
   requestId: number,
 };
 
-type ApproveAccessRequestBody = {
+export type ApproveAccessRequestBody = AccessRequestBody & {
   roleId: number,
-  units: number[],
+  unitIds: number[],
   allUnits: boolean,
-} & AccessRequestBody;
+};
+
+export type IssueAccessRequestBody = {
+  whatYouDo: string[]
+  sponsorName: string
+  sponsorEmail: string
+  sponsorPhone: string
+  justification: string
+};
 
 export default new AccessRequestController();

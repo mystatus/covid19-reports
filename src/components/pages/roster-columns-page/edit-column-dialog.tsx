@@ -339,7 +339,7 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
           </Grid>
         </Grid>
       </DialogContent>
-      <DialogActions className={classes.dialogActions}>
+      <DialogActions>
         <Button disabled={formDisabled} variant="outlined" onClick={onClose} color="primary">
           Cancel
         </Button>

@@ -487,7 +487,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
           Add One-Time
         </Button>
       </DialogContent>
-      <DialogActions className={classes.dialogActions}>
+      <DialogActions>
         <Button disabled={formDisabled} variant="outlined" onClick={onCancel} color="primary">
           Cancel
         </Button>

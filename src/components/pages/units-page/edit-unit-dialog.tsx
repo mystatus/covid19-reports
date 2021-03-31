@@ -473,7 +473,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
           )}
         </Grid>
       </DialogContent>
-      <DialogActions className={classes.dialogActions}>
+      <DialogActions>
         <Button disabled={formDisabled} variant="outlined" onClick={onClose} color="primary">
           Cancel
         </Button>

@@ -1,20 +1,50 @@
 import {
-  Button, Card, CardActions, CardContent, Container, IconButton, Menu, MenuItem, Paper, Snackbar, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Toolbar, Typography,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  Container,
+  IconButton,
+  Menu,
+  MenuItem,
+  Paper,
+  Snackbar,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Toolbar,
+  Typography,
 } from '@material-ui/core';
-import { MailOutline, PersonAdd, MoreVert } from '@material-ui/icons';
+import {
+  MailOutline,
+  PersonAdd,
+  MoreVert,
+} from '@material-ui/icons';
 import { Alert } from '@material-ui/lab';
 import axios, { AxiosResponse } from 'axios';
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
+import {
+  useDispatch,
+  useSelector,
+} from 'react-redux';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
 import PageHeader from '../../page-header/page-header';
 import { StatusChip } from '../../status-chip/status-chip';
 import useStyles from './groups-page.styles';
-import { ApiAccessRequest, ApiOrg } from '../../../models/api-response';
+import {
+  ApiAccessRequest,
+  ApiOrg,
+} from '../../../models/api-response';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
+import { RequestAccessDialog } from './request-access-dialog';
 
 export const GroupsPage = () => {
   const classes = useStyles();
@@ -23,11 +53,15 @@ export const GroupsPage = () => {
   const [isAlertVisible, setIsAlertVisible] = useState(!user.activeRole);
   const [isInfoCardVisible, setIsInfoCardVisible] = useState(true);
   const [accessRequests, setAccessRequests] = useState([] as ApiAccessRequest[]);
-  const [accessRequestsLoading, setAccessRequestsLoading] = useState({} as ({[orgId: number]: boolean}));
+  const [accessRequestsLoading, setAccessRequestsLoading] = useState({} as ({ [orgId: number]: boolean }));
   const [allOrgs, setAllOrgs] = useState([] as ApiOrg[]);
   const [requestAccessOrgs, setRequestAccessOrgs] = useState([] as ApiOrg[]);
   const [myOrgMenuAnchor, setMyOrgMenuAnchor] = useState(null as HTMLElement | null);
   const [myOrgMenuOrg, setMyOrgMenuOrg] = useState(null as MyOrg | null);
+  const [requestAccessDialogProps, setRequestAccessDialogProps] = useState({
+    open: false,
+    org: undefined as ApiOrg | undefined,
+  });
 
   async function fetchAllOrgs() {
     const response = await axios.get('api/org') as AxiosResponse<ApiOrg[]>;
@@ -37,10 +71,6 @@ export const GroupsPage = () => {
   async function fetchAccessRequests() {
     const response = await axios.get('api/user/access-requests') as AxiosResponse<ApiAccessRequest[]>;
     setAccessRequests(response.data);
-  }
-
-  function handleRequestAccessClick(org: ApiOrg) {
-    requestAccess(org).then();
   }
 
   function updateAccessRequestsLoading(org: ApiOrg, isLoading: boolean) {
@@ -144,6 +174,25 @@ export const GroupsPage = () => {
     setMyOrgMenuOrg(org);
   }
 
+  function handleRequestAccessClick(org: ApiOrg) {
+    setRequestAccessDialogProps({
+      ...requestAccessDialogProps,
+      open: true,
+      org,
+    });
+  }
+
+  function handleRequestAccessDialogClose() {
+    setRequestAccessDialogProps({
+      ...requestAccessDialogProps,
+      open: false,
+    });
+  }
+
+  function handleRequestAccessDialogComplete(accessRequest: ApiAccessRequest) {
+    setAccessRequests([...accessRequests, accessRequest]);
+  }
+
   useEffect(() => {
     // Initial load.
     async function fetchData() {
@@ -164,7 +213,7 @@ export const GroupsPage = () => {
 
   useEffect(() => {
     // Build a filtered list of orgs the user can request access to.
-    const myOrgsLookup = {} as {[orgId: number]: boolean};
+    const myOrgsLookup = {} as { [orgId: number]: boolean };
 
     // Filter orgs we have access requests for.
     for (const accessRequest of accessRequests) {
@@ -381,6 +430,13 @@ export const GroupsPage = () => {
           You have successfully registered and logged in!
         </Alert>
       </Snackbar>
+
+      <RequestAccessDialog
+        open={requestAccessDialogProps.open}
+        org={requestAccessDialogProps.org}
+        onClose={handleRequestAccessDialogClose}
+        onComplete={handleRequestAccessDialogComplete}
+      />
     </>
   );
 };

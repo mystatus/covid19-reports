@@ -4,8 +4,12 @@ import {
   ManyToOne,
   JoinColumn,
   PrimaryGeneratedColumn,
-  CreateDateColumn, Column,
+  CreateDateColumn,
+  Column,
+  BeforeInsert,
+  BeforeUpdate,
 } from 'typeorm';
+import { formatPhoneNumber } from '../../util/string-utils';
 import { Org } from '../org/org.model';
 import { User } from '../user/user.model';
 import { timestampColumnTransformer } from '../../util/util';
@@ -44,10 +48,34 @@ export class AccessRequest extends BaseEntity {
   requestDate!: Date;
 
   @Column({
+    type: 'varchar',
+    array: true,
+  })
+  whatYouDo: string[];
+
+  @Column()
+  sponsorName: string;
+
+  @Column()
+  sponsorEmail: string;
+
+  @Column()
+  sponsorPhone: string;
+
+  @Column()
+  justification: string;
+
+  @Column({
     type: 'enum',
     enum: AccessRequestStatus,
     default: AccessRequestStatus.Pending,
   })
   status!: AccessRequestStatus;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  formatPhoneNumber() {
+    this.sponsorPhone = formatPhoneNumber(this.sponsorPhone);
+  }
 
 }

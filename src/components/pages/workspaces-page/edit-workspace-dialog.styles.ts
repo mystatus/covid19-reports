@@ -10,12 +10,6 @@ export default makeStyles((theme: Theme) => createStyles({
   textField: {
     width: '100%',
     margin: 0,
-    '& .MuiInputBase-multiline': {
-      padding: 0,
-      '& textarea': {
-        padding: '8px 12px',
-      },
-    },
   },
   templateText: {
     width: '100%',
@@ -59,10 +53,5 @@ export default makeStyles((theme: Theme) => createStyles({
       top: '3px',
       color: theme.palette.primary.light,
     },
-  },
-  dialogActions: {
-    justifyContent: 'center',
-    backgroundColor: '#F0F1F1',
-    padding: '15px 35px',
   },
 }));

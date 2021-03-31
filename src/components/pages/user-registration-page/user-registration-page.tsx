@@ -1,30 +1,38 @@
 import {
-  Icon, MenuItem, Paper, TextField,
+  Box,
+  FormGroup,
+  Icon,
+  MenuItem,
+  Paper,
+  TextField,
 } from '@material-ui/core';
 import {
-  AssignmentOutlined, DoneAll, FavoriteBorder, LocalHospital, Timeline,
+  AssignmentOutlined,
+  DoneAll,
+  FavoriteBorder,
+  LocalHospital,
+  Timeline,
 } from '@material-ui/icons';
 import MuiPhoneNumber from 'material-ui-phone-number';
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { User, UserRegisterData } from '../../../actions/user.actions';
+import {
+  useDispatch,
+  useSelector,
+} from 'react-redux';
+import {
+  User,
+  UserRegisterData,
+} from '../../../actions/user.actions';
+import services from '../../../data/services';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
-import useStyles from './user-registration-page.styles';
-import services from '../../../data/services';
+import {
+  validateEmail,
+  validatePhone,
+} from '../../../utility/validation-utils';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { Link } from '../../link/link';
-
-// from: https://stackoverflow.com/questions/46155/how-to-validate-an-email-address-in-javascript
-function validateEmail(email: string) {
-  const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  return re.test(email);
-}
-
-function validatePhone(phone: string) {
-  const numeric = phone.replace(/\D/g, '');
-  return numeric.length === 10;
-}
+import useStyles from './user-registration-page.styles';
 
 type UserRegisterDataWithValidation = {
   [key in keyof UserRegisterData]: {
@@ -61,12 +69,12 @@ export const UserRegistrationPage = () => {
 
   function handleValidation(key: keyof UserRegisterData, value: string, fromBlur = true) {
     let helperText = '';
-    if (!value) {
-      helperText = 'Required';
-    } else if (key === 'email' && !validateEmail(value)) {
-      helperText = 'Invalid email address';
-    } else if (key === 'phone' && !validatePhone(value)) {
-      helperText = 'Invalid phone number';
+    if (value) {
+      if (key === 'email' && !validateEmail(value)) {
+        helperText = 'Invalid email address';
+      } else if (key === 'phone' && !validatePhone(value)) {
+        helperText = 'Invalid phone number';
+      }
     }
     inputData[key] = {
       hasBlurred: inputData[key].hasBlurred || fromBlur,
@@ -151,8 +159,8 @@ export const UserRegistrationPage = () => {
             </p>
           </header>
 
-          <form className={classes.form}>
-            <div>
+          <FormGroup className={classes.form}>
+            <Box>
               <TextField
                 id="firstName"
                 label="First name"
@@ -169,8 +177,8 @@ export const UserRegistrationPage = () => {
                 onChange={e => handleInputChange('lastName', e)}
                 {...getInputValidation('lastName')}
               />
-            </div>
-            <div>
+            </Box>
+            <Box>
               <TextField
                 id="edipi"
                 label="EDIPI"
@@ -179,6 +187,7 @@ export const UserRegistrationPage = () => {
                 disabled
               />
               <MuiPhoneNumber
+                onlyCountries={['us']}
                 defaultCountry="us"
                 disableCountryCode
                 disableDropdown
@@ -186,12 +195,12 @@ export const UserRegistrationPage = () => {
                 label="Phone number"
                 onBlur={(e: any) => handleValidation('phone', e.nativeEvent.target.value)}
                 onChange={(value: string) => handleChange('phone', value)}
-                placeholder="(702) 123-4567"
+                placeholder=""
                 required
                 {...getInputValidation('phone')}
               />
-            </div>
-            <div>
+            </Box>
+            <Box>
               <TextField
                 id="service"
                 label="Service"
@@ -217,8 +226,8 @@ export const UserRegistrationPage = () => {
                 onChange={e => handleInputChange('email', e)}
                 {...getInputValidation('email')}
               />
-            </div>
-          </form>
+            </Box>
+          </FormGroup>
 
           <ButtonWithSpinner
             className={classes.createAccountButton}

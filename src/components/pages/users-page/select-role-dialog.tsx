@@ -59,7 +59,11 @@ const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props:
       const userRole = user?.userRoles?.[0];
       const roleIndex = userRole ? availableRoles.findIndex(role => role.id === userRole.role.id) : 0;
       setSelectedRoleIndex(roleIndex >= 0 ? roleIndex : 0);
-      setSelectedUnits(userRole?.units?.map(unit => unit.id) ?? [-1]);
+      if (userRole?.allUnits) {
+        setSelectedUnits([-1]);
+      } else {
+        setSelectedUnits(userRole?.units?.map(unit => unit.id) ?? []);
+      }
     }
   }, [user, availableRoles]);
 
@@ -91,7 +95,7 @@ const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props:
       return 'All Units';
     }
     if ((selected as number[]).length === 0) {
-      return 'None';
+      return <em>- Select Unit(s) -</em>;
     }
     return (selected as number[]).map(unitId => units[unitIndexMap[unitId]].name).sort().join(', ');
   };
@@ -154,7 +158,7 @@ const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props:
           </Grid>
           <Grid item xs={6}>
             <FormControl className={classes.roleSelect}>
-              <Typography className={classes.roleHeader}>Unit:</Typography>
+              <Typography className={classes.roleHeader}>Units:</Typography>
               <Select
                 multiple
                 displayEmpty

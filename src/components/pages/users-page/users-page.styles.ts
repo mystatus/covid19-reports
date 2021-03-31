@@ -15,28 +15,6 @@ export default makeStyles((theme: Theme) => createStyles({
       textTransform: 'none',
     },
   },
-  accessRequestButtons: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    '& div': {
-      width: '100%',
-    },
-  },
-  accessRequestApproveButton: {
-    width: '100%',
-    backgroundColor: theme.palette.success.main,
-    '&:hover': {
-      backgroundColor: '#008C17',
-    },
-  },
-  accessRequestDenyButton: {
-    width: '100%',
-    backgroundColor: theme.palette.error.main,
-    marginLeft: '5px',
-    '&:hover': {
-      backgroundColor: '#B6001D',
-    },
-  },
   confirmRemoveFromGroupContent: {
     svgIcon: {
       fontSize: '128px',

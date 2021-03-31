@@ -154,4 +154,3 @@ export function getMomentDateFormat(interval: TimeInterval) {
       throw new Error(`Unsupported interval '${interval}'`);
   }
 }
-
