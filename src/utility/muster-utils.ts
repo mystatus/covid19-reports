@@ -163,9 +163,6 @@ export const validateMusterConfiguration = (musterConfig: MusterConfiguration[])
         if (a.end > b.start) {
           return 'Unable to use overlapping muster windows.';
         }
-        console.log('repa', moment(a.start).toISOString(), a);
-        console.log('repb', moment(b.start).toISOString(), b);
-
       }
     }
   }

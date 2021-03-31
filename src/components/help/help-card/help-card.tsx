@@ -4,6 +4,7 @@ import {
   CardActions,
   CardContent,
 } from '@material-ui/core';
+import clsx from 'clsx';
 import React, { ReactNode } from 'react';
 import {
   useDispatch,
@@ -16,11 +17,12 @@ import useStyles from './help-card.styles';
 
 export interface HelpCardProps {
   helpCardId: string
+  variant?: 'plain' | 'info'
   children?: ReactNode
 }
 
 export const HelpCard = (props: HelpCardProps) => {
-  const { helpCardId, children } = props;
+  const { helpCardId, children, variant = 'info' } = props;
   const classes = useStyles();
   const dispatch = useDispatch();
   const hide = useSelector<AppState, boolean>(state => state.localStorage.hideHelpCard?.[helpCardId] ?? false);
@@ -34,7 +36,7 @@ export const HelpCard = (props: HelpCardProps) => {
   }
 
   return (
-    <Card className={classes.card}>
+    <Card className={clsx(classes.card, { [classes.cardInfo]: variant === 'info' })}>
       <CardContent className={classes.cardContent}>
         <HelpContent>
           {children}
