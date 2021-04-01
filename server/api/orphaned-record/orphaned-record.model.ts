@@ -1,12 +1,13 @@
 import {
-  Entity,
-  Column,
   BaseEntity,
+  BeforeInsert,
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
   JoinColumn,
   ManyToOne,
-  BeforeInsert,
   PrimaryColumn,
-  DeleteDateColumn,
 } from 'typeorm';
 import { InternalServerError } from '../../util/error-types';
 import { timestampColumnTransformer } from '../../util/util';
@@ -47,6 +48,12 @@ export class OrphanedRecord extends BaseEntity {
     transformer: timestampColumnTransformer,
   })
   timestamp!: Date;
+
+  @CreateDateColumn({
+    type: 'timestamp',
+    transformer: timestampColumnTransformer,
+  })
+  createdOn!: Date;
 
   @DeleteDateColumn({
     type: 'timestamp',
