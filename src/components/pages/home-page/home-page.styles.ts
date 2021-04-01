@@ -73,7 +73,29 @@ export default makeStyles((theme: Theme) => createStyles({
     marginTop: '12px',
     marginBottom: '6px',
   },
-  hint: {
-    color: theme.palette.grey[500],
+  subtle: {
+    color: theme.palette.grey[600],
+    fontSize: '0.9rem',
+    paddingLeft: '5px',
+  },
+  favoritesContainer: {
+    fontWeight: 'bold',
+    margin: '12px 0',
+    '& .MuiTypography-root': {
+      fontWeight: 'bold',
+    },
+    '& svg': {
+      fill: '#F2938C',
+      marginRight: '10px',
+    },
+  },
+  favoritesCard: {
+    marginBottom: theme.spacing(3),
+    padding: theme.spacing(3),
+    lineHeight: 1.5,
+
+    '& .MuiGrid-container': {
+      marginTop: '2px',
+    },
   },
 }));

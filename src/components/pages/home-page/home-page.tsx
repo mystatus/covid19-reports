@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Card,
+import { Box,
+  Card,
   CardContent,
   Container,
   Grid,
-  IconButton,
+  Hidden,
   Theme,
   Tooltip,
   Typography,
   withStyles } from '@material-ui/core';
 import InfoOutlinedIcon from '@material-ui/icons/InfoOutlined';
-import ArrowDownwardIcon from '@material-ui/icons/ArrowDownward';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
+import FavoriteIcon from '@material-ui/icons/Favorite';
 import clsx from 'clsx';
 import axios from 'axios';
 import { UserSelector } from '../../../selectors/user.selector';
@@ -23,7 +24,7 @@ import welcomeImage from '../../../media/images/welcome-image.png';
 import PageHeader from '../../page-header/page-header';
 import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
 import { AccessRequestClient } from '../../../client';
-import { ApiAccessRequest, ApiMusterTrends } from '../../../models/api-response';
+import { ApiAccessRequest, ApiMusterTrends, ApiWorkspace } from '../../../models/api-response';
 
 
 const HomePageHelp = () => {
@@ -98,13 +99,66 @@ const HtmlTooltip = withStyles((theme: Theme) => ({
   },
 }))(Tooltip);
 
+
+export interface ApiDashboard {
+  id: string
+  title: string
+  description: string
+}
+
+
 export const HomePage = () => {
+
   const classes = useStyles();
   const orgId = useSelector(UserSelector.orgId);
   const user = useSelector<AppState, UserState>(state => state.user);
   const orphanedRecords = useSelector(OrphanedRecordSelector.all);
   const [accessRequests, setAccessRequests] = useState<ApiAccessRequest[]>([]);
   const [musterNonComplianceLastTwoWeeks, setMusterNonComplianceLastTwoWeek] = useState<number[]>([1.0, 0.0]);
+
+  const workspaces: ApiWorkspace[] = [
+    {
+      id: 1,
+      name: 'Workspace 1',
+      description: 'Workspace 1',
+      pii: false,
+      phi: false,
+    }, {
+      id: 2,
+      name: 'Workspace 2',
+      description: 'Workspace 2',
+      pii: false,
+      phi: false,
+    },
+  ];
+
+  const dashboardsMock: ApiDashboard[] = [
+    {
+      id: 'dashboard-1',
+      title: 'The Best',
+      description: 'Fact. This is the best dashboard. ',
+    },
+    {
+      id: 'dashboard-2',
+      title: 'Force Heath',
+      description: 'This dashboard is probably super cool. ',
+    },
+    {
+      id: 'dashboard-3',
+      title: 'Health / Symptom Tracking',
+      description: 'A dashboard for tracking soldier symptoms and coronavirus exposure potential',
+    },
+    {
+      id: 'dashboard-4',
+      title: 'Mental Health',
+      description: 'A dashboard for relevantly tracking the "Talk to someone" field from service member submissions.',
+    },
+  ];
+
+  const dashboards: { [workspaceId: number]: ApiDashboard[] } = {
+    1: dashboardsMock,
+    2: [...dashboardsMock].reverse(),
+  };
 
   const initializeTable = React.useCallback(async () => {
     if (orgId) {
@@ -183,8 +237,10 @@ export const HomePage = () => {
                   <span className={classes.metricTrendingIcon}>
                     <ArrowUpwardIcon />
                   </span>
-                  {(nonComplianceDelta).toFixed(2)}%&nbsp;
-                  {' '}<span className={classes.hint}> last 7 days</span>
+                  {(nonComplianceDelta).toFixed(2)}%
+                  <Hidden smDown>
+                    <span className={classes.subtle}>last 7 days</span>
+                  </Hidden>
                 </Typography>
               </CardContent>
             </Card>
@@ -211,10 +267,42 @@ export const HomePage = () => {
                 <Typography className={classes.metricValue}>
                   {accessRequests.length}
                 </Typography>
-                <Link to="/roster">View Now &rarr;</Link>
+                <Link to="/users">View Now &rarr;</Link>
               </CardContent>
             </Card>
           </Grid>
+          {user.activeRole?.role.workspaces && (
+            <Grid item xs={12}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box display="flex" alignItems="center" className={classes.favoritesContainer}>
+                  <FavoriteIcon color="secondary" />
+                  <Typography variant="subtitle1">
+                    My Favorited Dashboards
+                  </Typography>
+                </Box>
+                <Link to="/workspaces">View All Dashboards</Link>
+              </Box>
+              {workspaces.map(workspace => (
+                <Card key={workspace.id} className={classes.favoritesCard}>
+                  <Box fontSize="1rem" fontWeight={500}>
+                    {workspace.name}
+                  </Box>
+                  {dashboards[workspace.id].map(dashboard => (
+                    <Grid container key={dashboard.id}>
+                      <Grid item xs={3}>
+                        <Link to={`/dashboard?orgId=${orgId}&workspaceId=${workspace.id}`}>
+                          {dashboard.title}
+                        </Link>
+                      </Grid>
+                      <Grid item xs={9} className={classes.subtle}>
+                        {dashboard.description}
+                      </Grid>
+                    </Grid>
+                  ))}
+                </Card>
+              ))}
+            </Grid>
+          )}
         </Grid>
       </Container>
     </main>
