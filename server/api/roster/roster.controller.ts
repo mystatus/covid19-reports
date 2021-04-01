@@ -195,14 +195,13 @@ class RosterController {
     };
 
     roster.forEach((row, index) => {
-      const units = orgUnits.filter(u => row.unit === u.name);
-      const unit = units.length > 0 ? units[0] : undefined;
+      const unit = orgUnits.find(u => row.unit === u.name);
       // Pre-validate / check for row-level issues.
       try {
         if (!row.unit) {
           throw new BadRequestError('Unable to add roster entries without a unit.');
         }
-        if (units.length === 0) {
+        if (!unit) {
           throw new NotFoundError(`Unit "${row.unit}" could not be found in the group.`);
         }
         if (existingEntries.some(({ edipi }) => edipi === row.edipi)) {
@@ -555,9 +554,9 @@ function setCustomColumnFromBody(column: CustomRosterColumn, body: CustomColumnD
 function setColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColumnInfo) {
   let stringValue: string | undefined;
   if (column.required) {
-    stringValue = getRequiredParam(column.name, row);
+    stringValue = getRequiredParam(column.name, row, 'string', column.displayName);
   } else {
-    stringValue = getOptionalParam(column.name, row);
+    stringValue = getOptionalParam(column.name, row, 'string', column.displayName);
   }
   if (stringValue != null && stringValue.length > 0) {
     let value: any;

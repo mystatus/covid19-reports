@@ -24,24 +24,33 @@ export function dateFromString(dateStr: string, shouldThrow = true) {
   return undefined;
 }
 
-export function getOptionalParam<T extends object, K extends keyof T>(param: K, params: T, type: BaseType = 'string'): T[K] | undefined {
+export function getOptionalParam<T extends object, K extends keyof T>(param: K, params: T, type: BaseType = 'string', altParam?: K): T[K] | undefined {
+  let p = param;
   if (!params.hasOwnProperty(param)) {
-    return undefined;
+    if (!altParam || !params.hasOwnProperty(altParam)) {
+      return undefined;
+    }
+    p = altParam;
   }
-  if (params[param] !== null && typeof params[param] !== type) {
-    throw new BadRequestError(`Expected type '${type}' for parameter '${param}', but type was '${typeof params[param]}'.`);
+  if (params[p] !== null && typeof params[p] !== type) {
+    throw new BadRequestError(`Expected type '${type}' for parameter '${p}', but type was '${typeof params[p]}'.`);
   }
-  return params[param];
+  return params[p];
 }
 
-export function getRequiredParam<T extends object, K extends keyof T>(param: K, params: T, type: BaseType = 'string'): T[K] {
+export function getRequiredParam<T extends object, K extends keyof T>(param: K, params: T, type: BaseType = 'string', altParam?: K): T[K] {
+  let p = param;
   if (!params.hasOwnProperty(param)) {
-    throw new BadRequestError(`Missing parameter: ${param}`);
+    if (!altParam || !params.hasOwnProperty(altParam)) {
+      throw new BadRequestError(`Missing parameter: ${param}`);
+    }
+    p = altParam;
   }
-  if (typeof params[param] !== type) {
-    throw new BadRequestError(`Expected type '${type}' for parameter '${param}', but type was '${typeof params[param]}'.`);
+
+  if (typeof params[p] !== type) {
+    throw new BadRequestError(`Expected type '${type}' for parameter '${p}', but type was '${typeof params[p]}'.`);
   }
-  return params[param];
+  return params[p];
 }
 
 export function escapeRegExp(value: string) {
