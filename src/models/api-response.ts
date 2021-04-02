@@ -37,6 +37,11 @@ export interface ApiUserRole {
   user: ApiUser,
   units: ApiUnit[],
   allUnits: boolean,
+  favoriteDashboards: {
+    [workspaceId: string]: {
+      [dashboardUuid: string]: boolean
+    }
+  },
 }
 
 export interface ApiUser {
@@ -177,6 +182,12 @@ export interface ApiWorkspace {
   workspaceTemplate?: ApiWorkspaceTemplate,
   pii: boolean,
   phi: boolean,
+}
+
+export interface ApiDashboard {
+  uuid: string
+  title: string
+  description: string
 }
 
 export interface ApiUnitStatsByDate {

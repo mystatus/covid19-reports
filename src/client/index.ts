@@ -6,6 +6,7 @@ import axiosRetry from 'axios-retry';
 import { UserRegisterData } from '../actions/user.actions';
 import {
   ApiAccessRequest,
+  ApiDashboard,
   ApiNotification,
   ApiOrphanedRecord,
   ApiReportSchema,
@@ -165,11 +166,23 @@ export namespace UserClient {
   export const register = (data: UserRegisterData): Promise<ApiUser> => {
     return client.post(`user`, data);
   };
+
+  export const addFavoriteDashboard = (orgId: number, workspaceId: number, dashboardUuid: string): Promise<void> => {
+    return client.post(`user/${orgId}/favorite-dashboards/${workspaceId}/${dashboardUuid}`);
+  };
+
+  export const removeFavoriteDashboard = (orgId: number, workspaceId: number, dashboardUuid: string): Promise<void> => {
+    return client.delete(`user/${orgId}/favorite-dashboards/${workspaceId}/${dashboardUuid}`);
+  };
 }
 
 export namespace WorkspaceClient {
   export const fetchAll = (orgId: number): Promise<ApiWorkspace[]> => {
     return client.get(`workspace/${orgId}`);
+  };
+
+  export const fetchDashboards = (orgId: number, workspaceId: number): Promise<ApiDashboard[]> => {
+    return client.get(`workspace/${orgId}/${workspaceId}/dashboards`);
   };
 }
 

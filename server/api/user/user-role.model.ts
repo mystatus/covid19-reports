@@ -6,6 +6,7 @@ import {
   ManyToMany,
   JoinTable,
   Column,
+  EntityManager,
 } from 'typeorm';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
@@ -51,6 +52,48 @@ export class UserRole extends BaseEntity {
     default: false,
   })
   allUnits: boolean = false;
+
+  @Column('json', {
+    default: '{}',
+    nullable: false,
+  })
+  favoriteDashboards!: {
+    [workspaceId: string]: {
+      [dashboardUuid: string]: boolean
+    }
+  };
+
+  addFavoriteDashboard(workspaceId: string, dashboardUuid: string, manager: EntityManager) {
+    if (this.hasFavoriteDashboard(workspaceId, dashboardUuid)) {
+      throw new Error('This dashboard is already favorited!');
+    }
+
+    if (!this.favoriteDashboards[workspaceId]) {
+      this.favoriteDashboards[workspaceId] = {};
+    }
+
+    this.favoriteDashboards[workspaceId][dashboardUuid] = true;
+
+    return manager.save(this);
+  }
+
+  removeFavoriteDashboard(workspaceId: string, dashboardUuid: string, manager: EntityManager) {
+    if (!this.hasFavoriteDashboard(workspaceId, dashboardUuid)) {
+      throw new Error('This dashboard has not been favorited!');
+    }
+
+    delete this.favoriteDashboards[workspaceId][dashboardUuid];
+
+    return manager.save(this);
+  }
+
+  hasFavoriteDashboard(workspaceId: string, dashboardUuid: string) {
+    if (this.favoriteDashboards[workspaceId]) {
+      return Boolean(this.favoriteDashboards[workspaceId][dashboardUuid]);
+    }
+
+    return false;
+  }
 
   async getUnits() {
     if (this.allUnits) {

@@ -1,7 +1,12 @@
 import bodyParser from 'body-parser';
 import express from 'express';
+import { KibanaApi } from '../../kibana/kibana-api';
 import controller from './workspace.controller';
-import { requireOrgAccess, requireRolePermission } from '../../auth';
+import {
+  requireOrgAccess,
+  requireRolePermission,
+  requireWorkspaceAccess,
+} from '../../auth';
 
 const router = express.Router() as any;
 
@@ -47,6 +52,14 @@ router.put(
   requireOrgAccess,
   requireRolePermission(role => role.canManageGroup),
   controller.updateWorkspace,
+);
+
+router.get(
+  '/:orgId/:workspaceId/dashboards',
+  requireOrgAccess,
+  requireWorkspaceAccess,
+  KibanaApi.connect,
+  controller.getWorkspaceDashboards,
 );
 
 export default router;

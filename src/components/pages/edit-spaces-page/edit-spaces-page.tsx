@@ -16,21 +16,21 @@ import AddCircleIcon from '@material-ui/icons/AddCircle';
 import CheckIcon from '@material-ui/icons/Check';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PageHeader from '../../page-header/page-header';
-import useStyles from './workspaces-page.styles';
+import useStyles from './edit-spaces-page.styles';
 import { ApiWorkspace, ApiWorkspaceTemplate } from '../../../models/api-response';
-import { EditWorkspaceDialog, EditWorkspaceDialogProps } from './edit-workspace-dialog';
+import { EditSpaceDialog, EditWorkspaceDialogProps } from './edit-space-dialog';
 import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
 import { formatMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
-import { WorkspacesPagesHelp } from './workspaces-pages-help';
+import { EditSpacesPageHelp } from './edit-spaces-page-help';
 
 interface WorkspaceMenuState {
   anchor: HTMLElement | null,
   workspace?: ApiWorkspace,
 }
 
-export const WorkspacesPage = () => {
+export const EditSpacesPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
   const [workspaces, setWorkspaces] = useState<ApiWorkspace[]>([]);
@@ -57,7 +57,7 @@ export const WorkspacesPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        dispatch(Modal.alert('Add Workspace', `Unable to add workspace: ${message}`));
+        dispatch(Modal.alert('Add Space', `Unable to add space: ${message}`));
       },
     });
   };
@@ -75,7 +75,7 @@ export const WorkspacesPage = () => {
           await initializeTable();
         },
         onError: (message: string) => {
-          dispatch(Modal.alert('Edit Workspace', `Unable to edit workspace: ${message}`));
+          dispatch(Modal.alert('Edit Space', `Unable to edit space: ${message}`)).then();
         },
       });
     }
@@ -96,7 +96,7 @@ export const WorkspacesPage = () => {
     try {
       await axios.delete(`api/workspace/${orgId}/${workspaceToDelete.id}`);
     } catch (error) {
-      dispatch(Modal.alert('Delete Workspace', formatMessage(error, 'Unable to delete workspace')));
+      dispatch(Modal.alert('Delete Space', formatMessage(error, 'Unable to delete space'))).then();
     }
     setWorkspaceToDelete(null);
     await initializeTable();
@@ -120,10 +120,10 @@ export const WorkspacesPage = () => {
     <main className={classes.root}>
       <Container maxWidth="md">
         <PageHeader
-          title="Workspaces"
+          title="Edit Spaces"
           help={{
-            contentComponent: WorkspacesPagesHelp,
-            cardId: 'workspacesPage',
+            contentComponent: EditSpacesPageHelp,
+            cardId: 'editSpacesPage',
           }}
         />
         <ButtonSet>
@@ -134,7 +134,7 @@ export const WorkspacesPage = () => {
             onClick={newWorkspace}
             startIcon={<AddCircleIcon />}
           >
-            Add New Workspace
+            Add New Space
           </Button>
         </ButtonSet>
         <TableContainer className={classes.table} component={Paper}>
@@ -182,8 +182,8 @@ export const WorkspacesPage = () => {
                 open={Boolean(workspaceMenu.workspace)}
                 onClose={handleWorkspaceMenuClose}
               >
-                <MenuItem onClick={editWorkspace}>Edit Workspace</MenuItem>
-                <MenuItem onClick={deleteWorkspace}>Delete Workspace</MenuItem>
+                <MenuItem onClick={editWorkspace}>Edit Space</MenuItem>
+                <MenuItem onClick={deleteWorkspace}>Delete Space</MenuItem>
               </Menu>
             </TableBody>
           </Table>
@@ -196,10 +196,10 @@ export const WorkspacesPage = () => {
           aria-labelledby="alert-dialog-title"
           aria-describedby="alert-dialog-description"
         >
-          <DialogTitle id="alert-dialog-title">Delete Workspace</DialogTitle>
+          <DialogTitle id="alert-dialog-title">Delete Space</DialogTitle>
           <DialogContent>
             <DialogContentText id="alert-dialog-description">
-              {`Are you sure you want to delete the '${workspaceToDelete?.name}' workspace?`}
+              {`Are you sure you want to delete the '${workspaceToDelete?.name}' space?`}
             </DialogContentText>
           </DialogContent>
           <DialogActions>
@@ -213,7 +213,7 @@ export const WorkspacesPage = () => {
         </Dialog>
       )}
       {editWorkspaceDialogProps.open && (
-        <EditWorkspaceDialog
+        <EditSpaceDialog
           open={editWorkspaceDialogProps.open}
           orgId={editWorkspaceDialogProps.orgId}
           workspace={editWorkspaceDialogProps.workspace}

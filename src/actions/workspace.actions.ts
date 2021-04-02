@@ -1,6 +1,9 @@
 import { Dispatch } from 'redux';
 import { WorkspaceClient } from '../client';
-import { ApiWorkspace } from '../models/api-response';
+import {
+  ApiDashboard,
+  ApiWorkspace,
+} from '../models/api-response';
 
 export namespace Workspace {
 
@@ -24,6 +27,31 @@ export namespace Workspace {
         error: any
       }) { }
     }
+
+    export class FetchDashboards {
+      static type = 'FETCH_DASHBOARDS';
+      type = FetchDashboards.type;
+      constructor(public payload: {
+        workspaceId: number
+      }) {}
+    }
+    export class FetchDashboardsSuccess {
+      static type = `${FetchDashboards.type}_SUCCESS`;
+      type = FetchDashboardsSuccess.type;
+      constructor(public payload: {
+        workspaceId: number
+        dashboards: ApiDashboard[]
+      }) {}
+    }
+    export class FetchDashboardsFailure {
+      static type = `${FetchDashboards.type}_FAILURE`;
+      type = FetchDashboardsFailure.type;
+      constructor(public payload: {
+        workspaceId: number
+        error: any
+      }) {}
+    }
+
   }
 
   export const fetch = (orgId: number) => async (dispatch: Dispatch) => {
@@ -35,5 +63,16 @@ export namespace Workspace {
       dispatch(new Actions.FetchFailure({ error }));
     }
   };
+
+  export const fetchDashboards = (orgId: number, workspaceId: number) => async (dispatch: Dispatch) => {
+    dispatch(new Actions.FetchDashboards({ workspaceId }));
+    try {
+      const dashboards = await WorkspaceClient.fetchDashboards(orgId, workspaceId);
+      dispatch(new Actions.FetchDashboardsSuccess({ workspaceId, dashboards }));
+    } catch (error) {
+      dispatch(new Actions.FetchDashboardsFailure({ workspaceId, error }));
+    }
+  };
+
 }
 

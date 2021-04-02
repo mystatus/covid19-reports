@@ -91,7 +91,7 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
         <Box className={classes.section}>
           <TextSection
             text={role.workspaces.map(x => x.name).join(', ') || 'None'}
-            title="Analytics Workspaces"
+            title="Spaces"
           />
         </Box>
 

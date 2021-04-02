@@ -11,7 +11,7 @@ import { UserState } from '../reducers/user.reducer';
 import { AppState } from '../store';
 import { AppSidenav } from './app-sidenav/app-sidenav';
 import { AppToolbar } from './app-toolbar/app-toolbar';
-import { AnalyticsPage } from './pages/analytics-page/analytics-page';
+import { SpacesPage } from './pages/spaces-page/spaces-page';
 import { DataExportPage } from './pages/data-export-page/data-export-page';
 import { HomePage } from './pages/home-page/home-page';
 import useStyles from './app.styles';
@@ -21,7 +21,7 @@ import { RosterPage } from './pages/roster-page/roster-page';
 import { UserRegistrationPage } from './pages/user-registration-page/user-registration-page';
 import { UsersPage } from './pages/users-page/users-page';
 import { RoleManagementPage } from './pages/role-management-page/role-management-page';
-import { WorkspacesPage } from './pages/workspaces-page/workspaces-page';
+import { EditSpacesPage } from './pages/edit-spaces-page/edit-spaces-page';
 import { RosterColumnsPage } from './pages/roster-columns-page/roster-columns-page';
 import { SettingsPage } from './pages/settings-page/settings-page';
 import { UnitsPage } from './pages/units-page/units-page';
@@ -97,8 +97,8 @@ export const App = () => {
               <Route path="/roster-columns">
                 <RosterColumnsPage />
               </Route>
-              <Route path="/workspaces">
-                <WorkspacesPage />
+              <Route path="/edit-spaces">
+                <EditSpacesPage />
               </Route>
               <Route path="/roles">
                 <RoleManagementPage />
@@ -118,8 +118,8 @@ export const App = () => {
               <Route path="/data-export">
                 <DataExportPage />
               </Route>
-              <Route path="/analytics">
-                <AnalyticsPage />
+              <Route path="/spaces">
+                <SpacesPage />
               </Route>
               <Route path="/*">
                 <Redirect to="/home" />

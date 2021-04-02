@@ -1,7 +1,10 @@
 import { Response } from 'express';
 import { getConnection } from 'typeorm';
 import { KibanaApi } from '../../kibana/kibana-api';
-import { setupKibanaWorkspace } from '../../kibana/kibana-utility';
+import {
+  getKibanaWorkspaceDashboards,
+  setupKibanaWorkspace,
+} from '../../kibana/kibana-utility';
 import { assertRequestBody } from '../../util/api-utils';
 import {
   ApiRequest,
@@ -155,6 +158,11 @@ class WorkspaceController {
     const updatedWorkspace = await workspace.save();
 
     res.json(updatedWorkspace);
+  }
+
+  async getWorkspaceDashboards(req: ApiRequest<WorkspaceParam>, res: Response) {
+    const dashboards = await getKibanaWorkspaceDashboards(req.kibanaApi!);
+    res.json(dashboards);
   }
 
 }
