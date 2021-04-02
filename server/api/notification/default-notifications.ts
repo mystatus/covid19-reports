@@ -404,7 +404,7 @@ export const defaultNotifications: NotificationDefinition[] = [{
     + '  </tr>'
     + '  <tr>'
     + '    <td align="center" class="center-text">'
-    + '      <img style="width:218px;border:0px;display:inline!important;" src="__IMAGE_URL__/hand-lock.png" width="218" border="0" alt="intro">'
+    + '      <img style="width:218px;border:0px;display:inline!important;" src="__IMAGE_URL__/missing_record.png" width="218" border="0" alt="intro">'
     + '    </td>'
     + '  </tr>'
     + '  <tr>'

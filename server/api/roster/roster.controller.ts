@@ -113,10 +113,11 @@ class RosterController {
     const headers: string[] = ['unit'];
     const example: string[] = ['unit1'];
     columns.forEach(column => {
-      headers.push(column.name);
       if (column.name === 'edipi') {
+        headers.push('DODID');
         example.push('0000000001');
       } else {
+        headers.push(column.displayName.includes('"') ? `"${column.displayName.replaceAll('"', '\\"')}"` : column.displayName);
         switch (column.type) {
           case RosterColumnType.Number:
             example.push('12345');
