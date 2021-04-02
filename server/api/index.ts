@@ -82,6 +82,10 @@ export type ColumnNameParam = {
   columnName: string
 };
 
+export type DashboardParam = {
+  dashboardUuid: string
+};
+
 export type OrgRoleParams = OrgParam & RoleParam;
 export type OrgReportParams = OrgParam & ReportParam;
 export type OrgEdipiParams = OrgParam & EdipiParam;

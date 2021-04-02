@@ -142,8 +142,8 @@ export const AppSidenav = () => {
           />
           {userHasWorkspaces() && (
             <SidenavLink
-              to="/analytics"
-              name="Analytics"
+              to="/spaces"
+              name="Spaces"
               icon={(<BarChartIcon />)}
             />
           )}
@@ -203,8 +203,8 @@ export const AppSidenav = () => {
                 icon={(<ViewWeekOutlinedIcon />)}
               />
               <SidenavLink
-                to="/workspaces"
-                name="Workspaces"
+                to="/edit-spaces"
+                name="Edit Spaces"
                 icon={(<DashboardOutlinedIcon />)}
               />
             </List>

@@ -1,7 +1,14 @@
 import { Response } from 'express';
 import { getManager } from 'typeorm';
+import { getKibanaWorkspaceDashboards } from '../../kibana/kibana-utility';
 import { AccessRequest } from '../access-request/access-request.model';
-import { ApiRequest, OrgEdipiParams, OrgParam } from '../index';
+import {
+  ApiRequest,
+  DashboardParam,
+  OrgEdipiParams,
+  OrgParam,
+  WorkspaceParam,
+} from '../index';
 import { User } from './user.model';
 import { Role } from '../role/role.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
@@ -193,6 +200,30 @@ class UserController {
     });
 
     res.json(accessRequests);
+  }
+
+  async addFavoriteDashboard(req: ApiRequest<WorkspaceParam & DashboardParam>, res: Response) {
+    const workspaceId = req.params.workspaceId;
+    const dashboardUuid = req.params.dashboardUuid;
+
+    // Check that this is a valid dashboard that the user has access to.
+    const dashboards = await getKibanaWorkspaceDashboards(req.kibanaApi!);
+    if (!dashboards.some(x => x.uuid === dashboardUuid)) {
+      throw new BadRequestError('Dashboard could not be found!');
+    }
+
+    await req.appUserRole!.addFavoriteDashboard(workspaceId, dashboardUuid, getManager());
+
+    res.status(200).send();
+  }
+
+  async removeFavoriteDashboard(req: ApiRequest<WorkspaceParam & DashboardParam>, res: Response) {
+    const workspaceId = req.params.workspaceId;
+    const dashboardUuid = req.params.dashboardUuid;
+
+    await req.appUserRole!.removeFavoriteDashboard(workspaceId, dashboardUuid, getManager());
+
+    res.status(200).send();
   }
 
 }

@@ -1,3 +1,4 @@
+import qs from 'qs';
 import { Workspace } from '../api/workspace/workspace.model';
 import { KibanaApi } from './kibana-api';
 import { elasticsearch } from '../elasticsearch/elasticsearch';
@@ -48,6 +49,33 @@ export async function setupKibanaWorkspace(workspace: Workspace, kibanaApi: Kiba
       defaultIndex,
     },
   });
+}
+
+export async function getKibanaWorkspaceDashboards(kibanaApi: KibanaApi) {
+  const response = await kibanaApi.axios.get('/api/saved_objects/_find', {
+    params: {
+      type: 'dashboard',
+      fields: ['id', 'title', 'description'],
+      per_page: 1000,
+    },
+    paramsSerializer: params => qs.stringify(params, { arrayFormat: 'repeat' }),
+  });
+
+  const data = response.data as {
+    saved_objects: Array<{
+      id: string
+      attributes: {
+        title: string
+        description: string
+      }
+    }>
+  };
+
+  return data.saved_objects.map(so => ({
+    uuid: so.id,
+    title: so.attributes.title,
+    description: so.attributes.description,
+  }));
 }
 
 interface KibanaSavedObject {

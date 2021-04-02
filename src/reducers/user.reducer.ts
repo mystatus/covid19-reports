@@ -1,5 +1,9 @@
+import _ from 'lodash';
 import { User } from '../actions/user.actions';
-import { ApiUser, ApiUserRole } from '../models/api-response';
+import {
+  ApiUser,
+  ApiUserRole,
+} from '../models/api-response';
 import { getLoggedInState } from '../utility/user-utils';
 
 export interface UserState extends ApiUser {
@@ -48,7 +52,54 @@ export function userReducer(state = userInitialState, action: any): UserState {
         activeRole: userRole,
       };
     }
+    case User.Actions.AddFavoriteDashboard.type: {
+      const { workspaceId, dashboardUuid } = (action as User.Actions.AddFavoriteDashboard).payload;
+      return addFavoriteDashboard(state, workspaceId, dashboardUuid);
+    }
+    case User.Actions.AddFavoriteDashboardFailure.type: {
+      // Undo add.
+      const { workspaceId, dashboardUuid } = (action as User.Actions.AddFavoriteDashboardFailure).payload;
+      return removeFavoriteDashboard(state, workspaceId, dashboardUuid);
+    }
+    case User.Actions.RemoveFavoriteDashboard.type: {
+      const { workspaceId, dashboardUuid } = (action as User.Actions.RemoveFavoriteDashboard).payload;
+      return removeFavoriteDashboard(state, workspaceId, dashboardUuid);
+    }
+    case User.Actions.RemoveFavoriteDashboardFailure.type: {
+      // Undo remove.
+      const { workspaceId, dashboardUuid } = (action as User.Actions.RemoveFavoriteDashboard).payload;
+      return addFavoriteDashboard(state, workspaceId, dashboardUuid);
+    }
     default:
       return state;
   }
+}
+
+function addFavoriteDashboard(state: UserState, workspaceId: number, dashboardUuid: string) {
+  const favoriteDashboards = _.cloneDeep(state.activeRole!.favoriteDashboards);
+  if (!favoriteDashboards[workspaceId]) {
+    favoriteDashboards[workspaceId] = {};
+  }
+  favoriteDashboards[workspaceId][dashboardUuid] = true;
+  return {
+    ...state,
+    activeRole: {
+      ...state.activeRole!,
+      favoriteDashboards,
+    },
+  };
+}
+
+function removeFavoriteDashboard(state: UserState, workspaceId: number, dashboardUuid: string) {
+  const favoriteDashboards = _.cloneDeep(state.activeRole!.favoriteDashboards);
+  if (favoriteDashboards[workspaceId]) {
+    delete favoriteDashboards[workspaceId][dashboardUuid];
+  }
+  return {
+    ...state,
+    activeRole: {
+      ...state.activeRole!,
+      favoriteDashboards,
+    },
+  };
 }

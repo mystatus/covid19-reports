@@ -9,7 +9,7 @@ import {
 } from '@material-ui/core';
 import axios from 'axios';
 import CheckIcon from '@material-ui/icons/Check';
-import useStyles from './edit-workspace-dialog.styles';
+import useStyles from './edit-space-dialog.styles';
 import { ApiWorkspace, ApiWorkspaceTemplate } from '../../../models/api-response';
 import { formatMessage } from '../../../utility/errors';
 
@@ -22,7 +22,7 @@ export interface EditWorkspaceDialogProps {
   onError?: (error: string) => void,
 }
 
-export const EditWorkspaceDialog = (props: EditWorkspaceDialogProps) => {
+export const EditSpaceDialog = (props: EditWorkspaceDialogProps) => {
   const classes = useStyles();
   const [formDisabled, setFormDisabled] = useState(false);
   const {
@@ -105,11 +105,11 @@ export const EditWorkspaceDialog = (props: EditWorkspaceDialogProps) => {
 
   return (
     <Dialog className={classes.root} maxWidth="md" onClose={onClose} open={open}>
-      <DialogTitle id="alert-dialog-title">{existingWorkspace ? 'Edit Workspace' : 'New Workspace'}</DialogTitle>
+      <DialogTitle id="alert-dialog-title">{existingWorkspace ? 'Edit Space' : 'New Space'}</DialogTitle>
       <DialogContent>
         <Grid container spacing={3}>
           <Grid item xs={6}>
-            <Typography className={classes.headerLabel}>Workspace Name:</Typography>
+            <Typography className={classes.headerLabel}>Space Name:</Typography>
             <TextField
               className={classes.textField}
               id="workspace-name"
@@ -119,7 +119,7 @@ export const EditWorkspaceDialog = (props: EditWorkspaceDialogProps) => {
             />
           </Grid>
           <Grid item xs={6}>
-            <Typography className={classes.headerLabel}>Workspace Description:</Typography>
+            <Typography className={classes.headerLabel}>Space Description:</Typography>
             <TextField
               className={classes.textField}
               id="workspace-description"

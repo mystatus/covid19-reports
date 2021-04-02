@@ -243,7 +243,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
             </Box>
 
             <Box className={classes.section}>
-              <Typography className={classes.roleHeader}>Analytics Workspaces:</Typography>
+              <Typography className={classes.roleHeader}>Spaces:</Typography>
               <Select
                 className={classes.workspaceSelect}
                 multiple

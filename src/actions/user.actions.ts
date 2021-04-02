@@ -39,6 +39,58 @@ export namespace User {
       }) {}
     }
 
+    export class AddFavoriteDashboard {
+      static type = 'ADD_FAVORITE_DASHBOARD';
+      type = AddFavoriteDashboard.type;
+      constructor(public payload: {
+        workspaceId: number
+        dashboardUuid: string
+      }) {}
+    }
+    export class AddFavoriteDashboardSuccess {
+      static type = `${AddFavoriteDashboard.type}_SUCCESS`;
+      type = AddFavoriteDashboardSuccess.type;
+      constructor(public payload: {
+        workspaceId: number
+        dashboardUuid: string
+      }) {}
+    }
+    export class AddFavoriteDashboardFailure {
+      static type = `${AddFavoriteDashboard.type}_FAILURE`;
+      type = AddFavoriteDashboardFailure.type;
+      constructor(public payload: {
+        workspaceId: number
+        dashboardUuid: string
+        error: any
+      }) {}
+    }
+
+    export class RemoveFavoriteDashboard {
+      static type = 'REMOVE_FAVORITE_DASHBOARD';
+      type = RemoveFavoriteDashboard.type;
+      constructor(public payload: {
+        workspaceId: number
+        dashboardUuid: string
+      }) {}
+    }
+    export class RemoveFavoriteDashboardSuccess {
+      static type = `${RemoveFavoriteDashboard.type}_SUCCESS`;
+      type = RemoveFavoriteDashboardSuccess.type;
+      constructor(public payload: {
+        workspaceId: number
+        dashboardUuid: string
+      }) {}
+    }
+    export class RemoveFavoriteDashboardFailure {
+      static type = `${RemoveFavoriteDashboard.type}_FAILURE`;
+      type = RemoveFavoriteDashboardFailure.type;
+      constructor(public payload: {
+        workspaceId: number
+        dashboardUuid: string
+        error: any
+      }) {}
+    }
+
   }
 
   export const refresh = () => async (dispatch: Dispatch<Actions.Refresh>, getState: () => AppState) => {
@@ -79,6 +131,26 @@ export namespace User {
       userData,
       localStorage,
     }));
+  };
+
+  export const addFavoriteDashboard = (orgId: number, workspaceId: number, dashboardUuid: string) => async (dispatch: Dispatch) => {
+    dispatch(new Actions.AddFavoriteDashboard({ workspaceId, dashboardUuid }));
+    try {
+      await UserClient.addFavoriteDashboard(orgId, workspaceId, dashboardUuid);
+      dispatch(new Actions.AddFavoriteDashboardSuccess({ workspaceId, dashboardUuid }));
+    } catch (error) {
+      dispatch(new Actions.AddFavoriteDashboardFailure({ workspaceId, dashboardUuid, error }));
+    }
+  };
+
+  export const removeFavoriteDashboard = (orgId: number, workspaceId: number, dashboardUuid: string) => async (dispatch: Dispatch) => {
+    dispatch(new Actions.RemoveFavoriteDashboard({ workspaceId, dashboardUuid }));
+    try {
+      await UserClient.removeFavoriteDashboard(orgId, workspaceId, dashboardUuid);
+      dispatch(new Actions.RemoveFavoriteDashboardSuccess({ workspaceId, dashboardUuid }));
+    } catch (error) {
+      dispatch(new Actions.RemoveFavoriteDashboardFailure({ workspaceId, dashboardUuid, error }));
+    }
   };
 }
 
