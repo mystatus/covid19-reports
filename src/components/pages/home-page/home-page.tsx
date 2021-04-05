@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import {
+  useDispatch,
+  useSelector
+} from 'react-redux';
 import { Box,
   Card,
   CardContent,
@@ -16,7 +19,9 @@ import FavoriteIcon from '@material-ui/icons/Favorite';
 import clsx from 'clsx';
 import axios from 'axios';
 import { UserSelector } from '../../../selectors/user.selector';
+import { WorkspaceSelector } from '../../../selectors/workspace.selector';
 import { Link } from '../../link/link';
+import { User } from '../../../actions/user.actions';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
 import useStyles from './home-page.styles';
@@ -24,7 +29,9 @@ import welcomeImage from '../../../media/images/welcome-image.png';
 import PageHeader from '../../page-header/page-header';
 import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
 import { AccessRequestClient } from '../../../client';
-import { ApiAccessRequest, ApiMusterTrends, ApiWorkspace } from '../../../models/api-response';
+import { ApiAccessRequest, ApiDashboard, ApiMusterTrends, ApiWorkspace } from '../../../models/api-response';
+import { AppFrame } from '../../../actions/app-frame.actions';
+import { Workspace } from '../../../actions/workspace.actions';
 
 
 const HomePageHelp = () => {
@@ -100,64 +107,39 @@ const HtmlTooltip = withStyles((theme: Theme) => ({
 }))(Tooltip);
 
 
-export interface ApiDashboard {
-  id: string
-  title: string
-  description: string
-}
-
-
 export const HomePage = () => {
-
   const classes = useStyles();
-  const orgId = useSelector(UserSelector.orgId);
+  const dispatch = useDispatch();
+  const orgId = useSelector(UserSelector.orgId)!;
   const user = useSelector<AppState, UserState>(state => state.user);
   const orphanedRecords = useSelector(OrphanedRecordSelector.all);
   const [accessRequests, setAccessRequests] = useState<ApiAccessRequest[]>([]);
   const [musterNonComplianceLastTwoWeeks, setMusterNonComplianceLastTwoWeek] = useState<number[]>([1.0, 0.0]);
+  const favoriteDashboards = useSelector(UserSelector.favoriteDashboards)!;
+  const workspaces = useSelector(UserSelector.workspaces)!;
+  const dashboards = useSelector(WorkspaceSelector.dashboards)!;
 
-  const workspaces: ApiWorkspace[] = [
-    {
-      id: 1,
-      name: 'Workspace 1',
-      description: 'Workspace 1',
-      pii: false,
-      phi: false,
-    }, {
-      id: 2,
-      name: 'Workspace 2',
-      description: 'Workspace 2',
-      pii: false,
-      phi: false,
-    },
-  ];
+  useEffect(() => {
+    dispatch(AppFrame.setPageLoading(true));
+    dispatch(User.refresh());
+    dispatch(Workspace.fetch(orgId));
+  }, [dispatch, orgId]);
 
-  const dashboardsMock: ApiDashboard[] = [
-    {
-      id: 'dashboard-1',
-      title: 'The Best',
-      description: 'Fact. This is the best dashboard. ',
-    },
-    {
-      id: 'dashboard-2',
-      title: 'Force Heath',
-      description: 'This dashboard is probably super cool. ',
-    },
-    {
-      id: 'dashboard-3',
-      title: 'Health / Symptom Tracking',
-      description: 'A dashboard for tracking soldier symptoms and coronavirus exposure potential',
-    },
-    {
-      id: 'dashboard-4',
-      title: 'Mental Health',
-      description: 'A dashboard for relevantly tracking the "Talk to someone" field from service member submissions.',
-    },
-  ];
+  useEffect(() => {
+    (async () => {
+      for (const workspace of workspaces) {
+        await dispatch(Workspace.fetchDashboards(orgId, workspace.id));
+      }
 
-  const dashboards: { [workspaceId: number]: ApiDashboard[] } = {
-    1: dashboardsMock,
-    2: [...dashboardsMock].reverse(),
+      dispatch(AppFrame.setPageLoading(false));
+    })();
+  }, [dispatch, orgId, workspaces]);
+
+  const isDashboardFavorited = (workspace: ApiWorkspace, dashboard: ApiDashboard) => {
+    if (favoriteDashboards[workspace.id]) {
+      return Boolean(favoriteDashboards[workspace.id][dashboard.uuid]);
+    }
+    return false;
   };
 
   const initializeTable = React.useCallback(async () => {
@@ -287,8 +269,8 @@ export const HomePage = () => {
                   <Box fontSize="1rem" fontWeight={500}>
                     {workspace.name}
                   </Box>
-                  {dashboards[workspace.id].map(dashboard => (
-                    <Grid container key={dashboard.id}>
+                  {dashboards[workspace.id].filter(dashboard => isDashboardFavorited(workspace, dashboard)).map(dashboard => (
+                    <Grid container key={dashboard.uuid}>
                       <Grid item xs={3}>
                         <Link to={`/dashboard?orgId=${orgId}&workspaceId=${workspace.id}`}>
                           {dashboard.title}
