@@ -110,11 +110,11 @@ class RosterController {
 
   async getRosterTemplate(req: ApiRequest, res: Response) {
     const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
-    const headers: string[] = ['unit'];
+    const headers: string[] = ['Unit'];
     const example: string[] = ['unit1'];
     columns.forEach(column => {
       if (column.name === 'edipi') {
-        headers.push('DODID');
+        headers.push('DoD ID');
         example.push('0000000001');
       } else {
         headers.push(column.displayName.includes('"') ? `"${column.displayName.replaceAll('"', '\\"')}"` : column.displayName);
@@ -183,9 +183,9 @@ class RosterController {
       });
     }
 
-    const edipiKey = ['dodid', 'edipi', 'DODID', 'EDIPI'].find(t => t in roster[0]);
+    const edipiKey = ['DoD ID', 'edipi', 'EDIPI'].find(t => t in roster[0]);
     if (!edipiKey) {
-      throw new BadRequestError('No edipi/dodid column.');
+      throw new BadRequestError('No edipi/DoD ID column.');
     }
 
     const columns = await Roster.getAllowedColumns(org, req.appUserRole!.role);
@@ -207,15 +207,15 @@ class RosterController {
     };
 
     roster.forEach((row, index) => {
-      const units = orgUnits.filter(u => row.unit === u.name);
+      const units = orgUnits.filter(u => row.unit === u.name || row.Unit === u.name);
       const unit = units.length > 0 ? units[0] : undefined;
       // Pre-validate / check for row-level issues.
       try {
-        if (!row.unit) {
+        if (!(row.unit ?? row.Unit)) {
           throw new BadRequestError('Unable to add roster entries without a unit.');
         }
         if (units.length === 0) {
-          throw new NotFoundError(`Unit "${row.unit}" could not be found in the group.`);
+          throw new NotFoundError(`Unit "${(row.unit ?? row.Unit)}" could not be found in the group.`);
         }
         if (existingEntries.some(({ edipi }) => edipi === row[edipiKey])) {
           throw new BadRequestError(`Entry with ${edipiKey} already exists.`);

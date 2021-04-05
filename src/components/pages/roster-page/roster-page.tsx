@@ -483,7 +483,7 @@ export const RosterPage = () => {
             <TableCustomColumnsContent
               rows={orphanedRecords}
               columns={[
-                { name: 'edipi', displayName: 'Edipi' },
+                { name: 'edipi', displayName: 'DoD ID' },
                 { name: 'unit', displayName: 'Unit' },
                 { name: 'phone', displayName: 'Phone' },
                 { name: 'count', displayName: 'Count' },

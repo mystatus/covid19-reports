@@ -233,7 +233,7 @@ export const UsersPage = () => {
               </TableRow>
               <TableRow>
                 <TableCell>Name</TableCell>
-                <TableCell>EDIPI</TableCell>
+                <TableCell>DoD ID</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Phone</TableCell>
                 <TableCell>Role</TableCell>
