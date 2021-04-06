@@ -181,7 +181,7 @@ export const UserRegistrationPage = () => {
             <Box>
               <TextField
                 id="edipi"
-                label="EDIPI"
+                label="DoD ID"
                 value={user.edipi}
                 required
                 disabled

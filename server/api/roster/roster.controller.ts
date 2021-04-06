@@ -110,13 +110,14 @@ class RosterController {
 
   async getRosterTemplate(req: ApiRequest, res: Response) {
     const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
-    const headers: string[] = ['unit'];
+    const headers: string[] = ['Unit'];
     const example: string[] = ['unit1'];
     columns.forEach(column => {
-      headers.push(column.name);
       if (column.name === 'edipi') {
+        headers.push('DoD ID');
         example.push('0000000001');
       } else {
+        headers.push(column.displayName.includes('"') ? `"${column.displayName.replaceAll('"', '\\"')}"` : column.displayName);
         switch (column.type) {
           case RosterColumnType.Number:
             example.push('12345');
@@ -176,18 +177,29 @@ class RosterController {
       throw new BadRequestError('No units found.');
     }
 
+    if (roster.length === 0) {
+      return res.json({
+        count: 0,
+      });
+    }
+
+    const edipiKey = ['DoD ID', 'edipi', 'EDIPI'].find(t => t in roster[0]);
+    if (!edipiKey) {
+      throw new BadRequestError('No edipi/DoD ID column.');
+    }
+
     const columns = await Roster.getAllowedColumns(org, req.appUserRole!.role);
     const errors: RosterUploadErrorInfo[] = [];
     const existingEntries = await Roster.find({
       where: {
-        edipi: In(roster.map(x => x.edipi)),
+        edipi: In(roster.map(x => x[edipiKey])),
       },
     });
 
     const onError = (error: Error, row?: RosterFileRow, index?: number, column?: string) => {
       errors.push({
         column,
-        edipi: row?.edipi,
+        edipi: row ? row[edipiKey] : undefined,
         error: error.message,
         // Offset by 2 - 1 because of being zero-based and 1 because of the csv header row
         line: index !== undefined ? index + 2 : undefined,
@@ -195,18 +207,18 @@ class RosterController {
     };
 
     roster.forEach((row, index) => {
-      const units = orgUnits.filter(u => row.unit === u.name);
+      const units = orgUnits.filter(u => row.unit === u.name || row.Unit === u.name);
       const unit = units.length > 0 ? units[0] : undefined;
       // Pre-validate / check for row-level issues.
       try {
-        if (!row.unit) {
+        if (!(row.unit ?? row.Unit)) {
           throw new BadRequestError('Unable to add roster entries without a unit.');
         }
         if (units.length === 0) {
-          throw new NotFoundError(`Unit "${row.unit}" could not be found in the group.`);
+          throw new NotFoundError(`Unit "${(row.unit ?? row.Unit)}" could not be found in the group.`);
         }
-        if (existingEntries.some(({ edipi }) => edipi === row.edipi)) {
-          throw new BadRequestError(`Entry with EDIPI already exists.`);
+        if (existingEntries.some(({ edipi }) => edipi === row[edipiKey])) {
+          throw new BadRequestError(`Entry with ${edipiKey} already exists.`);
         }
       } catch (error) {
         onError(error, row, index);
@@ -216,9 +228,9 @@ class RosterController {
       entry.unit = unit!;
       for (const column of columns) {
         try {
-          setColumnFromCSV(entry, row, column);
+          setColumnFromCSV(entry, row, column, edipiKey);
         } catch (error) {
-          onError(error, row, index, column.name);
+          onError(error, row, index, column.name === 'edipi' ? edipiKey : column.name);
         }
       }
       rosterEntries.push(entry);
@@ -552,12 +564,13 @@ function setCustomColumnFromBody(column: CustomRosterColumn, body: CustomColumnD
 }
 
 
-function setColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColumnInfo) {
+function setColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColumnInfo, edipiKey: string) {
   let stringValue: string | undefined;
+  const columnName = column.name === 'edipi' ? edipiKey : column.name;
   if (column.required) {
-    stringValue = getRequiredParam(column.name, row);
+    stringValue = getRequiredParam(columnName, row, 'string', column.displayName);
   } else {
-    stringValue = getOptionalParam(column.name, row);
+    stringValue = getOptionalParam(columnName, row, 'string', column.displayName);
   }
   if (stringValue != null && stringValue.length > 0) {
     let value: any;
@@ -582,7 +595,7 @@ function setColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColu
     }
 
     if (column.required && value === undefined) {
-      throw new BadRequestError(`Invalid value (${stringValue}) for ${column.name}`);
+      throw new BadRequestError(`Invalid value (${stringValue}) for ${columnName}`);
     }
 
     if (value !== undefined) {

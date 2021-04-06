@@ -6,7 +6,7 @@ export const RosterPageHelp = () => {
     <PageHelp
       description={`
         The roster is simply the list of individuals within your group. By default, StatusEngine displays the following
-        columns: EDIPI, First Name, Last Name, Unit, and Last Reported. Additional custom columns may be added by
+        columns: DoD ID, First Name, Last Name, Unit, and Last Reported. Additional custom columns may be added by
         visiting the Roster Columns view.
       `}
       bullets={[

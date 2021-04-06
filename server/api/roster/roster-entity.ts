@@ -52,7 +52,7 @@ export class RosterEntity extends BaseEntity {
 export const baseRosterColumns: RosterColumnInfo[] = [
   {
     name: 'edipi',
-    displayName: 'EDIPI',
+    displayName: 'DoD ID',
     type: RosterColumnType.String,
     pii: true,
     phi: false,
