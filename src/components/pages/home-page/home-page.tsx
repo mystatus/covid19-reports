@@ -264,25 +264,27 @@ export const HomePage = () => {
                 </Box>
                 <Link to="/workspaces">View All Dashboards</Link>
               </Box>
-              {workspaces.map(workspace => (
-                <Card key={workspace.id} className={classes.favoritesCard}>
-                  <Box fontSize="1rem" fontWeight={500}>
-                    {workspace.name}
-                  </Box>
-                  {dashboards[workspace.id].filter(dashboard => isDashboardFavorited(workspace, dashboard)).map(dashboard => (
-                    <Grid container key={dashboard.uuid}>
-                      <Grid item xs={3}>
-                        <Link to={`/dashboard?orgId=${orgId}&workspaceId=${workspace.id}`}>
-                          {dashboard.title}
-                        </Link>
+              {workspaces
+                .filter(workspace => (dashboards[workspace.id] ?? []).some(dashboard => isDashboardFavorited(workspace, dashboard)))
+                .map(workspace => (
+                  <Card key={workspace.id} className={classes.favoritesCard}>
+                    <Box fontSize="1rem" fontWeight={500}>
+                      {workspace.name}
+                    </Box>
+                    {dashboards[workspace.id].filter(dashboard => isDashboardFavorited(workspace, dashboard)).map(dashboard => (
+                      <Grid container key={dashboard.uuid}>
+                        <Grid item xs={3}>
+                          <Link to={`/dashboard?orgId=${orgId}&workspaceId=${workspace.id}`}>
+                            {dashboard.title}
+                          </Link>
+                        </Grid>
+                        <Grid item xs={9} className={classes.subtle}>
+                          {dashboard.description}
+                        </Grid>
                       </Grid>
-                      <Grid item xs={9} className={classes.subtle}>
-                        {dashboard.description}
-                      </Grid>
-                    </Grid>
-                  ))}
-                </Card>
-              ))}
+                    ))}
+                  </Card>
+                ))}
             </Grid>
           )}
         </Grid>
