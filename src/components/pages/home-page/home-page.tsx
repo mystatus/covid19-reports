@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   useDispatch,
-  useSelector
+  useSelector,
 } from 'react-redux';
 import { Box,
   Card,
@@ -32,6 +32,7 @@ import { AccessRequestClient } from '../../../client';
 import { ApiAccessRequest, ApiDashboard, ApiMusterTrends, ApiWorkspace } from '../../../models/api-response';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { Workspace } from '../../../actions/workspace.actions';
+import { getDashboardUrl } from '../../../utility/url-utils';
 
 
 const HomePageHelp = () => {
@@ -73,7 +74,7 @@ const HomePageHelp = () => {
           {user.activeRole?.role.workspaces && (
             <li>
               <Typography>
-                <strong><Link href={`/dashboard?orgId=${orgId}`}>Customizable Dashboards</Link></strong><br />
+                <strong><Link to="/spaces">Customizable Dashboards</Link></strong><br />
                 Protect sensitive data by creating and assigning role-based permissions across the entire
                 organization.
               </Typography>
@@ -262,7 +263,7 @@ export const HomePage = () => {
                     My Favorited Dashboards
                   </Typography>
                 </Box>
-                <Link to="/workspaces">View All Dashboards</Link>
+                <Link to="/spaces">View All Dashboards</Link>
               </Box>
               {workspaces
                 .filter(workspace => (dashboards[workspace.id] ?? []).some(dashboard => isDashboardFavorited(workspace, dashboard)))
@@ -274,7 +275,7 @@ export const HomePage = () => {
                     {dashboards[workspace.id].filter(dashboard => isDashboardFavorited(workspace, dashboard)).map(dashboard => (
                       <Grid container key={dashboard.uuid}>
                         <Grid item xs={3}>
-                          <Link to={`/dashboard?orgId=${orgId}&workspaceId=${workspace.id}`}>
+                          <Link href={getDashboardUrl(orgId, workspace.id, dashboard.uuid)}>
                             {dashboard.title}
                           </Link>
                         </Grid>
