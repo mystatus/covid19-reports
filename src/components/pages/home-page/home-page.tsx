@@ -37,7 +37,6 @@ import { getDashboardUrl } from '../../../utility/url-utils';
 
 const HomePageHelp = () => {
   const user = useSelector<AppState, UserState>(state => state.user);
-  const orgId = useSelector(UserSelector.orgId);
 
   return (
     <Grid container direction="row">
@@ -183,6 +182,9 @@ export const HomePage = () => {
   const trendingUp = nonComplianceDelta > 0;
   const trendingDown = nonComplianceDelta < 0;
 
+  const workspacesWithFavorites = workspaces
+    .filter(workspace => (dashboards[workspace.id] ?? []).some(dashboard => isDashboardFavorited(workspace, dashboard)));
+
   return (
     <main className={classes.root}>
       <Container maxWidth="md">
@@ -196,64 +198,70 @@ export const HomePage = () => {
         />
 
         <Grid container spacing={3}>
-          <Grid item xs={4}>
-            <Card className={classes.card}>
-              <CardContent>
-                <Typography className={classes.metricLabel}>
-                  Muster Non-Compliance
-                  <HtmlTooltip
-                    arrow
-                    placement="top"
-                    title="The average percentage of times individuals within the group did not report during muster for the last 7 days."
+          {user.activeRole?.role.canViewMuster && (
+            <Grid item xs={4}>
+              <Card className={classes.card}>
+                <CardContent>
+                  <Typography className={classes.metricLabel}>
+                    Muster Non-Compliance
+                    <HtmlTooltip
+                      arrow
+                      placement="top"
+                      title="The average percentage of times individuals within the group did not report during muster for the last 7 days."
+                    >
+                      <InfoOutlinedIcon />
+                    </HtmlTooltip>
+                  </Typography>
+                  <Typography className={classes.metricValue}>
+                    {Math.round(musterNonComplianceLastTwoWeeks[1])}%
+                  </Typography>
+                  <Typography className={clsx(classes.metricTrending, {
+                    [classes.metricUp]: trendingUp,
+                    [classes.metricDown]: trendingDown,
+                  })}
                   >
-                    <InfoOutlinedIcon />
-                  </HtmlTooltip>
-                </Typography>
-                <Typography className={classes.metricValue}>
-                  {Math.round(musterNonComplianceLastTwoWeeks[1])}%
-                </Typography>
-                <Typography className={clsx(classes.metricTrending, {
-                  [classes.metricUp]: trendingUp,
-                  [classes.metricDown]: trendingDown,
-                })}
-                >
-                  <span className={classes.metricTrendingIcon}>
-                    <ArrowUpwardIcon />
-                  </span>
-                  {(nonComplianceDelta).toFixed(2)}%
-                  <Hidden smDown>
-                    <span className={classes.subtle}>last 7 days</span>
-                  </Hidden>
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={4}>
-            <Card className={classes.card}>
-              <CardContent>
-                <Typography className={classes.metricLabel}>
-                  Orphaned Records
-                </Typography>
-                <Typography className={classes.metricValue}>
-                  {orphanedRecords.length}
-                </Typography>
-                <Link to="/roster">View Now &rarr;</Link>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={4}>
-            <Card className={classes.card}>
-              <CardContent>
-                <Typography className={classes.metricLabel}>
-                  User Access Requests
-                </Typography>
-                <Typography className={classes.metricValue}>
-                  {accessRequests.length}
-                </Typography>
-                <Link to="/users">View Now &rarr;</Link>
-              </CardContent>
-            </Card>
-          </Grid>
+                    <span className={classes.metricTrendingIcon}>
+                      <ArrowUpwardIcon />
+                    </span>
+                    {(nonComplianceDelta).toFixed(2)}%
+                    <Hidden smDown>
+                      <span className={classes.subtle}>last 7 days</span>
+                    </Hidden>
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+          {user.activeRole?.role.canManageRoster && (
+            <Grid item xs={4}>
+              <Card className={classes.card}>
+                <CardContent>
+                  <Typography className={classes.metricLabel}>
+                    Orphaned Records
+                  </Typography>
+                  <Typography className={classes.metricValue}>
+                    {orphanedRecords.length}
+                  </Typography>
+                  <Link to="/roster">View Now &rarr;</Link>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+          {user.activeRole?.role.canManageGroup && (
+            <Grid item xs={4}>
+              <Card className={classes.card}>
+                <CardContent>
+                  <Typography className={classes.metricLabel}>
+                    User Access Requests
+                  </Typography>
+                  <Typography className={classes.metricValue}>
+                    {accessRequests.length}
+                  </Typography>
+                  <Link to="/users">View Now &rarr;</Link>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
           {user.activeRole?.role.workspaces && (
             <Grid item xs={12}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -265,8 +273,7 @@ export const HomePage = () => {
                 </Box>
                 <Link to="/spaces">View All Dashboards</Link>
               </Box>
-              {workspaces
-                .filter(workspace => (dashboards[workspace.id] ?? []).some(dashboard => isDashboardFavorited(workspace, dashboard)))
+              {workspacesWithFavorites
                 .map(workspace => (
                   <Card key={workspace.id} className={classes.favoritesCard}>
                     <Box fontSize="1rem" fontWeight={500}>
@@ -286,6 +293,11 @@ export const HomePage = () => {
                     ))}
                   </Card>
                 ))}
+                {workspacesWithFavorites.length === 0 && (
+                  <Grid item xs={12} className={classes.subtle}>
+                    You have no favorite dashboards.
+                  </Grid>
+                )}
             </Grid>
           )}
         </Grid>
