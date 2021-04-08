@@ -12,6 +12,7 @@ export interface PageHeaderProps {
   help?: {
     contentComponent: ElementType
     cardId: string
+    variant?: 'plain' | 'info'
   }
 }
 
@@ -31,13 +32,14 @@ const PageHeader = (props: PageHeaderProps) => {
           <HelpButton
             title={title}
             contentComponent={help.contentComponent}
+            variant={help.variant}
           />
         )}
       </Box>
 
       {(help && HelpContent) && (
         <Box className={classes.helpCardContainer}>
-          <HelpCard helpCardId={help.cardId}>
+          <HelpCard helpCardId={help.cardId} variant={help.variant}>
             <HelpContent />
           </HelpCard>
         </Box>

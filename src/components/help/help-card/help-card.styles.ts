@@ -6,8 +6,10 @@ import {
 
 export default makeStyles((theme: Theme) => createStyles({
   card: {
-    backgroundColor: '#ECF4FC',
     marginBottom: theme.spacing(3),
+  },
+  cardInfo: {
+    backgroundColor: '#ECF4FC',
   },
   cardContent: {
     paddingTop: theme.spacing(3),
