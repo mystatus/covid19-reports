@@ -73,6 +73,17 @@ class OrphanedRecordController {
     orphanedRecord.phone = req.body.phone;
     orphanedRecord.unit = req.body.unit;
 
+    const orphanedRecords = await OrphanedRecord.find({
+      where: {
+        documentId: req.body.documentId,
+      },
+    });
+
+    if (orphanedRecords.length > 0) {
+      res.status(200).json(orphanedRecord);
+      return;
+    }
+
     orphanedRecord.org = await Org.findOne({
       where: {
         reportingGroup: req.body.reportingGroup,

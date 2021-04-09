@@ -191,6 +191,7 @@ class RosterController {
     const columns = await Roster.getAllowedColumns(org, req.appUserRole!.role);
     const errors: RosterUploadErrorInfo[] = [];
     const existingEntries = await Roster.find({
+      relations: ['unit', 'unit.org'],
       where: {
         edipi: In(roster.map(x => x[edipiKey])),
       },
@@ -217,7 +218,7 @@ class RosterController {
         if (units.length === 0) {
           throw new NotFoundError(`Unit "${(row.unit ?? row.Unit)}" could not be found in the group.`);
         }
-        if (existingEntries.some(({ edipi }) => edipi === row[edipiKey])) {
+        if (existingEntries.some(x => x.edipi === row[edipiKey] && x.unit.org!.id === unit!.org!.id)) {
           throw new BadRequestError(`Entry with ${edipiKey} already exists.`);
         }
       } catch (error) {
