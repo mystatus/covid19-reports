@@ -141,7 +141,7 @@ export const MusterPage = () => {
   }, [orgId, dispatch]);
 
   const showErrorDialog = useCallback((title: string, error: Error) => {
-    dispatch(Modal.alert(`Error: ${title}`, formatMessage(error)));
+    dispatch(Modal.alert(`Error: ${title}`, formatMessage(error))).then();
   }, [dispatch]);
 
   const reloadTable = useCallback(async () => {
@@ -310,14 +310,14 @@ export const MusterPage = () => {
       const filename = `${_.kebabCase(orgName)}_${unitId}_muster-noncompliance_${startDate}_to_${endDate}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
-      dispatch(Modal.alert('Export to CSV', formatMessage(error, 'Unable to export')));
+      dispatch(Modal.alert('Export to CSV', formatMessage(error, 'Unable to export'))).then();
     } finally {
       setExportLoading(false);
     }
   };
 
   const getVisibleColumns = () => {
-    const customRosterColumnInfos = [
+    const customRosterColumnInfos: ApiRosterColumnInfo[] = [
       ...rosterColumnInfos,
       {
         name: 'unitId',
@@ -328,6 +328,7 @@ export const MusterPage = () => {
         custom: false,
         required: false,
         updatable: false,
+        config: {},
       },
       {
         name: 'nonMusterPercent',
@@ -338,6 +339,7 @@ export const MusterPage = () => {
         custom: false,
         required: false,
         updatable: false,
+        config: {},
       },
     ];
 

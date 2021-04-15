@@ -21,21 +21,12 @@ export default makeStyles((theme: Theme) => createStyles({
     lineHeight: '24px',
     color: '#A9AEB1',
   },
-  optionsHeaderLabel: {
-    marginTop: theme.spacing(3),
-  },
   flagTableBorder: {
     border: `1px solid ${theme.palette.text.hint}`,
     borderRadius: '4px',
   },
   typeSelect: {
     width: '100%',
-    '&:before': {
-      border: 'none',
-    },
-    '& option, & select': {
-      textTransform: 'capitalize',
-    },
   },
   addEnumButton: {
     borderColor: 'transparent',

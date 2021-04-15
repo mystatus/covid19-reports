@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import {
-  Button, Checkbox,
+  Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Grid,
   IconButton,
+  MenuItem,
   Select,
   TableCell,
   TableRow,
@@ -16,7 +18,6 @@ import {
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import axios from 'axios';
-import clsx from 'clsx';
 import { v4 as uuidv4 } from 'uuid';
 import useStyles from './edit-column-dialog.styles';
 import {
@@ -115,8 +116,7 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
     open, orgId, column, onClose, onError,
   } = props;
 
-  const existingColumn: boolean = !!column;
-  const [name, setName] = useState(column?.name || '');
+  const existingColumn = !!column;
   const [displayName, setDisplayName] = useState(column?.displayName || '');
   const [type, setType] = useState(column?.type || ApiRosterColumnType.String);
   const [pii, setPII] = useState(column?.pii || false);
@@ -151,7 +151,6 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
   const onSave = async () => {
     setFormDisabled(true);
     const body = {
-      name,
       displayName,
       type,
       pii: pii || phi,
@@ -178,7 +177,7 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
   };
 
   const canSave = () => {
-    return !formDisabled && name.length > 0 && displayName.length > 0;
+    return !formDisabled && displayName.length > 0;
   };
 
   return (
@@ -186,108 +185,76 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
       <DialogTitle id="alert-dialog-title">{existingColumn ? 'Edit Roster Column' : 'New Roster Column'}</DialogTitle>
       <DialogContent>
         <Grid container spacing={3}>
-          <Grid item xs={6}>
-            <Typography className={classes.headerLabel}>Field Name:</Typography>
-            {existingColumn && (
-              <Typography>
-                {name}
-              </Typography>
-            )}
-            {!existingColumn && (
-              <TextField
-                className={classes.textField}
-                id="field-name"
-                disabled={formDisabled}
-                value={name}
-                onChange={onInputChanged(setName)}
-              />
-            )}
+          <Grid item xs={12}>
+            <Typography className={classes.headerLabel}>Name:</Typography>
+            <TextField
+              className={classes.textField}
+              id="display-name"
+              disabled={formDisabled || existingColumn}
+              multiline
+              rowsMax={2}
+              value={displayName}
+              onChange={onInputChanged(setDisplayName)}
+            />
           </Grid>
-          <Grid item xs={6}>
+
+          <Grid item xs={12}>
             <Typography className={classes.headerLabel}>Type:</Typography>
-            {existingColumn && (
-              <Typography className={classes.typeText}>
-                {type}
-              </Typography>
-            )}
-            {!existingColumn && (
-              <Select
-                className={classes.typeSelect}
-                native
-                disabled={formDisabled}
-                value={type}
-                onChange={onColumnTypeChanged}
-                inputProps={{
-                  name: 'type',
-                  id: 'type-select',
-                }}
-              >
-                {Object.values(ApiRosterColumnType).map(columnType => (
-                  <option key={columnType} value={columnType}>{rosterColumnTypeDisplayName(columnType)}</option>
-                ))}
-              </Select>
-            )}
+            <Select
+              className={classes.typeSelect}
+              disabled={formDisabled || existingColumn}
+              value={type}
+              onChange={onColumnTypeChanged}
+            >
+              {Object.values(ApiRosterColumnType).map(columnType => (
+                <MenuItem key={columnType} value={columnType}>
+                  {rosterColumnTypeDisplayName(columnType)}
+                </MenuItem>
+              ))}
+            </Select>
           </Grid>
-          <Grid container item xs={6}>
+
+          {type === ApiRosterColumnType.Enum && (
             <Grid item xs={12}>
-              <Typography className={classes.headerLabel}>Display Name:</Typography>
-              <TextField
-                className={classes.textField}
-                id="display-name"
-                disabled={formDisabled}
-                multiline
-                rowsMax={2}
-                value={displayName}
-                onChange={onInputChanged(setDisplayName)}
-              />
-            </Grid>
-            {type === ApiRosterColumnType.Enum && (
-              <Grid container item xs={12}>
-                <Grid item xs={12}>
-                  <Typography className={clsx(classes.headerLabel, classes.optionsHeaderLabel)}>
-                    Options:
-                  </Typography>
-                </Grid>
+              <Typography className={classes.headerLabel}>Options:</Typography>
 
-                {getEnumOptions(config, type).map(({ id, label }) => (
-                  <Grid key={id} container item xs={12} spacing={1}>
-                    <Grid item xs={10}>
-                      <TextField
-                        className={classes.textField}
-                        disabled={formDisabled}
-                        onChange={onCustomEnumChanged(id)}
-                        size="small"
-                        value={label}
-                      />
-                    </Grid>
-                    <Grid item xs={2}>
-                      <IconButton
-                        className={classes.removeEnumButton}
-                        onClick={() => deleteEnumOption(config, type, id)}
-                      >
-                        <HighlightOffIcon />
-                      </IconButton>
-                    </Grid>
+              {getEnumOptions(config, type).map(({ id, label }) => (
+                <Grid key={id} container item xs={12} spacing={1}>
+                  <Grid item xs={10}>
+                    <TextField
+                      className={classes.textField}
+                      disabled={formDisabled}
+                      onChange={onCustomEnumChanged(id)}
+                      size="small"
+                      value={label}
+                    />
                   </Grid>
-                ))}
-
-                <Grid item xs={12}>
-                  <Button
-                    aria-label="Add option"
-                    className={classes.addEnumButton}
-                    onClick={() => setConfig(addEnumOption(config, type))}
-                    size="small"
-                    startIcon={<AddCircleIcon />}
-                    variant="outlined"
-                  >
-                    Add Option
-                  </Button>
+                  <Grid item xs={2}>
+                    <IconButton
+                      className={classes.removeEnumButton}
+                      onClick={() => setConfig(deleteEnumOption(config, type, id))}
+                    >
+                      <HighlightOffIcon />
+                    </IconButton>
+                  </Grid>
                 </Grid>
-              </Grid>
-            )}
-          </Grid>
-          <Grid item xs={6}>
-            <Typography className={classes.headerLabel}>Column Flags:</Typography>
+              ))}
+
+              <Button
+                aria-label="Add option"
+                className={classes.addEnumButton}
+                onClick={() => setConfig(addEnumOption(config, type))}
+                size="small"
+                startIcon={<AddCircleIcon />}
+                variant="outlined"
+              >
+                Add Option
+              </Button>
+            </Grid>
+          )}
+
+          <Grid item xs={12}>
+            <Typography className={classes.headerLabel}>Flags:</Typography>
             <EditableBooleanTable aria-label="Flags">
               <TableRow>
                 <TableCell>Contains PII</TableCell>

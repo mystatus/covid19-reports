@@ -78,7 +78,7 @@ export type SettingParam = {
   settingId: string
 };
 
-export type ColumnNameParam = {
+export type ColumnParam = {
   columnName: string
 };
 
@@ -93,7 +93,7 @@ export type OrgRosterParams = OrgParam & RosterParam;
 export type OrgWorkspaceParams = OrgParam & WorkspaceParam;
 export type OrgUnitParams = OrgParam & UnitParam;
 export type OrgSettingParams = OrgParam & SettingParam;
-export type OrgColumnNameParams = OrgParam & ColumnNameParam;
+export type OrgColumnParams = OrgParam & ColumnParam;
 
 export type PagedQuery = {
   limit: string
