@@ -24,8 +24,15 @@ export class FixCustomColumnSpaces1618422617092 implements MigrationInterface {
     } = {};
     for (const customColumn of customRosterColumns) {
       const oldName = customColumn.name;
-      const newName = _.camelCase(customColumn.display);
-      await queryRunner.query(`UPDATE "custom_roster_column" SET "name" = '${newName}' WHERE "name" = '${oldName}'`);
+
+      // Rename 'Covid Test' columns to 'Covid Tested', as requested.
+      let display = customColumn.display;
+      if (display.toLowerCase() === 'covid test') {
+        display = 'Covid Tested';
+      }
+
+      const newName = _.camelCase(display);
+      await queryRunner.query(`UPDATE "custom_roster_column" SET "name" = '${newName}', "display" = '${display}' WHERE "name" = '${oldName}'`);
 
       const orgId = customColumn.org_id;
       if (newNamesLookup[orgId] == null) {
