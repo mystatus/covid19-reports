@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import { env } from './env';
-import { BadRequestError, RequestError } from './error-types';
+import { RequestError } from './error-types';
 import { Log } from './log';
 
 export function errorHandler(error: any, req: Request, res: Response, next: NextFunction) {
@@ -13,41 +13,43 @@ export function errorHandler(error: any, req: Request, res: Response, next: Next
 
   Log.error(error);
 
-  let statusCode;
-  let errors;
-  let message;
+  let statusCode: number | undefined;
+  let errors: Array<{
+    message: string
+    type: string
+    sourceError?: any
+  }>;
+  let message: string;
 
   if (error.errors) {
     errors = error.errors;
   } else {
-    let type;
+    let type: string | undefined;
 
     if (error instanceof RequestError) {
       statusCode = error.statusCode;
       message = error.message;
       type = error.type;
-    } else if (error instanceof String) {
+    } else if (error instanceof Error) {
+      message = error.message;
+    } else if (typeof error === 'string') {
       message = error;
+    } else {
+      message = 'An unknown error occurred!';
     }
 
-    if (!env.isProd) {
-      errors = [{
-        message: message || 'An unknown error occurred!',
-        type: type || 'InternalServerError',
-        sourceError: error,
-      }];
-    } else {
-      errors = [{
-        message: message || 'An unknown error occurred!',
-        type: type || 'InternalServerError',
-      }];
-      if (!(error instanceof RequestError) || error instanceof BadRequestError) {
-        Log.info('Unknown Internal Server Error: ', error);
-      }
+    if (!type) {
+      type = 'InternalServerError';
     }
+
+    errors = [{
+      message,
+      type,
+      sourceError: (env.isProd) ? undefined : error,
+    }];
   }
 
-  res.status(statusCode || 500);
+  res.status(statusCode ?? 500);
 
   if (error.showErrorPage && error.errorPage && !env.isTest) {
     res.sendFile(path.join(__dirname, '../public', error.errorPage));

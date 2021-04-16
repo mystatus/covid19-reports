@@ -74,7 +74,6 @@ async function generateOrg(manager: EntityManager, orgNum: number, admin: User, 
 
   let customColumn = manager.create(CustomRosterColumn, {
     org,
-    name: 'myCustomColumn',
     display: `My Custom Column : Group ${orgNum}`,
     type: RosterColumnType.String,
     phi: false,

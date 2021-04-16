@@ -9,8 +9,14 @@ import {
 } from 'typeorm';
 import _ from 'lodash';
 import moment from 'moment';
+import { assertRequestBody } from '../../util/api-utils';
 import {
-  ApiRequest, EdipiParam, OrgColumnNameParams, OrgParam, OrgRosterParams, PagedQuery,
+  ApiRequest,
+  EdipiParam,
+  OrgColumnParams,
+  OrgParam,
+  OrgRosterParams,
+  PagedQuery,
 } from '../index';
 import { Roster } from './roster.model';
 import {
@@ -21,54 +27,48 @@ import {
   UnprocessableEntity,
 } from '../../util/error-types';
 import {
-  dateFromString, getOptionalParam, getRequiredParam,
+  dateFromString,
+  getOptionalParam,
+  getRequiredParam,
 } from '../../util/util';
 import { Org } from '../org/org.model';
-import { CustomColumnConfig, CustomRosterColumn } from './custom-roster-column.model';
+import {
+  CustomColumnData,
+  CustomRosterColumn,
+} from './custom-roster-column.model';
 import { Unit } from '../unit/unit.model';
-import { CustomColumnValue, RosterColumnInfo, RosterColumnType } from './roster.types';
+import {
+  CustomColumnValue,
+  RosterColumnInfo,
+  RosterColumnType,
+} from './roster.types';
 import { UserRole } from '../user/user-role.model';
-import { ChangeType, RosterHistory } from './roster-history.model';
-import { baseRosterColumns } from './roster-entity';
-import { addRosterEntry, setRosterParamsFromBody } from '../../util/roster-utils';
-
+import {
+  ChangeType,
+  RosterHistory,
+} from './roster-history.model';
+import {
+  addRosterEntry,
+  setRosterParamsFromBody,
+} from '../../util/roster-utils';
 
 class RosterController {
 
-  async addCustomColumn(req: ApiRequest<OrgParam, CustomColumnData>, res: Response) {
-    if (!req.body.name) {
-      throw new BadRequestError('A name must be supplied when adding a new column.');
-    }
-    if (!req.body.displayName) {
-      throw new BadRequestError('A display name must be supplied when adding a new column.');
-    }
-    if (!req.body.type) {
-      throw new BadRequestError('A type must be supplied when adding a new column.');
-    }
-
-    const columnName = req.body.name;
-    const existingColumn = await CustomRosterColumn.findOne({
-      where: {
-        name: columnName,
-        org: req.appOrg!.id,
-      },
-    });
-
-    if (existingColumn
-        || columnName.toLowerCase() === 'unit'
-        || baseRosterColumns.find(column => column.name.toLowerCase() === columnName.toLowerCase())) {
-      throw new BadRequestError('There is already a column with that name.');
-    }
+  async addCustomColumn(req: ApiRequest<OrgParam, AddCustomColumnBody>, res: Response) {
+    assertRequestBody(req, [
+      'displayName',
+      'type',
+    ]);
 
     const column = new CustomRosterColumn();
     column.org = req.appOrg;
-    setCustomColumnFromBody(column, req.body);
+    column.setFromData(req.body);
+    await column.save();
 
-    const newColumn = await column.save();
-    res.status(201).json(newColumn);
+    res.status(201).json(column);
   }
 
-  async updateCustomColumn(req: ApiRequest<OrgColumnNameParams, CustomColumnData>, res: Response) {
+  async updateCustomColumn(req: ApiRequest<OrgColumnParams, CustomColumnData>, res: Response) {
     const existingColumn = await CustomRosterColumn.findOne({
       relations: ['org'],
       where: {
@@ -81,17 +81,13 @@ class RosterController {
       throw new NotFoundError('The roster column could not be found.');
     }
 
-    if (req.body.name && req.body.name !== req.params.columnName) {
-      throw new BadRequestError('Unable to change the field name of a custom column.');
-    }
+    existingColumn.setFromData(req.body);
+    await existingColumn.save();
 
-    setCustomColumnFromBody(existingColumn, req.body);
-    const updatedColumn = await existingColumn.save();
-
-    res.json(updatedColumn);
+    res.json(existingColumn);
   }
 
-  async deleteCustomColumn(req: ApiRequest<OrgColumnNameParams>, res: Response) {
+  async deleteCustomColumn(req: ApiRequest<OrgColumnParams>, res: Response) {
     const existingColumn = await CustomRosterColumn.findOne({
       relations: ['org'],
       where: {
@@ -104,8 +100,9 @@ class RosterController {
       throw new NotFoundError('The roster column could not be found.');
     }
 
-    const deletedColumn = await existingColumn.remove();
-    res.json(deletedColumn);
+    await existingColumn.remove();
+
+    res.json(existingColumn);
   }
 
   async getRosterTemplate(req: ApiRequest, res: Response) {
@@ -178,9 +175,10 @@ class RosterController {
     }
 
     if (roster.length === 0) {
-      return res.json({
+      res.json({
         count: 0,
       });
+      return;
     }
 
     const edipiKey = ['DoD ID', 'edipi', 'EDIPI'].find(t => t in roster[0]);
@@ -409,29 +407,32 @@ const formatValue = (val: CustomColumnValue, column: RosterColumnInfo) => {
   }
 };
 
-const formatColumnName = (column: RosterColumnInfo) => {
-  const columnName = Roster.getColumnSelect(column);
+const formatColumnSelect = (column: RosterColumnInfo) => {
+  const columnSelect = Roster.getColumnSelect(column);
 
   switch (column.type) {
     case RosterColumnType.String:
-      return `LOWER(${columnName})`;
+      return `LOWER(${columnSelect})`;
     case RosterColumnType.DateTime:
-      return `date_trunc('minute', (${columnName})::TIMESTAMP)`;
+      return `date_trunc('minute', (${columnSelect})::TIMESTAMP)`;
     case RosterColumnType.Date:
-      return `date_trunc('day', (${columnName})::TIMESTAMP)`;
+      return `date_trunc('day', (${columnSelect})::TIMESTAMP)`;
     default:
-      return columnName;
+      return columnSelect;
   }
 };
 
-function applyWhere(queryBuilder: SelectQueryBuilder<Roster>, column: RosterColumnInfo, { op, value }: SearchRosterBodyEntry) {
-  const columnName = formatColumnName(column);
+function applyWhere(queryBuilder: SelectQueryBuilder<Roster>, column: RosterColumnInfo, {
+  op,
+  value,
+}: SearchRosterBodyEntry) {
+  const columnSelect = formatColumnSelect(column);
 
   if (op === 'in') {
     if (!Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected array value for ${column.name}.`);
     }
-    return queryBuilder.andWhere(`${columnName} ${op} (:...${column.name})`, {
+    return queryBuilder.andWhere(`${columnSelect} ${op} (:...${column.name})`, {
       [column.name]: value.map(v => formatValue(v, column)),
     });
   }
@@ -442,7 +443,7 @@ function applyWhere(queryBuilder: SelectQueryBuilder<Roster>, column: RosterColu
     if (!Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected array value for ${column.name}.`);
     }
-    return queryBuilder.andWhere(`${columnName} BETWEEN (:${minKey}) AND (:${maxKey})`, {
+    return queryBuilder.andWhere(`${columnSelect} BETWEEN (:${minKey}) AND (:${maxKey})`, {
       [minKey]: formatValue(value[0], column),
       [maxKey]: formatValue(value[1], column),
     });
@@ -454,7 +455,7 @@ function applyWhere(queryBuilder: SelectQueryBuilder<Roster>, column: RosterColu
     }
     const prefix = op !== 'startsWith' ? '%' : '';
     const suffix = op !== 'endsWith' ? '%' : '';
-    return queryBuilder.andWhere(`${columnName} LIKE :${column.name}`, {
+    return queryBuilder.andWhere(`${columnSelect} LIKE :${column.name}`, {
       [column.name]: `${prefix}${value}${suffix}`.toLowerCase(),
     });
   }
@@ -463,7 +464,7 @@ function applyWhere(queryBuilder: SelectQueryBuilder<Roster>, column: RosterColu
     if (Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected scalar value for ${column.name}.`);
     }
-    return queryBuilder.andWhere(`${columnName} ${op} :${column.name}`, {
+    return queryBuilder.andWhere(`${columnSelect} ${op} :${column.name}`, {
       [column.name]: formatValue(value, column),
     });
   }
@@ -471,7 +472,7 @@ function applyWhere(queryBuilder: SelectQueryBuilder<Roster>, column: RosterColu
   throw new BadRequestError(`Malformed search query. Received unexpected parameters for '${column.name}', op: ${op}`);
 }
 
-function findColumnByName(name: string, columns: RosterColumnInfo[]) {
+function findColumnByName(name: string, columns: RosterColumnInfo[]): RosterColumnInfo {
   if (name === 'unit') {
     return {
       name: 'unit',
@@ -540,31 +541,6 @@ function copyRosterEntry(roster: Roster) {
   return newEntry;
 }
 
-function setCustomColumnFromBody(column: CustomRosterColumn, body: CustomColumnData) {
-  if (body.name) {
-    column.name = body.name;
-  }
-  if (body.displayName) {
-    column.display = body.displayName;
-  }
-  if (body.type) {
-    column.type = body.type;
-  }
-  if (body.pii != null) {
-    column.pii = body.pii;
-  }
-  if (body.phi != null) {
-    column.phi = body.phi;
-  }
-  if (body.required != null) {
-    column.required = body.required;
-  }
-  if (body.config != null) {
-    column.config = body.config;
-  }
-}
-
-
 function setColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColumnInfo, edipiKey: string) {
   let stringValue: string | undefined;
   const columnName = column.name === 'edipi' ? edipiKey : column.name;
@@ -612,7 +588,6 @@ function setColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColu
   }
 }
 
-
 interface RosterColumnWithValue extends RosterColumnInfo {
   value: CustomColumnValue,
 }
@@ -622,43 +597,35 @@ interface RosterInfo {
   columns: RosterColumnInfo[],
 }
 
-  type GetRosterQuery = {
-    orderBy?: string
-    sortDirection?: 'ASC' | 'DESC'
-  } & PagedQuery;
+type GetRosterQuery = {
+  orderBy?: string
+  sortDirection?: 'ASC' | 'DESC'
+} & PagedQuery;
 
-  type QueryOp = '=' | '<>' | '~' | '>' | '<' | 'startsWith' | 'endsWith' | 'in' | 'between';
+type QueryOp = '=' | '<>' | '~' | '>' | '<' | 'startsWith' | 'endsWith' | 'in' | 'between';
 
-  type SearchRosterBodyEntry = {
-    op: QueryOp
-    value: CustomColumnValue | CustomColumnValue[]
-  };
+type SearchRosterBodyEntry = {
+  op: QueryOp
+  value: CustomColumnValue | CustomColumnValue[]
+};
 
-  type SearchRosterBody = {
-    [column: string]: SearchRosterBodyEntry
-  };
+type SearchRosterBody = {
+  [column: string]: SearchRosterBodyEntry
+};
 
-  type ReportDateQuery = {
-    reportDate: string
-  };
+type ReportDateQuery = {
+  reportDate: string
+};
 
-  type RosterFileRow = {
-    [key: string]: string
-  };
+type RosterFileRow = {
+  [key: string]: string
+};
 
 export type RosterEntryData = {
   unit?: number,
   [key: string]: CustomColumnValue | undefined
 };
 
-  type CustomColumnData = {
-    name?: string,
-    displayName?: string,
-    type?: RosterColumnType,
-    pii?: boolean,
-    phi?: boolean,
-    required?: boolean,
-    config?: CustomColumnConfig,
-  };
+type AddCustomColumnBody = CustomColumnData & Required<Pick<CustomColumnData, 'displayName' | 'type'>>;
 
 export default new RosterController();

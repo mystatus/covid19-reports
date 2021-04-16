@@ -8,8 +8,7 @@ export const RosterColumnsPageHelp = () => {
         Create and manage custom columns that appear on your group’s roster.
       `}
       bullets={[
-        'Add, Edit, or Delete custom columns',
-        'Edit a custom column’s display name',
+        'Add or Delete custom columns',
         'Edit custom column flags (e.g. Contains PII, Required, Multiline, etc.)',
       ]}
     />

@@ -90,7 +90,7 @@ export const RosterColumnsPage = () => {
           await initializeTable();
         },
         onError: (message: string) => {
-          dispatch(Modal.alert('Edit Column', `Unable to edit column: ${message}`));
+          dispatch(Modal.alert('Edit Column', `Unable to edit column: ${message}`)).then();
         },
       });
     }
@@ -111,7 +111,7 @@ export const RosterColumnsPage = () => {
     try {
       await axios.delete(`api/roster/${orgId}/column/${columnToDelete.name}`);
     } catch (error) {
-      dispatch(Modal.alert('Delete Column', formatMessage(error, 'Unable to delete column')));
+      dispatch(Modal.alert('Delete Column', formatMessage(error, 'Unable to delete column'))).then();
     }
     setColumnToDelete(null);
     await initializeTable();
@@ -156,8 +156,7 @@ export const RosterColumnsPage = () => {
           <Table aria-label="column table">
             <TableHead>
               <TableRow>
-                <TableCell>Field Name</TableCell>
-                <TableCell>Display Name</TableCell>
+                <TableCell>Name</TableCell>
                 <TableCell>Type</TableCell>
                 <TableCell className={classes.iconCell}>PII</TableCell>
                 <TableCell className={classes.iconCell}>PHI</TableCell>
@@ -168,7 +167,6 @@ export const RosterColumnsPage = () => {
             <TableBody>
               {columns.map(column => (
                 <TableRow key={column.name}>
-                  <TableCell component="th" scope="row">{column.name}</TableCell>
                   <TableCell>{column.displayName}</TableCell>
                   <TableCell className={classes.typeColumn}>{rosterColumnTypeDisplayName(column.type)}</TableCell>
                   <TableCell className={classes.iconCell}>
