@@ -1,7 +1,4 @@
-import {
-  MSearchResponse,
-  SearchResponse,
-} from 'elasticsearch';
+import { MSearchResponse } from 'elasticsearch';
 import moment from 'moment-timezone';
 import { Org } from '../api/org/org.model';
 import { UserRole } from '../api/user/user-role.model';
@@ -14,6 +11,7 @@ import { elasticsearch } from '../elasticsearch/elasticsearch';
 import { buildEsIndexPatternsForMuster } from './elasticsearch-utils';
 import { InternalServerError } from './error-types';
 import { Log } from './log';
+import { formatPhoneNumber } from './string-utils';
 import {
   getElasticsearchDateFormat,
   getElasticsearchTimeInterval,
@@ -35,18 +33,47 @@ export async function getRosterMusterStats(args: {
   const { org, userRole, interval, intervalCount, unitId } = args;
 
   // Send ES request.
-  let response: SearchResponse<never>;
+  const index = buildEsIndexPatternsForMuster(userRole, unitId);
+  const body = [
+    { index },
+    buildIndividualsMusterBody({
+      interval,
+      intervalCount,
+    }),
+
+    { index },
+    buildIndividualsPhoneNumberBody(),
+  ];
+
+  let response: MSearchResponse<never>;
   try {
-    response = await elasticsearch.search({
-      index: buildEsIndexPatternsForMuster(userRole, unitId),
-      body: buildIndividualsMusterBody({
-        interval,
-        intervalCount,
-      }),
-    });
+    response = await elasticsearch.msearch({ body });
   } catch (err) {
     Log.error(err);
     throw new InternalServerError(`Elasticsearch: ${err.message}`);
+  }
+
+  const musterAggsResponse = response.responses![0];
+  const phoneNumbersResponse = response.responses![1] as {
+    hits: {
+      hits: Array<{
+        _source: {
+          EDIPI: string
+          Timestamp: number
+          Details: {
+            PhoneNumber: string
+          }
+        }
+      }>
+    }
+  };
+
+  const edipiToPhone: { [edipi: string]: string } = {};
+  for (const doc of phoneNumbersResponse.hits.hits) {
+    const edipi = doc._source.EDIPI;
+    if (edipiToPhone[edipi] == null) {
+      edipiToPhone[edipi] = doc._source.Details.PhoneNumber;
+    }
   }
 
   // Get allowed roster data for the individuals returned from ES.
@@ -68,6 +95,16 @@ export async function getRosterMusterStats(args: {
   const rosterEntriesByEdipi: { [edipi: string]: Roster } = {};
   rosterEntries.forEach(e => {
     rosterEntriesByEdipi[e.edipi] = e;
+
+    // Fill in any missing phone numbers that weren't in ES.
+    // HACK: Just try to find any custom column with "phone" in its name. Maybe we need a special type
+    // for phone number, or need to make it a non-custom column...
+    const phoneKey = Object.keys(e.customColumns)
+      .find(key => key.toLowerCase().indexOf('phone') !== -1);
+
+    if (phoneKey && edipiToPhone[e.edipi] == null) {
+      edipiToPhone[e.edipi] = e.customColumns[phoneKey] as string;
+    }
   });
 
   const allowedRosterColumns = await Roster.getAllowedColumns(org, userRole.role);
@@ -75,7 +112,7 @@ export async function getRosterMusterStats(args: {
   // Collect reports and reports missed.
   const individualStats: IndividualStats = {};
 
-  const aggs = response.aggregations as IndividualsMusterAggregations | undefined;
+  const aggs = musterAggsResponse.aggregations as IndividualsMusterAggregations | undefined;
   const buckets = aggs?.muster.buckets ?? [];
   for (const bucket of buckets) {
     const { edipi, reported } = bucket.key;
@@ -135,10 +172,12 @@ export async function getRosterMusterStats(args: {
         const columnValue = rosterEntry.getColumnValue(columnInfo);
         Reflect.set(rosterEntryCleaned, columnInfo.name, columnValue);
       }
+      const phone = edipiToPhone[edipi];
       return {
         ...individual,
         ...rosterEntryCleaned,
         unitId: rosterEntry.unit.id,
+        phone: (phone) ? formatPhoneNumber(phone) : undefined,
       } as IndividualStats[string] & Partial<Roster>;
     });
 
@@ -260,6 +299,20 @@ export function getDistanceToWindow(start: number, end: number, time: number) {
     return time - start;
   }
   return 0;
+}
+
+function buildIndividualsPhoneNumberBody() {
+  return {
+    _source: ['EDIPI', 'Timestamp', 'Details.PhoneNumber'],
+    query: {
+      exists: {
+        field: 'Details.PhoneNumber',
+      },
+    },
+    sort: {
+      Timestamp: 'desc',
+    },
+  };
 }
 
 function buildIndividualsMusterBody({

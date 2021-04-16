@@ -317,7 +317,7 @@ export const MusterPage = () => {
   };
 
   const getVisibleColumns = () => {
-    const customRosterColumnInfos = [
+    const customRosterColumnInfos: ApiRosterColumnInfo[] = [
       ...rosterColumnInfos,
       {
         name: 'unitId',
@@ -328,6 +328,7 @@ export const MusterPage = () => {
         custom: false,
         required: false,
         updatable: false,
+        config: {},
       },
       {
         name: 'nonMusterPercent',
@@ -338,13 +339,31 @@ export const MusterPage = () => {
         custom: false,
         required: false,
         updatable: false,
+        config: {},
       },
     ];
 
-    return columnInfosOrdered(customRosterColumnInfos, [
+    // HACK: The phone number might already exist in custom columns, but we're also returning it manually
+    // for muster data to merge ES data with roster data. So trim out any possible existing phone columns
+    // before adding our special case one.
+    const filteredCustomRosterColumnInfos = customRosterColumnInfos.filter(x => x.name.toLowerCase().indexOf('phone') === -1);
+    filteredCustomRosterColumnInfos.push({
+      name: 'phone',
+      displayName: 'Phone',
+      type: ApiRosterColumnType.String,
+      pii: true,
+      phi: false,
+      custom: true,
+      required: false,
+      updatable: false,
+      config: {},
+    });
+
+    return columnInfosOrdered(filteredCustomRosterColumnInfos, [
       'edipi',
       'firstName',
       'lastName',
+      'phone',
       'unitId',
       'nonMusterPercent',
     ]).slice(0, maxNumColumnsToShow);
