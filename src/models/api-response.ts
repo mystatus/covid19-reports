@@ -164,6 +164,7 @@ export interface ApiOrphanedRecord {
   claimedUntil?: Date,
   latestReportDate: Date,
   earliestReportDate: Date,
+  unitId?: number,
 }
 
 export interface ApiWorkspaceTemplate {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Box,
   Button,
   Checkbox,
   Dialog,
@@ -18,6 +19,7 @@ import axios from 'axios';
 import { useSelector } from 'react-redux';
 import useStyles from './edit-roster-entry-dialog.style';
 import {
+  ApiOrphanedRecord,
   ApiRosterColumnInfo, ApiRosterColumnType, ApiRosterEntry, ApiRosterEnumColumnConfig, ApiRosterStringColumnConfig,
 } from '../../../models/api-response';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
@@ -31,6 +33,7 @@ export interface EditRosterEntryDialogProps {
   rosterColumnInfos?: ApiRosterColumnInfo[],
   rosterEntry?: ApiRosterEntry,
   prepopulated?: Partial<ApiRosterEntry>,
+  orphanedRecord?: Partial<ApiOrphanedRecord>,
   onSave?: (rosterEntry: ApiRosterEntry) => void,
   onClose?: () => void,
   onError?: (error: string) => void,
@@ -40,7 +43,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   const classes = useStyles();
   const units = useSelector(UnitSelector.all);
   const {
-    open, orgId, prepopulated, rosterColumnInfos, onClose, onError,
+    open, orgId, prepopulated, orphanedRecord, rosterColumnInfos, onClose, onError,
   } = props;
 
   const hiddenEditFields = ['unit'];
@@ -51,7 +54,6 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   const [unitChangedPromptOpen, setUnitChangedPromptOpen] = useState(false);
   const [rosterEntry, setRosterEntryProperties] = useState(existingRosterEntry ? props.rosterEntry as ApiRosterEntry : (prepopulated ?? {}) as ApiRosterEntry);
   const originalUnit = props.rosterEntry?.unit ?? prepopulated?.unit;
-  const orphanedRecord = !!prepopulated;
 
   if (!open) {
     return <></>;
@@ -333,6 +335,11 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
           <Grid container spacing={3}>
             <Grid item xs={6}>
               <FormControl required className={classes.selectField}>
+                {orphanedRecord?.unit ? (
+                  <Box className={classes.orphanLabel}>
+                    {`Orphaned Record says: ${orphanedRecord?.unit}`}
+                  </Box>
+                ) : null}
                 <InputLabel id="unit-label">Unit</InputLabel>
                 <Select
                   labelId="unit-label"

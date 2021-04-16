@@ -153,6 +153,30 @@ export const RosterPage = () => {
     }
   }, [dispatch, page, rowsPerPage, orgId, queryFilterState, sortState]);
 
+  const getRosterEntry = useCallback(async (orphanedRecord: ApiOrphanedRecord) => {
+    try {
+      const params = {
+        limit: '1',
+        page: '0',
+      };
+      const query: QueryFilterState = {
+        edipi: { op: '=', value: orphanedRecord.edipi },
+      };
+      if (orphanedRecord.unitId) {
+        query.unit = { op: '=', value: orphanedRecord.unitId };
+      }
+      const response = await axios.post(`api/roster/${orgId}/search`, query, {
+        params,
+      });
+      const data = response.data as ApiRosterPaginated;
+      return data.rows.length ? data.rows[0] : null;
+
+    } catch (e) {
+      dispatch(Modal.alert('Error', formatMessage(e, 'Error Getting Roster Entry for Orphan')));
+    }
+    return null;
+  }, [dispatch, orgId]);
+
   const initializeRosterColumnInfo = useCallback(async () => {
     try {
       const infos = (await axios.get(`api/roster/${orgId}/info`)).data as ApiRosterColumnInfo[];
@@ -429,6 +453,32 @@ export const RosterPage = () => {
     });
   };
 
+  const editOrphanOnRosterClicked = async (row: ApiOrphanedRecord) => {
+    const rosterEntry = await getRosterEntry(row);
+    if (!rosterEntry) {
+      Modal.alert('Edit Roster Entry for Orphan', `Unable to find the roster entry`);
+      return;
+    }
+    setEditRosterEntryDialogProps({
+      open: true,
+      orgId,
+      rosterColumnInfos,
+      rosterEntry,
+      orphanedRecord: row,
+      onSave: async (body: any) => {
+        await axios.put(`api/roster/${orgId}/${rosterEntry.id}`, body);
+        await axios.put(`api/orphaned-record/${orgId}/${row.id}/resolve`, body);
+      },
+      onClose: async () => {
+        setEditRosterEntryDialogProps({ open: false });
+        await initializeTable();
+      },
+      onError: (message: string) => {
+        dispatch(Modal.alert('Edit Roster Entry for Orphan', `Unable to edit the roster entry: ${message}`));
+      },
+    });
+  };
+
   const ignoreOrphanClicked = async (row: ApiOrphanedRecord) => {
     const result = await dispatch(Modal.alert('Ignore Orphaned Record', 'This orphaned record will be permanently hidden from your view but will remain visible to other roster managers.', [
       { text: 'Ignore', value: -1, className: classes.deleteOrphanedRecordConfirmButton },
@@ -491,17 +541,23 @@ export const RosterPage = () => {
                 { name: 'latestReportDate', displayName: 'Latest Report' },
               ]}
               title={`Orphaned Records (${orphanedRecords.length})`}
-              idColumn="id"
+              idColumn={row => row.id + row.unitId}
               rowOptions={{
-                menuItems: [{
+                menuItems: row => ([{
                   callback: addOrphanToRosterClicked,
                   disabled: orphanedRecordsWaiting,
                   name: 'Add to a Roster...',
+                  hidden: row.unitId,
+                }, {
+                  callback: editOrphanOnRosterClicked,
+                  disabled: orphanedRecordsWaiting,
+                  name: 'Edit Existing Entry...',
+                  hidden: !row.unitId,
                 }, {
                   callback: ignoreOrphanClicked,
                   disabled: orphanedRecordsWaiting,
                   name: 'Ignore...',
-                }],
+                }]),
                 renderCell: getOrphanCellDisplayValue,
               }}
             />
