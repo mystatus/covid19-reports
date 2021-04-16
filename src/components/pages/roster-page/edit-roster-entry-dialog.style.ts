@@ -8,6 +8,7 @@ export default makeStyles((theme: Theme) => createStyles({
     },
   },
   selectField: {
+    position: 'relative',
     width: '100%',
     '& .MuiFormLabel-root': {
       color: theme.palette.text.primary,
@@ -49,5 +50,10 @@ export default makeStyles((theme: Theme) => createStyles({
     backgroundColor: '#F0F1F1',
     padding: '15px 35px',
     marginTop: '20px',
+  },
+  orphanLabel: {
+    color: '#f00',
+    position: 'absolute',
+    right: 0,
   },
 }));
