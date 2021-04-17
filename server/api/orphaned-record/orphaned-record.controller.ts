@@ -154,7 +154,6 @@ class OrphanedRecordController {
 
     if (req.body.unit) {
       rosterHistory = await getRosterHistory(orphanedRecord, req.body.unit);
-      console.log('one', orphanedRecords[0].timestamp, rosterHistory);
     }
 
     let newRosterEntry: Roster | undefined;
