@@ -32,7 +32,10 @@ export class FixCustomColumnSpaces1618422617092 implements MigrationInterface {
       }
 
       const newName = _.camelCase(display);
-      await queryRunner.query(`UPDATE "custom_roster_column" SET "name" = '${newName}', "display" = '${display}' WHERE "name" = '${oldName}'`);
+      await queryRunner.query(
+        `UPDATE "custom_roster_column" SET "name"=$1, "display"=$2 WHERE "name"=$3`,
+        [newName, display, oldName],
+      );
 
       const orgId = customColumn.org_id;
       if (newNamesLookup[orgId] == null) {
@@ -61,7 +64,10 @@ export class FixCustomColumnSpaces1618422617092 implements MigrationInterface {
         }
       }
 
-      await queryRunner.query(`UPDATE "roster" SET "custom_columns" = '${JSON.stringify(entry.custom_columns)}' WHERE "id" = ${entry.id}`);
+      await queryRunner.query(
+        `UPDATE "roster" SET "custom_columns"=$1 WHERE "id"=$2`,
+        [JSON.stringify(entry.custom_columns), entry.id],
+      );
     }
 
     // Restore roster history with new custom column names.
@@ -80,7 +86,11 @@ export class FixCustomColumnSpaces1618422617092 implements MigrationInterface {
         }
       }
 
-      await queryRunner.query(`INSERT INTO "roster_history" ("id", "edipi", "first_name", "last_name", "custom_columns", "timestamp", "change_type", "unit_id") VALUES (${entry.id}, '${entry.edipi}', '${entry.first_name}', '${entry.last_name}', '${JSON.stringify(entry.custom_columns)}', '${entry.timestamp.toISOString()}', '${entry.change_type}', ${entry.unit_id})`);
+      await queryRunner.query(
+        `INSERT INTO "roster_history" ("id", "edipi", "first_name", "last_name", "custom_columns", "timestamp", "change_type", "unit_id")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [entry.id, entry.edipi, entry.first_name, entry.last_name, JSON.stringify(entry.custom_columns), entry.timestamp.toISOString(), entry.change_type, entry.unit_id],
+      );
     }
   }
 
