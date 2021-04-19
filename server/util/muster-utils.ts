@@ -45,6 +45,8 @@ export async function getRosterMusterStats(args: {
     buildIndividualsPhoneNumberBody(),
   ];
 
+  Log.info('ES Body', body);
+
   let response: MSearchResponse<never>;
   try {
     response = await elasticsearch.msearch({ body });
@@ -52,6 +54,8 @@ export async function getRosterMusterStats(args: {
     Log.error(err);
     throw new InternalServerError(`Elasticsearch: ${err.message}`);
   }
+
+  Log.info('ES Response', response);
 
   const musterAggsResponse = response.responses![0];
   const phoneNumbersResponse = response.responses![1] as {
@@ -75,6 +79,8 @@ export async function getRosterMusterStats(args: {
       edipiToPhone[edipi] = doc._source.Details.PhoneNumber;
     }
   }
+
+  Log.info('edipiToPhone #1', edipiToPhone);
 
   // Get allowed roster data for the individuals returned from ES.
   let rosterEntries: Roster[];
@@ -107,7 +113,11 @@ export async function getRosterMusterStats(args: {
     }
   });
 
+  Log.info('edipiToPhone #2', edipiToPhone);
+
   const allowedRosterColumns = await Roster.getAllowedColumns(org, userRole.role);
+
+  Log.info('allowedRosterColumns', allowedRosterColumns);
 
   // Collect reports and reports missed.
   const individualStats: IndividualStats = {};
@@ -173,6 +183,7 @@ export async function getRosterMusterStats(args: {
         Reflect.set(rosterEntryCleaned, columnInfo.name, columnValue);
       }
       const phone = edipiToPhone[edipi];
+      Log.info('phone', phone);
       return {
         ...individual,
         ...rosterEntryCleaned,
