@@ -132,7 +132,7 @@ class OrphanedRecordController {
     res.json(result);
   }
 
-  async resolveOrphanedRecord(req: ApiRequest<OrphanedRecordResolveParam, RosterEntryData>, res: Response<OrphanedRecordResolveResponse>) {
+  async resolveOrphanedRecord(req: ApiRequest<OrphanedRecordResolveParam, RosterEntryData>, res: Response<OrphanedRecord>) {
     const orphanedRecords = await OrphanedRecord.find({
       where: {
         compositeId: req.params.orphanId,
@@ -148,7 +148,6 @@ class OrphanedRecordController {
     }
 
     const orphanedRecord = orphanedRecords[0];
-    const resultRecords: OrphanedRecordResolveItem[] = [];
     const documentId = orphanedRecord.documentId;
     let rosterHistory: RosterHistory[] | undefined;
 
@@ -207,19 +206,11 @@ class OrphanedRecordController {
       throw err;
     }
 
-    // Request a reingestion of a single document
-    const reingestResult = await reingestByDocumentId(documentId);
+    // Request a reingestion of a single document. Don't await on this since it may take a while
+    // and can safely run in the background.
+    reingestByDocumentId(documentId).then();
 
-    // Track the individual ingestion and postgres updated entity
-    resultRecords.push({
-      ...reingestResult,
-      orphanedRecord,
-    });
-
-    res.json({
-      items: resultRecords,
-      ...reingestResult,
-    });
+    res.json(orphanedRecord);
   }
 
   async addOrphanedRecordAction(req: ApiRequest<OrphanedRecordActionParam, OrphanedRecordActionData>, res: Response) {
@@ -316,18 +307,6 @@ export interface OrphanedRecordActionParam extends OrgParam {
 
 export interface OrphanedRecordResolveParam extends OrphanedRecordActionParam {
   rosterHistoryId: string;
-}
-
-export interface OrphanedRecordResolveItem {
-  lambdaInvocationCount: number;
-  recordsIngested: number;
-  orphanedRecord: Partial<OrphanedRecord>;
-}
-
-export interface OrphanedRecordResolveResponse {
-  lambdaInvocationCount: number;
-  recordsIngested: number;
-  items: OrphanedRecordResolveItem[];
 }
 
 export interface OrphanedRecordData {
