@@ -15,8 +15,10 @@ import {
   ApiRequest,
   OrgRoleParams,
   OrgUnitParams,
-  PagedQuery,
+  PaginatedQuery,
+  Paginated,
 } from '../index';
+import { Roster } from '../roster/roster.model';
 import {
   MusterConfiguration,
   Unit,
@@ -31,7 +33,7 @@ import {
 
 class MusterController {
 
-  async getIndividuals(req: ApiRequest<OrgRoleParams, null, GetIndividualsQuery>, res: Response) {
+  async getIndividuals(req: ApiRequest<OrgRoleParams, null, GetIndividualsQuery>, res: Response<Paginated<Partial<Roster>>>) {
     assertRequestQuery(req, [
       'interval',
       'intervalCount',
@@ -215,7 +217,7 @@ type GetIndividualsQuery = {
   interval: TimeInterval
   intervalCount: string
   unitId: number | null
-} & PagedQuery;
+} & PaginatedQuery;
 
 type GetTrendsQuery = {
   weeksCount?: string

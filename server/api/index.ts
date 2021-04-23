@@ -95,9 +95,14 @@ export type OrgUnitParams = OrgParam & UnitParam;
 export type OrgSettingParams = OrgParam & SettingParam;
 export type OrgColumnParams = OrgParam & ColumnParam;
 
-export type PagedQuery = {
+export type PaginatedQuery = {
   limit: string
   page: string
+};
+
+export type Paginated<TData> = {
+  rows: TData[]
+  totalRowsCount: number
 };
 
 export default router;

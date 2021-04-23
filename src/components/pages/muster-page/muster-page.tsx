@@ -17,16 +17,27 @@ import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
 import ToggleButton from '@material-ui/lab/ToggleButton';
 import * as Plotly from 'plotly.js';
 import React, {
-  ChangeEvent, MouseEvent, useCallback, useEffect, useState,
+  ChangeEvent,
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useState,
 } from 'react';
 import axios from 'axios';
-import { useDispatch, useSelector } from 'react-redux';
+import {
+  useDispatch,
+  useSelector,
+} from 'react-redux';
 import Plot from 'react-plotly.js';
 import _ from 'lodash';
 import moment from 'moment';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { downloadFile } from '../../../utility/download';
-import { getMaxPageIndex, getNewPageIndex, columnInfosOrdered } from '../../../utility/table';
+import {
+  getMaxPageIndex,
+  getNewPageIndex,
+  columnInfosOrdered,
+} from '../../../utility/table';
 import PageHeader from '../../page-header/page-header';
 import { TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
@@ -35,7 +46,7 @@ import useStyles from './muster-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
 import {
-  ApiMusterIndividuals,
+  ApiMusterIndividualsPaginated,
   ApiMusterTrends,
   ApiRosterColumnInfo,
   ApiRosterColumnType,
@@ -112,7 +123,10 @@ export const MusterPage = () => {
     ...trendChart,
   };
 
-  const [individualsTimeRangeString, setIndividualsTimeRangeString] = useState(timeRangeToString({ interval: 'day', intervalCount: 1 }));
+  const [individualsTimeRangeString, setIndividualsTimeRangeString] = useState(timeRangeToString({
+    interval: 'day',
+    intervalCount: 1,
+  }));
   const [individualsUnitId, setIndividualsUnitId] = useState<number>(-1);
   const [individualsPage, setIndividualsPage] = useState(0);
   const [individualsRowsPerPage, setIndividualsRowsPerPage] = useState(10);
@@ -123,7 +137,10 @@ export const MusterPage = () => {
   const [monthlyTrendTopUnitCount, setMonthlyTrendTopUnitCount] = useState(5);
   const [weeklyTrendData, setWeeklyTrendData] = useState<Plotly.Data[]>([]);
   const [monthlyTrendData, setMonthlyTrendData] = useState<Plotly.Data[]>([]);
-  const [individualsData, setIndividualsData] = useState<ApiMusterIndividuals>({ rows: [], totalRowsCount: 0 });
+  const [individualsData, setIndividualsData] = useState<ApiMusterIndividualsPaginated>({
+    rows: [],
+    totalRowsCount: 0,
+  });
 
   const org = useSelector(UserSelector.org);
   const orgId = org?.id;
@@ -146,7 +163,7 @@ export const MusterPage = () => {
 
   const reloadTable = useCallback(async () => {
     const { interval, intervalCount } = stringToTimeRange(individualsTimeRangeString);
-    let data: ApiMusterIndividuals;
+    let data: ApiMusterIndividualsPaginated;
     try {
       data = (await axios.get(`api/muster/${orgId}/individuals`, {
         params: {
@@ -156,7 +173,7 @@ export const MusterPage = () => {
           page: individualsPage,
           limit: individualsRowsPerPage,
         },
-      })).data as ApiMusterIndividuals;
+      })).data as ApiMusterIndividualsPaginated;
     } catch (error) {
       showErrorDialog('Get Individuals', error);
       throw error;
@@ -217,7 +234,7 @@ export const MusterPage = () => {
 
   const getTrendData = useCallback((unitStatsByDate: ApiUnitStatsByDate, topUnitCount: number) => {
     // Sum up each unit's non-muster percent to figure out who's performing worst overall.
-    const nonMusterPercentSumByUnit = {} as {[unitName: string]: number};
+    const nonMusterPercentSumByUnit = {} as { [unitName: string]: number };
     for (const date of Object.keys(unitStatsByDate)) {
       for (const unitName of Object.keys(unitStatsByDate[date])) {
         if (nonMusterPercentSumByUnit[unitName] == null) {

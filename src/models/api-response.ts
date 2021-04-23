@@ -1,7 +1,7 @@
 import { DaysOfTheWeek } from '../utility/days';
 
-export interface ApiArrayPaginated {
-  rows: any[],
+export interface ApiPaginated<TData> {
+  rows: TData[],
   totalRowsCount: number,
 }
 
@@ -69,9 +69,7 @@ export interface ApiAccessRequest {
   status: 'approved' | 'pending' | 'denied',
 }
 
-export interface ApiRosterPaginated extends ApiArrayPaginated {
-  rows: ApiRosterEntry[],
-}
+export interface ApiRosterPaginated extends ApiPaginated<ApiRosterEntry> {}
 
 export enum ApiRosterColumnType {
   String = 'string',
@@ -155,17 +153,20 @@ export interface ApiRosterEntry {
 }
 
 export interface ApiOrphanedRecord {
-  id: string,
-  edipi: string,
-  phone: string,
-  unit: string,
-  count: number,
-  action?: string,
-  claimedUntil?: Date,
-  latestReportDate: Date,
-  earliestReportDate: Date,
-  unitId?: number,
+  id: string;
+  edipi: string;
+  phone: string;
+  unit: string;
+  count: number;
+  action?: string;
+  claimedUntil?: Date;
+  latestReportDate: Date;
+  earliestReportDate: Date;
+  unitId?: number;
+  rosterHistoryId?: number;
 }
+
+export interface ApiOrphanedRecordsPaginated extends ApiPaginated<ApiOrphanedRecord> {}
 
 export interface ApiWorkspaceTemplate {
   id: number,
@@ -201,9 +202,7 @@ export interface ApiUnitStatsByDate {
   }
 }
 
-export interface ApiMusterIndividuals extends ApiArrayPaginated {
-  rows: ApiRosterEntry[]
-}
+export interface ApiMusterIndividualsPaginated extends ApiPaginated<ApiRosterEntry> {}
 
 export interface ApiMusterTrends {
   weekly: ApiUnitStatsByDate

@@ -112,7 +112,7 @@ export const HomePage = () => {
   const dispatch = useDispatch();
   const orgId = useSelector(UserSelector.orgId)!;
   const user = useSelector<AppState, UserState>(state => state.user);
-  const orphanedRecords = useSelector(OrphanedRecordSelector.all);
+  const orphanedRecords = useSelector(OrphanedRecordSelector.root);
   const [accessRequests, setAccessRequests] = useState<ApiAccessRequest[]>([]);
   const [musterNonComplianceLastTwoWeeks, setMusterNonComplianceLastTwoWeek] = useState<number[]>([1.0, 0.0]);
   const favoriteDashboards = useSelector(UserSelector.favoriteDashboards)!;
@@ -175,7 +175,7 @@ export const HomePage = () => {
   }, [orgId]);
 
   useEffect(() => {
-    initializeTable();
+    initializeTable().then();
   }, [initializeTable]);
 
   const nonComplianceDelta = musterNonComplianceLastTwoWeeks[1] - musterNonComplianceLastTwoWeeks[0];
@@ -240,7 +240,7 @@ export const HomePage = () => {
                     Orphaned Records
                   </Typography>
                   <Typography className={classes.metricValue}>
-                    {orphanedRecords.length}
+                    {orphanedRecords.totalRowsCount}
                   </Typography>
                   <Link to="/roster">View Now &rarr;</Link>
                 </CardContent>

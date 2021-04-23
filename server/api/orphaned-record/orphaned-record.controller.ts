@@ -1,87 +1,55 @@
 import { Response } from 'express';
-import { Brackets, getConnection, getManager, In } from 'typeorm';
 import {
-  ApiRequest, OrgParam,
+  Brackets,
+  getConnection,
+} from 'typeorm';
+import { assertRequestQuery } from '../../util/api-utils';
+import {
+  ApiRequest,
+  OrgParam,
+  PaginatedQuery,
+  Paginated,
 } from '../index';
 import { OrphanedRecord } from './orphaned-record.model';
-import { ActionType, OrphanedRecordAction } from './orphaned-record-action.model';
+import {
+  ActionType,
+  OrphanedRecordAction,
+} from './orphaned-record-action.model';
 import { Org } from '../org/org.model';
-import { BadRequestError, InternalServerError } from '../../util/error-types';
-import { convertDateParam, reingestByDocumentId } from '../../util/reingest-utils';
+import {
+  BadRequestError,
+  InternalServerError,
+} from '../../util/error-types';
+import {
+  convertDateParam,
+  reingestByDocumentId,
+} from '../../util/reingest-utils';
 import { RosterHistory } from '../roster/roster-history.model';
 import { RosterEntryData } from '../roster/roster.controller';
 import { addRosterEntry } from '../../util/roster-utils';
 import { Roster } from '../roster/roster.model';
 
-interface OrphanedRecordResult {
-  id: string;
-  edipi: string;
-  phone: string;
-  unit: string;
-  count: number;
-  action?: string;
-  claimedUntil?: Date;
-  latestReportDate: Date;
-  earliestReportDate: Date;
-  unitId?: number;
-  rosterHistoryId?: number;
-}
-
-function getVisibleOrphanedRecordResults(userEdipi: string, orgId: number) {
-  const params = {
-    now: new Date(),
-    orgId,
-    userEdipi,
-  };
-
-  const rosterEntries = RosterHistory.createQueryBuilder('rh')
-    .leftJoin('rh.unit', 'u')
-    .select('rh.id', 'id')
-    .addSelect('rh.edipi', 'edipi')
-    .addSelect('rh.timestamp', 'timestamp')
-    .addSelect('rh.change_type', 'change_type')
-    .addSelect('rh.unit_id', 'unit_id')
-    .where('u.org_id = :orgId', { orgId })
-    .distinctOn(['rh.unit_id', 'rh.edipi'])
-    .orderBy('rh.unit_id')
-    .addOrderBy('rh.edipi', 'DESC')
-    .addOrderBy('rh.timestamp', 'DESC')
-    .addOrderBy('rh.change_type', 'DESC');
-
-  return OrphanedRecord
-    .createQueryBuilder('orphan')
-    .leftJoin(OrphanedRecordAction, 'action', `action.id=orphan.composite_id AND (action.expires_on > :now OR action.expires_on IS NULL) AND (action.type='claim' OR (action.user_edipi=:userEdipi AND action.type='ignore'))`, params)
-    .leftJoin(`(${rosterEntries.getQuery()})`, 'roster', 'orphan.edipi = roster.edipi')
-    .where('orphan.org_id=:orgId', params)
-    .andWhere('orphan.deleted_on IS NULL')
-    .andWhere('roster.change_type IS NULL OR (roster.change_type <> \'deleted\')')
-    .andWhere(`(action.type IS NULL OR (action.type='claim' AND action.user_edipi=:userEdipi))`, params)
-    .select('orphan.edipi', 'edipi')
-    .addSelect('orphan.unit', 'unit')
-    .addSelect('orphan.phone', 'phone')
-    .addSelect('action.type', 'action')
-    .addSelect('action.expires_on', 'claimedUntil')
-    .addSelect('MAX(orphan.timestamp)', 'latestReportDate')
-    .addSelect('MIN(orphan.timestamp)', 'earliestReportDate')
-    .addSelect('COUNT(*)::INTEGER', 'count')
-    .addSelect('orphan.composite_id', 'id')
-    .addSelect('roster.unit_id', 'unitId')
-    .addSelect('roster.id', 'rosterHistoryId')
-    .groupBy('orphan.composite_id')
-    .addGroupBy('orphan.edipi')
-    .addGroupBy('orphan.unit')
-    .addGroupBy('orphan.phone')
-    .addGroupBy('action.type')
-    .addGroupBy('action.expires_on')
-    .addGroupBy('roster.unit_id')
-    .addGroupBy('roster.id');
-  // .getRawMany<OrphanedRecordResult>();
-}
-
 class OrphanedRecordController {
-  async getOrphanedRecords(req: ApiRequest<OrgParam>, res: Response) {
-    const orphanedRecords = await (getVisibleOrphanedRecordResults(req.appUser!.edipi, req.appOrg!.id).getRawMany<OrphanedRecordResult>());
-    res.json(orphanedRecords);
+
+  async getOrphanedRecords(req: ApiRequest<OrgParam, null, PaginatedQuery>, res: Response<Paginated<OrphanedRecordResult>>) {
+    assertRequestQuery(req, [
+      'page',
+      'limit',
+    ]);
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit);
+    const offset = page * limit;
+
+    // For some reason when calling getCount() on this query TypeORM completely modifies it and returns an erroneous
+    // count (returning the total row count instead of the aggregated count). So as a workaround just query
+    // for all of the records and do pagination after.
+    const query = buildVisibleOrphanedRecordResultsQuery(req.appUser!.edipi, req.appOrg!.id);
+    const orphanedRecords = await query.getRawMany<OrphanedRecordResult>();
+
+    res.json({
+      rows: orphanedRecords.slice(offset, offset + limit),
+      totalRowsCount: orphanedRecords.length,
+    });
   }
 
   async addOrphanedRecord(req: ApiRequest<null, OrphanedRecordData>, res: Response) {
@@ -149,32 +117,28 @@ class OrphanedRecordController {
 
     const orphanedRecord = orphanedRecords[0];
     const documentId = orphanedRecord.documentId;
-    let rosterHistory: RosterHistory[] | undefined;
+    let rosterHistory: RosterHistory[] = [];
 
     if (req.body.unit) {
-      rosterHistory = await getRosterHistory(orphanedRecord, req.body.unit);
+      rosterHistory = await getRosterHistoryForOrphanedRecord(orphanedRecord, req.body.unit);
     }
 
     let newRosterEntry: Roster | undefined;
-    if (!rosterHistory?.length) {
-      // If the roster entry already exists, backdate the timestamp column
-      // of the corresponding  'added' record in he roster history.
-      // Otherwise, add the new roster entry and then update the roster history.
+    if (!rosterHistory.length) {
       // Add a new roster entry since the orphaned record
       // doesn't correspond to an existing roster entry
       newRosterEntry = await addRosterEntry(req.appOrg!, req.appUserRole!.role, req.body);
-      rosterHistory = await getRosterHistory(orphanedRecord, newRosterEntry.unit.id);
+      rosterHistory = await getRosterHistoryForOrphanedRecord(orphanedRecord, newRosterEntry.unit.id);
     }
 
-    if (!rosterHistory) {
+    if (!rosterHistory.length) {
       throw new InternalServerError('Unable to locate RosterHistory record.');
     }
 
     try {
       await getConnection().transaction(async manager => {
         let timestamp = Math.min(...orphanedRecords.map(x => x.timestamp.getTime()));
-        for (const item of rosterHistory!) {
-
+        for (const item of rosterHistory) {
           // Backdate the timestamp to the earliest orphaned record time.
           item.timestamp = new Date(
             Math.min(item.timestamp.getTime(), timestamp),
@@ -278,27 +242,82 @@ class OrphanedRecordController {
 
     res.status(204).send();
   }
+
 }
 
-async function getRosterHistory(orphanedRecord: OrphanedRecord, unit: number) {
-  const raw = await getManager().query(`
-  SELECT
-  "rh"."id" AS "id", "rh"."edipi" AS "edipi",
-  "rh"."change_type" AS "change_type",
-  "rh"."unit_id" AS "unit_id"
-  FROM "roster_history" "rh"
-  WHERE "rh"."unit_id" = $1 AND "rh"."timestamp" >= $2
-  ORDER BY "rh"."edipi" DESC, "rh"."timestamp" DESC, "rh"."change_type" DESC
-  `, [unit, orphanedRecord.timestamp]);
+async function getRosterHistoryForOrphanedRecord(orphanedRecord: OrphanedRecord, unitId: number) {
+  return RosterHistory.createQueryBuilder('rh')
+    .where('rh.unit_id = :unitId', { unitId })
+    .andWhere('rh.edipi = :edipi', { edipi: orphanedRecord.edipi })
+    .addOrderBy('rh.edipi', 'DESC')
+    .addOrderBy('rh.change_type', 'DESC')
+    .getMany();
+}
 
-  if (!raw?.length) {
-    return undefined;
-  }
-  return RosterHistory.find({
-    where: {
-      id: In(raw.map((x: any) => x.id)),
-    },
-  });
+function buildVisibleOrphanedRecordResultsQuery(userEdipi: string, orgId: number) {
+  const params = {
+    now: new Date(),
+    orgId,
+    userEdipi,
+  };
+
+  const rosterEntries = RosterHistory.createQueryBuilder('rh')
+    .leftJoin('rh.unit', 'u')
+    .select('rh.id', 'id')
+    .addSelect('rh.edipi', 'edipi')
+    .addSelect('rh.timestamp', 'timestamp')
+    .addSelect('rh.change_type', 'change_type')
+    .addSelect('rh.unit_id', 'unit_id')
+    .where('u.org_id = :orgId', { orgId })
+    .distinctOn(['rh.unit_id', 'rh.edipi'])
+    .orderBy('rh.unit_id')
+    .addOrderBy('rh.edipi', 'DESC')
+    .addOrderBy('rh.timestamp', 'DESC')
+    .addOrderBy('rh.change_type', 'DESC');
+
+  return OrphanedRecord.createQueryBuilder('orphan')
+    .leftJoin(OrphanedRecordAction, 'action', `action.id=orphan.composite_id AND (action.expires_on > :now OR action.expires_on IS NULL) AND (action.type='claim' OR (action.user_edipi=:userEdipi AND action.type='ignore'))`, params)
+    .leftJoin(`(${rosterEntries.getQuery()})`, 'roster', 'orphan.edipi = roster.edipi')
+    .where('orphan.org_id=:orgId', params)
+    .andWhere('orphan.deleted_on IS NULL')
+    .andWhere('roster.change_type IS NULL OR (roster.change_type <> \'deleted\')')
+    .andWhere(`(action.type IS NULL OR (action.type='claim' AND action.user_edipi=:userEdipi))`, params)
+    .select('orphan.edipi', 'edipi')
+    .addSelect('orphan.unit', 'unit')
+    .addSelect('orphan.phone', 'phone')
+    .addSelect('action.type', 'action')
+    .addSelect('action.expires_on', 'claimedUntil')
+    .addSelect('MAX(orphan.timestamp)', 'latestReportDate')
+    .addSelect('MIN(orphan.timestamp)', 'earliestReportDate')
+    .addSelect('COUNT(*)::INTEGER', 'count')
+    .addSelect('orphan.composite_id', 'id')
+    .addSelect('roster.unit_id', 'unitId')
+    .addSelect('roster.id', 'rosterHistoryId')
+    .orderBy('orphan.count', 'DESC')
+    .addOrderBy('orphan.unit', 'ASC')
+    .addOrderBy('orphan.edipi', 'ASC')
+    .groupBy('orphan.composite_id')
+    .addGroupBy('orphan.edipi')
+    .addGroupBy('orphan.unit')
+    .addGroupBy('orphan.phone')
+    .addGroupBy('action.type')
+    .addGroupBy('action.expires_on')
+    .addGroupBy('roster.unit_id')
+    .addGroupBy('roster.id');
+}
+
+interface OrphanedRecordResult {
+  id: string;
+  edipi: string;
+  phone: string;
+  unit: string;
+  count: number;
+  action?: string;
+  claimedUntil?: Date;
+  latestReportDate: Date;
+  earliestReportDate: Date;
+  unitId?: number;
+  rosterHistoryId?: number;
 }
 
 export interface OrphanedRecordActionParam extends OrgParam {

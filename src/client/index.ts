@@ -8,7 +8,7 @@ import {
   ApiAccessRequest,
   ApiDashboard,
   ApiNotification,
-  ApiOrphanedRecord,
+  ApiOrphanedRecordsPaginated,
   ApiReportSchema,
   ApiRole,
   ApiRosterColumnInfo,
@@ -112,8 +112,13 @@ export namespace ReportSchemaClient {
 }
 
 export namespace OrphanedRecordClient {
-  export const fetchAll = (orgId: number): Promise<ApiOrphanedRecord[]> => {
-    return client.get(`orphaned-record/${orgId}`);
+  export const fetchPage = (orgId: number, page: number, limit: number): Promise<ApiOrphanedRecordsPaginated> => {
+    return client.get(`orphaned-record/${orgId}`, {
+      params: {
+        page,
+        limit,
+      },
+    });
   };
 }
 
