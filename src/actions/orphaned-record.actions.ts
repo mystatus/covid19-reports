@@ -1,43 +1,41 @@
 import { Dispatch } from 'redux';
 import { OrphanedRecordClient } from '../client';
-import { ApiOrphanedRecord } from '../models/api-response';
+import { ApiOrphanedRecordsPaginated } from '../models/api-response';
 
 export namespace OrphanedRecord {
 
   export namespace Actions {
 
     export class Clear {
-      static type = 'CLEAR_ORPHANED_RECORD';
+      static type = 'ORPHANED_RECORD_CLEAR';
       type = Clear.type;
     }
 
-    export class Fetch {
-      static type = 'FETCH_ORPHANED_RECORD';
-      type = Fetch.type;
+    export class FetchPage {
+      static type = 'ORPHANED_RECORD_FETCH_PAGE';
+      type = FetchPage.type;
     }
-    export class FetchSuccess {
-      static type = `${Fetch.type}_SUCCESS`;
-      type = FetchSuccess.type;
-      constructor(public payload: {
-        orphanedRecords: ApiOrphanedRecord[]
-      }) {}
+    export class FetchPageSuccess {
+      static type = `${FetchPage.type}_SUCCESS`;
+      type = FetchPageSuccess.type;
+      constructor(public payload: ApiOrphanedRecordsPaginated) {}
     }
-    export class FetchFailure {
-      static type = `${Fetch.type}_FAILURE`;
-      type = FetchFailure.type;
+    export class FetchPageFailure {
+      static type = `${FetchPage.type}_FAILURE`;
+      type = FetchPageFailure.type;
       constructor(public payload: {
         error: any
       }) { }
     }
   }
 
-  export const fetch = (orgId: number) => async (dispatch: Dispatch) => {
-    dispatch(new Actions.Fetch());
+  export const fetchPage = (orgId: number, page: number, limit: number) => async (dispatch: Dispatch) => {
+    dispatch(new Actions.FetchPage());
     try {
-      const orphanedRecords = await OrphanedRecordClient.fetchAll(orgId);
-      dispatch(new Actions.FetchSuccess({ orphanedRecords }));
+      const data = await OrphanedRecordClient.fetchPage(orgId, page, limit);
+      dispatch(new Actions.FetchPageSuccess(data));
     } catch (error) {
-      dispatch(new Actions.FetchFailure({ error }));
+      dispatch(new Actions.FetchPageFailure({ error }));
     }
   };
 

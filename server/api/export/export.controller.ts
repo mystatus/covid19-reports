@@ -14,7 +14,7 @@ import {
 import {
   ApiRequest,
   OrgParam,
-  PagedQuery,
+  PaginatedQuery,
 } from '../index';
 import { RosterEntryData } from '../roster/roster.controller';
 import { Roster } from '../roster/roster.model';
@@ -177,6 +177,6 @@ type ExportMusterIndividualsQuery = {
   interval: TimeInterval
   intervalCount: string
   unitId?: number
-} & PagedQuery;
+} & PaginatedQuery;
 
 export default new ExportController();

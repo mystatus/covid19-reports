@@ -1,6 +1,6 @@
-import { ApiOrphanedRecord } from '../models/api-response';
+import { OrphanedRecordState } from '../reducers/orphaned-record.reducer';
 import { AppState } from '../store';
 
 export namespace OrphanedRecordSelector {
-  export const all = (state: AppState): ApiOrphanedRecord[] => state.orphanedRecord.orphanedRecords;
+  export const root = (state: AppState): OrphanedRecordState => state.orphanedRecord;
 }

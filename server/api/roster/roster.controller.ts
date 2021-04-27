@@ -16,7 +16,8 @@ import {
   OrgColumnParams,
   OrgParam,
   OrgRosterParams,
-  PagedQuery,
+  Paginated,
+  PaginatedQuery,
 } from '../index';
 import { Roster } from './roster.model';
 import {
@@ -143,11 +144,11 @@ class RosterController {
     res.send(csvContents);
   }
 
-  async getRoster(req: ApiRequest<OrgParam, any, GetRosterQuery>, res: Response) {
+  async getRoster(req: ApiRequest<OrgParam, any, GetRosterQuery>, res: Response<Paginated<RosterEntryData>>) {
     res.json(await internalSearchRoster(req.query, req.appOrg!, req.appUserRole!));
   }
 
-  async searchRoster(req: ApiRequest<OrgParam, SearchRosterBody, GetRosterQuery>, res: Response) {
+  async searchRoster(req: ApiRequest<OrgParam, SearchRosterBody, GetRosterQuery>, res: Response<Paginated<RosterEntryData>>) {
     res.json(await internalSearchRoster(req.query, req.appOrg!, req.appUserRole!, req.body));
   }
 
@@ -493,7 +494,7 @@ function findColumnByName(name: string, columns: RosterColumnInfo[]): RosterColu
   return column;
 }
 
-async function internalSearchRoster(query: GetRosterQuery, org: Org, userRole: UserRole, searchParams?: SearchRosterBody) {
+async function internalSearchRoster(query: GetRosterQuery, org: Org, userRole: UserRole, searchParams?: SearchRosterBody): Promise<Paginated<RosterEntryData>> {
   const limit = parseInt(query.limit ?? '100');
   const page = parseInt(query.page ?? '0');
   const orderBy = query.orderBy || 'edipi';
@@ -601,7 +602,7 @@ interface RosterInfo {
 type GetRosterQuery = {
   orderBy?: string
   sortDirection?: 'ASC' | 'DESC'
-} & PagedQuery;
+} & PaginatedQuery;
 
 type QueryOp = '=' | '<>' | '~' | '>' | '<' | 'startsWith' | 'endsWith' | 'in' | 'between';
 

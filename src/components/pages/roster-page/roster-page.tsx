@@ -20,24 +20,36 @@ import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import DeleteSweepIcon from '@material-ui/icons/DeleteSweep';
 import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import React, {
-  ChangeEvent, MouseEvent, useCallback, useEffect, useRef, useState,
+  ChangeEvent,
+  createRef,
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
 } from 'react';
 import axios from 'axios';
-import { useDispatch, useSelector } from 'react-redux';
+import {
+  useDispatch,
+  useSelector,
+} from 'react-redux';
 import _ from 'lodash';
 import moment from 'moment';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { OrphanedRecord } from '../../../actions/orphaned-record.actions';
 import { Roster } from '../../../actions/roster.actions';
-
+import { Unit } from '../../../actions/unit.actions';
 import { downloadFile } from '../../../utility/download';
 import { getNewPageIndex } from '../../../utility/table';
 import PageHeader from '../../page-header/page-header';
-import { SortDirection, TableColumn, TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
+import {
+  SortDirection,
+  TableColumn,
+  TableCustomColumnsContent,
+} from '../../tables/table-custom-columns-content';
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
 import { RosterPageHelp } from './roster-page-help';
 import useStyles from './roster-page.styles';
-
 import {
   ApiRosterColumnInfo,
   ApiRosterColumnType,
@@ -46,13 +58,18 @@ import {
   ApiRosterPaginated,
   ApiOrphanedRecord,
 } from '../../../models/api-response';
-import { EditRosterEntryDialog, EditRosterEntryDialogProps } from './edit-roster-entry-dialog';
+import {
+  EditRosterEntryDialog,
+  EditRosterEntryDialogProps,
+} from './edit-roster-entry-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
-import { Unit } from '../../../actions/unit.actions';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
 import {
-  QueryBuilder, QueryFieldPickListItem, QueryFieldType, QueryFilterState,
+  QueryBuilder,
+  QueryFieldPickListItem,
+  QueryFieldType,
+  QueryFilterState,
 } from '../../query-builder/query-builder';
 import { formatMessage } from '../../../utility/errors';
 import { ButtonSet } from '../../buttons/button-set';
@@ -84,18 +101,21 @@ export const RosterPage = () => {
   const dispatch = useDispatch();
 
   const units = useSelector(UnitSelector.all);
-  const orphanedRecords = useSelector(OrphanedRecordSelector.all);
-  const fileInputRef = React.createRef<HTMLInputElement>();
+  const orphanedRecords = useSelector(OrphanedRecordSelector.root);
+  const user = useSelector<AppState, UserState>(state => state.user);
+  const org = useSelector(UserSelector.org);
 
-  const maxNumColumnsToShow = 5;
-
+  const fileInputRef = createRef<HTMLInputElement>();
+  const initialLoad = useRef(true);
+  const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
   const [orphanedRecordsWaiting, setOrphanedRecordsWaiting] = useState(false);
+  const [orphanedRecordsPage, setOrphanedRecordsPage] = useState(0);
+  const [orphanedRecordsRowsPerPage, setOrphanedRecordsRowsPerPage] = useState(10);
   const [rows, setRows] = useState<ApiRosterEntry[]>([]);
   const [page, setPage] = useState(0);
-  const initialLoad = useRef(true);
   const [totalRowsCount, setTotalRowsCount] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [unitNameMap, setUnitNameMap] = useState<{[key: string]: string}>({});
+  const [unitNameMap, setUnitNameMap] = useState<{ [key: string]: string }>({});
   const [selectedRosterEntry, setSelectedRosterEntry] = useState<ApiRosterEntry>();
   const [deleteRosterEntryDialogOpen, setDeleteRosterEntryDialogOpen] = useState(false);
   const [editRosterEntryDialogProps, setEditRosterEntryDialogProps] = useState<EditRosterEntryDialogProps>({ open: false });
@@ -110,19 +130,18 @@ export const RosterPage = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
   const [applyingFilters, setApplyingFilters] = useState(false);
-  const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
-  const user = useSelector<AppState, UserState>(state => state.user);
-  const org = useSelector(UserSelector.org);
+
   const orgId = org?.id;
   const orgName = org?.name;
+  const maxNumColumnsToShow = 5;
 
   //
   // Effects
   //
 
-  const reloadTable = useCallback(async () => {
+  const fetchRoster = useCallback(async () => {
     try {
-      const params: {[key: string]: string} = {
+      const params: { [key: string]: string } = {
         limit: `${rowsPerPage}`,
         page: `${page}`,
       };
@@ -149,11 +168,11 @@ export const RosterPage = () => {
         setTotalRowsCount(data.totalRowsCount);
       }
     } catch (e) {
-      dispatch(Modal.alert('Error', formatMessage(e, 'Error Applying Filters')));
+      dispatch(Modal.alert('Error', formatMessage(e, 'Error Applying Filters'))).then();
     }
   }, [dispatch, page, rowsPerPage, orgId, queryFilterState, sortState]);
 
-  const getRosterEntry = useCallback(async (orphanedRecord: ApiOrphanedRecord) => {
+  const fetchRosterEntry = useCallback(async (orphanedRecord: ApiOrphanedRecord) => {
     try {
       const params = {
         limit: '1',
@@ -172,12 +191,12 @@ export const RosterPage = () => {
       return data.rows.length ? data.rows[0] : null;
 
     } catch (e) {
-      dispatch(Modal.alert('Error', formatMessage(e, 'Error Getting Roster Entry for Orphan')));
+      dispatch(Modal.alert('Error', formatMessage(e, 'Error Getting Roster Entry for Orphan'))).then();
     }
     return null;
   }, [dispatch, orgId]);
 
-  const initializeRosterColumnInfo = useCallback(async () => {
+  const fetchRosterColumnInfo = useCallback(async () => {
     try {
       const infos = (await axios.get(`api/roster/${orgId}/info`)).data as ApiRosterColumnInfo[];
       const unitColumnWithInfos = sortRosterColumns([unitColumn, ...infos]);
@@ -186,7 +205,7 @@ export const RosterPage = () => {
         setVisibleColumns(unitColumnWithInfos.slice(0, maxNumColumnsToShow));
       }
     } catch (error) {
-      dispatch(Modal.alert('Get Roster Column Info', formatMessage(error, 'Failed to get roster column info')));
+      dispatch(Modal.alert('Get Roster Column Info', formatMessage(error, 'Failed to get roster column info'))).then();
     }
   }, [dispatch, orgId]);
 
@@ -194,29 +213,21 @@ export const RosterPage = () => {
     return Boolean(userState.activeRole?.role.canManageRoster);
   };
 
-  const initializeOrphanedRecords = useCallback(async () => {
+  const fetchOrphanedRecords = useCallback(async () => {
     if (canManageRoster(user)) {
       try {
-        await dispatch(OrphanedRecord.fetch(orgId!));
+        await dispatch(OrphanedRecord.fetchPage(orgId!, orphanedRecordsPage, orphanedRecordsRowsPerPage));
       } catch (error) {
-        dispatch(Modal.alert('Get Orphaned Records', formatMessage(error, 'Failed to get orphaned records')));
+        dispatch(Modal.alert('Get Orphaned Records', formatMessage(error, 'Failed to get orphaned records'))).then();
       }
     } else {
       dispatch(OrphanedRecord.clear());
     }
-  }, [dispatch, orgId, user]);
+  }, [dispatch, orgId, orphanedRecordsPage, orphanedRecordsRowsPerPage, user]);
 
-  const initializeTable = useCallback(async () => {
-    dispatch(AppFrame.setPageLoading(initialLoad.current));
-    if (orgId) {
-      await dispatch(Unit.fetch(orgId));
-    }
-    await initializeRosterColumnInfo();
-    await reloadTable();
-    await initializeOrphanedRecords();
-    dispatch(AppFrame.setPageLoading(false));
-    initialLoad.current = false;
-  }, [dispatch, orgId, initializeRosterColumnInfo, reloadTable, initializeOrphanedRecords]);
+  const fetchUnits = useCallback(async () => {
+    dispatch(Unit.fetch(orgId!));
+  }, [dispatch, orgId]);
 
   const sortRosterColumns = (columns: ApiRosterColumnInfo[]) => {
     const columnPriority: {
@@ -234,6 +245,45 @@ export const RosterPage = () => {
     });
   };
 
+  // Initial load
+  useEffect(() => {
+    if (!initialLoad.current) {
+      return;
+    }
+
+    (async () => {
+      dispatch(AppFrame.setPageLoading(true));
+
+      await Promise.all([
+        fetchRosterColumnInfo(),
+        fetchUnits(),
+      ]);
+
+      await Promise.all([
+        fetchOrphanedRecords(),
+        fetchRoster(),
+      ]);
+
+      initialLoad.current = false;
+      dispatch(AppFrame.setPageLoading(false));
+    })();
+  }, [dispatch, fetchRosterColumnInfo, fetchOrphanedRecords, fetchRoster, fetchUnits]);
+
+  // Orphaned records reload.
+  useEffect(() => {
+    if (!initialLoad.current) {
+      fetchOrphanedRecords().then();
+    }
+  }, [fetchOrphanedRecords]);
+
+  // Roster reload.
+  useEffect(() => {
+    if (!initialLoad.current) {
+      fetchRoster().then();
+    }
+  }, [fetchRoster]);
+
+  // Units dropdown refresh.
   useEffect(() => {
     const unitNames: { [key: string]: string } = {};
     for (const unit of units) {
@@ -242,13 +292,16 @@ export const RosterPage = () => {
     setUnitNameMap(unitNames);
   }, [units]);
 
-  useEffect(() => {
-    initializeTable().then();
-  }, [initializeTable]);
-
   //
   // Functions
   //
+
+  const handleRosterOrOrphanedRecordsModified = async () => {
+    await Promise.all([
+      fetchOrphanedRecords(),
+      fetchRoster(),
+    ]);
+  };
 
   const handleSortChanged = (column: TableColumn, direction: SortDirection) => {
     setSortState({
@@ -288,10 +341,10 @@ export const RosterPage = () => {
           msg += error.error;
         });
 
-        dispatch(Modal.alert('Upload Error', msg));
+        dispatch(Modal.alert('Upload Error', msg)).then();
       } else {
-        dispatch(Modal.alert('Upload Successful', `Successfully uploaded ${response.count} roster entries.`));
-        await initializeTable();
+        dispatch(Modal.alert('Upload Successful', `Successfully uploaded ${response.count} roster entries.`)).then();
+        handleRosterOrOrphanedRecordsModified().then();
       }
     }));
   };
@@ -324,7 +377,7 @@ export const RosterPage = () => {
       rosterEntry,
       onClose: async () => {
         setEditRosterEntryDialogProps({ open: false });
-        await initializeTable();
+        handleRosterOrOrphanedRecordsModified().then();
       },
       onError: (message: string) => {
         dispatch(Modal.alert('Edit Roster Entry', `Unable to edit roster entry: ${message}`));
@@ -339,7 +392,7 @@ export const RosterPage = () => {
       rosterColumnInfos,
       onClose: async () => {
         setEditRosterEntryDialogProps({ open: false });
-        await initializeTable();
+        handleRosterOrOrphanedRecordsModified().then();
       },
       onError: (message: string) => {
         dispatch(Modal.alert('Add Roster Entry', `Unable to add roster entry: ${message}`));
@@ -351,7 +404,7 @@ export const RosterPage = () => {
     // eslint-disable-next-line no-restricted-globals, no-alert
     if (confirm('This will permanently delete ALL roster entries?')) {
       await dispatch(Roster.deleteAll(orgId!));
-      await initializeTable();
+      handleRosterOrOrphanedRecordsModified().then();
     }
   };
 
@@ -367,12 +420,12 @@ export const RosterPage = () => {
         endDate: moment().subtract(1, 'day').toISOString(),
       });
     } catch (error) {
-      dispatch(Modal.alert('Remove Roster Entry', formatMessage(error, 'Unable to set end date for roster entry')));
+      dispatch(Modal.alert('Remove Roster Entry', formatMessage(error, 'Unable to set end date for roster entry'))).then();
     } finally {
       setRosterEntryEndDateLoading(false);
       setDeleteRosterEntryDialogOpen(false);
       setSelectedRosterEntry(undefined);
-      await initializeTable();
+      handleRosterOrOrphanedRecordsModified().then();
     }
   };
 
@@ -381,12 +434,12 @@ export const RosterPage = () => {
       setDeleteRosterEntryLoading(true);
       await axios.delete(`api/roster/${orgId}/${selectedRosterEntry!.id}`);
     } catch (error) {
-      dispatch(Modal.alert('Delete Roster Entry', formatMessage(error, 'Unable to delete roster entry')));
+      dispatch(Modal.alert('Delete Roster Entry', formatMessage(error, 'Unable to delete roster entry'))).then();
     } finally {
       setDeleteRosterEntryLoading(false);
       setDeleteRosterEntryDialogOpen(false);
       setSelectedRosterEntry(undefined);
-      await initializeTable();
+      handleRosterOrOrphanedRecordsModified().then();
     }
   };
 
@@ -408,7 +461,7 @@ export const RosterPage = () => {
       const filename = `${_.kebabCase(orgName)}_roster_export_${date}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
-      dispatch(Modal.alert('Roster CSV Export', formatMessage(error, 'Unable to export roster to CSV')));
+      dispatch(Modal.alert('Roster CSV Export', formatMessage(error, 'Unable to export roster to CSV'))).then();
     } finally {
       setExportRosterLoading(false);
     }
@@ -425,7 +478,7 @@ export const RosterPage = () => {
 
       downloadFile(response.data, 'roster-template', 'csv');
     } catch (error) {
-      dispatch(Modal.alert('CSV Template Download', formatMessage(error, 'Unable to download CSV template')));
+      dispatch(Modal.alert('CSV Template Download', formatMessage(error, 'Unable to download CSV template'))).then();
     } finally {
       setDownloadTemplateLoading(false);
     }
@@ -445,7 +498,7 @@ export const RosterPage = () => {
       },
       onClose: async () => {
         setEditRosterEntryDialogProps({ open: false });
-        await initializeTable();
+        handleRosterOrOrphanedRecordsModified().then();
       },
       onError: (message: string) => {
         dispatch(Modal.alert('Add Orphan to Roster', `Unable to add orphan to roster: ${message}`));
@@ -454,9 +507,9 @@ export const RosterPage = () => {
   };
 
   const editOrphanOnRosterClicked = async (row: ApiOrphanedRecord) => {
-    const rosterEntry = await getRosterEntry(row);
+    const rosterEntry = await fetchRosterEntry(row);
     if (!rosterEntry) {
-      Modal.alert('Edit Roster Entry for Orphan', `Unable to find the roster entry`);
+      Modal.alert('Edit Roster Entry for Orphan', `Unable to find the roster entry`).then();
       return;
     }
     setEditRosterEntryDialogProps({
@@ -471,7 +524,7 @@ export const RosterPage = () => {
       },
       onClose: async () => {
         setEditRosterEntryDialogProps({ open: false });
-        await initializeTable();
+        handleRosterOrOrphanedRecordsModified().then();
       },
       onError: (message: string) => {
         dispatch(Modal.alert('Edit Roster Entry for Orphan', `Unable to edit the roster entry: ${message}`));
@@ -493,9 +546,9 @@ export const RosterPage = () => {
         action: 'ignore',
         timeToLiveMs: Math.max(0, result.button.value * 60 * 60 * 1000),
       });
-      await initializeTable();
+      await fetchOrphanedRecords();
     } catch (error) {
-      dispatch(Modal.alert('Ignore Orphan', formatMessage(error, 'Unable to ignore the record')));
+      dispatch(Modal.alert('Ignore Orphan', formatMessage(error, 'Unable to ignore the record'))).then();
     } finally {
       setOrphanedRecordsWaiting(false);
     }
@@ -513,6 +566,17 @@ export const RosterPage = () => {
     return value;
   };
 
+  const handleOrphanedRecordsChangePage = (event: MouseEvent<HTMLButtonElement> | null, pageNew: number) => {
+    setOrphanedRecordsPage(pageNew);
+  };
+
+  const handleOrphanedRecordsChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const rowsPerPageNew = parseInt(event.target.value);
+    const pageNew = getNewPageIndex(orphanedRecordsRowsPerPage, orphanedRecordsPage, rowsPerPageNew);
+    setOrphanedRecordsRowsPerPage(rowsPerPageNew);
+    setOrphanedRecordsPage(pageNew);
+  };
+
   //
   // Render
   //
@@ -528,10 +592,10 @@ export const RosterPage = () => {
           }}
         />
 
-        {orphanedRecords.length > 0 && (
+        {orphanedRecords.totalRowsCount > 0 && (
           <TableContainer component={Paper} className={classes.table}>
             <TableCustomColumnsContent
-              rows={orphanedRecords}
+              rows={orphanedRecords.rows}
               columns={[
                 { name: 'edipi', displayName: 'DoD ID' },
                 { name: 'unit', displayName: 'Unit' },
@@ -540,13 +604,13 @@ export const RosterPage = () => {
                 { name: 'earliestReportDate', displayName: 'First Report' },
                 { name: 'latestReportDate', displayName: 'Latest Report' },
               ]}
-              title={`Orphaned Records (${orphanedRecords.length})`}
+              title={`Orphaned Records (${orphanedRecords.totalRowsCount})`}
               idColumn={row => row.id + row.unitId}
               rowOptions={{
                 menuItems: row => ([{
                   callback: addOrphanToRosterClicked,
                   disabled: orphanedRecordsWaiting,
-                  name: 'Add to a Roster...',
+                  name: 'Add to Roster...',
                   hidden: row.unitId,
                 }, {
                   callback: editOrphanOnRosterClicked,
@@ -560,6 +624,15 @@ export const RosterPage = () => {
                 }]),
                 renderCell: getOrphanCellDisplayValue,
               }}
+            />
+            <TablePagination
+              className={classes.pagination}
+              count={orphanedRecords.totalRowsCount}
+              page={orphanedRecordsPage}
+              rowsPerPage={orphanedRecordsRowsPerPage}
+              rowsPerPageOptions={[10, 25, 50]}
+              onChangePage={handleOrphanedRecordsChangePage}
+              onChangeRowsPerPage={handleOrphanedRecordsChangeRowsPerPage}
             />
           </TableContainer>
         )}
@@ -649,7 +722,11 @@ export const RosterPage = () => {
               className={classes.secondaryButton}
               onClick={() => setFiltersOpen(!filtersOpen)}
               size="small"
-              startIcon={queryFilterState ? <div className={classes.secondaryButtonCount}>{Object.keys(queryFilterState).length}</div> : <FilterListIcon />}
+              startIcon={
+                queryFilterState
+                  ? <div className={classes.secondaryButtonCount}>{Object.keys(queryFilterState).length}</div>
+                  : <FilterListIcon />
+              }
               variant="outlined"
             >
               Filters

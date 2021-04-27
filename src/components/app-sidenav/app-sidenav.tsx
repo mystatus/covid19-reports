@@ -76,7 +76,7 @@ const SidenavLink = (props: SidenavLinkProps) => {
       <ListItem button key={name}>
         <ListItemIcon>{icon}</ListItemIcon>
         <ListItemText primary={name} />
-        <Badge color={badgeColor} badgeContent={badgeContent} className={classes.badge} />
+        <Badge color={badgeColor} badgeContent={badgeContent} max={999} className={classes.badge} />
       </ListItem>
     </Link>
   );
@@ -88,7 +88,7 @@ export const AppSidenav = () => {
   const user = useSelector<AppState, UserState>(state => state.user);
   const orgId = useSelector(UserSelector.orgId);
   const appFrame = useSelector<AppState, AppFrameState>(state => state.appFrame);
-  const orphanedRecords = useSelector(OrphanedRecordSelector.all);
+  const orphanedRecords = useSelector(OrphanedRecordSelector.root);
 
   const toggleSidenav = () => {
     dispatch(AppFrame.toggleSidenavExpanded());
@@ -96,7 +96,8 @@ export const AppSidenav = () => {
 
   useEffect(() => {
     if (user.activeRole?.role.canManageRoster) {
-      dispatch(OrphanedRecord.fetch(orgId!));
+      // Set the limit to 0 here since we only need the total rows count for the Roster badge.
+      dispatch(OrphanedRecord.fetchPage(orgId!, 0, 0));
     } else {
       dispatch(OrphanedRecord.clear());
     }
@@ -166,7 +167,7 @@ export const AppSidenav = () => {
               to="/roster"
               name="Roster"
               icon={(<AssignmentIndIcon />)}
-              badgeContent={orphanedRecords.length}
+              badgeContent={orphanedRecords.totalRowsCount}
             />
           )}
         </List>

@@ -2,13 +2,15 @@ import { OrphanedRecord } from '../actions/orphaned-record.actions';
 import { ApiOrphanedRecord } from '../models/api-response';
 
 export interface OrphanedRecordState {
-  orphanedRecords: ApiOrphanedRecord[],
+  rows: ApiOrphanedRecord[],
+  totalRowsCount: number
   isLoading: boolean
   lastUpdated: number
 }
 
 export const orphanedRecordInitialState: OrphanedRecordState = {
-  orphanedRecords: [],
+  rows: [],
+  totalRowsCount: 0,
   isLoading: false,
   lastUpdated: 0,
 };
@@ -18,30 +20,33 @@ export function orphanedRecordReducer(state = orphanedRecordInitialState, action
     case OrphanedRecord.Actions.Clear.type: {
       return {
         ...state,
-        orphanedRecords: [],
+        rows: [],
+        totalRowsCount: 0,
         isLoading: false,
         lastUpdated: Date.now(),
       };
     }
-    case OrphanedRecord.Actions.Fetch.type: {
+    case OrphanedRecord.Actions.FetchPage.type: {
       return {
         ...state,
         isLoading: true,
       };
     }
-    case OrphanedRecord.Actions.FetchSuccess.type: {
-      const payload = (action as OrphanedRecord.Actions.FetchSuccess).payload;
+    case OrphanedRecord.Actions.FetchPageSuccess.type: {
+      const { rows, totalRowsCount } = (action as OrphanedRecord.Actions.FetchPageSuccess).payload;
       return {
         ...state,
-        orphanedRecords: payload.orphanedRecords,
+        rows,
+        totalRowsCount,
         isLoading: false,
         lastUpdated: Date.now(),
       };
     }
-    case OrphanedRecord.Actions.FetchFailure.type: {
+    case OrphanedRecord.Actions.FetchPageFailure.type: {
       return {
         ...state,
-        orphanedRecords: [],
+        rows: [],
+        totalRowsCount: 0,
         isLoading: false,
       };
     }
