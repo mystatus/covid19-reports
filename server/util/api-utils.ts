@@ -1,9 +1,9 @@
 import { ApiRequest } from '../api';
 import { BadRequestError } from './error-types';
 
-export function assertRequestQuery<TQuery extends object>(
+export function assertRequestQuery<TQuery, TQueryKey extends keyof TQuery>(
   req: ApiRequest<unknown, unknown, TQuery>,
-  requiredKeys: Array<keyof TQuery>,
+  requiredKeys: Array<TQueryKey>,
 ) {
   const missingKeys = getMissingKeys(req.query, requiredKeys);
   if (missingKeys.length) {
@@ -13,9 +13,9 @@ export function assertRequestQuery<TQuery extends object>(
   return req.query;
 }
 
-export function assertRequestBody<TBody extends object>(
+export function assertRequestBody<TBody, TBodyKey extends keyof TBody>(
   req: ApiRequest<unknown, TBody, unknown>,
-  requiredKeys: Array<keyof TBody>,
+  requiredKeys: Array<TBodyKey>,
 ) {
   const missingKeys = getMissingKeys(req.body, requiredKeys);
   if (missingKeys.length) {
@@ -25,6 +25,6 @@ export function assertRequestBody<TBody extends object>(
   return req.body;
 }
 
-function getMissingKeys<T extends object>(obj: T, keys: Array<keyof T>) {
+function getMissingKeys<T, K extends keyof T>(obj: T, keys: Array<K>) {
   return keys.filter(key => obj[key] === undefined);
 }

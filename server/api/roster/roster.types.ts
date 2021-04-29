@@ -1,10 +1,10 @@
 import { CustomColumnConfig } from './custom-roster-column.model';
 
 export interface CustomColumns {
-  [key: string]: CustomColumnValue
+  [columnName: string]: RosterColumnValue | undefined
 }
 
-export type CustomColumnValue = string | boolean | number | null;
+export type RosterColumnValue = string | boolean | number | null;
 
 export enum RosterColumnType {
   String = 'string',

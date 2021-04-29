@@ -8,10 +8,12 @@ export function mockCustomRosterColumn(org: Org, options?: {
 }) {
   const { customData } = options ?? {};
 
+  const name = uniqueString();
+
   return CustomRosterColumn.create({
-    name: uniqueString(),
+    name,
     org,
-    display: uniqueString(),
+    display: name,
     type: RosterColumnType.String,
     pii: true,
     phi: true,

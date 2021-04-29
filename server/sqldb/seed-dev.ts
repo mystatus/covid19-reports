@@ -1,6 +1,7 @@
-import { getManager, EntityManager } from 'typeorm';
+import { getManager } from 'typeorm';
 import database from '.';
 import { Org } from '../api/org/org.model';
+import { seedOrphanedRecords } from '../api/orphaned-record/orphaned-record.model.mock';
 import { Role } from '../api/role/role.model';
 import { RosterColumnType } from '../api/roster/roster.types';
 import { User } from '../api/user/user.model';
@@ -12,6 +13,11 @@ import { env } from '../util/env';
 import { Log } from '../util/log';
 import { RosterHistory } from '../api/roster/roster-history.model';
 import { defaultReportSchemas, ReportSchema } from '../api/report-schema/report-schema.model';
+import {
+  uniqueEdipi,
+  uniquePhone,
+  uniqueString,
+} from '../util/test-utils/unique';
 
 require('dotenv').config();
 
@@ -24,39 +30,58 @@ export default (async function() {
 
   const connection = await database;
 
-  await getManager().transaction(async manager => {
+  // Create Group Admin
+  const groupAdmin = User.create({
+    edipi: '0000000001',
+    firstName: 'Group',
+    lastName: 'Admin',
+    phone: '123-456-7890',
+    email: 'groupadmin@statusengine.com',
+    service: 'Space Force',
+    isRegistered: true,
+  });
+  await groupAdmin.save();
 
-    // Create Group Admin
-    let groupAdmin = manager.create(User, {
-      edipi: '0000000001',
-      firstName: 'Group',
-      lastName: 'Admin',
-      phone: '123-456-7890',
-      email: 'groupadmin@statusengine.com',
-      service: 'Space Force',
-      isRegistered: true,
-    });
-    groupAdmin = await manager.save(groupAdmin);
+  // Create Org 1 & 2 and their Users
+  const { org: org1, rosterEntries: org1RosterEntries } = await generateOrg(1, groupAdmin, 5, 20);
+  await generateOrg(2, groupAdmin, 5, 20);
 
-    // Create Org 1 & 2 and their Users
-    await generateOrg(manager, 1, groupAdmin, 5, 20);
-    await generateOrg(manager, 2, groupAdmin, 5, 20);
+  // Set the start date on each roster entry to some time in the past to help with repeatable testing
+  await RosterHistory.createQueryBuilder()
+    .update()
+    .set({ timestamp: '2020-01-01 00:00:00' })
+    .execute();
 
-    // Set the start date on each roster entry to some time in the past to help with repeatable testing
-    await manager
-      .createQueryBuilder()
-      .update(RosterHistory)
-      .set({ timestamp: '2020-01-01 00:00:00' })
-      .execute();
+  // Create lots of orphaned records to catch possible UI issues.
+  await seedOrphanedRecords(org1, { count: 1000 });
+
+  // Create some orphaned records that have the same composite id.
+  await seedOrphanedRecords(org1, {
+    count: 3,
+    customData: {
+      edipi: uniqueEdipi(),
+      unit: uniqueString(),
+      phone: uniquePhone(),
+    },
+  });
+
+  // Create some orphaned records for an individual in the roster.
+  await seedOrphanedRecords(org1, {
+    count: 3,
+    customData: {
+      edipi: org1RosterEntries[0].edipi,
+      unit: uniqueString(),
+      phone: uniquePhone(),
+    },
   });
 
   await connection.close();
+
   Log.info('Finished!');
 }());
 
-
-async function generateOrg(manager: EntityManager, orgNum: number, admin: User, numUsers: number, numRosterEntries: number) {
-  let org = manager.create(Org, {
+async function generateOrg(orgNum: number, admin: User, numUsers: number, numRosterEntries: number) {
+  const org = Org.create({
     name: `Test Group ${orgNum}`,
     description: `Group ${orgNum} for testing.`,
     contact: admin,
@@ -64,15 +89,15 @@ async function generateOrg(manager: EntityManager, orgNum: number, admin: User, 
     reportingGroup: `test${orgNum}`,
     defaultMusterConfiguration: [],
   });
-  org = await manager.save(org);
+  await org.save();
 
-  const reportSchemas = manager.create(ReportSchema, defaultReportSchemas);
+  const reportSchemas = ReportSchema.create(defaultReportSchemas);
   for (const report of reportSchemas) {
     report.org = org;
   }
-  await manager.save(reportSchemas);
+  await ReportSchema.save(reportSchemas);
 
-  let customColumn = manager.create(CustomRosterColumn, {
+  const customColumn = CustomRosterColumn.create({
     org,
     display: `My Custom Column : Group ${orgNum}`,
     type: RosterColumnType.String,
@@ -80,31 +105,31 @@ async function generateOrg(manager: EntityManager, orgNum: number, admin: User, 
     pii: false,
     required: false,
   });
-  customColumn = await manager.save(customColumn);
+  await customColumn.save();
 
   const units: Unit[] = [];
   for (let i = 1; i <= 5; i++) {
-    let unit = manager.create(Unit, {
+    const unit = Unit.create({
       org,
       name: `Unit ${i} : Group ${orgNum}`,
       musterConfiguration: [],
       includeDefaultConfig: true,
     });
-    unit = await manager.save(unit);
     units.push(unit);
   }
+  await Unit.save(units);
 
-  let groupAdminRole = createGroupAdminRole(manager, org);
-  groupAdminRole = await manager.save(groupAdminRole);
-  await admin.addRole(manager, groupAdminRole, [], true);
-  await manager.save(admin);
+  const groupAdminRole = createGroupAdminRole(org);
+  await groupAdminRole.save();
+  await admin.addRole(getManager(), groupAdminRole, [], true);
+  await admin.save();
 
-  let groupUserRole = createGroupUserRole(manager, org);
+  const groupUserRole = createGroupUserRole(org);
   groupUserRole.allowedRosterColumns.push(customColumn.name);
-  groupUserRole = await manager.save(groupUserRole);
+  await groupUserRole.save();
 
   for (let i = 0; i < numUsers; i++) {
-    let user = manager.create(User, {
+    const user = User.create({
       edipi: `${orgNum}00000000${i}`,
       firstName: 'User',
       lastName: `${i}`,
@@ -113,24 +138,26 @@ async function generateOrg(manager: EntityManager, orgNum: number, admin: User, 
       service: 'Space Force',
       isRegistered: true,
     });
-    user = await manager.save(user);
-    await user.addRole(manager, groupUserRole, [units[i % 5]], false);
+    await user.save();
+    await user.addRole(getManager(), groupUserRole, [units[i % 5]], false);
   }
 
+  const rosterEntries: Roster[] = [];
   for (let i = 0; i < numRosterEntries; i++) {
     const customColumns: any = {};
     customColumns[customColumn.name] = `custom column value`;
-    const rosterEntry = manager.create(Roster, {
+    const rosterEntry = Roster.create({
       edipi: `${orgNum}${`${i}`.padStart(9, '0')}`,
       firstName: 'Roster',
       lastName: `Entry${i}`,
       unit: units[i % 5],
       customColumns,
     });
-    await manager.save(rosterEntry);
+    rosterEntries.push(rosterEntry);
   }
+  await Roster.save(rosterEntries);
 
-  return org;
+  return { org, rosterEntries };
 }
 
 function randomPhoneNumber() {
@@ -141,8 +168,8 @@ function randomNumber(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function createGroupAdminRole(manager: EntityManager, org: Org, workspaces?: Workspace[]) {
-  return manager.create(Role, {
+function createGroupAdminRole(org: Org, workspaces?: Workspace[]) {
+  return Role.create({
     name: `Group Admin : Group ${org.id}`,
     description: 'For managing the group.',
     org,
@@ -158,8 +185,8 @@ function createGroupAdminRole(manager: EntityManager, org: Org, workspaces?: Wor
   });
 }
 
-function createGroupUserRole(manager: EntityManager, org: Org, workspaces?: Workspace[]) {
-  return manager.create(Role, {
+function createGroupUserRole(org: Org, workspaces?: Workspace[]) {
+  return Role.create({
     name: `Group User : Group ${org.id}`,
     description: `Basic role for all Group ${org.id} users.`,
     org,

@@ -68,6 +68,22 @@ export class InternalServerError extends RequestError {
   }
 }
 
+export class RequiredColumnError extends RequestError {
+  constructor(columnName: string, showErrorPage = false) {
+    const message = `Required column '${columnName}' cannot be empty, null, or undefined.`;
+    super(message, 'BadRequest', 400, showErrorPage);
+    Error.captureStackTrace(this, RequiredColumnError);
+  }
+}
+
+export class DateParseError extends RequestError {
+  constructor(date: any, showErrorPage = false) {
+    const message = `Unable to parse date '${date}'. Valid dates are ISO formatted date strings and UNIX timestamps.`;
+    super(message, 'BadRequest', 400, showErrorPage);
+    Error.captureStackTrace(this, DateParseError);
+  }
+}
+
 export type RequestErrorType = (
   'BadRequest' |
   'Unauthorized' |

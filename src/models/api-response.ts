@@ -1,3 +1,4 @@
+import { RosterColumnValue } from '../../server/api/roster/roster.types';
 import { DaysOfTheWeek } from '../utility/days';
 
 export interface ApiPaginated<TData> {
@@ -146,11 +147,20 @@ export interface ApiRosterColumnInfo extends ColumnInfo {
   config: ApiRosterCustomColumnConfig,
 }
 
-export interface ApiRosterEntry {
-  id: number,
+export type ApiCustomColumns = {
+  [columnName: string]: RosterColumnValue | undefined
+};
+
+export type ApiRosterEntryData = {
+  edipi: string,
   unit: number,
-  [key: string]: string | boolean | number | null,
-}
+  firstName?: string,
+  lastName?: string,
+} & ApiCustomColumns;
+
+export type ApiRosterEntry = ApiRosterEntryData & {
+  id: number,
+};
 
 export interface ApiOrphanedRecord {
   id: string;

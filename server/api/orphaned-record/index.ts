@@ -28,11 +28,19 @@ router.delete(
 );
 
 router.put(
-  '/:orgId/:orphanId/resolve',
+  '/:orgId/:orphanId/resolve-with-add',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),
   bodyParser.json(),
-  controller.resolveOrphanedRecord,
+  controller.resolveOrphanedRecordWithAdd,
+);
+
+router.put(
+  '/:orgId/:orphanId/resolve-with-edit',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageRoster),
+  bodyParser.json(),
+  controller.resolveOrphanedRecordWithEdit,
 );
 
 router.put(
