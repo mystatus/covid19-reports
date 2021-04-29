@@ -280,7 +280,7 @@ function buildVisibleOrphanedRecordResultsQuery(userEdipi: string, orgId: number
     .leftJoin(`(${rosterEntries.getQuery()})`, 'roster', 'orphan.edipi = roster.edipi')
     .where('orphan.org_id=:orgId', params)
     .andWhere('orphan.deleted_on IS NULL')
-    .andWhere('roster.change_type IS NULL OR (roster.change_type <> \'deleted\')')
+    .andWhere(`(roster.change_type IS NULL OR (roster.change_type <> 'deleted'))`)
     .andWhere(`(action.type IS NULL OR (action.type='claim' AND action.user_edipi=:userEdipi))`, params)
     .select('orphan.edipi', 'edipi')
     .addSelect('orphan.unit', 'unit')
