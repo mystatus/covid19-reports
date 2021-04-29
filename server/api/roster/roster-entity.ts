@@ -92,7 +92,7 @@ export class RosterEntity extends BaseEntity {
   setColumnValue(column: RosterColumnInfo, value: RosterColumnValue | undefined) {
     // Ignore undefined values, unless this is a required column with no current value.
     if (value === undefined) {
-      if (column.required && this.getColumnValue(column) != null) {
+      if (column.required && this.getColumnValue(column) !== undefined) {
         throw new RequiredColumnError(column.name);
       }
 
