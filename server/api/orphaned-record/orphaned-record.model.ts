@@ -43,10 +43,10 @@ export class OrphanedRecord extends BaseEntity {
   org?: Org;
 
   @Column()
-  unit: string;
+  unit!: string;
 
   @Column()
-  phone: string;
+  phone!: string;
 
   @Column({
     type: 'timestamp',

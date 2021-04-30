@@ -1,3 +1,5 @@
+import { OrphanedRecord } from '../api/orphaned-record/orphaned-record.model';
+
 export class RequestError extends Error {
   type: RequestErrorType;
   statusCode: number;
@@ -81,6 +83,14 @@ export class DateParseError extends RequestError {
     const message = `Unable to parse date '${date}'. Valid dates are ISO formatted date strings and UNIX timestamps.`;
     super(message, 'BadRequest', 400, showErrorPage);
     Error.captureStackTrace(this, DateParseError);
+  }
+}
+
+export class OrphanedRecordsNotFoundError extends RequestError {
+  constructor(compositeId: OrphanedRecord['compositeId'], showErrorPage = false) {
+    const message = `Unable to locate orphaned record with id: ${compositeId}`;
+    super(message, 'NotFound', 404, showErrorPage);
+    Error.captureStackTrace(this, OrphanedRecordsNotFoundError);
   }
 }
 

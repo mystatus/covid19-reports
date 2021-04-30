@@ -1,7 +1,7 @@
 import { CustomColumnConfig } from './custom-roster-column.model';
 
 export interface CustomColumns {
-  [columnName: string]: RosterColumnValue | undefined
+  [columnName: string]: RosterColumnValue
 }
 
 export type RosterColumnValue = string | boolean | number | null;

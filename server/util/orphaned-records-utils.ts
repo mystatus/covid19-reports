@@ -1,6 +1,36 @@
+import { Brackets } from 'typeorm';
 import { OrphanedRecordAction } from '../api/orphaned-record/orphaned-record-action.model';
 import { OrphanedRecord } from '../api/orphaned-record/orphaned-record.model';
 import { RosterHistory } from '../api/roster/roster-history.model';
+import { User } from '../api/user/user.model';
+
+export function getOrphanedRecordsForResolve(compositeId: OrphanedRecord['compositeId']) {
+  return OrphanedRecord.find({
+    where: {
+      compositeId,
+      deletedOn: null,
+    },
+  });
+}
+
+export function deleteOrphanedRecordActionsForUser(
+  compositeId: OrphanedRecord['compositeId'],
+  edipi: User['edipi'],
+  action?: OrphanedRecordAction['type'],
+) {
+  return OrphanedRecordAction.createQueryBuilder()
+    .delete()
+    .where(new Brackets(qb => {
+      qb.where(`id = :id`, { id: compositeId })
+        .andWhere('user_edipi = :edipi', { edipi });
+
+      if (action) {
+        qb.andWhere('type = :action', { action });
+      }
+    }))
+    .orWhere('expires_on < now()')
+    .execute();
+}
 
 export function buildVisibleOrphanedRecordResultsQuery(userEdipi: string, orgId: number) {
   const params = {

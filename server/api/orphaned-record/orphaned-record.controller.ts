@@ -1,14 +1,19 @@
 import { Response } from 'express';
-import {
-  Brackets,
-  getManager,
-} from 'typeorm';
+import { getManager } from 'typeorm';
 import {
   assertRequestBody,
+  assertRequestParams,
   assertRequestQuery,
 } from '../../util/api-utils';
-import { BadRequestError } from '../../util/error-types';
-import { buildVisibleOrphanedRecordResultsQuery } from '../../util/orphaned-records-utils';
+import {
+  BadRequestError,
+  OrphanedRecordsNotFoundError,
+} from '../../util/error-types';
+import {
+  buildVisibleOrphanedRecordResultsQuery,
+  deleteOrphanedRecordActionsForUser,
+  getOrphanedRecordsForResolve,
+} from '../../util/orphaned-records-utils';
 import { convertDateParam } from '../../util/reingest-utils';
 import {
   addRosterEntry,
@@ -111,15 +116,9 @@ class OrphanedRecordController {
     ]);
     const entryData = req.body;
 
-    const orphanedRecords = await OrphanedRecord.find({
-      where: {
-        compositeId,
-        deletedOn: null,
-      },
-    });
-
+    const orphanedRecords = await getOrphanedRecordsForResolve(compositeId);
     if (orphanedRecords.length === 0) {
-      throw new BadRequestError(`Unable to locate orphaned record with id: ${compositeId}`);
+      throw new OrphanedRecordsNotFoundError(compositeId);
     }
 
     // We have to modify the roster outside of the transaction, since the orphaned record resolve process
@@ -152,15 +151,9 @@ class OrphanedRecordController {
     ]);
     const { id: entryId, ...entryData } = req.body;
 
-    const orphanedRecords = await OrphanedRecord.find({
-      where: {
-        compositeId,
-        deletedOn: null,
-      },
-    });
-
+    const orphanedRecords = await getOrphanedRecordsForResolve(compositeId);
     if (orphanedRecords.length === 0) {
-      throw new BadRequestError(`Unable to locate orphaned record with id: ${compositeId}`);
+      throw new OrphanedRecordsNotFoundError(compositeId);
     }
 
     // Save out the old entry data in case something goes wrong and we need to rollback.
@@ -202,39 +195,23 @@ class OrphanedRecordController {
   }
 
   async addOrphanedRecordAction(req: ApiRequest<OrphanedRecordActionParam, OrphanedRecordActionData>, res: Response) {
-    if (!req.params.orphanId) {
-      throw new BadRequestError(`Param 'id' is required.`);
-    }
-    if (!req.body.action) {
-      throw new BadRequestError(`Expected 'action' in payload.`);
-    }
+    const { orphanId: compositeId } = assertRequestParams(req, ['orphanId']);
+    const { action, timeToLiveMs } = assertRequestBody(req, ['action']);
 
-    // Delete any existing actions for this user (or any expired ones)
-    await OrphanedRecordAction
-      .createQueryBuilder()
-      .delete()
-      .where(`id=:id`, { id: req.params.orphanId })
-      .andWhere('user_edipi=:userEdipi', { userEdipi: req.appUser.edipi })
-      .orWhere('expires_on < now()')
-      .execute();
+    await deleteOrphanedRecordActionsForUser(compositeId, req.appUser.edipi);
 
-    const orphanedRecords = await OrphanedRecord.find({
-      where: {
-        compositeId: req.params.orphanId,
-      },
-    });
-
+    const orphanedRecords = await getOrphanedRecordsForResolve(compositeId);
     if (orphanedRecords.length === 0) {
-      throw new BadRequestError(`Unable to locate orphaned record with id: ${req.params.orphanId}`);
+      throw new BadRequestError(`Unable to locate orphaned record with id: ${compositeId}`);
     }
 
     const orphanedRecordAction = new OrphanedRecordAction();
-    orphanedRecordAction.id = req.params.orphanId;
-    orphanedRecordAction.type = req.body.action;
+    orphanedRecordAction.id = compositeId;
+    orphanedRecordAction.type = action;
     orphanedRecordAction.user = req.appUser;
 
-    if (req.body.timeToLiveMs) {
-      const date = new Date(Date.now() + req.body.timeToLiveMs);
+    if (timeToLiveMs) {
+      const date = new Date(Date.now() + timeToLiveMs);
       date.setTime(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
       orphanedRecordAction.expiresOn = date;
     }
@@ -244,30 +221,18 @@ class OrphanedRecordController {
   }
 
   async deleteOrphanedRecordAction(req: ApiRequest<OrphanedRecordDeleteActionData>, res: Response) {
-    if (!req.params.orphanId) {
-      throw new BadRequestError(`Param 'id' is required.`);
-    }
-    if (!req.params.action) {
-      throw new BadRequestError(`Expected 'action' in payload.`);
-    }
+    const { orphanId: compositeId, action } = assertRequestParams(req, [
+      'orphanId',
+      'action',
+    ]);
 
-    // Delete any existing actions for this user (or any expired ones)
-    await OrphanedRecordAction
-      .createQueryBuilder()
-      .delete()
-      .where(new Brackets(qb => {
-        qb
-          .where(`id=:id`, { id: req.params.orphanId })
-          .andWhere('user_edipi=:userEdipi', { userEdipi: req.appUser.edipi })
-          .andWhere('type=:action', { action: req.params.action });
-      }))
-      .orWhere('expires_on < now()')
-      .execute();
+    await deleteOrphanedRecordActionsForUser(compositeId, req.appUser.edipi, action);
 
     res.status(204).send();
   }
 
 }
+
 interface OrphanedRecordResult {
   id: string;
   edipi: string;

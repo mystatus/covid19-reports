@@ -9,7 +9,6 @@ import {
   RequiredColumnError,
 } from '../../util/error-types';
 import {
-  BaseType,
   dateFromString,
   getOptionalValue,
   getRequiredValue,
@@ -144,24 +143,14 @@ export class RosterEntity extends BaseEntity {
   }
 
   setColumnValueFromData(column: RosterColumnInfo, data: RosterEntryData) {
-    // Get dates and enums as strings.
-    let paramType: BaseType;
-    switch (column.type) {
-      case RosterColumnType.Date:
-      case RosterColumnType.DateTime:
-      case RosterColumnType.Enum:
-        paramType = 'string';
-        break;
-      default:
-        paramType = column.type;
-    }
+    const expectedType = columnTypeToEntryDataType(column.type);
 
     // Get the column value from the data.
     let value: RosterColumnValue | undefined;
     if (column.required) {
-      value = getRequiredValue(column.name, data, paramType);
+      value = getRequiredValue(column.name, data, expectedType);
     } else {
-      value = getOptionalValue(column.name, data, paramType);
+      value = getOptionalValue(column.name, data, expectedType);
     }
 
     this.setColumnValue(column, value);
@@ -182,6 +171,18 @@ export class RosterEntity extends BaseEntity {
     this.setColumnValue(column, value);
   }
 
+}
+
+function columnTypeToEntryDataType(columnType: RosterColumnType) {
+  // Get dates and enums as strings.
+  switch (columnType) {
+    case RosterColumnType.Date:
+    case RosterColumnType.DateTime:
+    case RosterColumnType.Enum:
+      return 'string';
+    default:
+      return columnType;
+  }
 }
 
 export const baseRosterColumns: RosterColumnInfo[] = [
@@ -225,5 +226,5 @@ export type RosterEntryData = {
 } & CustomColumns;
 
 export type RosterFileRow = {
-  [key: string]: string
+  [columnName: string]: string
 };

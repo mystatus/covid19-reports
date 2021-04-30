@@ -25,6 +25,18 @@ export function assertRequestBody<TBody, TBodyKey extends keyof TBody>(
   return req.body;
 }
 
+export function assertRequestParams<TParams, TParamsKey extends keyof TParams>(
+  req: ApiRequest<TParams, unknown, unknown>,
+  requiredKeys: Array<TParamsKey>,
+) {
+  const missingKeys = getMissingKeys(req.params, requiredKeys);
+  if (missingKeys.length) {
+    throw new BadRequestError(`Missing required request url params: ${missingKeys.join(', ')}`);
+  }
+
+  return req.params;
+}
+
 function getMissingKeys<T, K extends keyof T>(obj: T, keys: Array<K>) {
   return keys.filter(key => obj[key] === undefined);
 }

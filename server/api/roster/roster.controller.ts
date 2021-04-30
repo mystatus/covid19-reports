@@ -8,7 +8,10 @@ import {
   OrderByCondition,
   SelectQueryBuilder,
 } from 'typeorm';
-import { assertRequestBody } from '../../util/api-utils';
+import {
+  assertRequestBody,
+  assertRequestParams,
+} from '../../util/api-utils';
 import {
   BadRequestError,
   NotFoundError,
@@ -359,7 +362,8 @@ class RosterController {
   }
 
   async updateRosterEntry(req: ApiRequest<OrgRosterParams, RosterEntryData>, res: Response) {
-    const entryId = parseInt(req.params.rosterId);
+    assertRequestParams(req, ['rosterId']);
+    const entryId = +req.params.rosterId;
 
     const entry = await getManager().transaction(async manager => {
       return editRosterEntry(req.appOrg!, req.appUserRole!, entryId, req.body, manager);
