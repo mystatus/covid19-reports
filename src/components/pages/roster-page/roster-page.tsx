@@ -57,6 +57,7 @@ import {
   ApiRosterEntry,
   ApiRosterPaginated,
   ApiOrphanedRecord,
+  ApiRosterEntryData,
 } from '../../../models/api-response';
 import {
   EditRosterEntryDialog,
@@ -493,8 +494,8 @@ export const RosterPage = () => {
         edipi: row.edipi,
         unit: units.find(unit => unit.name === row.unit)?.id,
       },
-      onSave: async (body: any) => {
-        return axios.put(`api/orphaned-record/${orgId}/${row.id}/resolve`, body);
+      onSave: async (body: ApiRosterEntryData) => {
+        return axios.put(`api/orphaned-record/${orgId}/${row.id}/resolve-with-add`, body);
       },
       onClose: async () => {
         setEditRosterEntryDialogProps({ open: false });
@@ -518,9 +519,8 @@ export const RosterPage = () => {
       rosterColumnInfos,
       rosterEntry,
       orphanedRecord: row,
-      onSave: async (body: any) => {
-        await axios.put(`api/roster/${orgId}/${rosterEntry.id}`, body);
-        await axios.put(`api/orphaned-record/${orgId}/${row.id}/resolve`, body);
+      onSave: async (body: ApiRosterEntry) => {
+        return axios.put(`api/orphaned-record/${orgId}/${row.id}/resolve-with-edit`, body);
       },
       onClose: async () => {
         setEditRosterEntryDialogProps({ open: false });

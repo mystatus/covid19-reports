@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import FormData from 'form-data';
+import _ from 'lodash';
 import { expectNoErrors } from '../../util/test-utils/expect';
 import {
   seedOrgContact,
@@ -72,8 +73,7 @@ describe(`Roster Controller`, () => {
       });
 
       const body = {
-        name: uniqueString(),
-        displayName: uniqueString(),
+        displayName: 'Some Column Name',
         type: RosterColumnType.String,
         pii: true,
         phi: true,
@@ -97,7 +97,7 @@ describe(`Roster Controller`, () => {
       expect(columnAfter).to.exist;
       expect(columnAfter.org!.id).to.equal(org.id);
       expect(columnAfter).to.containSubset({
-        name: body.name,
+        name: _.camelCase(body.displayName),
         display: body.displayName,
         type: body.type,
         pii: body.pii,
@@ -120,8 +120,6 @@ describe(`Roster Controller`, () => {
       const column = await seedCustomRosterColumn(org);
 
       const body = {
-        displayName: uniqueString(),
-        type: RosterColumnType.Boolean,
         pii: !column.pii,
         phi: !column.phi,
         required: !column.required,
@@ -139,8 +137,6 @@ describe(`Roster Controller`, () => {
         org,
       }))!;
       expect(columnAfter).to.containSubset({
-        display: body.displayName,
-        type: body.type,
         pii: body.pii,
         phi: body.phi,
         required: body.required,
@@ -237,8 +233,7 @@ describe(`Roster Controller`, () => {
       expectNoErrors(res);
       expect(res.data).to.be.a('string');
       const csvHeaderParts = res.data.split('\n')[0].split(',');
-      expect(csvHeaderParts).to.include('unit');
-      expect(csvHeaderParts).to.include.members(baseRosterColumns.map(x => x.name));
+      expect(csvHeaderParts).to.include.members(['Unit', 'DoD ID', 'First Name', 'Last Name', customColumn.display]);
       expect(csvHeaderParts).to.include(customColumn.name);
     });
 

@@ -30,7 +30,7 @@ export class Unit extends BaseEntity {
   @Column({
     default: true,
   })
-  includeDefaultConfig: boolean;
+  includeDefaultConfig!: boolean;
 
   @Column('json', {
     nullable: false,

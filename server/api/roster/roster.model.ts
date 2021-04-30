@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import {
   Entity,
   Unique,
@@ -16,6 +17,16 @@ import { UserRole } from '../user/user-role.model';
 @Entity()
 @Unique(['edipi', 'unit'])
 export class Roster extends RosterEntity {
+
+  clone() {
+    const entry = new Roster();
+    entry.edipi = this.edipi;
+    entry.unit = this.unit;
+    entry.firstName = this.firstName;
+    entry.lastName = this.lastName;
+    entry.customColumns = _.cloneDeep(this.customColumns);
+    return entry;
+  }
 
   static getColumnSelect(column: RosterColumnInfo) {
     // Make sure custom columns are converted to appropriate types

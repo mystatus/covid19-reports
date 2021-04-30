@@ -1,7 +1,9 @@
 import moment from 'moment';
 import { ValueTransformer } from 'typeorm';
-import { BadRequestError } from './error-types';
-
+import {
+  BadRequestError,
+  DateParseError,
+} from './error-types';
 
 export function dateFromString(dateStr: string, shouldThrow = true) {
   if (dateStr && dateStr.length > 0) {
@@ -14,7 +16,7 @@ export function dateFromString(dateStr: string, shouldThrow = true) {
     }
     if (Number.isNaN(date.getTime())) {
       if (shouldThrow) {
-        throw new BadRequestError(`Unable to parse date '${dateStr}'.  Valid dates are ISO formatted date strings and UNIX timestamps.`);
+        throw new DateParseError(dateStr);
       } else {
         return undefined;
       }
@@ -24,33 +26,48 @@ export function dateFromString(dateStr: string, shouldThrow = true) {
   return undefined;
 }
 
-export function getOptionalParam<T extends object, K extends keyof T>(param: K, params: T, type: BaseType = 'string', altParam?: K): T[K] | undefined {
-  let p = param;
-  if (!params.hasOwnProperty(param)) {
-    if (!altParam || !params.hasOwnProperty(altParam)) {
+export function getOptionalValue<T extends object, K extends keyof T>(
+  key: K,
+  obj: T,
+  expectedType: BaseType = 'string',
+  altKey?: K,
+): T[K] | undefined {
+  let p = key;
+  if (!obj.hasOwnProperty(key)) {
+    if (!altKey || !obj.hasOwnProperty(altKey)) {
       return undefined;
     }
-    p = altParam;
+    p = altKey;
   }
-  if (params[p] !== null && typeof params[p] !== type) {
-    throw new BadRequestError(`Expected type '${type}' for parameter '${p}', but type was '${typeof params[p]}'.`);
+
+  const value = obj[p];
+  if (value !== null && typeof value !== expectedType) {
+    throw new BadRequestError(`Expected type '${expectedType}' for '${p}', but type was '${typeof value}'.`);
   }
-  return params[p];
+
+  return value;
 }
 
-export function getRequiredParam<T extends object, K extends keyof T>(param: K, params: T, type: BaseType = 'string', altParam?: K): T[K] {
-  let p = param;
-  if (!params.hasOwnProperty(param)) {
-    if (!altParam || !params.hasOwnProperty(altParam)) {
-      throw new BadRequestError(`Missing parameter: ${param}`);
+export function getRequiredValue<T extends object, K extends keyof T>(
+  key: K,
+  obj: T,
+  expectedType: BaseType = 'string',
+  altKey?: K,
+): T[K] {
+  let p = key;
+  if (!obj.hasOwnProperty(key)) {
+    if (!altKey || !obj.hasOwnProperty(altKey)) {
+      throw new BadRequestError(`Missing parameter: ${key}`);
     }
-    p = altParam;
+    p = altKey;
   }
 
-  if (typeof params[p] !== type) {
-    throw new BadRequestError(`Expected type '${type}' for parameter '${p}', but type was '${typeof params[p]}'.`);
+  const value = obj[p];
+  if (value !== null && typeof value !== expectedType) {
+    throw new BadRequestError(`Expected type '${expectedType}' for '${p}', but type was '${typeof value}'.`);
   }
-  return params[p];
+
+  return value;
 }
 
 export function escapeRegExp(value: string) {

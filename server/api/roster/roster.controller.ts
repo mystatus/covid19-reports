@@ -1,15 +1,29 @@
-import { Response } from 'express';
 import csv from 'csvtojson';
+import { Response } from 'express';
 import fs from 'fs';
+import moment from 'moment';
 import {
-  getConnection,
+  getManager,
   In,
   OrderByCondition,
   SelectQueryBuilder,
 } from 'typeorm';
-import _ from 'lodash';
-import moment from 'moment';
-import { assertRequestBody } from '../../util/api-utils';
+import {
+  assertRequestBody,
+  assertRequestParams,
+} from '../../util/api-utils';
+import {
+  BadRequestError,
+  NotFoundError,
+  RosterUploadError,
+  RosterUploadErrorInfo,
+  UnprocessableEntity,
+} from '../../util/error-types';
+import {
+  addRosterEntry,
+  editRosterEntry,
+} from '../../util/roster-utils';
+import { dateFromString } from '../../util/util';
 import {
   ApiRequest,
   EdipiParam,
@@ -19,39 +33,27 @@ import {
   Paginated,
   PaginatedQuery,
 } from '../index';
-import { Roster } from './roster.model';
-import {
-  BadRequestError,
-  NotFoundError,
-  RosterUploadError,
-  RosterUploadErrorInfo,
-  UnprocessableEntity,
-} from '../../util/error-types';
-import {
-  dateFromString,
-  getOptionalParam,
-  getRequiredParam,
-} from '../../util/util';
 import { Org } from '../org/org.model';
+import { Unit } from '../unit/unit.model';
+import { UserRole } from '../user/user-role.model';
 import {
   CustomColumnData,
   CustomRosterColumn,
 } from './custom-roster-column.model';
-import { Unit } from '../unit/unit.model';
 import {
-  CustomColumnValue,
-  RosterColumnInfo,
-  RosterColumnType,
-} from './roster.types';
-import { UserRole } from '../user/user-role.model';
+  RosterEntryData,
+  RosterFileRow,
+} from './roster-entity';
 import {
   ChangeType,
   RosterHistory,
 } from './roster-history.model';
+import { Roster } from './roster.model';
 import {
-  addRosterEntry,
-  setRosterParamsFromBody,
-} from '../../util/roster-utils';
+  RosterColumnValue,
+  RosterColumnInfo,
+  RosterColumnType,
+} from './roster.types';
 
 class RosterController {
 
@@ -170,21 +172,18 @@ class RosterController {
     }
 
     const orgUnits = await req.appUserRole?.getUnits();
-
     if (!orgUnits) {
-      throw new BadRequestError('No units found.');
+      throw new BadRequestError('No units found in org.');
     }
 
     if (roster.length === 0) {
-      res.json({
-        count: 0,
-      });
+      res.json({ count: 0 });
       return;
     }
 
     const edipiKey = ['DoD ID', 'edipi', 'EDIPI'].find(t => t in roster[0]);
     if (!edipiKey) {
-      throw new BadRequestError('No edipi/DoD ID column.');
+      throw new BadRequestError('No edipi/DoD ID column in file.');
     }
 
     const columns = await Roster.getAllowedColumns(org, req.appUserRole!.role);
@@ -209,6 +208,7 @@ class RosterController {
     roster.forEach((row, index) => {
       const units = orgUnits.filter(u => row.unit === u.name || row.Unit === u.name);
       const unit = units.length > 0 ? units[0] : undefined;
+
       // Pre-validate / check for row-level issues.
       try {
         if (!(row.unit ?? row.Unit)) {
@@ -226,13 +226,16 @@ class RosterController {
 
       const entry = new Roster();
       entry.unit = unit!;
+
       for (const column of columns) {
         try {
-          setColumnFromCSV(entry, row, column, edipiKey);
+          entry.setColumnValueFromFileRow(column, row, edipiKey);
         } catch (error) {
-          onError(error, row, index, column.name === 'edipi' ? edipiKey : column.name);
+          const columnName = (column.name === 'edipi') ? edipiKey : column.name;
+          onError(error, row, index, columnName);
         }
       }
+
       rosterEntries.push(entry);
     });
 
@@ -303,7 +306,7 @@ class RosterController {
       const columns = (await Roster.getColumns(roster.unit.org!.id)).map(column => ({
         ...column,
         value: roster.getColumnValue(column),
-      } as RosterColumnWithValue));
+      } as RosterColumnInfoWithValue));
 
       const rosterInfo: RosterInfo = {
         unit: roster.unit,
@@ -318,7 +321,9 @@ class RosterController {
   }
 
   async addRosterEntry(req: ApiRequest<OrgParam, RosterEntryData>, res: Response) {
-    const newRosterEntry = await addRosterEntry(req.appOrg!, req.appUserRole!.role, req.body);
+    const newRosterEntry = await getManager().transaction(async manager => {
+      return addRosterEntry(req.appOrg!, req.appUserRole!.role, req.body, manager);
+    });
     res.status(201).json(newRosterEntry);
   }
 
@@ -357,43 +362,19 @@ class RosterController {
   }
 
   async updateRosterEntry(req: ApiRequest<OrgRosterParams, RosterEntryData>, res: Response) {
-    const rosterId = req.params.rosterId;
+    assertRequestParams(req, ['rosterId']);
+    const entryId = +req.params.rosterId;
 
-    let entry = await Roster.findOne({
-      relations: ['unit'],
-      where: {
-        id: rosterId,
-      },
+    const entry = await getManager().transaction(async manager => {
+      return editRosterEntry(req.appOrg!, req.appUserRole!, entryId, req.body, manager);
     });
 
-    let updatedRosterEntry: Roster | null = null;
-    await getConnection().transaction(async manager => {
-      if (!entry) {
-        throw new NotFoundError('User could not be found.');
-      }
-
-      if (req.body.unit && req.body.unit !== entry.unit!.id) {
-        // If the unit changed, delete the individual from the old unit's roster.
-        const unit = await req.appUserRole?.getUnit(req.body.unit);
-        if (!unit) {
-          throw new NotFoundError(`Unit with ID ${req.body.unit} could not be found.`);
-        }
-        const newEntry = copyRosterEntry(entry);
-        await manager.delete(Roster, entry.id);
-        entry = newEntry;
-        entry.unit = unit;
-      }
-
-      const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
-      await setRosterParamsFromBody(req.appOrg!, entry, req.body, columns);
-      updatedRosterEntry = await manager.save(entry);
-    });
-    res.json(updatedRosterEntry);
+    res.json(entry);
   }
 
 }
 
-const formatValue = (val: CustomColumnValue, column: RosterColumnInfo) => {
+const formatValue = (val: RosterColumnValue, column: RosterColumnInfo) => {
   if (val === null) {
     return val;
   }
@@ -533,65 +514,8 @@ async function internalSearchRoster(query: GetRosterQuery, org: Org, userRole: U
   };
 }
 
-function copyRosterEntry(roster: Roster) {
-  const newEntry = new Roster();
-  newEntry.edipi = roster.edipi;
-  newEntry.unit = roster.unit;
-  newEntry.firstName = roster.firstName;
-  newEntry.lastName = roster.lastName;
-  newEntry.customColumns = _.cloneDeep(roster.customColumns);
-  return newEntry;
-}
-
-function setColumnFromCSV(roster: Roster, row: RosterFileRow, column: RosterColumnInfo, edipiKey: string) {
-  let stringValue: string | undefined;
-  const columnName = column.name === 'edipi' ? edipiKey : column.name;
-  if (column.required) {
-    stringValue = getRequiredParam(columnName, row, 'string', column.displayName);
-  } else {
-    stringValue = getOptionalParam(columnName, row, 'string', column.displayName);
-  }
-  if (stringValue != null && stringValue.length > 0) {
-    let value: any;
-    switch (column.type) {
-      case RosterColumnType.String:
-        value = stringValue;
-        break;
-      case RosterColumnType.Number:
-        if (stringValue.length > 0) {
-          value = +stringValue;
-        }
-        break;
-      case RosterColumnType.Date:
-      case RosterColumnType.DateTime:
-        value = dateFromString(stringValue);
-        break;
-      case RosterColumnType.Boolean:
-        value = stringValue === 'true';
-        break;
-      default:
-        break;
-    }
-
-    if (column.required && value === undefined) {
-      throw new BadRequestError(`Invalid value (${stringValue}) for ${columnName}`);
-    }
-
-    if (value !== undefined) {
-      if (column.custom) {
-        if (!roster.customColumns) {
-          roster.customColumns = {};
-        }
-        roster.customColumns[column.name] = value;
-      } else {
-        Reflect.set(roster, column.name, value);
-      }
-    }
-  }
-}
-
-interface RosterColumnWithValue extends RosterColumnInfo {
-  value: CustomColumnValue,
+interface RosterColumnInfoWithValue extends RosterColumnInfo {
+  value: RosterColumnValue,
 }
 
 interface RosterInfo {
@@ -608,7 +532,7 @@ type QueryOp = '=' | '<>' | '~' | '>' | '<' | 'startsWith' | 'endsWith' | 'in' |
 
 type SearchRosterBodyEntry = {
   op: QueryOp
-  value: CustomColumnValue | CustomColumnValue[]
+  value: RosterColumnValue | RosterColumnValue[]
 };
 
 type SearchRosterBody = {
@@ -617,15 +541,6 @@ type SearchRosterBody = {
 
 type ReportDateQuery = {
   reportDate: string
-};
-
-type RosterFileRow = {
-  [key: string]: string
-};
-
-export type RosterEntryData = {
-  unit?: number,
-  [key: string]: CustomColumnValue | undefined
 };
 
 type AddCustomColumnBody = CustomColumnData & Required<Pick<CustomColumnData, 'displayName' | 'type'>>;

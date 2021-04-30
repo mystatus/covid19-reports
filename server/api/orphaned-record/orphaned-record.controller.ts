@@ -1,33 +1,41 @@
 import { Response } from 'express';
+import { getManager } from 'typeorm';
 import {
-  Brackets,
-  getConnection,
-} from 'typeorm';
-import { assertRequestQuery } from '../../util/api-utils';
+  assertRequestBody,
+  assertRequestParams,
+  assertRequestQuery,
+} from '../../util/api-utils';
+import {
+  BadRequestError,
+  OrphanedRecordsNotFoundError,
+} from '../../util/error-types';
+import {
+  buildVisibleOrphanedRecordResultsQuery,
+  deleteOrphanedRecordActionsForUser,
+  getOrphanedRecordsForResolve,
+} from '../../util/orphaned-records-utils';
+import { convertDateParam } from '../../util/reingest-utils';
+import {
+  addRosterEntry,
+  editRosterEntry,
+} from '../../util/roster-utils';
 import {
   ApiRequest,
   OrgParam,
-  PaginatedQuery,
   Paginated,
+  PaginatedQuery,
 } from '../index';
-import { OrphanedRecord } from './orphaned-record.model';
+import { Org } from '../org/org.model';
+import {
+  RosterEntity,
+  RosterEntryData,
+} from '../roster/roster-entity';
+import { Roster } from '../roster/roster.model';
 import {
   ActionType,
   OrphanedRecordAction,
 } from './orphaned-record-action.model';
-import { Org } from '../org/org.model';
-import {
-  BadRequestError,
-  InternalServerError,
-} from '../../util/error-types';
-import {
-  convertDateParam,
-  reingestByDocumentId,
-} from '../../util/reingest-utils';
-import { RosterHistory } from '../roster/roster-history.model';
-import { RosterEntryData } from '../roster/roster.controller';
-import { addRosterEntry } from '../../util/roster-utils';
-import { Roster } from '../roster/roster.model';
+import { OrphanedRecord } from './orphaned-record.model';
 
 class OrphanedRecordController {
 
@@ -100,117 +108,110 @@ class OrphanedRecordController {
     res.json(result);
   }
 
-  async resolveOrphanedRecord(req: ApiRequest<OrphanedRecordResolveParam, RosterEntryData>, res: Response<OrphanedRecord>) {
-    const orphanedRecords = await OrphanedRecord.find({
-      where: {
-        compositeId: req.params.orphanId,
-        deletedOn: null,
-      },
+  async resolveOrphanedRecordWithAdd(req: ApiRequest<OrphanedRecordResolveParam, RosterEntryData>, res: Response) {
+    const compositeId = req.params.orphanId;
+    assertRequestBody(req, [
+      'edipi',
+      'unit',
+    ]);
+    const entryData = req.body;
+
+    const orphanedRecords = await getOrphanedRecordsForResolve(compositeId);
+    if (orphanedRecords.length === 0) {
+      throw new OrphanedRecordsNotFoundError(compositeId);
+    }
+
+    // We have to modify the roster outside of the transaction, since the orphaned record resolve process
+    // depends on having the latest roster history from this addition.
+    const entry = await getManager().transaction(async manager => {
+      return addRosterEntry(req.appOrg!, req.appUserRole!.role, entryData, manager);
     });
 
-    if (orphanedRecords.length === 0) {
-      throw new BadRequestError(`Unable to locate orphaned record with id: ${req.params.orphanId}`);
-    }
-    if (orphanedRecords.length > 1) {
-      throw new BadRequestError(`Encountered Multiple Orphaned Records: ${req.params.orphanId}`);
-    }
-
-    const orphanedRecord = orphanedRecords[0];
-    const documentId = orphanedRecord.documentId;
-    let rosterHistory: RosterHistory[] = [];
-
-    if (req.body.unit) {
-      rosterHistory = await getRosterHistoryForOrphanedRecord(orphanedRecord, req.body.unit);
-    }
-
-    let newRosterEntry: Roster | undefined;
-    if (!rosterHistory.length) {
-      // Add a new roster entry since the orphaned record
-      // doesn't correspond to an existing roster entry
-      newRosterEntry = await addRosterEntry(req.appOrg!, req.appUserRole!.role, req.body);
-      rosterHistory = await getRosterHistoryForOrphanedRecord(orphanedRecord, newRosterEntry.unit.id);
-    }
-
-    if (!rosterHistory.length) {
-      throw new InternalServerError('Unable to locate RosterHistory record.');
-    }
-
     try {
-      await getConnection().transaction(async manager => {
-        let timestamp = Math.min(...orphanedRecords.map(x => x.timestamp.getTime()));
-        for (const item of rosterHistory) {
-          // Backdate the timestamp to the earliest orphaned record time.
-          item.timestamp = new Date(
-            Math.min(item.timestamp.getTime(), timestamp),
-          );
-
-          // Ensure that two records don't have the same value
-          timestamp -= 1;
+      await getManager().transaction(async manager => {
+        for (const orphanedRecord of orphanedRecords) {
+          await orphanedRecord.resolve(entry, manager);
         }
-
-        // Save the updated timestamp
-        await manager.save(rosterHistory);
-
-        // Remove the orphan record entry
-        await manager.softRemove(orphanedRecord);
-
-        // Delete any outstanding actions
-        await manager
-          .createQueryBuilder()
-          .delete()
-          .from(OrphanedRecordAction)
-          .where(`id=:id`, { id: req.params.orphanId })
-          .orWhere('expires_on < now()')
-          .execute();
       });
     } catch (err) {
-      if (newRosterEntry) {
-        await newRosterEntry.remove();
-      }
+      // If something went wrong we have to rollback the new entry manually.
+      await entry.remove();
+
       throw err;
     }
 
-    // Request a reingestion of a single document. Don't await on this since it may take a while
-    // and can safely run in the background.
-    reingestByDocumentId(documentId).then();
-
-    res.json(orphanedRecord);
+    res.status(200).send();
   }
 
-  async addOrphanedRecordAction(req: ApiRequest<OrphanedRecordActionParam, OrphanedRecordActionData>, res: Response) {
-    if (!req.params.orphanId) {
-      throw new BadRequestError(`Param 'id' is required.`);
-    }
-    if (!req.body.action) {
-      throw new BadRequestError(`Expected 'action' in payload.`);
+  async resolveOrphanedRecordWithEdit(req: ApiRequest<OrphanedRecordResolveParam, ResolveWithEditBody>, res: Response) {
+    const compositeId = req.params.orphanId;
+    assertRequestBody(req, [
+      'edipi',
+      'unit',
+    ]);
+    const { id: entryId, ...entryData } = req.body;
+
+    const orphanedRecords = await getOrphanedRecordsForResolve(compositeId);
+    if (orphanedRecords.length === 0) {
+      throw new OrphanedRecordsNotFoundError(compositeId);
     }
 
-    // Delete any existing actions for this user (or any expired ones)
-    await OrphanedRecordAction
-      .createQueryBuilder()
-      .delete()
-      .where(`id=:id`, { id: req.params.orphanId })
-      .andWhere('user_edipi=:userEdipi', { userEdipi: req.appUser.edipi })
-      .orWhere('expires_on < now()')
-      .execute();
-
-    const orphanedRecords = await OrphanedRecord.find({
+    // Save out the old entry data in case something goes wrong and we need to rollback.
+    const oldEntry = await Roster.findOne({
+      relations: ['unit'],
       where: {
-        compositeId: req.params.orphanId,
+        id: entryId,
       },
     });
 
+    if (!oldEntry) {
+      throw new BadRequestError(`Unable to locate roster entry with id: ${entryId}`);
+    }
+
+    const oldEntryData = oldEntry.toData();
+
+    // We have to modify the roster outside of the transaction, since the orphaned record resolve process
+    // depends on having the latest roster history from this addition.
+    const entry = await getManager().transaction(async manager => {
+      return editRosterEntry(req.appOrg!, req.appUserRole!, entryId, entryData, manager);
+    });
+
+    try {
+      await getManager().transaction(async manager => {
+        for (const orphanedRecord of orphanedRecords) {
+          await orphanedRecord.resolve(entry, manager);
+        }
+      });
+    } catch (err) {
+      // If something went wrong we have to rollback the entry manually.
+      await getManager().transaction(async manager => {
+        await editRosterEntry(req.appOrg!, req.appUserRole!, entryId, oldEntryData, manager);
+      });
+
+      throw err;
+    }
+
+    res.status(200).send();
+  }
+
+  async addOrphanedRecordAction(req: ApiRequest<OrphanedRecordActionParam, OrphanedRecordActionData>, res: Response) {
+    const { orphanId: compositeId } = assertRequestParams(req, ['orphanId']);
+    const { action, timeToLiveMs } = assertRequestBody(req, ['action']);
+
+    await deleteOrphanedRecordActionsForUser(compositeId, req.appUser.edipi);
+
+    const orphanedRecords = await getOrphanedRecordsForResolve(compositeId);
     if (orphanedRecords.length === 0) {
-      throw new BadRequestError(`Unable to locate orphaned record with id: ${req.params.orphanId}`);
+      throw new BadRequestError(`Unable to locate orphaned record with id: ${compositeId}`);
     }
 
     const orphanedRecordAction = new OrphanedRecordAction();
-    orphanedRecordAction.id = req.params.orphanId;
-    orphanedRecordAction.type = req.body.action;
+    orphanedRecordAction.id = compositeId;
+    orphanedRecordAction.type = action;
     orphanedRecordAction.user = req.appUser;
 
-    if (req.body.timeToLiveMs) {
-      const date = new Date(Date.now() + req.body.timeToLiveMs);
+    if (timeToLiveMs) {
+      const date = new Date(Date.now() + timeToLiveMs);
       date.setTime(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
       orphanedRecordAction.expiresOn = date;
     }
@@ -220,90 +221,16 @@ class OrphanedRecordController {
   }
 
   async deleteOrphanedRecordAction(req: ApiRequest<OrphanedRecordDeleteActionData>, res: Response) {
-    if (!req.params.orphanId) {
-      throw new BadRequestError(`Param 'id' is required.`);
-    }
-    if (!req.params.action) {
-      throw new BadRequestError(`Expected 'action' in payload.`);
-    }
+    const { orphanId: compositeId, action } = assertRequestParams(req, [
+      'orphanId',
+      'action',
+    ]);
 
-    // Delete any existing actions for this user (or any expired ones)
-    await OrphanedRecordAction
-      .createQueryBuilder()
-      .delete()
-      .where(new Brackets(qb => {
-        qb
-          .where(`id=:id`, { id: req.params.orphanId })
-          .andWhere('user_edipi=:userEdipi', { userEdipi: req.appUser.edipi })
-          .andWhere('type=:action', { action: req.params.action });
-      }))
-      .orWhere('expires_on < now()')
-      .execute();
+    await deleteOrphanedRecordActionsForUser(compositeId, req.appUser.edipi, action);
 
     res.status(204).send();
   }
 
-}
-
-async function getRosterHistoryForOrphanedRecord(orphanedRecord: OrphanedRecord, unitId: number) {
-  return RosterHistory.createQueryBuilder('rh')
-    .where('rh.unit_id = :unitId', { unitId })
-    .andWhere('rh.edipi = :edipi', { edipi: orphanedRecord.edipi })
-    .addOrderBy('rh.edipi', 'DESC')
-    .addOrderBy('rh.change_type', 'DESC')
-    .getMany();
-}
-
-function buildVisibleOrphanedRecordResultsQuery(userEdipi: string, orgId: number) {
-  const params = {
-    now: new Date(),
-    orgId,
-    userEdipi,
-  };
-
-  const rosterEntries = RosterHistory.createQueryBuilder('rh')
-    .leftJoin('rh.unit', 'u')
-    .select('rh.id', 'id')
-    .addSelect('rh.edipi', 'edipi')
-    .addSelect('rh.timestamp', 'timestamp')
-    .addSelect('rh.change_type', 'change_type')
-    .addSelect('rh.unit_id', 'unit_id')
-    .where('u.org_id = :orgId', { orgId })
-    .distinctOn(['rh.unit_id', 'rh.edipi'])
-    .orderBy('rh.unit_id')
-    .addOrderBy('rh.edipi', 'DESC')
-    .addOrderBy('rh.timestamp', 'DESC')
-    .addOrderBy('rh.change_type', 'DESC');
-
-  return OrphanedRecord.createQueryBuilder('orphan')
-    .leftJoin(OrphanedRecordAction, 'action', `action.id=orphan.composite_id AND (action.expires_on > :now OR action.expires_on IS NULL) AND (action.type='claim' OR (action.user_edipi=:userEdipi AND action.type='ignore'))`, params)
-    .leftJoin(`(${rosterEntries.getQuery()})`, 'roster', 'orphan.edipi = roster.edipi')
-    .where('orphan.org_id=:orgId', params)
-    .andWhere('orphan.deleted_on IS NULL')
-    .andWhere(`(roster.change_type IS NULL OR (roster.change_type <> 'deleted'))`)
-    .andWhere(`(action.type IS NULL OR (action.type='claim' AND action.user_edipi=:userEdipi))`, params)
-    .select('orphan.edipi', 'edipi')
-    .addSelect('orphan.unit', 'unit')
-    .addSelect('orphan.phone', 'phone')
-    .addSelect('action.type', 'action')
-    .addSelect('action.expires_on', 'claimedUntil')
-    .addSelect('MAX(orphan.timestamp)', 'latestReportDate')
-    .addSelect('MIN(orphan.timestamp)', 'earliestReportDate')
-    .addSelect('COUNT(*)::INTEGER', 'count')
-    .addSelect('orphan.composite_id', 'id')
-    .addSelect('roster.unit_id', 'unitId')
-    .addSelect('roster.id', 'rosterHistoryId')
-    .orderBy('orphan.count', 'DESC')
-    .addOrderBy('orphan.unit', 'ASC')
-    .addOrderBy('orphan.edipi', 'ASC')
-    .groupBy('orphan.composite_id')
-    .addGroupBy('orphan.edipi')
-    .addGroupBy('orphan.unit')
-    .addGroupBy('orphan.phone')
-    .addGroupBy('action.type')
-    .addGroupBy('action.expires_on')
-    .addGroupBy('roster.unit_id')
-    .addGroupBy('roster.id');
 }
 
 interface OrphanedRecordResult {
@@ -345,5 +272,9 @@ export interface OrphanedRecordActionData {
 export interface OrphanedRecordDeleteActionData extends OrphanedRecordActionParam {
   action: ActionType,
 }
+
+type ResolveWithEditBody = RosterEntryData & {
+  id: RosterEntity['id']
+};
 
 export default new OrphanedRecordController();
