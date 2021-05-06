@@ -19,13 +19,14 @@ export function getDatabaseErrorMessage(err: DatabaseError) {
   }
 }
 
-export function getColumnMaxLength(entityType: EntityTarget<any>, columnName: string) {
+export function getColumnMetadata(entityType: EntityTarget<any>, columnName: string) {
   const entityMetadata = getConnection().getMetadata(entityType);
-  const columnMetadata = entityMetadata.columns.find(x => x.propertyName === columnName);
+  return entityMetadata.columns.find(x => x.propertyName === columnName);
+}
 
-  // Metadata 'length' value here will be what was set on the @Column() decorator.
+export function getColumnMaxLength(entityType: EntityTarget<any>, columnName: string) {
+  const columnMetadata = getColumnMetadata(entityType, columnName);
   const maxLength = parseInt(columnMetadata?.length ?? '');
-
   return Number.isNaN(maxLength) ? undefined : maxLength;
 }
 
