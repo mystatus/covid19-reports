@@ -95,6 +95,49 @@ export abstract class RosterEntity extends BaseEntity {
     return Reflect.get(this, column.name);
   }
 
+  setColumnValue(column: RosterColumnInfo, value: RosterColumnValue | undefined) {
+    const validValue = this.validateColumnValue(column, value);
+    if (validValue === undefined) {
+      return;
+    }
+
+    // Set the value.
+    if (column.custom) {
+      if (!this.customColumns) {
+        this.customColumns = {};
+      }
+      this.customColumns[column.name] = validValue;
+    } else {
+      Reflect.set(this, column.name, validValue);
+    }
+  }
+
+  setColumnValueFromData(column: RosterColumnInfo, data: RosterEntryData) {
+    const expectedType = columnTypeToEntryDataType(column.type);
+
+    // Get the column value from the data.
+    let value: RosterColumnValue | undefined;
+    if (column.required) {
+      value = getRequiredValue(column.name, data, expectedType);
+    } else {
+      value = getOptionalValue(column.name, data, expectedType);
+    }
+
+    this.setColumnValue(column, value);
+  }
+
+  setColumnValueFromFileRow(column: RosterColumnInfo, row: RosterFileRow) {
+    // Get the string value from the row data.
+    let value: string | null | undefined;
+    if (column.required) {
+      value = getRequiredValue(column.displayName, row, 'string');
+    } else {
+      value = getOptionalValue(column.displayName, row, 'string');
+    }
+
+    this.setColumnValue(column, value);
+  }
+
   validateColumnValue(column: RosterColumnInfo, value: RosterColumnValue | undefined): RosterColumnValue | undefined {
     if (typeof value === 'string') {
       const maxLength = getColumnMaxLength(this.getEntityTarget(), column.name);
@@ -152,49 +195,6 @@ export abstract class RosterEntity extends BaseEntity {
     }
 
     return value;
-  }
-
-  setColumnValue(column: RosterColumnInfo, value: RosterColumnValue | undefined) {
-    const validValue = this.validateColumnValue(column, value);
-    if (validValue === undefined) {
-      return;
-    }
-
-    // Set the value.
-    if (column.custom) {
-      if (!this.customColumns) {
-        this.customColumns = {};
-      }
-      this.customColumns[column.name] = validValue;
-    } else {
-      Reflect.set(this, column.name, validValue);
-    }
-  }
-
-  setColumnValueFromData(column: RosterColumnInfo, data: RosterEntryData) {
-    const expectedType = columnTypeToEntryDataType(column.type);
-
-    // Get the column value from the data.
-    let value: RosterColumnValue | undefined;
-    if (column.required) {
-      value = getRequiredValue(column.name, data, expectedType);
-    } else {
-      value = getOptionalValue(column.name, data, expectedType);
-    }
-
-    this.setColumnValue(column, value);
-  }
-
-  setColumnValueFromFileRow(column: RosterColumnInfo, row: RosterFileRow) {
-    // Get the string value from the row data.
-    let value: string | null | undefined;
-    if (column.required) {
-      value = getRequiredValue(column.displayName, row, 'string');
-    } else {
-      value = getOptionalValue(column.displayName, row, 'string');
-    }
-
-    this.setColumnValue(column, value);
   }
 
 }
