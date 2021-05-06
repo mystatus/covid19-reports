@@ -10,7 +10,7 @@ import useStyles from './notifications-tab.style';
 import { TabPanelProps } from './settings-page';
 import { EditAlertDialog, EditAlertDialogProps } from './edit-alert-dialog';
 import { Modal } from '../../../actions/modal.actions';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
 
 interface NotificationSettings {
@@ -115,7 +115,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
         return newState;
       });
     } catch (error) {
-      dispatch(Modal.alert('Error', formatMessage(error, 'An error occurred while saving the alert setting')));
+      dispatch(Modal.alert('Error', formatErrorMessage(error, 'An error occurred while saving the alert setting'))).then();
       await initializeTable();
     }
   };
@@ -146,7 +146,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
       `Alerts within the StatusEngine application have been designed to give you the most up-to-date
       information on your group and users without overburdening your inbox or mobile device. Each alert topic
       has customizable parameters that allow you to tweak the alert type, threshold, frequency, and minimum
-      time between individual alerts.`));
+      time between individual alerts.`)).then();
   };
 
   useEffect(() => { initializeTable().then(); }, [initializeTable]);

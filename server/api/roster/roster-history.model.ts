@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  EntityTarget,
 } from 'typeorm';
 import { RosterEntity } from './roster-entity';
 import { timestampColumnTransformer } from '../../util/util';
@@ -27,5 +28,9 @@ export class RosterHistory extends RosterEntity {
     default: ChangeType.Changed,
   })
   changeType!: ChangeType;
+
+  getEntityTarget(): EntityTarget<any> {
+    return RosterHistory;
+  }
 
 }

@@ -25,7 +25,7 @@ import { Role } from '../../../actions/role.actions';
 import { Workspace } from '../../../actions/workspace.actions';
 import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 
 
 export const RoleManagementPage = () => {
@@ -86,7 +86,7 @@ export const RoleManagementPage = () => {
     try {
       await axios.delete(`api/role/${orgId}/${roles[selectedRoleIndex].id}`);
     } catch (error) {
-      dispatch(Modal.alert('Delete Role', formatMessage(error, 'Unable to delete role')));
+      dispatch(Modal.alert('Delete Role', formatErrorMessage(error, 'Unable to delete role'))).then();
     }
     setDeleteRoleLoading(false);
     setDeleteRoleDialogOpen(false);

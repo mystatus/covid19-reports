@@ -1,5 +1,6 @@
 import { ApiRequest } from '../api';
 import { BadRequestError } from './error-types';
+import { getMissingKeys } from './util';
 
 export function assertRequestQuery<TQuery, TQueryKey extends keyof TQuery>(
   req: ApiRequest<unknown, unknown, TQuery>,
@@ -35,8 +36,4 @@ export function assertRequestParams<TParams, TParamsKey extends keyof TParams>(
   }
 
   return req.params;
-}
-
-function getMissingKeys<T, K extends keyof T>(obj: T, keys: Array<K>) {
-  return keys.filter(key => obj[key] === undefined);
 }

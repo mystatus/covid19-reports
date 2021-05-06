@@ -43,7 +43,7 @@ import { Unit } from '../../../actions/unit.actions';
 import PageHeader from '../../page-header/page-header';
 import { musterConfigurationsToStrings } from '../../../utility/muster-utils';
 import { Modal } from '../../../actions/modal.actions';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 import { DefaultMusterDialog, DefaultMusterDialogProps } from './default-muster-dialog';
 import { User } from '../../../actions/user.actions';
 import { UserSelector } from '../../../selectors/user.selector';
@@ -121,7 +121,7 @@ export const UnitsPage = () => {
           await initializeTable();
         },
         onError: (message: string) => {
-          dispatch(Modal.alert('Edit Unit', `Unable to edit unit: ${message}`));
+          dispatch(Modal.alert('Edit Unit', `Unable to edit unit: ${message}`)).then();
         },
       });
     }
@@ -141,7 +141,7 @@ export const UnitsPage = () => {
     try {
       await axios.delete(`api/unit/${orgId}/${unitToDelete.id}`);
     } catch (error) {
-      dispatch(Modal.alert('Delete Unit', formatMessage(error, 'Unable to delete unit')));
+      dispatch(Modal.alert('Delete Unit', formatErrorMessage(error, 'Unable to delete unit'))).then();
     }
     setUnitToDelete(null);
     await initializeTable();

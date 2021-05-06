@@ -10,8 +10,10 @@ import {
 } from 'typeorm';
 import _ from 'lodash';
 import { Org } from '../org/org.model';
-import { baseRosterColumns } from './roster-entity';
-import { RosterColumnType } from './roster.types';
+import {
+  baseRosterColumns,
+  RosterColumnType,
+} from './roster.types';
 
 @Entity()
 export class CustomRosterColumn extends BaseEntity {

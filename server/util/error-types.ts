@@ -1,4 +1,5 @@
 import { OrphanedRecord } from '../api/orphaned-record/orphaned-record.model';
+import { RosterFileRow } from '../api/roster/roster.types';
 
 export class RequestError extends Error {
   type: RequestErrorType;
@@ -54,9 +55,9 @@ export class UnprocessableEntity extends RequestError {
 }
 
 export class RosterUploadError extends RequestError {
-  errors?: RosterUploadErrorInfo[];
+  errors?: Error[];
 
-  constructor(errors?: RosterUploadErrorInfo[], message = 'Roster Upload Error', showErrorPage = false) {
+  constructor(errors?: Error[], message = 'Roster Upload Error', showErrorPage = false) {
     super(message, 'RosterUploadError', 400, showErrorPage);
     this.errors = errors;
     Error.captureStackTrace(this, RosterUploadError);
@@ -71,8 +72,8 @@ export class InternalServerError extends RequestError {
 }
 
 export class RequiredColumnError extends RequestError {
-  constructor(columnName: string, showErrorPage = false) {
-    const message = `Required column '${columnName}' cannot be empty, null, or undefined.`;
+  constructor(columnDisplayName: string, showErrorPage = false) {
+    const message = `"${columnDisplayName}" is required.`;
     super(message, 'BadRequest', 400, showErrorPage);
     Error.captureStackTrace(this, RequiredColumnError);
   }
@@ -94,6 +95,24 @@ export class OrphanedRecordsNotFoundError extends RequestError {
   }
 }
 
+export class CsvRowError extends RequestError {
+  constructor(message: string, row: RosterFileRow, rowIndex: number, columnDisplayName?: string, showErrorPage = false) {
+    // Offset by 2 (1 for being zero-based and 1 for the csv header row).
+    const lineNumber = rowIndex + 2;
+
+    let lineInfo: string;
+    if (columnDisplayName) {
+      lineInfo = `(Line ${lineNumber}, "${columnDisplayName}")`;
+    } else {
+      lineInfo = `(Line ${lineNumber})`;
+    }
+
+    super(`${lineInfo}\n${message}`, 'UnprocessableEntity', 422, showErrorPage);
+
+    Error.captureStackTrace(this, CsvRowError);
+  }
+}
+
 export type RequestErrorType = (
   'BadRequest' |
   'Unauthorized' |
@@ -103,10 +122,3 @@ export type RequestErrorType = (
   'RosterUploadError' |
   'InternalServerError'
 );
-
-export type RosterUploadErrorInfo = {
-  error: string,
-  edipi?: string,
-  line?: number,
-  column?: string,
-};

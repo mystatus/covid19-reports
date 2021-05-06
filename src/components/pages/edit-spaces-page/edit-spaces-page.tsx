@@ -21,7 +21,7 @@ import { ApiWorkspace, ApiWorkspaceTemplate } from '../../../models/api-response
 import { EditSpaceDialog, EditWorkspaceDialogProps } from './edit-space-dialog';
 import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
 import { EditSpacesPageHelp } from './edit-spaces-page-help';
 
@@ -96,7 +96,7 @@ export const EditSpacesPage = () => {
     try {
       await axios.delete(`api/workspace/${orgId}/${workspaceToDelete.id}`);
     } catch (error) {
-      dispatch(Modal.alert('Delete Space', formatMessage(error, 'Unable to delete space'))).then();
+      dispatch(Modal.alert('Delete Space', formatErrorMessage(error, 'Unable to delete space'))).then();
     }
     setWorkspaceToDelete(null);
     await initializeTable();

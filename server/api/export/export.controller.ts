@@ -16,7 +16,7 @@ import {
   OrgParam,
   PaginatedQuery,
 } from '../index';
-import { RosterEntryData } from '../roster/roster-entity';
+import { RosterEntryData } from '../roster/roster.types';
 import { Roster } from '../roster/roster.model';
 import { Unit } from '../unit/unit.model';
 

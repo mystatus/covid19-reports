@@ -1,12 +1,9 @@
 import { EntityManager } from 'typeorm';
 import { Org } from '../api/org/org.model';
 import { Role } from '../api/role/role.model';
-import {
-  RosterEntity,
-  RosterEntryData,
-} from '../api/roster/roster-entity';
 import { RosterHistory } from '../api/roster/roster-history.model';
 import { Roster } from '../api/roster/roster.model';
+import { RosterEntryData } from '../api/roster/roster.types';
 import { Unit } from '../api/unit/unit.model';
 import { UserRole } from '../api/user/user-role.model';
 import {
@@ -55,7 +52,7 @@ export async function addRosterEntry(org: Org, role: Role, entryData: RosterEntr
   return manager.save(entry);
 }
 
-export async function editRosterEntry(org: Org, userRole: UserRole, entryId: RosterEntity['id'], entryData: RosterEntryData, manager: EntityManager) {
+export async function editRosterEntry(org: Org, userRole: UserRole, entryId: number, entryData: RosterEntryData, manager: EntityManager) {
   const { unit: unitId } = entryData;
 
   let entry = await Roster.findOne({

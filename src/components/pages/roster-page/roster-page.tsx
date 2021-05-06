@@ -34,6 +34,7 @@ import { AppFrame } from '../../../actions/app-frame.actions';
 import { OrphanedRecord } from '../../../actions/orphaned-record.actions';
 import { Roster } from '../../../actions/roster.actions';
 import { Unit } from '../../../actions/unit.actions';
+import { RosterClient } from '../../../client';
 import { downloadFile } from '../../../utility/download';
 import { getNewPageIndex } from '../../../utility/table';
 import PageHeader from '../../page-header/page-header';
@@ -67,7 +68,7 @@ import {
   QueryFieldType,
   QueryFilterState,
 } from '../../query-builder/query-builder';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 import { ButtonSet } from '../../buttons/button-set';
 import { DataExportIcon } from '../../icons/data-export-icon';
 import { Modal } from '../../../actions/modal.actions';
@@ -99,7 +100,7 @@ export const RosterPage = () => {
   const units = useSelector(UnitSelector.all);
   const orphanedRecords = useSelector(OrphanedRecordSelector.root);
   const user = useSelector<AppState, UserState>(state => state.user);
-  const org = useSelector(UserSelector.org);
+  const org = useSelector(UserSelector.org)!;
 
   const fileInputRef = createRef<HTMLInputElement>();
   const initialLoad = useRef(true);
@@ -123,8 +124,8 @@ export const RosterPage = () => {
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
   const [applyingFilters, setApplyingFilters] = useState(false);
 
-  const orgId = org?.id;
-  const orgName = org?.name;
+  const orgId = org.id;
+  const orgName = org.name;
   const maxNumColumnsToShow = 5;
 
   //
@@ -160,7 +161,7 @@ export const RosterPage = () => {
         setTotalRowsCount(data.totalRowsCount);
       }
     } catch (e) {
-      dispatch(Modal.alert('Error', formatMessage(e, 'Error Applying Filters'))).then();
+      dispatch(Modal.alert('Error', formatErrorMessage(e, 'Error Applying Filters'))).then();
     }
   }, [dispatch, page, rowsPerPage, orgId, queryFilterState, sortState]);
 
@@ -183,7 +184,7 @@ export const RosterPage = () => {
       return data.rows.length ? data.rows[0] : null;
 
     } catch (e) {
-      dispatch(Modal.alert('Error', formatMessage(e, 'Error Getting Roster Entry for Orphan'))).then();
+      dispatch(Modal.alert('Error', formatErrorMessage(e, 'Error Getting Roster Entry for Orphan'))).then();
     }
     return null;
   }, [dispatch, orgId]);
@@ -197,7 +198,7 @@ export const RosterPage = () => {
         setVisibleColumns(unitColumnWithInfos.slice(0, maxNumColumnsToShow));
       }
     } catch (error) {
-      dispatch(Modal.alert('Get Roster Column Info', formatMessage(error, 'Failed to get roster column info'))).then();
+      dispatch(Modal.alert('Get Roster Column Info', formatErrorMessage(error, 'Failed to get roster column info'))).then();
     }
   }, [dispatch, orgId]);
 
@@ -210,7 +211,7 @@ export const RosterPage = () => {
       try {
         await dispatch(OrphanedRecord.fetchPage(orgId!, orphanedRecordsPage, orphanedRecordsRowsPerPage));
       } catch (error) {
-        dispatch(Modal.alert('Get Orphaned Records', formatMessage(error, 'Failed to get orphaned records'))).then();
+        dispatch(Modal.alert('Get Orphaned Records', formatErrorMessage(error, 'Failed to get orphaned records'))).then();
       }
     } else {
       dispatch(OrphanedRecord.clear());
@@ -313,32 +314,26 @@ export const RosterPage = () => {
     setPage(pageNew);
   };
 
-  const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files[0] == null) {
       return;
     }
 
-    dispatch(Roster.upload(e.target.files[0], async (response, message) => {
-      // reset the file input so that onChange fires again on repeat uploads of the same file.
+    let uploadCount: number;
+    try {
+      const data = await RosterClient.upload(orgId, e.target.files[0]);
+      uploadCount = data.count;
+    } catch (err) {
+      const message = formatErrorMessage(err);
+      dispatch(Modal.alert('Upload Error', message)).then();
+      return;
+    } finally {
+      // Clear the file input value.
       fileInputRef.current!.value = '';
-      if (response.errors?.length || message) {
-        let msg = message || 'Please verify the roster data.';
+    }
 
-        (response.errors ?? []).forEach(error => {
-          const line = error.line ? `Line: ${error.line}` : undefined;
-          msg += '<br/>';
-          if (line) {
-            msg += `<em>${line}${error.column ? `, Column: ${error.column}` : ''}</em> - `;
-          }
-          msg += error.error;
-        });
-
-        dispatch(Modal.alert('Upload Error', msg)).then();
-      } else {
-        dispatch(Modal.alert('Upload Successful', `Successfully uploaded ${response.count} roster entries.`)).then();
-        handleRosterOrOrphanedRecordsModified().then();
-      }
-    }));
+    dispatch(Modal.alert('Upload Successful', `Successfully uploaded ${uploadCount} roster entries.`)).then();
+    handleRosterOrOrphanedRecordsModified().then();
   };
 
   const getCellDisplayValue = (rosterEntry: ApiRosterEntry, column: ApiRosterColumnInfo) => {
@@ -407,7 +402,7 @@ export const RosterPage = () => {
     try {
       await dispatch(Roster.deleteAll(orgId!));
     } catch (err) {
-      dispatch(Modal.alert('Delete All Entries', formatMessage(err, 'Unable to delete all entries'))).then();
+      dispatch(Modal.alert('Delete All Entries', formatErrorMessage(err, 'Unable to delete all entries'))).then();
     }
 
     handleRosterOrOrphanedRecordsModified().then();
@@ -428,7 +423,7 @@ export const RosterPage = () => {
     try {
       await axios.delete(`api/roster/${orgId}/${rosterEntry.id}`);
     } catch (err) {
-      dispatch(Modal.alert('Remove Roster Entry', formatMessage(err, 'Unable to remove roster entry'))).then();
+      dispatch(Modal.alert('Remove Roster Entry', formatErrorMessage(err, 'Unable to remove roster entry'))).then();
     }
 
     handleRosterOrOrphanedRecordsModified().then();
@@ -447,7 +442,7 @@ export const RosterPage = () => {
       const filename = `${_.kebabCase(orgName)}_roster_export_${date}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
-      dispatch(Modal.alert('Roster CSV Export', formatMessage(error, 'Unable to export roster to CSV'))).then();
+      dispatch(Modal.alert('Roster CSV Export', formatErrorMessage(error, 'Unable to export roster to CSV'))).then();
     } finally {
       setExportRosterLoading(false);
     }
@@ -464,7 +459,7 @@ export const RosterPage = () => {
 
       downloadFile(response.data, 'roster-template', 'csv');
     } catch (error) {
-      dispatch(Modal.alert('CSV Template Download', formatMessage(error, 'Unable to download CSV template'))).then();
+      dispatch(Modal.alert('CSV Template Download', formatErrorMessage(error, 'Unable to download CSV template'))).then();
     } finally {
       setDownloadTemplateLoading(false);
     }
@@ -537,7 +532,7 @@ export const RosterPage = () => {
       });
       await fetchOrphanedRecords();
     } catch (error) {
-      dispatch(Modal.alert('Ignore Orphan', formatMessage(error, 'Unable to ignore the record'))).then();
+      dispatch(Modal.alert('Ignore Orphan', formatErrorMessage(error, 'Unable to ignore the record'))).then();
     } finally {
       setOrphanedRecordsWaiting(false);
     }

@@ -14,39 +14,14 @@ export function errorHandler(error: any, req: Request, res: Response, next: Next
   Log.error(error);
 
   let statusCode: number | undefined;
-  let errors: Array<{
-    message: string
-    type: string
-    sourceError?: any
-  }>;
-  let message: string;
+  let errors: ErrorData[];
 
   if (error.errors) {
-    errors = error.errors;
+    statusCode = error.errors[0].statusCode;
+    errors = error.errors.map(errorToData);
   } else {
-    let type: string | undefined;
-
-    if (error instanceof RequestError) {
-      statusCode = error.statusCode;
-      message = error.message;
-      type = error.type;
-    } else if (error instanceof Error) {
-      message = error.message;
-    } else if (typeof error === 'string') {
-      message = error;
-    } else {
-      message = 'An unknown error occurred!';
-    }
-
-    if (!type) {
-      type = 'InternalServerError';
-    }
-
-    errors = [{
-      message,
-      type,
-      sourceError: (env.isProd) ? undefined : error,
-    }];
+    statusCode = error.statusCode;
+    errors = [errorToData(error)];
   }
 
   res.status(statusCode ?? 500);
@@ -58,3 +33,35 @@ export function errorHandler(error: any, req: Request, res: Response, next: Next
     next();
   }
 }
+
+function errorToData(error: any): ErrorData {
+  let message: string;
+  let type: string | undefined;
+
+  if (error instanceof RequestError) {
+    message = error.message;
+    type = error.type;
+  } else if (error instanceof Error) {
+    message = error.message;
+  } else if (typeof error === 'string') {
+    message = error;
+  } else {
+    message = 'An unknown error occurred!';
+  }
+
+  if (!type) {
+    type = 'InternalServerError';
+  }
+
+  return {
+    message,
+    type,
+    sourceError: (env.isProd) ? undefined : error,
+  };
+}
+
+type ErrorData = {
+  message: string
+  type: string
+  sourceError?: any
+};

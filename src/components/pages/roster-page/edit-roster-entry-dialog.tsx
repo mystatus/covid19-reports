@@ -25,7 +25,7 @@ import {
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
 import { UnitSelector } from '../../../selectors/unit.selector';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 
 export interface EditRosterEntryDialogProps {
   open: boolean,
@@ -123,7 +123,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
       }
     } catch (error) {
       if (onError) {
-        onError(formatMessage(error));
+        onError(formatErrorMessage(error));
       }
       setFormDisabled(false);
       return;

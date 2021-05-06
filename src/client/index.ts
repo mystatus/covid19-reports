@@ -12,6 +12,7 @@ import {
   ApiReportSchema,
   ApiRole,
   ApiRosterColumnInfo,
+  ApiRosterUploadInfo,
   ApiUnit,
   ApiUser,
   ApiWorkspace,
@@ -123,36 +124,17 @@ export namespace OrphanedRecordClient {
 }
 
 export namespace RosterClient {
-  export type UploadError = {
-    error: string,
-    edipi?: string,
-    line?: number,
-    column?: string,
-  };
-  export interface UploadResponse {
-    count: number
-    errors: UploadError[] | undefined
-  }
   export const fetchColumns = (orgId: number): Promise<ApiRosterColumnInfo[]> => {
     return client.get(`roster/${orgId}/column`);
   };
-  export const upload = async (orgId: number, file: File): Promise<UploadResponse> => {
+  export const upload = async (orgId: number, file: File): Promise<ApiRosterUploadInfo> => {
     const formData = new FormData();
     formData.append('roster_csv', file);
-    let response: UploadResponse | undefined;
-    try {
-      response = await client.post(`roster/${orgId}/bulk`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-    } catch (error) {
-      if (error.data?.errors?.length) {
-        return error.data;
-      }
-      throw error;
-    }
-    return response ?? { count: -1, errors: [] };
+    return client.post(`roster/${orgId}/bulk`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
   };
   export const deleteAll = (orgId: number) => {
     return client.delete(`roster/${orgId}/bulk`);

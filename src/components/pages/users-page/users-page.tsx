@@ -29,7 +29,7 @@ import { ApiRole, ApiUser, ApiAccessRequest } from '../../../models/api-response
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import SelectRoleDialog, { SelectRoleDialogProps } from './select-role-dialog';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
 import { Modal } from '../../../actions/modal.actions';
 import { UnitSelector } from '../../../selectors/unit.selector';
@@ -80,7 +80,7 @@ export const UsersPage = () => {
   }, [orgId, dispatch]);
 
   const showAlertDialog = (error: Error, title: string, message: string) => {
-    dispatch(Modal.alert(title, formatMessage(error, message))).then();
+    dispatch(Modal.alert(title, formatErrorMessage(error, message))).then();
   };
 
   const makeHandleUserMoreClick = (user: ApiUser) => (event: React.MouseEvent<HTMLButtonElement>) => {

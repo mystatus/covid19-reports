@@ -37,7 +37,7 @@ import { mustersConfigurationsAreEqual, validateMusterConfiguration } from '../.
 import { HelpCard } from '../../help/help-card/help-card';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 
 export interface DefaultMusterDialogProps {
   open: boolean,
@@ -253,7 +253,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
       await axios.put(`api/org/${orgId}/default-muster`, body);
     } catch (error) {
       if (onError) {
-        onError(formatMessage(error));
+        onError(formatErrorMessage(error));
       }
       setFormDisabled(false);
       return;

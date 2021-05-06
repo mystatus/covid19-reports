@@ -11,7 +11,7 @@ import axios from 'axios';
 import CheckIcon from '@material-ui/icons/Check';
 import useStyles from './edit-space-dialog.styles';
 import { ApiWorkspace, ApiWorkspaceTemplate } from '../../../models/api-response';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 
 export interface EditWorkspaceDialogProps {
   open: boolean,
@@ -89,7 +89,7 @@ export const EditSpaceDialog = (props: EditWorkspaceDialogProps) => {
       }
     } catch (error) {
       if (onError) {
-        onError(formatMessage(error));
+        onError(formatErrorMessage(error));
       }
       setFormDisabled(false);
       return;

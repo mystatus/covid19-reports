@@ -26,11 +26,9 @@ import {
   PaginatedQuery,
 } from '../index';
 import { Org } from '../org/org.model';
-import {
-  RosterEntity,
-  RosterEntryData,
-} from '../roster/roster-entity';
+import { RosterEntity } from '../roster/roster-entity';
 import { Roster } from '../roster/roster.model';
+import { RosterEntryData } from '../roster/roster.types';
 import {
   ActionType,
   OrphanedRecordAction,
