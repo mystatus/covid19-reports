@@ -5,7 +5,8 @@ import {
 
 export function getDatabaseErrorMessage(err: DatabaseError) {
   switch (err.code) {
-    case '22001': {
+    case DatabaseErrorCode.ValueExceedsMaxLength: {
+      // The error message coming back should have the max length in parentheses.
       const maxLengthMatch = err.message.match(/\((\d.)\)/);
       const maxLength = parseInt(maxLengthMatch?.[1] ?? '');
       if (!Number.isNaN(maxLength)) {
@@ -32,4 +33,8 @@ export function getColumnMaxLength(entityType: EntityTarget<any>, columnName: st
 
 interface DatabaseError extends Error {
   code: string
+}
+
+enum DatabaseErrorCode {
+  ValueExceedsMaxLength = '22001',
 }
