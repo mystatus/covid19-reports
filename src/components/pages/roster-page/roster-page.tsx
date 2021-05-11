@@ -2,11 +2,6 @@ import {
   Button,
   Checkbox,
   Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   FormControlLabel,
   Menu,
   MenuItem,
@@ -117,11 +112,7 @@ export const RosterPage = () => {
   const [totalRowsCount, setTotalRowsCount] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [unitNameMap, setUnitNameMap] = useState<{ [key: string]: string }>({});
-  const [selectedRosterEntry, setSelectedRosterEntry] = useState<ApiRosterEntry>();
-  const [deleteRosterEntryDialogOpen, setDeleteRosterEntryDialogOpen] = useState(false);
   const [editRosterEntryDialogProps, setEditRosterEntryDialogProps] = useState<EditRosterEntryDialogProps>({ open: false });
-  const [deleteRosterEntryLoading, setDeleteRosterEntryLoading] = useState(false);
-  const [rosterEntryEndDateLoading, setRosterEntryEndDateLoading] = useState(false);
   const [downloadTemplateLoading, setDownloadTemplateLoading] = useState(false);
   const [exportRosterLoading, setExportRosterLoading] = useState(false);
   const [queryFilterState, setQueryFilterState] = useState<QueryFilterState>();
@@ -370,7 +361,7 @@ export const RosterPage = () => {
     }
   };
 
-  const editButtonClicked = async (rosterEntry: ApiRosterEntry) => {
+  const editEntryClicked = async (rosterEntry: ApiRosterEntry) => {
     setEditRosterEntryDialogProps({
       open: true,
       orgId,
@@ -386,7 +377,7 @@ export const RosterPage = () => {
     });
   };
 
-  const addButtonClicked = async () => {
+  const addEntryClicked = async () => {
     setEditRosterEntryDialogProps({
       open: true,
       orgId,
@@ -401,52 +392,46 @@ export const RosterPage = () => {
     });
   };
 
-  const deleteAllClicked = async () => {
-    // eslint-disable-next-line no-restricted-globals, no-alert
-    if (confirm('This will permanently delete ALL roster entries?')) {
+  const deleteAllEntriesClicked = async () => {
+    const title = 'Delete All Entries';
+    const message = 'This will permanently delete ALL roster entries. Are you sure?';
+    const result = await dispatch(Modal.confirm(title, message, {
+      destructive: true,
+      confirmText: 'Delete All',
+    }));
+
+    if (!result?.button?.value) {
+      return;
+    }
+
+    try {
       await dispatch(Roster.deleteAll(orgId!));
-      handleRosterOrOrphanedRecordsModified().then();
+    } catch (err) {
+      dispatch(Modal.alert('Delete All Entries', formatMessage(err, 'Unable to delete all entries'))).then();
     }
+
+    handleRosterOrOrphanedRecordsModified().then();
   };
 
-  const deleteButtonClicked = (rosterEntry: ApiRosterEntry) => {
-    setSelectedRosterEntry(rosterEntry);
-    setDeleteRosterEntryDialogOpen(true);
-  };
+  const deleteEntryClicked = async (rosterEntry: ApiRosterEntry) => {
+    const title = 'Delete Roster Entry';
+    const message = 'Are you sure you want to delete this roster entry?';
+    const result = await dispatch(Modal.confirm(title, message, {
+      destructive: true,
+      confirmText: 'Delete',
+    }));
 
-  const setRosterEntryEndDate = async () => {
+    if (!result?.button?.value) {
+      return;
+    }
+
     try {
-      setRosterEntryEndDateLoading(true);
-      await axios.put(`api/roster/${orgId}/${selectedRosterEntry!.id}`, {
-        endDate: moment().subtract(1, 'day').toISOString(),
-      });
-    } catch (error) {
-      dispatch(Modal.alert('Remove Roster Entry', formatMessage(error, 'Unable to set end date for roster entry'))).then();
-    } finally {
-      setRosterEntryEndDateLoading(false);
-      setDeleteRosterEntryDialogOpen(false);
-      setSelectedRosterEntry(undefined);
-      handleRosterOrOrphanedRecordsModified().then();
+      await axios.delete(`api/roster/${orgId}/${rosterEntry.id}`);
+    } catch (err) {
+      dispatch(Modal.alert('Remove Roster Entry', formatMessage(err, 'Unable to remove roster entry'))).then();
     }
-  };
 
-  const deleteRosterEntry = async () => {
-    try {
-      setDeleteRosterEntryLoading(true);
-      await axios.delete(`api/roster/${orgId}/${selectedRosterEntry!.id}`);
-    } catch (error) {
-      dispatch(Modal.alert('Delete Roster Entry', formatMessage(error, 'Unable to delete roster entry'))).then();
-    } finally {
-      setDeleteRosterEntryLoading(false);
-      setDeleteRosterEntryDialogOpen(false);
-      setSelectedRosterEntry(undefined);
-      handleRosterOrOrphanedRecordsModified().then();
-    }
-  };
-
-  const cancelDeleteRosterEntryDialog = () => {
-    setDeleteRosterEntryDialogOpen(false);
-    setSelectedRosterEntry(undefined);
+    handleRosterOrOrphanedRecordsModified().then();
   };
 
   const downloadCSVExport = async () => {
@@ -533,13 +518,17 @@ export const RosterPage = () => {
   };
 
   const ignoreOrphanClicked = async (row: ApiOrphanedRecord) => {
-    const result = await dispatch(Modal.alert('Ignore Orphaned Record', 'This orphaned record will be permanently hidden from your view but will remain visible to other roster managers.', [
-      { text: 'Ignore', value: -1, className: classes.deleteOrphanedRecordConfirmButton },
-      { text: 'Cancel', variant: 'outlined' },
-    ]));
+    const title = 'Ignore Orphaned Record';
+    const message = 'This orphaned record will be permanently hidden from your view but will remain visible to other roster managers.';
+    const result = await dispatch(Modal.confirm(title, message, {
+      destructive: true,
+      confirmText: 'Ignore',
+    }));
+
     if (!result?.button?.value) {
       return;
     }
+
     try {
       setOrphanedRecordsWaiting(true);
       await axios.put(`api/orphaned-record/${orgId}/${row.id}/action`, {
@@ -696,7 +685,7 @@ export const RosterPage = () => {
                 size="large"
                 variant="text"
                 startIcon={<PersonAddIcon />}
-                onClick={addButtonClicked}
+                onClick={addEntryClicked}
               >
                 Add Individual
               </Button>
@@ -707,7 +696,7 @@ export const RosterPage = () => {
                 size="large"
                 variant="text"
                 startIcon={<DeleteSweepIcon />}
-                onClick={deleteAllClicked}
+                onClick={deleteAllEntriesClicked}
               >
                 Delete All
               </Button>
@@ -807,10 +796,10 @@ export const RosterPage = () => {
               rowOptions={{
                 menuItems: canManageRoster(user) ? [{
                   name: 'Edit Entry',
-                  callback: editButtonClicked,
+                  callback: editEntryClicked,
                 }, {
                   name: 'Delete Entry',
-                  callback: deleteButtonClicked,
+                  callback: deleteEntryClicked,
                 }] : [],
                 renderCell: getCellDisplayValue,
               }}
@@ -827,32 +816,6 @@ export const RosterPage = () => {
           </div>
         </TableContainer>
       </Container>
-      {deleteRosterEntryDialogOpen && (
-        <Dialog
-          open={deleteRosterEntryDialogOpen}
-          onClose={cancelDeleteRosterEntryDialog}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-        >
-          <DialogTitle id="alert-dialog-title">Remove Individual</DialogTitle>
-          <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-              Is the removal of this individual a correction, or is the individual no longer part of the group?
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions className={classes.deleteDialogActions}>
-            <ButtonWithSpinner onClick={deleteRosterEntry} loading={deleteRosterEntryLoading}>
-              This is a Correction
-            </ButtonWithSpinner>
-            <ButtonWithSpinner onClick={setRosterEntryEndDate} loading={rosterEntryEndDateLoading}>
-              Individual Left Group
-            </ButtonWithSpinner>
-            <Button variant="outlined" onClick={cancelDeleteRosterEntryDialog}>
-              Cancel
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
       {editRosterEntryDialogProps.open && (
         <EditRosterEntryDialog {...editRosterEntryDialogProps} />
       )}

@@ -1,18 +1,30 @@
 import React from 'react';
 import {
   Button,
-  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@material-ui/core';
-import { useDispatch, useSelector } from 'react-redux';
+import {
+  useDispatch,
+  useSelector,
+} from 'react-redux';
 import { Modal as ModalActions } from '../../actions/modal.actions';
-import { ModalButton, ModalState } from '../../reducers/modal.reducer';
+import {
+  ModalButton,
+  ModalState,
+} from '../../reducers/modal.reducer';
 import { AppState } from '../../store';
+import useStyles from './modal.styles';
 
 const defaultButtons: ModalButton[] = [
   { text: 'Ok' },
 ];
 
 export const ModalProvider = () => {
+  const classes = useStyles();
   const { buttons, message, open, title } = useSelector<AppState, ModalState>(state => state.modal);
   const dispatch = useDispatch();
 
@@ -41,8 +53,13 @@ export const ModalProvider = () => {
         <div id="modal-provider-content" />
       </DialogContent>
       <DialogActions>
-        {(buttons ?? defaultButtons).map(({ text, ...rest }, index) => (
-          <Button key={text} onClick={() => onClose(index)} {...rest}>
+        {(buttons ?? defaultButtons).map(({ text, destructive, ...rest }, index) => (
+          <Button
+            key={text}
+            className={rest.className ?? (destructive) ? classes.destructiveButton : undefined}
+            onClick={() => onClose(index)}
+            {...rest}
+          >
             {text}
           </Button>
         ))}
