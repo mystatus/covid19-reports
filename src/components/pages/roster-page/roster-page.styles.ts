@@ -58,16 +58,4 @@ export default makeStyles((theme: Theme) => createStyles({
       fontWeight: 'bold',
     },
   },
-  deleteOrphanedMenuItem: {
-    color: theme.palette.error.main,
-    '&:hover': {
-      backgroundColor: '#B6001D20',
-    },
-  },
-  deleteOrphanedRecordConfirmButton: {
-    backgroundColor: theme.palette.error.main,
-    '&:hover': {
-      backgroundColor: '#B6001D',
-    },
-  },
 }));

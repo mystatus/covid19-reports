@@ -39,7 +39,28 @@ export namespace Modal {
     }) as unknown as Promise<ModalResponse>;
   };
 
-  export const confirm = (title: string, message: string, buttons: ModalButton[] = [{ text: 'OK' }, { text: 'Cancel' }]) => alert(title, message, buttons);
+  export const confirm = (title: string, message: string, options?: {
+    destructive?: boolean,
+    confirmText?: string,
+    cancelText?: string,
+  }) => {
+    const {
+      destructive = false,
+      confirmText = 'Confirm',
+      cancelText = 'Cancel',
+    } = options ?? {};
+
+    return alert(title, message, [{
+      text: confirmText,
+      value: true,
+      destructive,
+    }, {
+      text: cancelText,
+      value: false,
+      destructive: false,
+      variant: 'outlined',
+    }]);
+  };
 
   export const close = (title: string, response: ModalResponse) => (dispatch: Dispatch<Actions.Close>) => {
     dispatch(new Actions.Close({ title, response }));

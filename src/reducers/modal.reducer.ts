@@ -3,6 +3,7 @@ import { Modal } from '../actions/modal.actions';
 
 export interface ModalButton extends ButtonProps {
   text: string,
+  destructive?: boolean,
   value?: any,
 }
 
