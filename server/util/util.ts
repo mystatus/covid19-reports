@@ -180,3 +180,7 @@ export function getMomentDateFormat(interval: TimeInterval) {
       throw new Error(`Unsupported interval '${interval}'`);
   }
 }
+
+export function getMissingKeys<T, K extends keyof T>(obj: T, keys: Array<K>) {
+  return keys.filter(key => obj[key] === undefined);
+}

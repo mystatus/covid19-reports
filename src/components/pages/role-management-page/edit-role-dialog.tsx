@@ -32,7 +32,7 @@ import { EditableBooleanTable } from '../../tables/editable-boolean-table';
 import { RosterSelector } from '../../../selectors/roster.selector';
 import { NotificationSelector } from '../../../selectors/notification.selector';
 import { WorkspaceSelector } from '../../../selectors/workspace.selector';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 
 export interface EditRoleDialogProps {
   open: boolean,
@@ -166,7 +166,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
       }
     } catch (error) {
       if (onError) {
-        onError(formatMessage(error));
+        onError(formatErrorMessage(error));
       }
       setFormDisabled(false);
       return;

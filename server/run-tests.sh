@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ../utils.sh
+
 LOG_LEVEL="test"
 CLEAN=false
 
@@ -27,23 +29,15 @@ export PGPASSWORD=$SQL_PASSWORD
 export TYPEORM_CACHE=false
 
 # If the clean flag is passed in, drop the database to start fresh.
-if [ "$CLEAN" == true ]; then
-  if psql -h "$SQL_HOST" -p "$SQL_PORT" -U "$SQL_USER" -lqt | cut -d \| -f 1 | grep -qw "$SQL_DATABASE"; then
-    echo -n "Dropping '$SQL_DATABASE' database... "
-    dropdb -h "$SQL_HOST" -p "$SQL_PORT" -U "$SQL_USER" "$SQL_DATABASE"
-    echo "success!"
+if $CLEAN; then
+  if [[ "$(database_exists)" ]]; then
+    drop_database
   fi
 fi
 
 # Create test database if it doesn't exist.
-if ! psql -h "$SQL_HOST" -p "$SQL_PORT" -U "$SQL_USER" -lqt | cut -d \| -f 1 | grep -qw "$SQL_DATABASE"; then
-  echo -n "Creating '$SQL_DATABASE' database... "
-  createdb -h "$SQL_HOST" -p "$SQL_PORT" -U "$SQL_USER" "$SQL_DATABASE" || {
-    echo "failed to create '$SQL_DATABASE' database. Aborting..."
-    exit
-  }
-  echo "success!"
-
+if ! [[ "$(database_exists)" ]]; then
+  create_database
   ../migration-run.sh
 fi
 

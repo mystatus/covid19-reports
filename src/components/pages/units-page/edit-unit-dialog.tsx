@@ -33,7 +33,7 @@ import { useSelector } from 'react-redux';
 import useStyles from './edit-unit-dialog.styles';
 import { ApiUnit, MusterConfiguration } from '../../../models/api-response';
 import { DaysOfTheWeek } from '../../../utility/days';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
 import { mustersConfigurationsAreEqual, validateMusterConfiguration } from '../../../utility/muster-utils';
 
@@ -225,7 +225,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
       }
     } catch (error) {
       if (onError) {
-        onError(formatMessage(error));
+        onError(formatErrorMessage(error));
       }
       setFormDisabled(false);
       return;

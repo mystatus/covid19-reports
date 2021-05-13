@@ -30,7 +30,7 @@ import {
   rosterColumnTypeDisplayName,
 } from '../../../models/api-response';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 
 export interface EditColumnDialogProps {
   open: boolean,
@@ -166,7 +166,7 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
       }
     } catch (error) {
       if (onError) {
-        onError(formatMessage(error));
+        onError(formatErrorMessage(error));
       }
       setFormDisabled(false);
       return;

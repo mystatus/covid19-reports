@@ -22,7 +22,6 @@ import {
 } from '../user/user.model.mock';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { seedCustomRosterColumn } from './custom-roster-column.model.mock';
-import { baseRosterColumns } from './roster-entity';
 import {
   ChangeType,
   RosterHistory,
@@ -33,7 +32,10 @@ import {
   seedRosterEntries,
   seedRosterEntry,
 } from './roster.model.mock';
-import { RosterColumnType } from './roster.types';
+import {
+  baseRosterColumns,
+  RosterColumnType,
+} from './roster.types';
 
 describe(`Roster Controller`, () => {
 

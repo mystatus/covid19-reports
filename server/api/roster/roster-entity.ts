@@ -1,6 +1,7 @@
 import {
   BaseEntity,
   Column,
+  EntityTarget,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -8,6 +9,7 @@ import {
   BadRequestError,
   RequiredColumnError,
 } from '../../util/error-types';
+import { getColumnMaxLength } from '../../util/typeorm-utils';
 import {
   dateFromString,
   getOptionalValue,
@@ -16,9 +18,12 @@ import {
 import { Unit } from '../unit/unit.model';
 import {
   CustomColumns,
+  edipiColumnDisplayName,
   RosterColumnInfo,
   RosterColumnType,
   RosterColumnValue,
+  RosterEntryData,
+  RosterFileRow,
 } from './roster.types';
 
 /**
@@ -26,7 +31,7 @@ import {
  * to have columns, functions, and constraints that aren't shared with each other while still retaining a shared set of
  * columns.
  */
-export class RosterEntity extends BaseEntity {
+export abstract class RosterEntity extends BaseEntity {
 
   @PrimaryGeneratedColumn()
   id!: number;
@@ -61,6 +66,8 @@ export class RosterEntity extends BaseEntity {
   })
   customColumns!: CustomColumns;
 
+  abstract getEntityTarget(): EntityTarget<any>;
+
   toData(): RosterEntryData {
     if (!this.unit) {
       throw new Error('You must have the roster entry unit loaded to convert to data.');
@@ -89,46 +96,9 @@ export class RosterEntity extends BaseEntity {
   }
 
   setColumnValue(column: RosterColumnInfo, value: RosterColumnValue | undefined) {
-    // Ignore undefined values, unless this is a required column with no current value.
-    if (value === undefined) {
-      if (column.required && this.getColumnValue(column) !== undefined) {
-        throw new RequiredColumnError(column.name);
-      }
-
+    const validValue = this.validateColumnValue(column, value);
+    if (validValue === undefined) {
       return;
-    }
-
-    // Don't allow non-updatable columns to be updated if they already have a value.
-    if (!column.updatable && this.getColumnValue(column) !== undefined) {
-      throw new Error(`Column '${column.name}' is not updatable.`);
-    }
-
-    // If this is a null or empty value, make sure it's not a required column.
-    if (value === null || (typeof value === 'string' && value.length === 0)) {
-      if (column.required) {
-        throw new RequiredColumnError(column.name);
-      }
-    }
-
-    // Convert string data into the type our model expects.
-    if (typeof value === 'string' && column.type !== RosterColumnType.String) {
-      switch (column.type) {
-        case RosterColumnType.Number:
-          value = +value;
-          if (Number.isNaN(value)) {
-            throw new BadRequestError(`Number value for column '${column.name}' is invalid.`);
-          }
-          break;
-        case RosterColumnType.Date:
-        case RosterColumnType.DateTime:
-          value = dateFromString(value, true)!.toISOString();
-          break;
-        case RosterColumnType.Boolean:
-          value = (value === 'true');
-          break;
-        default:
-          break;
-      }
     }
 
     // Set the value.
@@ -136,9 +106,9 @@ export class RosterEntity extends BaseEntity {
       if (!this.customColumns) {
         this.customColumns = {};
       }
-      this.customColumns[column.name] = value;
+      this.customColumns[column.name] = validValue;
     } else {
-      Reflect.set(this, column.name, value);
+      Reflect.set(this, column.name, validValue);
     }
   }
 
@@ -156,19 +126,75 @@ export class RosterEntity extends BaseEntity {
     this.setColumnValue(column, value);
   }
 
-  setColumnValueFromFileRow(column: RosterColumnInfo, row: RosterFileRow, edipiColumnName: string) {
-    // Allow a custom edipi column name.
-    const columnName = (column.name === 'edipi') ? edipiColumnName : column.name;
-
+  setColumnValueFromFileRow(column: RosterColumnInfo, row: RosterFileRow) {
     // Get the string value from the row data.
     let value: string | null | undefined;
     if (column.required) {
-      value = getRequiredValue(columnName, row, 'string', column.displayName);
+      value = getRequiredValue(column.displayName, row, 'string');
     } else {
-      value = getOptionalValue(columnName, row, 'string', column.displayName);
+      value = getOptionalValue(column.displayName, row, 'string');
     }
 
     this.setColumnValue(column, value);
+  }
+
+  validateColumnValue(column: RosterColumnInfo, value: RosterColumnValue | undefined): RosterColumnValue | undefined {
+    if (typeof value === 'string') {
+      const maxLength = getColumnMaxLength(this.getEntityTarget(), column.name);
+      if (maxLength) {
+        if (isEdipiColumn(column) && value.length !== maxLength) {
+          throw new Error(`"${column.displayName}" must be exactly ${maxLength} characters.`);
+        }
+
+        if (value.length > maxLength) {
+          throw new Error(`"${column.displayName}" value exceeds max length of ${maxLength}.`);
+        }
+      }
+    }
+
+    // Ignore undefined values, unless this is a required column with no current value.
+    if (value === undefined) {
+      if (column.required && this.getColumnValue(column) !== undefined) {
+        throw new RequiredColumnError(column.displayName);
+      }
+
+      return undefined;
+    }
+
+    // Don't allow non-updatable columns to be updated if they already have a value.
+    if (!column.updatable && this.getColumnValue(column) !== undefined) {
+      throw new Error(`"${column.displayName}" is not updatable.`);
+    }
+
+    // If this is a null or empty value, make sure it's not a required column.
+    if (value === null || (typeof value === 'string' && value.length === 0)) {
+      if (column.required) {
+        throw new RequiredColumnError(column.displayName);
+      }
+    }
+
+    // Convert string data into the type our model expects.
+    if (typeof value === 'string' && column.type !== RosterColumnType.String) {
+      switch (column.type) {
+        case RosterColumnType.Number:
+          value = +value;
+          if (Number.isNaN(value)) {
+            throw new BadRequestError(`"${column.displayName}" number value is invalid.`);
+          }
+          break;
+        case RosterColumnType.Date:
+        case RosterColumnType.DateTime:
+          value = dateFromString(value, true)!.toISOString();
+          break;
+        case RosterColumnType.Boolean:
+          value = (value === 'true');
+          break;
+        default:
+          break;
+      }
+    }
+
+    return value;
   }
 
 }
@@ -185,46 +211,6 @@ function columnTypeToEntryDataType(columnType: RosterColumnType) {
   }
 }
 
-export const baseRosterColumns: RosterColumnInfo[] = [
-  {
-    name: 'edipi',
-    displayName: 'DoD ID',
-    type: RosterColumnType.String,
-    pii: true,
-    phi: false,
-    custom: false,
-    required: true,
-    updatable: false,
-  },
-  {
-    name: 'firstName',
-    displayName: 'First Name',
-    type: RosterColumnType.String,
-    pii: true,
-    phi: false,
-    custom: false,
-    required: true,
-    updatable: true,
-  },
-  {
-    name: 'lastName',
-    displayName: 'Last Name',
-    type: RosterColumnType.String,
-    pii: true,
-    phi: false,
-    custom: false,
-    required: true,
-    updatable: true,
-  },
-];
-
-export type RosterEntryData = {
-  edipi: RosterEntity['edipi'],
-  unit: number,
-  firstName?: RosterEntity['firstName'],
-  lastName?: RosterEntity['lastName'],
-} & CustomColumns;
-
-export type RosterFileRow = {
-  [columnName: string]: string
-};
+function isEdipiColumn(column: RosterColumnInfo) {
+  return (column.displayName === edipiColumnDisplayName);
+}

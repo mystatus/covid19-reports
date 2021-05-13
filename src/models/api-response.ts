@@ -241,8 +241,18 @@ export interface ApiUnit {
 }
 
 export interface ApiError {
-  errors: {
-    message: string
-    type: string
-  }[]
+  message: string
+  type: string
+}
+
+export interface ApiErrorResponseData {
+  errors: ApiError[]
+}
+
+export interface ApiErrorResponse {
+  data: ApiErrorResponseData
+}
+
+export interface ApiRosterUploadInfo {
+  count: number
 }

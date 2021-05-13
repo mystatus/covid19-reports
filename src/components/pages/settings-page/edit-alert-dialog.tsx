@@ -15,7 +15,7 @@ import {
 } from '../../../models/api-response';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { buildSettingText } from './notifications-tab';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 
 export interface EditAlertDialogProps {
   open: boolean,
@@ -72,7 +72,7 @@ export const EditAlertDialog = (props: EditAlertDialogProps) => {
       }
     } catch (error) {
       if (onError) {
-        onError(formatMessage(error));
+        onError(formatErrorMessage(error));
       }
       setFormDisabled(false);
     }

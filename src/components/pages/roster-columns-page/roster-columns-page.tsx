@@ -36,7 +36,7 @@ import { EditColumnDialog, EditColumnDialogProps } from './edit-column-dialog';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
-import { formatMessage } from '../../../utility/errors';
+import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
 
 interface ColumnMenuState {
@@ -111,7 +111,7 @@ export const RosterColumnsPage = () => {
     try {
       await axios.delete(`api/roster/${orgId}/column/${columnToDelete.name}`);
     } catch (error) {
-      dispatch(Modal.alert('Delete Column', formatMessage(error, 'Unable to delete column'))).then();
+      dispatch(Modal.alert('Delete Column', formatErrorMessage(error, 'Unable to delete column'))).then();
     }
     setColumnToDelete(null);
     await initializeTable();

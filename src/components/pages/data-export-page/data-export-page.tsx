@@ -17,7 +17,7 @@ import React, {
 } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Modal } from '../../../actions/modal.actions';
-import { ApiError } from '../../../models/api-response';
+import { ApiErrorResponseData } from '../../../models/api-response';
 import { UserSelector } from '../../../selectors/user.selector';
 import { downloadFile } from '../../../utility/download';
 import { getLineCount } from '../../../utility/string-utils';
@@ -58,7 +58,7 @@ export const DataExportPage = () => {
     if (response.status !== 200) {
       let message: string | undefined;
       try {
-        const error = await response.json() as ApiError;
+        const error = await response.json() as ApiErrorResponseData;
         message = error.errors[0].message;
       } finally {
         if (!message) {
@@ -99,7 +99,7 @@ export const DataExportPage = () => {
     try {
       await runExport();
     } catch (err) {
-      dispatch(Modal.alert('Export Failed', err.message));
+      dispatch(Modal.alert('Export Failed', err.message)).then();
     } finally {
       setIsExportLoading(false);
     }

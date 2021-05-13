@@ -1,12 +1,15 @@
 import { json2csvAsync } from 'json-2-csv';
-import { uniqueString } from '../../util/test-utils/unique';
+import {
+  uniqueEdipi,
+  uniqueString,
+} from '../../util/test-utils/unique';
 import { Unit } from '../unit/unit.model';
 import { Roster } from './roster.model';
 
 export function mockRosterEntry(unit: Unit) {
   return Roster.create({
     unit,
-    edipi: uniqueString(),
+    edipi: uniqueEdipi(),
     firstName: uniqueString(),
     lastName: uniqueString(),
     customColumns: {
@@ -42,10 +45,10 @@ export function mockRosterUploadCsv(args: {
   for (let i = 0; i < rosterCount; i++) {
     const entry = mockRosterEntry(unit);
     const entryData = {
-      unit: entry.unit.name,
-      edipi: entry.edipi,
-      firstName: entry.firstName,
-      lastName: entry.lastName,
+      Unit: entry.unit.name,
+      'DoD ID': entry.edipi,
+      'First Name': entry.firstName,
+      'Last Name': entry.lastName,
     } as any;
 
     for (const key of Object.keys(entry.customColumns)) {

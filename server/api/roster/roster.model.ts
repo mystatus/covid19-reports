@@ -1,22 +1,28 @@
 import _ from 'lodash';
 import {
   Entity,
+  EntityTarget,
   Unique,
 } from 'typeorm';
 import { snakeCase } from 'typeorm/util/StringUtils';
 import {
+  baseRosterColumns,
   RosterColumnInfo,
   RosterColumnType,
 } from './roster.types';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
-import { baseRosterColumns, RosterEntity } from './roster-entity';
+import { RosterEntity } from './roster-entity';
 import { UserRole } from '../user/user-role.model';
 
 @Entity()
 @Unique(['edipi', 'unit'])
 export class Roster extends RosterEntity {
+
+  getEntityTarget(): EntityTarget<any> {
+    return Roster;
+  }
 
   clone() {
     const entry = new Roster();

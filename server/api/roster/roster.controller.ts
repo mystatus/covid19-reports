@@ -3,6 +3,7 @@ import { Response } from 'express';
 import fs from 'fs';
 import moment from 'moment';
 import {
+  getConnection,
   getManager,
   In,
   OrderByCondition,
@@ -14,16 +15,20 @@ import {
 } from '../../util/api-utils';
 import {
   BadRequestError,
+  CsvRowError,
   NotFoundError,
   RosterUploadError,
-  RosterUploadErrorInfo,
   UnprocessableEntity,
 } from '../../util/error-types';
 import {
   addRosterEntry,
   editRosterEntry,
 } from '../../util/roster-utils';
-import { dateFromString } from '../../util/util';
+import { getDatabaseErrorMessage } from '../../util/typeorm-utils';
+import {
+  dateFromString,
+  getMissingKeys,
+} from '../../util/util';
 import {
   ApiRequest,
   EdipiParam,
@@ -41,10 +46,6 @@ import {
   CustomRosterColumn,
 } from './custom-roster-column.model';
 import {
-  RosterEntryData,
-  RosterFileRow,
-} from './roster-entity';
-import {
   ChangeType,
   RosterHistory,
 } from './roster-history.model';
@@ -53,6 +54,10 @@ import {
   RosterColumnValue,
   RosterColumnInfo,
   RosterColumnType,
+  RosterEntryData,
+  unitColumnDisplayName,
+  edipiColumnDisplayName,
+  RosterFileRow,
 } from './roster.types';
 
 class RosterController {
@@ -155,108 +160,91 @@ class RosterController {
   }
 
   async uploadRosterEntries(req: ApiRequest<OrgParam>, res: Response) {
-    const org = req.appOrg!;
-
     if (!req.file || !req.file.path) {
       throw new BadRequestError('No file to process.');
     }
 
-    const rosterEntries: Roster[] = [];
-    let roster: RosterFileRow[];
+    let rosterCsvRows: RosterFileRow[];
     try {
-      roster = await csv().fromFile(req.file.path) as RosterFileRow[];
+      rosterCsvRows = await csv().fromFile(req.file.path) as RosterFileRow[];
     } catch (err) {
       throw new UnprocessableEntity('Roster file was unable to be processed. Check that it is formatted correctly.');
     } finally {
       fs.unlinkSync(req.file.path);
     }
 
-    const orgUnits = await req.appUserRole?.getUnits();
-    if (!orgUnits) {
-      throw new BadRequestError('No units found in org.');
-    }
-
-    if (roster.length === 0) {
+    if (rosterCsvRows.length === 0) {
       res.json({ count: 0 });
       return;
     }
 
-    const edipiKey = ['DoD ID', 'edipi', 'EDIPI'].find(t => t in roster[0]);
-    if (!edipiKey) {
-      throw new BadRequestError('No edipi/DoD ID column in file.');
+    const orgUnits = await req.appUserRole?.getUnits();
+    if (!orgUnits) {
+      throw new BadRequestError('No units found.');
     }
 
-    const columns = await Roster.getAllowedColumns(org, req.appUserRole!.role);
-    const errors: RosterUploadErrorInfo[] = [];
+    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
+
+    const requiredColumns = columns
+      .filter(x => x.required)
+      .map(x => x.displayName)
+      .concat([unitColumnDisplayName]);
+
+    const missingRequiredColumns = getMissingKeys(rosterCsvRows[0], requiredColumns);
+    if (missingRequiredColumns.length > 0) {
+      throw new BadRequestError(`Missing required column(s): ${missingRequiredColumns.map(x => `"${x}"`).join(', ')}`);
+    }
+
     const existingEntries = await Roster.find({
       relations: ['unit', 'unit.org'],
       where: {
-        edipi: In(roster.map(x => x[edipiKey])),
+        edipi: In(rosterCsvRows.map(x => x[edipiColumnDisplayName])),
       },
     });
 
-    const onError = (error: Error, row?: RosterFileRow, index?: number, column?: string) => {
-      errors.push({
-        column,
-        edipi: row ? row[edipiKey] : undefined,
-        error: error.message,
-        // Offset by 2 - 1 because of being zero-based and 1 because of the csv header row
-        line: index !== undefined ? index + 2 : undefined,
-      });
-    };
+    // Start a transaction with the query runner so that we can rollback/commit manually.
+    const queryRunner = getConnection().createQueryRunner();
+    await queryRunner.startTransaction();
+    const manager = queryRunner.manager;
 
-    roster.forEach((row, index) => {
-      const units = orgUnits.filter(u => row.unit === u.name || row.Unit === u.name);
-      const unit = units.length > 0 ? units[0] : undefined;
+    const rowErrors: CsvRowError[] = [];
+    let savedCount = 0;
+    for (let rowIndex = 0; rowIndex < rosterCsvRows.length; rowIndex++) {
+      const csvRow = rosterCsvRows[rowIndex];
 
-      // Pre-validate / check for row-level issues.
+      // Try to get a roster entry from the row.
+      let entry: Roster;
       try {
-        if (!(row.unit ?? row.Unit)) {
-          throw new BadRequestError('Unable to add roster entries without a unit.');
+        entry = getRosterEntryFromCsvRow(csvRow, columns, rowIndex, orgUnits, existingEntries);
+      } catch (err) {
+        if (err instanceof CsvRowError) {
+          rowErrors.push(err);
+        } else {
+          rowErrors.push(new CsvRowError(err.message, csvRow, rowIndex));
         }
-        if (units.length === 0) {
-          throw new NotFoundError(`Unit "${(row.unit ?? row.Unit)}" could not be found in the group.`);
-        }
-        if (existingEntries.some(x => x.edipi === row[edipiKey] && x.unit.org!.id === unit!.org!.id)) {
-          throw new BadRequestError(`Entry with ${edipiKey} already exists.`);
-        }
-      } catch (error) {
-        onError(error, row, index);
+        continue;
       }
 
-      const entry = new Roster();
-      entry.unit = unit!;
-
-      for (const column of columns) {
-        try {
-          entry.setColumnValueFromFileRow(column, row, edipiKey);
-        } catch (error) {
-          const columnName = (column.name === 'edipi') ? edipiKey : column.name;
-          onError(error, row, index, columnName);
-        }
-      }
-
-      rosterEntries.push(entry);
-    });
-
-    if (errors.length === 0) {
+      // Try to save the roster entry.
       try {
-        await Roster.save(rosterEntries);
-      } catch (error) {
-        const edipi = error.parameters[0];
-        const index = roster.findIndex(r => r.edipi === edipi);
-        const row = index === -1 ? undefined : roster[index];
-        onError(error, row, index, error.column);
+        await manager.save(entry);
+        savedCount += 1;
+      } catch (err) {
+        const message = getDatabaseErrorMessage(err);
+        rowErrors.push(new CsvRowError(message, csvRow, rowIndex));
       }
     }
 
-    if (errors.length !== 0) {
-      throw new RosterUploadError(errors);
+    if (rowErrors.length > 0) {
+      await queryRunner.rollbackTransaction();
+      await queryRunner.release();
+      throw new RosterUploadError(rowErrors);
     }
 
-    res.json({
-      count: rosterEntries.length,
-    });
+    await queryRunner.commitTransaction();
+    await queryRunner.release();
+
+    res.json({ count: savedCount });
   }
 
   async deleteRosterEntries(req: ApiRequest, res: Response) {
@@ -512,6 +500,37 @@ async function internalSearchRoster(query: GetRosterQuery, org: Org, userRole: U
     rows: roster,
     totalRowsCount,
   };
+}
+
+function getRosterEntryFromCsvRow(csvRow: RosterFileRow, columns: RosterColumnInfo[], rowIndex: number, orgUnits: Unit[], existingEntries: Roster[]) {
+  const unitName = csvRow.Unit;
+  if (!unitName) {
+    throw new CsvRowError('"Unit" is required.', csvRow, rowIndex, unitColumnDisplayName);
+  }
+
+  const units = orgUnits.filter(u => unitName === u.name);
+  if (units.length === 0) {
+    throw new CsvRowError(`Unit "${(csvRow.unit ?? csvRow.Unit)}" could not be found in the group.`, csvRow, rowIndex, unitColumnDisplayName);
+  }
+
+  const edipi = csvRow[edipiColumnDisplayName];
+  const unit = units[0];
+  if (existingEntries.some(x => x.edipi === edipi && x.unit.org!.id === unit!.org!.id)) {
+    throw new CsvRowError(`Entry with ${edipiColumnDisplayName} ${edipi} already exists.`, csvRow, rowIndex, edipiColumnDisplayName);
+  }
+
+  // Create a new roster entry and set its columns from the csv row.
+  const entry = new Roster();
+  entry.unit = unit;
+  for (const column of columns) {
+    try {
+      entry.setColumnValueFromFileRow(column, csvRow);
+    } catch (err) {
+      throw new CsvRowError(err.message, csvRow, rowIndex, column.displayName);
+    }
+  }
+
+  return entry;
 }
 
 interface RosterColumnInfoWithValue extends RosterColumnInfo {
