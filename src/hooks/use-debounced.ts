@@ -1,11 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function useDebounced<T>(value: T, delay: number) {
+  const isInitialMount = useRef(true);
   const [debounced, setDebounced] = useState(value);
 
+  // eslint-disable-next-line consistent-return
   useEffect(() => {
-    const timeout = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timeout);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    } else {
+      const timeout = setTimeout(() => {
+        setDebounced(value);
+      }, delay);
+
+      return () => clearTimeout(timeout);
+    }
   }, [value, delay]);
 
   return debounced;

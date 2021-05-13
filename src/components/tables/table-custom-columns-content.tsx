@@ -39,6 +39,7 @@ type TableCustomColumnsContentProps = OverrideType<TableProps, {
   }
   idColumn: string | ((row: any) => string)
   sortable?: boolean
+  defaultSort?: { column: string, direction: SortDirection }
   onSortChange?: (column: TableColumn, direction: SortDirection) => void
   noDataText?: string
   title?: React.ReactNode
@@ -56,13 +57,21 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
   const [leftShadowVisible, setLeftShadowVisible] = React.useState(false);
   const [rightShadowVisible, setRightShadowVisible] = React.useState(false);
   const [sortColumn, setSortColumn] = React.useState<TableColumn | undefined>();
-  const [sortDirection, setSortDirection] = React.useState<SortDirection>('ASC');
+  const [sortDirection, setSortDirection] = React.useState<SortDirection>(props.defaultSort?.direction ?? 'ASC');
 
   const scrollRef = React.createRef<HTMLDivElement>();
 
+
   const {
-    rows, columns, rowOptions, idColumn, noDataText, sortable, title, onSortChange,
+    rows, columns, defaultSort, rowOptions, idColumn, noDataText, sortable, title, onSortChange,
   } = props;
+
+  useEffect(() => {
+    if (!sortColumn && defaultSort) {
+      setSortColumn(defaultSort?.column ? columns.find(column => column.name === defaultSort?.column) : undefined);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columns, defaultSort]);
 
   const columnClicked = (column: TableColumn) => () => {
     if (!sortable) {

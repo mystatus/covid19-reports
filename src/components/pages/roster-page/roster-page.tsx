@@ -79,6 +79,7 @@ import { Modal } from '../../../actions/modal.actions';
 import { UserSelector } from '../../../selectors/user.selector';
 import { AppState } from '../../../store';
 import { UserState } from '../../../reducers/user.reducer';
+import usePersist from '../../../hooks/use-persist';
 
 const unitColumn: ApiRosterColumnInfo = {
   name: 'unit',
@@ -111,11 +112,11 @@ export const RosterPage = () => {
   const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
   const [orphanedRecordsWaiting, setOrphanedRecordsWaiting] = useState(false);
   const [orphanedRecordsPage, setOrphanedRecordsPage] = useState(0);
-  const [orphanedRecordsRowsPerPage, setOrphanedRecordsRowsPerPage] = useState(10);
+  const [orphanedRecordsRowsPerPage, setOrphanedRecordsRowsPerPage] = usePersist('orphanRowsPerPage', useState(10));
   const [rows, setRows] = useState<ApiRosterEntry[]>([]);
   const [page, setPage] = useState(0);
   const [totalRowsCount, setTotalRowsCount] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = usePersist('rosterRowsPerPage', useState(10));
   const [unitNameMap, setUnitNameMap] = useState<{ [key: string]: string }>({});
   const [selectedRosterEntry, setSelectedRosterEntry] = useState<ApiRosterEntry>();
   const [deleteRosterEntryDialogOpen, setDeleteRosterEntryDialogOpen] = useState(false);
@@ -124,13 +125,17 @@ export const RosterPage = () => {
   const [rosterEntryEndDateLoading, setRosterEntryEndDateLoading] = useState(false);
   const [downloadTemplateLoading, setDownloadTemplateLoading] = useState(false);
   const [exportRosterLoading, setExportRosterLoading] = useState(false);
-  const [queryFilterState, setQueryFilterState] = useState<QueryFilterState>();
-  const [sortState, setSortState] = useState<SortState>();
+  const [queryFilterState, setQueryFilterState] = usePersist('rosterFilter', useState<QueryFilterState>());
+  const [sortState, setSortState] = usePersist('rosterSort', useState<SortState>());
   const [rosterColumnInfos, setRosterColumnInfos] = useState<ApiRosterColumnInfo[]>([]);
-  const [visibleColumns, setVisibleColumns] = useState<ApiRosterColumnInfo[]>([]);
+  const [visibleColumns, setVisibleColumns] = usePersist('rosterVisibleColumns', useState<ApiRosterColumnInfo[]>([]));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
   const [applyingFilters, setApplyingFilters] = useState(false);
+  const fetchRosterLatestId = useRef(0);
+
+  // const [recentlyViewedOrphans, setRecentlyViewedOrphans] = useState<string>([]);
+
 
   const orgId = org?.id;
   const orgName = org?.name;
@@ -139,8 +144,9 @@ export const RosterPage = () => {
   //
   // Effects
   //
-
   const fetchRoster = useCallback(async () => {
+    const fetchRosterId = Date.now() + Math.random();
+    fetchRosterLatestId.current = fetchRosterId;
     try {
       const params: { [key: string]: string } = {
         limit: `${rowsPerPage}`,
@@ -151,22 +157,30 @@ export const RosterPage = () => {
         params.sortDirection = sortState.sortDirection;
       }
       if (queryFilterState) {
-        setApplyingFilters(true);
-        setTotalRowsCount(0);
+        if (fetchRosterLatestId.current === fetchRosterId) {
+          setApplyingFilters(true);
+          setTotalRowsCount(0);
+        }
         const response = await axios.post(`api/roster/${orgId}/search`, queryFilterState, {
           params,
         });
+
         const data = response.data as ApiRosterPaginated;
-        setRows(data.rows);
-        setTotalRowsCount(data.totalRowsCount);
+
         setApplyingFilters(false);
+        if (fetchRosterLatestId.current === fetchRosterId) {
+          setRows(data.rows);
+          setTotalRowsCount(data.totalRowsCount);
+        }
       } else {
         const response = await axios(`api/roster/${orgId}`, {
           params,
         });
         const data = response.data as ApiRosterPaginated;
-        setRows(data.rows);
-        setTotalRowsCount(data.totalRowsCount);
+        if (fetchRosterLatestId.current === fetchRosterId) {
+          setRows(data.rows);
+          setTotalRowsCount(data.totalRowsCount);
+        }
       }
     } catch (e) {
       dispatch(Modal.alert('Error', formatMessage(e, 'Error Applying Filters'))).then();
@@ -202,7 +216,7 @@ export const RosterPage = () => {
       const infos = (await axios.get(`api/roster/${orgId}/info`)).data as ApiRosterColumnInfo[];
       const unitColumnWithInfos = sortRosterColumns([unitColumn, ...infos]);
       setRosterColumnInfos(unitColumnWithInfos);
-      if (initialLoad.current) {
+      if (initialLoad.current && visibleColumns.length === 0) {
         setVisibleColumns(unitColumnWithInfos.slice(0, maxNumColumnsToShow));
       }
     } catch (error) {
@@ -268,7 +282,7 @@ export const RosterPage = () => {
       initialLoad.current = false;
       dispatch(AppFrame.setPageLoading(false));
     })();
-  }, [dispatch, fetchRosterColumnInfo, fetchOrphanedRecords, fetchRoster, fetchUnits]);
+  }, []);
 
   // Orphaned records reload.
   useEffect(() => {
@@ -277,7 +291,7 @@ export const RosterPage = () => {
     }
   }, [fetchOrphanedRecords]);
 
-  // Roster reload.
+  // // Roster reload.
   useEffect(() => {
     if (!initialLoad.current) {
       fetchRoster().then();
@@ -795,12 +809,14 @@ export const RosterPage = () => {
               })}
             onChange={setQueryFilterState}
             open={filtersOpen}
+            persistKey="rosterQuery"
           />
           <div className={classes.tableWrapper}>
             <TableCustomColumnsContent
               rows={rows}
               columns={visibleColumns}
               sortable
+              defaultSort={sortState ? { column: sortState.column, direction: sortState.sortDirection } : undefined}
               onSortChange={handleSortChanged}
               idColumn="id"
               noDataText={applyingFilters ? 'Searching...' : 'No Data'}

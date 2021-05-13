@@ -1,4 +1,5 @@
 import { HelpCard } from '../actions/help-card.actions';
+import { Persist } from '../actions/persist.actions';
 import { User } from '../actions/user.actions';
 import { Dict } from '../utility/typescript-utils';
 import { getLoggedInState } from '../utility/user-utils';
@@ -6,7 +7,7 @@ import { getLoggedInState } from '../utility/user-utils';
 // We need to be careful about what goes into local storage due to security concerns. So make sure not to add anything
 // that is clearly identifying of groups, units, or individuals, such as PII/PHI data, group name, etc.
 
-export interface LocalStorageState {
+export interface LocalStorageState extends Record<string, unknown>{
   orgId?: number
   hideHelpCard?: Dict<boolean>
 }
@@ -51,6 +52,15 @@ export function localStorageReducer(state = localStorageInitialState, action: an
         },
       };
     }
+    case Persist.Actions.Set.type: {
+      const { persistKey, value } = (action as Persist.Actions.Set).payload;
+      console.log('persistAction', persistKey, value);
+      return {
+        ...state,
+        [persistKey]: action.payload.value,
+      };
+    }
+
     default:
       return state;
   }
