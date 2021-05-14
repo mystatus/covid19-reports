@@ -4,7 +4,6 @@ export default function useDebounced<T>(value: T, delay: number) {
   const isInitialMount = useRef(true);
   const [debounced, setDebounced] = useState(value);
 
-  // eslint-disable-next-line consistent-return
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
