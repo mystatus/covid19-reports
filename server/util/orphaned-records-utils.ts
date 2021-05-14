@@ -10,6 +10,9 @@ export function getOrphanedRecordsForResolve(compositeId: OrphanedRecord['compos
       compositeId,
       deletedOn: null,
     },
+    order: {
+      timestamp: 'DESC',
+    },
   });
 }
 
@@ -71,9 +74,8 @@ export function buildVisibleOrphanedRecordResultsQuery(userEdipi: string, orgId:
     .addSelect('orphan.composite_id', 'id')
     .addSelect('roster.unit_id', 'unitId')
     .addSelect('roster.id', 'rosterHistoryId')
-    .orderBy('orphan.count', 'DESC')
-    .addOrderBy('orphan.unit', 'ASC')
-    .addOrderBy('orphan.edipi', 'ASC')
+    .orderBy('orphan.unit', 'ASC')
+    .addOrderBy('MAX(orphan.timestamp)', 'DESC')
     .groupBy('orphan.composite_id')
     .addGroupBy('orphan.edipi')
     .addGroupBy('orphan.unit')
