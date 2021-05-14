@@ -6,7 +6,6 @@ import { elasticsearch } from '../../elasticsearch/elasticsearch';
 import { assertRequestQuery } from '../../util/api-utils';
 import { buildEsIndexPatternsForDataExport } from '../../util/elasticsearch-utils';
 import { InternalServerError } from '../../util/error-types';
-import { Log } from '../../util/log';
 import { getRosterMusterStats } from '../../util/muster-utils';
 import {
   TimeInterval,
@@ -16,7 +15,12 @@ import {
   OrgParam,
   PaginatedQuery,
 } from '../index';
-import { RosterEntryData } from '../roster/roster.types';
+import {
+  RosterColumnInfo,
+  RosterColumnValue,
+  RosterEntryData,
+  RosterFileRow,
+} from '../roster/roster.types';
 import { Roster } from '../roster/roster.model';
 import { Unit } from '../unit/unit.model';
 
@@ -94,7 +98,6 @@ class ExportController {
   }
 
   async exportRosterToCsv(req: ApiRequest, res: Response) {
-
     const orgId = req.appOrg!.id;
 
     const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appUserRole!);
@@ -104,8 +107,7 @@ class ExportController {
       })
       .getRawMany<RosterEntryData>();
 
-
-    const unitIdNameMap: {[key: number]: string} = {};
+    const unitIdNameMap: { [key: number]: string } = {};
     const units = await Unit.find({
       where: {
         org: orgId,
@@ -116,19 +118,30 @@ class ExportController {
       unitIdNameMap[unit.id] = unit.name;
     });
 
-    // convert data to csv format and download
-    let csv: string;
-    try {
-      csv = await json2csvAsync(rosterData.map(roster => {
-        return {
-          ...roster,
-          unit: unitIdNameMap[roster.unit!],
-        };
-      }));
-    } catch (err) {
-      Log.error('Failed to convert roster json data to CSV string.');
-      throw new InternalServerError('Failed to export Roster data to CSV.');
+    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
+    const columnsLookup: { [columnName: string]: RosterColumnInfo } = {};
+    for (const column of columns) {
+      columnsLookup[column.name] = column;
     }
+
+    // Convert data to csv format and download.
+    const csv = await json2csvAsync(rosterData.map(entry => {
+      // Convert column 'name' keys to column 'displayName' keys.
+      const row: RosterFileRow<RosterColumnValue> = {
+        Unit: unitIdNameMap[entry.unit],
+      };
+
+      for (const columnName of Object.keys(entry)) {
+        const column = columnsLookup[columnName];
+        if (column == null || column.name === 'unit') {
+          continue;
+        }
+
+        row[column.displayName] = entry[columnName];
+      }
+
+      return row;
+    }));
 
     const date = new Date().toISOString();
     const filename = `org_${orgId}_roster_export_${date}.csv`;

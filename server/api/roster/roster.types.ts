@@ -79,7 +79,7 @@ export type RosterEntryData = {
   lastName?: RosterEntity['lastName'],
 } & CustomColumns;
 
-export type RosterFileRow = {
-  Unit: string
-  [columnName: string]: string
+export type RosterFileRow<TColumnValue = string> = {
+  Unit: TColumnValue
+  [columnDisplayName: string]: TColumnValue
 };
