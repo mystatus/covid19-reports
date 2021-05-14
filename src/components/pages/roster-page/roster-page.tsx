@@ -79,7 +79,7 @@ import { Modal } from '../../../actions/modal.actions';
 import { UserSelector } from '../../../selectors/user.selector';
 import { AppState } from '../../../store';
 import { UserState } from '../../../reducers/user.reducer';
-import usePersist from '../../../hooks/use-persist';
+import usePersistedState from '../../../hooks/use-persisted-state';
 
 const unitColumn: ApiRosterColumnInfo = {
   name: 'unit',
@@ -112,11 +112,11 @@ export const RosterPage = () => {
   const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
   const [orphanedRecordsWaiting, setOrphanedRecordsWaiting] = useState(false);
   const [orphanedRecordsPage, setOrphanedRecordsPage] = useState(0);
-  const [orphanedRecordsRowsPerPage, setOrphanedRecordsRowsPerPage] = usePersist('orphanRowsPerPage', useState(10));
+  const [orphanedRecordsRowsPerPage, setOrphanedRecordsRowsPerPage] = usePersistedState('orphanRowsPerPage', 10);
   const [rows, setRows] = useState<ApiRosterEntry[]>([]);
   const [page, setPage] = useState(0);
   const [totalRowsCount, setTotalRowsCount] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = usePersist('rosterRowsPerPage', useState(10));
+  const [rowsPerPage, setRowsPerPage] = usePersistedState('rosterRowsPerPage', 10);
   const [unitNameMap, setUnitNameMap] = useState<{ [key: string]: string }>({});
   const [selectedRosterEntry, setSelectedRosterEntry] = useState<ApiRosterEntry>();
   const [deleteRosterEntryDialogOpen, setDeleteRosterEntryDialogOpen] = useState(false);
@@ -125,17 +125,14 @@ export const RosterPage = () => {
   const [rosterEntryEndDateLoading, setRosterEntryEndDateLoading] = useState(false);
   const [downloadTemplateLoading, setDownloadTemplateLoading] = useState(false);
   const [exportRosterLoading, setExportRosterLoading] = useState(false);
-  const [queryFilterState, setQueryFilterState] = usePersist('rosterFilter', useState<QueryFilterState>());
-  const [sortState, setSortState] = usePersist('rosterSort', useState<SortState>());
+  const [queryFilterState, setQueryFilterState] = usePersistedState<QueryFilterState | undefined>('rosterFilter');
+  const [sortState, setSortState] = usePersistedState<SortState>('rosterSort');
   const [rosterColumnInfos, setRosterColumnInfos] = useState<ApiRosterColumnInfo[]>([]);
-  const [visibleColumns, setVisibleColumns] = usePersist('rosterVisibleColumns', useState<ApiRosterColumnInfo[]>([]));
+  const [visibleColumns, setVisibleColumns] = usePersistedState<ApiRosterColumnInfo[]>('rosterVisibleColumns', []);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
   const [applyingFilters, setApplyingFilters] = useState(false);
-  const fetchRosterLatestId = useRef(0);
-
-  // const [recentlyViewedOrphans, setRecentlyViewedOrphans] = useState<string>([]);
-
+  const fetchRosterInvokeCount = useRef(0);
 
   const orgId = org?.id;
   const orgName = org?.name;
@@ -145,10 +142,18 @@ export const RosterPage = () => {
   // Effects
   //
   const fetchRoster = useCallback(async () => {
-    const fetchRosterId = Date.now() + Math.random();
-    fetchRosterLatestId.current = fetchRosterId;
+    // fetchRoster can be called multiple times in close proximity resulting in possible a race condition
+    // where API responses return out of order relative to the invocation order.
+    //
+    // Therefore, we track the latest invocation using an ever incrementing integer value
+    // store in a captured ref (fetchRosterInvokeCount) and compare it to the locally scoped
+    // copy (fetchRosterInvocation) of that value to ensure that our component state always
+    // represents the results of the latest invocation.
+    fetchRosterInvokeCount.current += 1;
+    const fetchRosterInvocation = fetchRosterInvokeCount.current;
+
     try {
-      const params: { [key: string]: string } = {
+      const params: Record<string, string> = {
         limit: `${rowsPerPage}`,
         page: `${page}`,
       };
@@ -157,7 +162,7 @@ export const RosterPage = () => {
         params.sortDirection = sortState.sortDirection;
       }
       if (queryFilterState) {
-        if (fetchRosterLatestId.current === fetchRosterId) {
+        if (fetchRosterInvokeCount.current === fetchRosterInvocation) {
           setApplyingFilters(true);
           setTotalRowsCount(0);
         }
@@ -168,7 +173,7 @@ export const RosterPage = () => {
         const data = response.data as ApiRosterPaginated;
 
         setApplyingFilters(false);
-        if (fetchRosterLatestId.current === fetchRosterId) {
+        if (fetchRosterInvokeCount.current === fetchRosterInvocation) {
           setRows(data.rows);
           setTotalRowsCount(data.totalRowsCount);
         }
@@ -177,7 +182,7 @@ export const RosterPage = () => {
           params,
         });
         const data = response.data as ApiRosterPaginated;
-        if (fetchRosterLatestId.current === fetchRosterId) {
+        if (fetchRosterInvokeCount.current === fetchRosterInvocation) {
           setRows(data.rows);
           setTotalRowsCount(data.totalRowsCount);
         }
@@ -222,7 +227,7 @@ export const RosterPage = () => {
     } catch (error) {
       dispatch(Modal.alert('Get Roster Column Info', formatMessage(error, 'Failed to get roster column info'))).then();
     }
-  }, [dispatch, orgId]);
+  }, [dispatch, orgId, setVisibleColumns, visibleColumns.length]);
 
   const canManageRoster = (userState: UserState) => {
     return Boolean(userState.activeRole?.role.canManageRoster);
@@ -291,7 +296,7 @@ export const RosterPage = () => {
     }
   }, [fetchOrphanedRecords]);
 
-  // // Roster reload.
+  // Roster reload.
   useEffect(() => {
     if (!initialLoad.current) {
       fetchRoster().then();

@@ -54,13 +54,11 @@ export function localStorageReducer(state = localStorageInitialState, action: an
     }
     case Persist.Actions.Set.type: {
       const { persistKey, value } = (action as Persist.Actions.Set).payload;
-      console.log('persistAction', persistKey, value);
       return {
         ...state,
-        [persistKey]: action.payload.value,
+        [persistKey]: value,
       };
     }
-
     default:
       return state;
   }

@@ -29,10 +29,6 @@ import {
   orphanedRecordInitialState,
   orphanedRecordReducer,
 } from './reducers/orphaned-record.reducer';
-// import {
-//   persistInitialState,
-//   persistReducer,
-// } from './reducers/persist.reducer';
 import {
   roleInitialState,
   roleReducer,
@@ -75,7 +71,6 @@ export const initialState = {
   user: userInitialState,
   workspace: workspaceInitialState,
   localStorage: localStorageInitialState,
-  // persist: persistInitialState,
 };
 
 export type AppState = typeof initialState;
@@ -123,7 +118,7 @@ function createPlainObjectMiddleware(): Middleware<AnyAction, AppState> {
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['localStorage'/* , 'persist' */],
+  whitelist: ['localStorage'],
 };
 
 export const configureStore = () => {
@@ -142,7 +137,6 @@ export const configureStore = () => {
         user: userReducer,
         workspace: workspaceReducer,
         localStorage: localStorageReducer,
-        // persist: persistReducer,
       }),
     ),
     initialState,

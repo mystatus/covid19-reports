@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   Button, Collapse, Grid, IconButton, Select, Switch, TextField,
 } from '@material-ui/core';
@@ -10,7 +10,7 @@ import moment, { Moment } from 'moment';
 import useStyles from './query-builder.styles';
 import useDebounced from '../../hooks/use-debounced';
 import useDeepEquality from '../../hooks/use-deep-equality';
-import usePersist from '../../hooks/use-persist';
+import usePersistedState from '../../hooks/use-persisted-state';
 
 const toDate = (date: Moment) => date.format('YYYY-MM-DD');
 
@@ -410,7 +410,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
   const {
     fields, onChange, open, persistKey,
   } = props;
-  const [rows, setRows] = usePersist(persistKey, useState<QueryRow[]>([]));
+  const [rows, setRows] = usePersistedState<QueryRow[]>(persistKey, []);
   const availableFields = fields.filter(field => !rows.some(row => row.field.name === field.name));
   const [filterState, setFilterState] = useDeepEquality<QueryFilterState | undefined>();
   const debouncedRows = useDebounced(rows, 333);
@@ -439,7 +439,6 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
     for (const { field, op, value } of queryableRows) {
       query[field!.name] = { op, value };
     }
-    console.log('qe', queryableRows, rows, query, filterState);
     setFilterState(queryableRows.length ? query : undefined);
   }, [debouncedRows, setFilterState]);
 
