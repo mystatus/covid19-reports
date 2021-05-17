@@ -1,7 +1,7 @@
 import { Brackets } from 'typeorm';
 import { OrphanedRecordAction } from '../api/orphaned-record/orphaned-record-action.model';
 import { OrphanedRecord } from '../api/orphaned-record/orphaned-record.model';
-import { RosterHistory } from '../api/roster/roster-history.model';
+import { RosterHistory } from '../api/roster-history/roster-history.model';
 import { User } from '../api/user/user.model';
 
 export function getOrphanedRecordsForResolve(compositeId: OrphanedRecord['compositeId']) {

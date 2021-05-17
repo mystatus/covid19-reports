@@ -36,6 +36,7 @@ import {
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
 import PageHeader from '../../page-header/page-header';
+import { PageRoot } from '../../page-root/page-root';
 import { StatusChip } from '../../status-chip/status-chip';
 import useStyles from './groups-page.styles';
 import {
@@ -237,7 +238,7 @@ export const GroupsPage = () => {
   const myOrgs = getMyOrgs();
 
   return (
-    <>
+    <PageRoot>
       <Container maxWidth="md">
         <PageHeader title="Groups" />
 
@@ -437,7 +438,7 @@ export const GroupsPage = () => {
         onClose={handleRequestAccessDialogClose}
         onComplete={handleRequestAccessDialogComplete}
       />
-    </>
+    </PageRoot>
   );
 };
 

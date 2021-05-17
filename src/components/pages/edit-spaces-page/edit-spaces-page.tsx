@@ -16,6 +16,7 @@ import AddCircleIcon from '@material-ui/icons/AddCircle';
 import CheckIcon from '@material-ui/icons/Check';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PageHeader from '../../page-header/page-header';
+import { PageRoot } from '../../page-root/page-root';
 import useStyles from './edit-spaces-page.styles';
 import { ApiWorkspace, ApiWorkspaceTemplate } from '../../../models/api-response';
 import { EditSpaceDialog, EditWorkspaceDialogProps } from './edit-space-dialog';
@@ -117,7 +118,7 @@ export const EditSpacesPage = () => {
   useEffect(() => { initializeTable().then(); }, [initializeTable]);
 
   return (
-    <main className={classes.root}>
+    <PageRoot>
       <Container maxWidth="md">
         <PageHeader
           title="Edit Spaces"
@@ -222,6 +223,6 @@ export const EditSpacesPage = () => {
           onError={editWorkspaceDialogProps.onError}
         />
       )}
-    </main>
+    </PageRoot>
   );
 };

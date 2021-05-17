@@ -120,10 +120,9 @@ export class UserRole extends BaseEntity {
     return this.units.find(unit => unit.id === unitId);
   }
 
-  static admin(org: Org, user: User) {
+  static admin(org: Org) {
     const userRole = new UserRole();
     userRole.id = 0;
-    userRole.user = user;
     userRole.role = Role.admin(org);
     userRole.allUnits = true;
     return userRole;

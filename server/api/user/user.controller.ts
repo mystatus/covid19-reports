@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { getManager } from 'typeorm';
 import { getKibanaWorkspaceDashboards } from '../../kibana/kibana-utility';
+import { Log } from '../../util/log';
 import { AccessRequest } from '../access-request/access-request.model';
 import {
   ApiRequest,

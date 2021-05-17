@@ -23,6 +23,7 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ReportProblemOutlinedIcon from '@material-ui/icons/ReportProblemOutlined';
 import client, { AccessRequestClient, UserClient } from '../../../client';
 import PageHeader from '../../page-header/page-header';
+import { PageRoot } from '../../page-root/page-root';
 import { UsersPageHelp } from './users-page-help';
 import useStyles from './users-page.styles';
 import { ApiRole, ApiUser, ApiAccessRequest } from '../../../models/api-response';
@@ -175,7 +176,7 @@ export const UsersPage = () => {
   useEffect(() => { initializeTable().then(); }, [initializeTable]);
 
   return (
-    <main className={classes.root}>
+    <PageRoot>
       <Container maxWidth="md">
         <PageHeader
           title="Users"
@@ -324,6 +325,6 @@ export const UsersPage = () => {
           accessRequest={viewAccessRequestDialogProps.accessRequest}
         />
       )}
-    </main>
+    </PageRoot>
   );
 };

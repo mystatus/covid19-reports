@@ -39,6 +39,7 @@ import {
   columnInfosOrdered,
 } from '../../../utility/table';
 import PageHeader from '../../page-header/page-header';
+import { PageRoot } from '../../page-root/page-root';
 import { TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
 import { MusterPageHelp } from './muster-page-help';
@@ -414,7 +415,7 @@ export const MusterPage = () => {
   //
 
   return (
-    <main className={classes.root}>
+    <PageRoot>
       <Container maxWidth="md">
         <PageHeader
           title="Muster Non-Compliance"
@@ -574,6 +575,6 @@ export const MusterPage = () => {
           </Grid>
         </Grid>
       </Container>
-    </main>
+    </PageRoot>
   );
 };

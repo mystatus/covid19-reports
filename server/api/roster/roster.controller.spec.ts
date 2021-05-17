@@ -23,9 +23,8 @@ import {
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { seedCustomRosterColumn } from './custom-roster-column.model.mock';
 import {
-  ChangeType,
   RosterHistory,
-} from './roster-history.model';
+} from '../roster-history/roster-history.model';
 import { Roster } from './roster.model';
 import {
   mockRosterUploadCsv,
@@ -34,6 +33,7 @@ import {
 } from './roster.model.mock';
 import {
   baseRosterColumns,
+  RosterHistoryChangeType,
   RosterColumnType,
 } from './roster.types';
 
@@ -363,7 +363,7 @@ describe(`Roster Controller`, () => {
         },
       }))!;
       expect(rosterHistoryAfter.edipi).to.equal(body.edipi);
-      expect(rosterHistoryAfter.changeType).to.equal(ChangeType.Added);
+      expect(rosterHistoryAfter.changeType).to.equal(RosterHistoryChangeType.Added);
 
       const rosterHistoryCountAfter = await RosterHistory.count({
         where: {

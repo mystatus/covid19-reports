@@ -34,6 +34,7 @@ import axios from 'axios';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
+import { PageRoot } from '../../page-root/page-root';
 import { UnitsPageHelp } from './units-page-help';
 import useStyles from './units-page.styles';
 import { ApiUnit } from '../../../models/api-response';
@@ -162,7 +163,7 @@ export const UnitsPage = () => {
   useEffect(() => { initializeTable().then(); }, [initializeTable]);
 
   return (
-    <main className={classes.root}>
+    <PageRoot>
       <Container maxWidth="md">
         <PageHeader
           title="Unit Management"
@@ -299,6 +300,6 @@ export const UnitsPage = () => {
       )}
       {editUnitDialogProps.open && <EditUnitDialog {...editUnitDialogProps} />}
       {defaultMusterDialogProps.open && <DefaultMusterDialog {...defaultMusterDialogProps} />}
-    </main>
+    </PageRoot>
   );
 };

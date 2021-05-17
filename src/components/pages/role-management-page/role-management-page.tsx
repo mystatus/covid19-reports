@@ -13,6 +13,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import PageHeader from '../../page-header/page-header';
+import { PageRoot } from '../../page-root/page-root';
 import { RoleManagementPageHelp } from './role-management-page-help';
 import useStyles from './role-management-page.styles';
 import { EditRoleDialog, EditRoleDialogProps } from './edit-role-dialog';
@@ -100,7 +101,7 @@ export const RoleManagementPage = () => {
   useEffect(() => { initializeTable().then(); }, [initializeTable]);
 
   return (
-    <main className={classes.root}>
+    <PageRoot>
       <Container maxWidth="md">
         <PageHeader
           title="Group Roles"
@@ -186,6 +187,6 @@ export const RoleManagementPage = () => {
         </Dialog>
       )}
       {editRoleDialogProps.open && <EditRoleDialog {...editRoleDialogProps} />}
-    </main>
+    </PageRoot>
   );
 };

@@ -62,7 +62,8 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
   }
 
   if (user?.rootAdmin) {
-    user.userRoles = (await Org.find()).map(org => UserRole.admin(org, user!));
+    const allOrgs = await Org.find();
+    user.userRoles = allOrgs.map(org => UserRole.admin(org));
   }
 
   if (!user) {
@@ -133,7 +134,7 @@ export async function requireOrgAccess(reqAny: any, res: Response, next: NextFun
 
       if (org) {
         req.appOrg = org;
-        req.appUserRole = UserRole.admin(org, req.appUser);
+        req.appUserRole = UserRole.admin(org);
       } else {
         throw new NotFoundError('Organization was not found.');
       }

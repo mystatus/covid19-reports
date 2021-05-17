@@ -113,6 +113,7 @@ export class Role extends BaseEntity {
     adminRole.org = org;
     adminRole.allowedNotificationEvents = ['*'];
     adminRole.allowedRosterColumns = ['*'];
+    adminRole.workspaces = [];
 
     // Allow all permissions
     for (const key of Object.keys(adminRole)) {

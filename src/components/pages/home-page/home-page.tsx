@@ -24,6 +24,7 @@ import { Link } from '../../link/link';
 import { User } from '../../../actions/user.actions';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
+import { PageRoot } from '../../page-root/page-root';
 import useStyles from './home-page.styles';
 import welcomeImage from '../../../media/images/welcome-image.png';
 import PageHeader from '../../page-header/page-header';
@@ -186,7 +187,7 @@ export const HomePage = () => {
     .filter(workspace => (dashboards[workspace.id] ?? []).some(dashboard => isDashboardFavorited(workspace, dashboard)));
 
   return (
-    <main className={classes.root}>
+    <PageRoot>
       <Container maxWidth="md">
         <PageHeader
           title={`Welcome back, ${user.firstName}!`}
@@ -302,6 +303,6 @@ export const HomePage = () => {
           )}
         </Grid>
       </Container>
-    </main>
+    </PageRoot>
   );
 };

@@ -24,6 +24,7 @@ import { getLineCount } from '../../../utility/string-utils';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { LinearProgressWithPercent } from '../../linear-progress-with-label/linear-progress-with-label';
 import PageHeader from '../../page-header/page-header';
+import { PageRoot } from '../../page-root/page-root';
 import { DataExportPageHelp } from './data-export-page-help';
 import useStyles from './data-export-page.styles';
 
@@ -106,7 +107,7 @@ export const DataExportPage = () => {
   };
 
   return (
-    <main className={classes.root}>
+    <PageRoot>
       <Container maxWidth="md">
         <PageHeader
           title="Data Export"
@@ -176,6 +177,6 @@ export const DataExportPage = () => {
           </Grid>
         </Grid>
       </Container>
-    </main>
+    </PageRoot>
   );
 };

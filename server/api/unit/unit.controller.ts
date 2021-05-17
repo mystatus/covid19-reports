@@ -4,13 +4,14 @@ import { Log } from '../../util/log';
 import {
   ApiRequest, OrgParam, OrgUnitParams,
 } from '../index';
+import { RosterHistoryChangeType } from '../roster/roster.types';
 import { MusterConfiguration, Unit } from './unit.model';
 import {
   BadRequestError, InternalServerError, NotFoundError,
 } from '../../util/error-types';
 import { Roster } from '../roster/roster.model';
 import { elasticsearch } from '../../elasticsearch/elasticsearch';
-import { ChangeType, RosterHistory } from '../roster/roster-history.model';
+import { RosterHistory } from '../roster-history/roster-history.model';
 import { ReportSchema } from '../report-schema/report-schema.model';
 
 class UnitController {
@@ -114,9 +115,9 @@ class UnitController {
       .distinctOn(['roster.edipi'])
       .orderBy('roster.edipi')
       .addOrderBy('roster.timestamp', 'DESC')
-      .getRawMany() as { edipi: string, changeType: ChangeType }[];
+      .getRawMany() as { edipi: string, changeType: RosterHistoryChangeType }[];
 
-    res.json(roster.filter(entry => entry.changeType !== ChangeType.Deleted).map(entry => entry.edipi));
+    res.json(roster.filter(entry => entry.changeType !== RosterHistoryChangeType.Deleted).map(entry => entry.edipi));
   }
 }
 

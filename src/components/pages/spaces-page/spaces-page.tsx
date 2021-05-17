@@ -31,6 +31,7 @@ import { WorkspaceSelector } from '../../../selectors/workspace.selector';
 import { getDashboardUrl } from '../../../utility/url-utils';
 import { Link } from '../../link/link';
 import PageHeader from '../../page-header/page-header';
+import { PageRoot } from '../../page-root/page-root';
 import { SpacesPageHelp } from './spaces-page-help';
 import useStyles from './spaces-page.styles';
 
@@ -76,7 +77,7 @@ export const SpacesPage = () => {
   };
 
   return (
-    <main className={classes.root}>
+    <PageRoot>
       <Container maxWidth="md">
         <PageHeader
           title="Spaces"
@@ -138,6 +139,6 @@ export const SpacesPage = () => {
           ))}
         </Grid>
       </Container>
-    </main>
+    </PageRoot>
   );
 };

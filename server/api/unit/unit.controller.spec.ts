@@ -16,7 +16,7 @@ import {
   uniqueString,
 } from '../../util/test-utils/unique';
 import { Org } from '../org/org.model';
-import { RosterHistory } from '../roster/roster-history.model';
+import { RosterHistory } from '../roster-history/roster-history.model';
 import { seedRosterEntries } from '../roster/roster.model.mock';
 import { User } from '../user/user.model';
 import { seedUserInternal } from '../user/user.model.mock';

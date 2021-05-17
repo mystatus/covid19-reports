@@ -26,10 +26,15 @@ export interface RosterColumnInfo {
   required: boolean,
   updatable: boolean,
   config?: CustomColumnConfig
+  exampleValue?: string
 }
 
 export interface BaseRosterColumnInfo extends RosterColumnInfo {
   name: 'edipi' | 'firstName' | 'lastName'
+}
+
+export interface BaseRosterHistoryColumnInfo extends RosterColumnInfo {
+  name: 'edipi' | 'firstName' | 'lastName' | 'timestamp' | 'changeType'
 }
 
 export const baseRosterColumnLookup: Readonly<{
@@ -44,6 +49,7 @@ export const baseRosterColumnLookup: Readonly<{
     custom: false,
     required: true,
     updatable: false,
+    exampleValue: '0000000001',
   },
   firstName: {
     name: 'firstName',
@@ -69,6 +75,34 @@ export const baseRosterColumnLookup: Readonly<{
 
 export const baseRosterColumns: Readonly<Readonly<BaseRosterColumnInfo>>[] = Object.values(baseRosterColumnLookup);
 
+export enum RosterHistoryChangeType {
+  Added = 'added',
+  Changed = 'changed',
+  Deleted = 'deleted',
+}
+
+export const baseRosterHistoryColumns: Readonly<Readonly<BaseRosterHistoryColumnInfo>>[] = (baseRosterColumns as BaseRosterHistoryColumnInfo[])
+  .concat([{
+    name: 'timestamp',
+    displayName: 'Timestamp',
+    type: RosterColumnType.DateTime,
+    pii: false,
+    phi: false,
+    custom: false,
+    required: true,
+    updatable: false,
+  }, {
+    name: 'changeType',
+    displayName: 'Change Type',
+    type: RosterColumnType.Enum,
+    pii: false,
+    phi: false,
+    custom: false,
+    required: true,
+    updatable: false,
+    exampleValue: RosterHistoryChangeType.Added,
+  }]);
+
 export const edipiColumnDisplayName = baseRosterColumnLookup.edipi.displayName;
 export const unitColumnDisplayName = 'Unit';
 
@@ -79,7 +113,12 @@ export type RosterEntryData = {
   lastName?: RosterEntity['lastName'],
 } & CustomColumns;
 
-export type RosterFileRow<TColumnValue = string> = {
+export interface RosterFileRow<TColumnValue = string> {
   Unit: TColumnValue
-  [columnDisplayName: string]: TColumnValue
-};
+  [columnName: string]: TColumnValue
+}
+
+export interface RosterHistoryFileRow extends RosterFileRow {
+  Timestamp: string
+  'Change Type': RosterHistoryChangeType
+}

@@ -1,15 +1,23 @@
 import { EntityManager } from 'typeorm';
 import { Org } from '../api/org/org.model';
 import { Role } from '../api/role/role.model';
-import { RosterHistory } from '../api/roster/roster-history.model';
+import { RosterHistory } from '../api/roster-history/roster-history.model';
 import { Roster } from '../api/roster/roster.model';
-import { RosterEntryData } from '../api/roster/roster.types';
+import {
+  baseRosterColumnLookup,
+  RosterColumnInfo,
+  RosterColumnType,
+  RosterEntryData,
+  RosterFileRow,
+  unitColumnDisplayName,
+} from '../api/roster/roster.types';
 import { Unit } from '../api/unit/unit.model';
 import { UserRole } from '../api/user/user-role.model';
 import {
   BadRequestError,
   NotFoundError,
 } from './error-types';
+import { getMissingKeys } from './util';
 
 export async function addRosterEntry(org: Org, role: Role, entryData: RosterEntryData, manager: EntityManager) {
   const edipi = entryData.edipi as string;
@@ -101,4 +109,47 @@ export async function getRosterHistoryForIndividual(edipi: string, unitId: numbe
     .addOrderBy('rh.timestamp', 'DESC')
     .addOrderBy('rh.change_type', 'DESC')
     .getMany();
+}
+
+export function getRequiredColumnDisplayNames(columns: RosterColumnInfo[]) {
+  return columns
+    .filter(x => x.required)
+    .map(x => x.displayName)
+    .concat([unitColumnDisplayName]);
+}
+
+export function getRosterCsvTemplate(columns: RosterColumnInfo[]) {
+  const headers = ['Unit'];
+  const exampleValues = ['unit1'];
+
+  columns.forEach(column => {
+    if (column.name === 'edipi') {
+      headers.push(baseRosterColumnLookup.edipi.displayName);
+      exampleValues.push('0000000001');
+    } else {
+      headers.push(column.displayName.includes('"') ? `"${column.displayName.replaceAll('"', '\\"')}"` : column.displayName);
+      switch (column.type) {
+        case RosterColumnType.Number:
+          exampleValues.push('12345');
+          break;
+        case RosterColumnType.Boolean:
+          exampleValues.push('false');
+          break;
+        case RosterColumnType.String:
+          exampleValues.push('Example Text');
+          break;
+        case RosterColumnType.Date:
+          exampleValues.push(new Date().toLocaleDateString());
+          break;
+        case RosterColumnType.DateTime:
+          exampleValues.push(new Date().toISOString());
+          break;
+        default:
+          exampleValues.push('');
+          break;
+      }
+    }
+  });
+
+  return `${headers.join(',')}\n${exampleValues.join(',')}`;
 }

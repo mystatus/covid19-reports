@@ -11,7 +11,7 @@ import { CustomRosterColumn } from '../api/roster/custom-roster-column.model';
 import { Unit } from '../api/unit/unit.model';
 import { env } from '../util/env';
 import { Log } from '../util/log';
-import { RosterHistory } from '../api/roster/roster-history.model';
+import { RosterHistory } from '../api/roster-history/roster-history.model';
 import { defaultReportSchemas, ReportSchema } from '../api/report-schema/report-schema.model';
 import {
   uniqueEdipi,

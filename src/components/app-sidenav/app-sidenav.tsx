@@ -20,6 +20,7 @@ import HelpIcon from '@material-ui/icons/Help';
 import ViewWeekOutlinedIcon from '@material-ui/icons/ViewWeekOutlined';
 import DashboardOutlinedIcon from '@material-ui/icons/DashboardOutlined';
 import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
+import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import clsx from 'clsx';
 import {
   useDispatch,
@@ -208,6 +209,13 @@ export const AppSidenav = () => {
                 name="Edit Spaces"
                 icon={(<DashboardOutlinedIcon />)}
               />
+              {user.rootAdmin && (
+                <SidenavLink
+                  to="/root-admin"
+                  name="Root Admin"
+                  icon={(<AccountCircleIcon />)}
+                />
+              )}
             </List>
           </>
         )}

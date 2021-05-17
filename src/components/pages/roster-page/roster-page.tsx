@@ -38,6 +38,7 @@ import { RosterClient } from '../../../client';
 import { downloadFile } from '../../../utility/download';
 import { getNewPageIndex } from '../../../utility/table';
 import PageHeader from '../../page-header/page-header';
+import { PageRoot } from '../../page-root/page-root';
 import {
   SortDirection,
   TableColumn,
@@ -585,7 +586,7 @@ export const RosterPage = () => {
   //
 
   return (
-    <main className={classes.root}>
+    <PageRoot>
       <Container maxWidth={false}>
         <PageHeader
           title="Roster"
@@ -835,6 +836,6 @@ export const RosterPage = () => {
       {editRosterEntryDialogProps.open && (
         <EditRosterEntryDialog {...editRosterEntryDialogProps} />
       )}
-    </main>
+    </PageRoot>
   );
 };

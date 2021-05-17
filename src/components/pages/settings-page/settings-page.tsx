@@ -3,6 +3,7 @@ import {
 } from '@material-ui/core';
 import React from 'react';
 import PageHeader from '../../page-header/page-header';
+import { PageRoot } from '../../page-root/page-root';
 import useStyles from './settings-page.styles';
 import { NotificationsTab } from './notifications-tab';
 import { ProfileDetailsTab } from './profile-details-tab';
@@ -35,7 +36,7 @@ export const SettingsPage = () => {
   };
 
   return (
-    <main className={classes.root}>
+    <PageRoot>
       <Container maxWidth="md">
         <PageHeader title="Settings" />
 
@@ -69,6 +70,6 @@ export const SettingsPage = () => {
           />
         </div>
       </Container>
-    </main>
+    </PageRoot>
   );
 };

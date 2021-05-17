@@ -8,7 +8,7 @@ import { UserNotificationSetting } from './api/notification/user-notification-se
 import { Org } from './api/org/org.model';
 import { Role } from './api/role/role.model';
 import { CustomRosterColumn } from './api/roster/custom-roster-column.model';
-import { RosterHistory } from './api/roster/roster-history.model';
+import { RosterHistory } from './api/roster-history/roster-history.model';
 import { Roster } from './api/roster/roster.model';
 import { Unit } from './api/unit/unit.model';
 import { UserRole } from './api/user/user-role.model';

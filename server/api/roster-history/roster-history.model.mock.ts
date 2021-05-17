@@ -2,9 +2,9 @@ import {
   uniqueDate,
   uniqueString,
 } from '../../util/test-utils/unique';
+import { RosterHistoryChangeType } from '../roster/roster.types';
 import { Unit } from '../unit/unit.model';
 import {
-  ChangeType,
   RosterHistory,
 } from './roster-history.model';
 
@@ -18,7 +18,7 @@ export function mockRosterHistory(unit: Unit) {
       stuff: uniqueString(),
     },
     timestamp: uniqueDate(),
-    changeType: ChangeType.Changed,
+    changeType: RosterHistoryChangeType.Changed,
   });
 }
 

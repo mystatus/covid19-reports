@@ -136,6 +136,15 @@ export namespace RosterClient {
       },
     });
   };
+  export const uploadHistory = async (orgId: number, file: File): Promise<ApiRosterUploadInfo> => {
+    const formData = new FormData();
+    formData.append('roster_history_csv', file);
+    return client.post(`roster-history/${orgId}/bulk`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  };
   export const deleteAll = (orgId: number) => {
     return client.delete(`roster/${orgId}/bulk`);
   };

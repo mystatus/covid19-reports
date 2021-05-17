@@ -29,6 +29,7 @@ import axios from 'axios';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PageHeader from '../../page-header/page-header';
+import { PageRoot } from '../../page-root/page-root';
 import { RosterColumnsPageHelp } from './roster-columns-page-help';
 import useStyles from './roster-columns-page.styles';
 import { ApiRosterColumnInfo, rosterColumnTypeDisplayName } from '../../../models/api-response';
@@ -132,7 +133,7 @@ export const RosterColumnsPage = () => {
   useEffect(() => { initializeTable().then(); }, [initializeTable]);
 
   return (
-    <main className={classes.root}>
+    <PageRoot>
       <Container maxWidth="md">
         <PageHeader
           title="Custom Roster Columns"
@@ -236,6 +237,6 @@ export const RosterColumnsPage = () => {
           onError={editColumnDialogProps.onError}
         />
       )}
-    </main>
+    </PageRoot>
   );
 };

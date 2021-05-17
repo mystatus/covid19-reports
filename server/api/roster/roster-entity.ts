@@ -15,7 +15,10 @@ import {
   getOptionalValue,
   getRequiredValue,
 } from '../../util/util';
+import { Org } from '../org/org.model';
+import { Role } from '../role/role.model';
 import { Unit } from '../unit/unit.model';
+import { CustomRosterColumn } from './custom-roster-column.model';
 import {
   CustomColumns,
   edipiColumnDisplayName,
@@ -67,6 +70,54 @@ export abstract class RosterEntity extends BaseEntity {
   customColumns!: CustomColumns;
 
   abstract getEntityTarget(): EntityTarget<any>;
+
+  protected static async _getAllowedColumns(org: Org, role: Role, allColumns: RosterColumnInfo[]) {
+    const fineGrained = !(role.allowedRosterColumns.length === 1 && role.allowedRosterColumns[0] === '*');
+    return allColumns.filter(column => {
+      let allowed = true;
+      if (fineGrained && role.allowedRosterColumns.indexOf(column.name) < 0) {
+        allowed = false;
+      } else if (!role.canViewPII && column.pii) {
+        allowed = false;
+      } else if (!role.canViewPHI && column.phi) {
+        allowed = false;
+      }
+      return allowed;
+    });
+  }
+
+  protected static async _getColumns(orgId: number, baseColumns: RosterColumnInfo[]) {
+    const customColumns = (await CustomRosterColumn.find({
+      where: {
+        org: orgId,
+      },
+    })).map(customColumn => {
+      const columnInfo: RosterColumnInfo = {
+        ...customColumn,
+        displayName: customColumn.display,
+        custom: true,
+        updatable: true,
+      };
+      return columnInfo;
+    });
+    return [...baseColumns, ...customColumns];
+  }
+
+  protected static async _getCsvTemplate(columns: RosterColumnInfo[]) {
+    const headers = ['Unit'];
+    const exampleValues = ['unit1'];
+
+    columns.forEach(column => {
+      const header = column.displayName.includes('"')
+        ? `"${column.displayName.replaceAll('"', '\\"')}"`
+        : column.displayName;
+
+      headers.push(header);
+      exampleValues.push(getExampleValueForColumn(column));
+    });
+
+    return `${headers.join(',')}\n${exampleValues.join(',')}`;
+  }
 
   toData(): RosterEntryData {
     if (!this.unit) {
@@ -213,4 +264,27 @@ function columnTypeToEntryDataType(columnType: RosterColumnType) {
 
 function isEdipiColumn(column: RosterColumnInfo) {
   return (column.displayName === edipiColumnDisplayName);
+}
+
+function getExampleValueForColumn(column: RosterColumnInfo): string {
+  if (column.exampleValue) {
+    return column.exampleValue;
+  }
+
+  switch (column.type) {
+    case RosterColumnType.Number:
+      return '12345';
+    case RosterColumnType.Boolean:
+      return 'false';
+    case RosterColumnType.String:
+      return 'Example Text';
+    case RosterColumnType.Date:
+      return new Date().toLocaleDateString();
+    case RosterColumnType.DateTime:
+      return new Date().toISOString();
+    case RosterColumnType.Enum:
+      return 'Value';
+    default:
+      return '';
+  }
 }

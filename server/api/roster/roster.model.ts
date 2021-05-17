@@ -12,7 +12,6 @@ import {
 } from './roster.types';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
-import { CustomRosterColumn } from './custom-roster-column.model';
 import { RosterEntity } from './roster-entity';
 import { UserRole } from '../user/user-role.model';
 
@@ -81,35 +80,16 @@ export class Roster extends RosterEntity {
 
   static async getAllowedColumns(org: Org, role: Role) {
     const allColumns = await Roster.getColumns(org.id);
-    const fineGrained = !(role.allowedRosterColumns.length === 1 && role.allowedRosterColumns[0] === '*');
-    return allColumns.filter(column => {
-      let allowed = true;
-      if (fineGrained && role.allowedRosterColumns.indexOf(column.name) < 0) {
-        allowed = false;
-      } else if (!role.canViewPII && column.pii) {
-        allowed = false;
-      } else if (!role.canViewPHI && column.phi) {
-        allowed = false;
-      }
-      return allowed;
-    });
+    return Roster._getAllowedColumns(org, role, allColumns);
   }
 
   static async getColumns(orgId: number) {
-    const customColumns = (await CustomRosterColumn.find({
-      where: {
-        org: orgId,
-      },
-    })).map(customColumn => {
-      const columnInfo: RosterColumnInfo = {
-        ...customColumn,
-        displayName: customColumn.display,
-        custom: true,
-        updatable: true,
-      };
-      return columnInfo;
-    });
-    return [...baseRosterColumns, ...customColumns];
+    return Roster._getColumns(orgId, baseRosterColumns);
+  }
+
+  static async getCsvTemplate(org: Org) {
+    const columns = await Roster.getColumns(org.id);
+    return Roster._getCsvTemplate(columns);
   }
 
 }

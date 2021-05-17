@@ -23,6 +23,8 @@ import {
 import {
   addRosterEntry,
   editRosterEntry,
+  getRequiredColumnDisplayNames,
+  getRosterCsvTemplate,
 } from '../../util/roster-utils';
 import { getDatabaseErrorMessage } from '../../util/typeorm-utils';
 import {
@@ -45,10 +47,7 @@ import {
   CustomColumnData,
   CustomRosterColumn,
 } from './custom-roster-column.model';
-import {
-  ChangeType,
-  RosterHistory,
-} from './roster-history.model';
+import { RosterHistory } from '../roster-history/roster-history.model';
 import { Roster } from './roster.model';
 import {
   RosterColumnValue,
@@ -58,6 +57,8 @@ import {
   unitColumnDisplayName,
   edipiColumnDisplayName,
   RosterFileRow,
+  baseRosterColumnLookup,
+  RosterHistoryChangeType,
 } from './roster.types';
 
 class RosterController {
@@ -114,41 +115,10 @@ class RosterController {
   }
 
   async getRosterTemplate(req: ApiRequest, res: Response) {
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
-    const headers: string[] = ['Unit'];
-    const example: string[] = ['unit1'];
-    columns.forEach(column => {
-      if (column.name === 'edipi') {
-        headers.push('DoD ID');
-        example.push('0000000001');
-      } else {
-        headers.push(column.displayName.includes('"') ? `"${column.displayName.replaceAll('"', '\\"')}"` : column.displayName);
-        switch (column.type) {
-          case RosterColumnType.Number:
-            example.push('12345');
-            break;
-          case RosterColumnType.Boolean:
-            example.push('false');
-            break;
-          case RosterColumnType.String:
-            example.push('Example Text');
-            break;
-          case RosterColumnType.Date:
-            example.push(new Date().toLocaleDateString());
-            break;
-          case RosterColumnType.DateTime:
-            example.push(new Date().toISOString());
-            break;
-          default:
-            example.push('');
-            break;
-        }
-      }
-    });
-    const csvContents = `${headers.join(',')}\n${example.join(',')}`;
+    const csvTemplate = await Roster.getCsvTemplate(req.appOrg!);
     res.header('Content-Type', 'text/csv');
     res.attachment('roster-template.csv');
-    res.send(csvContents);
+    res.send(csvTemplate);
   }
 
   async getRoster(req: ApiRequest<OrgParam, any, GetRosterQuery>, res: Response<Paginated<RosterEntryData>>) {
@@ -185,12 +155,8 @@ class RosterController {
 
     const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
 
-    const requiredColumns = columns
-      .filter(x => x.required)
-      .map(x => x.displayName)
-      .concat([unitColumnDisplayName]);
-
-    const missingRequiredColumns = getMissingKeys(rosterCsvRows[0], requiredColumns);
+    const requiredColumnDisplayNames = getRequiredColumnDisplayNames(columns);
+    const missingRequiredColumns = getMissingKeys(rosterCsvRows[0], requiredColumnDisplayNames);
     if (missingRequiredColumns.length > 0) {
       throw new BadRequestError(`Missing required column(s): ${missingRequiredColumns.map(x => `"${x}"`).join(', ')}`);
     }
@@ -287,7 +253,7 @@ class RosterController {
 
     const responseData: RosterInfo[] = [];
     for (const roster of entries) {
-      if (roster.changeType === ChangeType.Deleted) {
+      if (roster.changeType === RosterHistoryChangeType.Deleted) {
         continue;
       }
 
@@ -508,13 +474,12 @@ function getRosterEntryFromCsvRow(csvRow: RosterFileRow, columns: RosterColumnIn
     throw new CsvRowError('"Unit" is required.', csvRow, rowIndex, unitColumnDisplayName);
   }
 
-  const units = orgUnits.filter(u => unitName === u.name);
-  if (units.length === 0) {
-    throw new CsvRowError(`Unit "${(csvRow.unit ?? csvRow.Unit)}" could not be found in the group.`, csvRow, rowIndex, unitColumnDisplayName);
+  const unit = orgUnits.find(u => unitName === u.name);
+  if (!unit) {
+    throw new CsvRowError(`Unit "${unitName}" could not be found in the group.`, csvRow, rowIndex, unitColumnDisplayName);
   }
 
   const edipi = csvRow[edipiColumnDisplayName];
-  const unit = units[0];
   if (existingEntries.some(x => x.edipi === edipi && x.unit.org!.id === unit!.org!.id)) {
     throw new CsvRowError(`Entry with ${edipiColumnDisplayName} ${edipi} already exists.`, csvRow, rowIndex, edipiColumnDisplayName);
   }
