@@ -96,7 +96,14 @@ export class OrphanedRecordsNotFoundError extends RequestError {
 }
 
 export class CsvRowError extends RequestError {
-  constructor(message: string, row: RosterFileRow, rowIndex: number, columnDisplayName?: string, showErrorPage = false) {
+  constructor(messageOrError: string | Error, row: RosterFileRow, rowIndex: number, columnDisplayName?: string, showErrorPage = false) {
+    let message: string;
+    if (messageOrError instanceof Error) {
+      message = messageOrError.message;
+    } else {
+      message = messageOrError;
+    }
+
     // Offset by 2 (1 for being zero-based and 1 for the csv header row).
     const lineNumber = rowIndex + 2;
 
@@ -110,6 +117,10 @@ export class CsvRowError extends RequestError {
     super(`${lineInfo}\n${message}`, 'UnprocessableEntity', 422, showErrorPage);
 
     Error.captureStackTrace(this, CsvRowError);
+
+    if (messageOrError instanceof Error) {
+      this.stack! += `\nOriginal Error:\n${messageOrError.stack}`;
+    }
   }
 }
 

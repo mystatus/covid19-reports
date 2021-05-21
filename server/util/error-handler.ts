@@ -17,6 +17,7 @@ export function errorHandler(error: any, req: Request, res: Response, next: Next
   let errors: ErrorData[];
 
   if (error.errors) {
+    error.errors.forEach(Log.error);
     statusCode = error.errors[0].statusCode;
     errors = error.errors.map(errorToData);
   } else {

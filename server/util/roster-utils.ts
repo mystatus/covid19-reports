@@ -3,7 +3,10 @@ import { Org } from '../api/org/org.model';
 import { Role } from '../api/role/role.model';
 import { RosterHistory } from '../api/roster/roster-history.model';
 import { Roster } from '../api/roster/roster.model';
-import { RosterEntryData } from '../api/roster/roster.types';
+import {
+  RosterColumnInfo,
+  RosterEntryData,
+} from '../api/roster/roster.types';
 import { Unit } from '../api/unit/unit.model';
 import { UserRole } from '../api/user/user-role.model';
 import {
@@ -101,4 +104,12 @@ export async function getRosterHistoryForIndividual(edipi: string, unitId: numbe
     .addOrderBy('rh.timestamp', 'DESC')
     .addOrderBy('rh.change_type', 'DESC')
     .getMany();
+}
+
+export function getCsvHeaderForRosterColumn(column: RosterColumnInfo) {
+  return column.displayName;
+}
+
+export function getCsvValueForRosterColumn(entry: RosterEntryData, column: RosterColumnInfo) {
+  return entry[column.name] ?? '';
 }

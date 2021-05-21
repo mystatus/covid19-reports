@@ -135,6 +135,9 @@ export abstract class RosterEntity extends BaseEntity {
       value = getOptionalValue(column.displayName, row, 'string');
     }
 
+    // Convert empty strings to null.
+    value = value || null;
+
     this.setColumnValue(column, value);
   }
 
