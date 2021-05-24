@@ -509,7 +509,7 @@ export const RosterPage = () => {
   const editOrphanOnRosterClicked = async (row: ApiOrphanedRecord) => {
     const rosterEntry = await fetchRosterEntry(row);
     if (!rosterEntry) {
-      Modal.alert('Edit Roster Entry for Orphan', `Unable to find the roster entry`).then();
+      dispatch(Modal.alert('Edit Roster Entry for Orphan', `Unable to find the roster entry`)).then();
       return;
     }
     setEditRosterEntryDialogProps({
