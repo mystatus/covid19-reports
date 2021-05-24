@@ -8,6 +8,10 @@ import { buildEsIndexPatternsForDataExport } from '../../util/elasticsearch-util
 import { InternalServerError } from '../../util/error-types';
 import { getRosterMusterStats } from '../../util/muster-utils';
 import {
+  getCsvHeaderForRosterColumn,
+  getCsvValueForRosterColumn,
+} from '../../util/roster-utils';
+import {
   TimeInterval,
 } from '../../util/util';
 import {
@@ -137,7 +141,8 @@ class ExportController {
           continue;
         }
 
-        row[column.displayName] = entry[columnName];
+        const header = getCsvHeaderForRosterColumn(column);
+        row[header] = getCsvValueForRosterColumn(entry, column);
       }
 
       return row;

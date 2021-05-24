@@ -134,7 +134,7 @@ class RosterController {
             example.push('Example Text');
             break;
           case RosterColumnType.Date:
-            example.push(new Date().toLocaleDateString());
+            example.push(new Date().toISOString().split('T')[0]);
             break;
           case RosterColumnType.DateTime:
             example.push(new Date().toISOString());
@@ -220,7 +220,7 @@ class RosterController {
         if (err instanceof CsvRowError) {
           rowErrors.push(err);
         } else {
-          rowErrors.push(new CsvRowError(err.message, csvRow, rowIndex));
+          rowErrors.push(new CsvRowError(err, csvRow, rowIndex));
         }
         continue;
       }
@@ -526,7 +526,7 @@ function getRosterEntryFromCsvRow(csvRow: RosterFileRow, columns: RosterColumnIn
     try {
       entry.setColumnValueFromFileRow(column, csvRow);
     } catch (err) {
-      throw new CsvRowError(err.message, csvRow, rowIndex, column.displayName);
+      throw new CsvRowError(err, csvRow, rowIndex, column.displayName);
     }
   }
 
