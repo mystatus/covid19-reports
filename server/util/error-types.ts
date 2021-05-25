@@ -113,6 +113,16 @@ export class CsvRowError extends RequestError {
   }
 }
 
+export class CsvColumnError extends RequestError {
+  columnDisplayName: string;
+
+  constructor(message: string, columnDisplayName: string, showErrorPage = false) {
+    super(message, 'UnprocessableEntity', 422, showErrorPage);
+    this.columnDisplayName = columnDisplayName;
+    Error.captureStackTrace(this, CsvRowError);
+  }
+}
+
 export type RequestErrorType = (
   'BadRequest' |
   'Unauthorized' |

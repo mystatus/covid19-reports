@@ -5,6 +5,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { snakeCase } from 'typeorm/util/StringUtils';
 import {
   BadRequestError,
   RequiredColumnError,
@@ -25,7 +26,7 @@ import {
   RosterColumnInfo,
   RosterColumnType,
   RosterColumnValue,
-  RosterEntryData,
+  RosterEntrySerialized,
   RosterFileRow,
 } from './roster.types';
 
@@ -103,6 +104,21 @@ export abstract class RosterEntity extends BaseEntity {
     return [...baseColumns, ...customColumns];
   }
 
+  static getColumnSelect(column: RosterColumnInfo, tableAlias = 'roster') {
+    // Make sure custom columns are converted to appropriate types
+    if (column.custom) {
+      switch (column.type) {
+        case RosterColumnType.Boolean:
+          return `(${tableAlias}.custom_columns ->> '${column.name}')::BOOLEAN`;
+        case RosterColumnType.Number:
+          return `(${tableAlias}.custom_columns ->> '${column.name}')::DOUBLE PRECISION`;
+        default:
+          return `${tableAlias}.custom_columns ->> '${column.name}'`;
+      }
+    }
+    return `${tableAlias}.${snakeCase(column.name)}`;
+  }
+
   protected static async _getCsvTemplate(columns: RosterColumnInfo[]) {
     const headers = ['Unit'];
     const exampleValues = ['unit1'];
@@ -119,12 +135,12 @@ export abstract class RosterEntity extends BaseEntity {
     return `${headers.join(',')}\n${exampleValues.join(',')}`;
   }
 
-  toData(): RosterEntryData {
+  serialize(): RosterEntrySerialized {
     if (!this.unit) {
-      throw new Error('You must have the roster entry unit loaded to convert to data.');
+      throw new Error('You must have the roster entry unit loaded to be serialized.');
     }
 
-    const entryData: RosterEntryData = {
+    const entryData: RosterEntrySerialized = {
       edipi: this.edipi,
       unit: this.unit.id,
       firstName: this.firstName,
@@ -163,7 +179,7 @@ export abstract class RosterEntity extends BaseEntity {
     }
   }
 
-  setColumnValueFromData(column: RosterColumnInfo, data: RosterEntryData) {
+  setColumnValueFromData(column: RosterColumnInfo, data: RosterEntrySerialized) {
     const expectedType = columnTypeToEntryDataType(column.type);
 
     // Get the column value from the data.

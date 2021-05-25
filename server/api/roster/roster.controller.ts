@@ -53,7 +53,7 @@ import {
   RosterColumnValue,
   RosterColumnInfo,
   RosterColumnType,
-  RosterEntryData,
+  RosterEntrySerialized,
   unitColumnDisplayName,
   edipiColumnDisplayName,
   RosterFileRow,
@@ -121,11 +121,11 @@ class RosterController {
     res.send(csvTemplate);
   }
 
-  async getRoster(req: ApiRequest<OrgParam, any, GetRosterQuery>, res: Response<Paginated<RosterEntryData>>) {
+  async getRoster(req: ApiRequest<OrgParam, any, GetRosterQuery>, res: Response<Paginated<RosterEntrySerialized>>) {
     res.json(await internalSearchRoster(req.query, req.appOrg!, req.appUserRole!));
   }
 
-  async searchRoster(req: ApiRequest<OrgParam, SearchRosterBody, GetRosterQuery>, res: Response<Paginated<RosterEntryData>>) {
+  async searchRoster(req: ApiRequest<OrgParam, SearchRosterBody, GetRosterQuery>, res: Response<Paginated<RosterEntrySerialized>>) {
     res.json(await internalSearchRoster(req.query, req.appOrg!, req.appUserRole!, req.body));
   }
 
@@ -274,7 +274,7 @@ class RosterController {
     });
   }
 
-  async addRosterEntry(req: ApiRequest<OrgParam, RosterEntryData>, res: Response) {
+  async addRosterEntry(req: ApiRequest<OrgParam, RosterEntrySerialized>, res: Response) {
     const newRosterEntry = await getManager().transaction(async manager => {
       return addRosterEntry(req.appOrg!, req.appUserRole!.role, req.body, manager);
     });
@@ -284,10 +284,10 @@ class RosterController {
   async getRosterEntry(req: ApiRequest<OrgRosterParams>, res: Response) {
     const rosterId = req.params.rosterId;
 
-    const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appUserRole!);
+    const queryBuilder = await Roster.buildQuery(req.appOrg!, req.appUserRole!);
     const rosterEntry = await queryBuilder
       .andWhere('roster.id = :rosterId', { rosterId })
-      .getRawOne<RosterEntryData>();
+      .getRawOne<RosterEntrySerialized>();
 
     if (!rosterEntry) {
       throw new NotFoundError('User could not be found.');
@@ -315,7 +315,7 @@ class RosterController {
     res.json(deletedEntry);
   }
 
-  async updateRosterEntry(req: ApiRequest<OrgRosterParams, RosterEntryData>, res: Response) {
+  async updateRosterEntry(req: ApiRequest<OrgRosterParams, RosterEntrySerialized>, res: Response) {
     assertRequestParams(req, ['rosterId']);
     const entryId = +req.params.rosterId;
 
@@ -429,13 +429,13 @@ function findColumnByName(name: string, columns: RosterColumnInfo[]): RosterColu
   return column;
 }
 
-async function internalSearchRoster(query: GetRosterQuery, org: Org, userRole: UserRole, searchParams?: SearchRosterBody): Promise<Paginated<RosterEntryData>> {
+async function internalSearchRoster(query: GetRosterQuery, org: Org, userRole: UserRole, searchParams?: SearchRosterBody): Promise<Paginated<RosterEntrySerialized>> {
   const limit = parseInt(query.limit ?? '100');
   const page = parseInt(query.page ?? '0');
   const orderBy = query.orderBy || 'edipi';
   const sortDirection = query.sortDirection || 'ASC';
   const rosterColumns = await Roster.getAllowedColumns(org, userRole.role);
-  let queryBuilder = await Roster.queryAllowedRoster(org, userRole);
+  let queryBuilder = await Roster.buildQuery(org, userRole);
 
   if (searchParams) {
     Object.keys(searchParams)
@@ -458,7 +458,7 @@ async function internalSearchRoster(query: GetRosterQuery, org: Org, userRole: U
     order['u.name'] = sortDirection;
     rosterQuery.orderBy(order);
   }
-  const roster = await rosterQuery.getRawMany<RosterEntryData>();
+  const roster = await rosterQuery.getRawMany<RosterEntrySerialized>();
 
   const totalRowsCount = await queryBuilder.getCount();
 

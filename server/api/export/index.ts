@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   requireOrgAccess,
   requireRolePermission,
+  requireRootAdmin,
 } from '../../auth';
 import controller from './export.controller';
 
@@ -18,6 +19,13 @@ router.get(
   requireOrgAccess,
   requireRolePermission(role => role.canViewRoster),
   controller.exportRosterToCsv,
+);
+
+router.get(
+  '/:orgId/roster-history',
+  requireOrgAccess,
+  requireRootAdmin,
+  controller.exportRosterHistoryToCsv,
 );
 
 router.get(

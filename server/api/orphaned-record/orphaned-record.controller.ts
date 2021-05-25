@@ -21,6 +21,7 @@ import {
 } from '../../util/roster-utils';
 import {
   ApiRequest,
+  DocumentParam,
   OrgParam,
   Paginated,
   PaginatedQuery,
@@ -28,7 +29,7 @@ import {
 import { Org } from '../org/org.model';
 import { RosterEntity } from '../roster/roster-entity';
 import { Roster } from '../roster/roster.model';
-import { RosterEntryData } from '../roster/roster.types';
+import { RosterEntrySerialized } from '../roster/roster.types';
 import {
   ActionType,
   OrphanedRecordAction,
@@ -106,7 +107,7 @@ class OrphanedRecordController {
     res.json(result);
   }
 
-  async resolveOrphanedRecordWithAdd(req: ApiRequest<OrphanedRecordResolveParam, RosterEntryData>, res: Response) {
+  async resolveOrphanedRecordWithAdd(req: ApiRequest<OrphanedRecordResolveParam, RosterEntrySerialized>, res: Response) {
     const compositeId = req.params.orphanId;
     assertRequestBody(req, [
       'edipi',
@@ -166,7 +167,7 @@ class OrphanedRecordController {
       throw new BadRequestError(`Unable to locate roster entry with id: ${entryId}`);
     }
 
-    const oldEntryData = oldEntry.toData();
+    const oldEntryData = oldEntry.serialize();
 
     // We have to modify the roster outside of the transaction, since the orphaned record resolve process
     // depends on having the latest roster history from this addition.
@@ -229,6 +230,32 @@ class OrphanedRecordController {
     res.status(204).send();
   }
 
+  async getStatusForDocumentId(req: ApiRequest<DocumentParam>, res: Response) {
+    const { documentId } = req.params;
+
+    let created = false;
+    let resolved = false;
+
+    const orphanedRecord = await OrphanedRecord.findOne({
+      where: {
+        documentId,
+      },
+    });
+
+    if (orphanedRecord) {
+      created = true;
+
+      if (orphanedRecord.deletedOn) {
+        resolved = true;
+      }
+    }
+
+    res.send({
+      created,
+      resolved,
+    });
+  }
+
 }
 
 interface OrphanedRecordResult {
@@ -271,7 +298,7 @@ export interface OrphanedRecordDeleteActionData extends OrphanedRecordActionPara
   action: ActionType,
 }
 
-type ResolveWithEditBody = RosterEntryData & {
+type ResolveWithEditBody = RosterEntrySerialized & {
   id: RosterEntity['id']
 };
 

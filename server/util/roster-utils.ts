@@ -7,7 +7,7 @@ import {
   baseRosterColumnLookup,
   RosterColumnInfo,
   RosterColumnType,
-  RosterEntryData,
+  RosterEntrySerialized,
   RosterFileRow,
   unitColumnDisplayName,
 } from '../api/roster/roster.types';
@@ -19,7 +19,7 @@ import {
 } from './error-types';
 import { getMissingKeys } from './util';
 
-export async function addRosterEntry(org: Org, role: Role, entryData: RosterEntryData, manager: EntityManager) {
+export async function addRosterEntry(org: Org, role: Role, entryData: RosterEntrySerialized, manager: EntityManager) {
   const edipi = entryData.edipi as string;
 
   if (!entryData.unit) {
@@ -60,7 +60,7 @@ export async function addRosterEntry(org: Org, role: Role, entryData: RosterEntr
   return manager.save(entry);
 }
 
-export async function editRosterEntry(org: Org, userRole: UserRole, entryId: number, entryData: RosterEntryData, manager: EntityManager) {
+export async function editRosterEntry(org: Org, userRole: UserRole, entryId: number, entryData: RosterEntrySerialized, manager: EntityManager) {
   const { unit: unitId } = entryData;
 
   let entry = await Roster.findOne({

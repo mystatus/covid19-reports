@@ -2,6 +2,7 @@ import { SearchResponse } from 'elasticsearch';
 import { Response } from 'express';
 import { json2csvAsync } from 'json-2-csv';
 import moment from 'moment';
+import { UserSelector } from '../../../src/selectors/user.selector';
 import { elasticsearch } from '../../elasticsearch/elasticsearch';
 import { assertRequestQuery } from '../../util/api-utils';
 import { buildEsIndexPatternsForDataExport } from '../../util/elasticsearch-utils';
@@ -15,14 +16,17 @@ import {
   OrgParam,
   PaginatedQuery,
 } from '../index';
+import { RosterHistory } from '../roster-history/roster-history.model';
 import {
   RosterColumnInfo,
   RosterColumnValue,
-  RosterEntryData,
+  RosterEntrySerialized,
   RosterFileRow,
+  RosterHistoryEntrySerialized,
 } from '../roster/roster.types';
 import { Roster } from '../roster/roster.model';
 import { Unit } from '../unit/unit.model';
+import orgId = UserSelector.orgId;
 
 class ExportController {
 
@@ -98,53 +102,18 @@ class ExportController {
   }
 
   async exportRosterToCsv(req: ApiRequest, res: Response) {
-    const orgId = req.appOrg!.id;
-
-    const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appUserRole!);
-    const rosterData = await queryBuilder
-      .orderBy({
-        edipi: 'ASC',
-      })
-      .getRawMany<RosterEntryData>();
-
-    const unitIdNameMap: { [key: number]: string } = {};
-    const units = await Unit.find({
-      where: {
-        org: orgId,
-      },
-    });
-
-    units.forEach(unit => {
-      unitIdNameMap[unit.id] = unit.name;
-    });
-
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
-    const columnsLookup: { [columnName: string]: RosterColumnInfo } = {};
-    for (const column of columns) {
-      columnsLookup[column.name] = column;
-    }
-
-    // Convert data to csv format and download.
-    const csv = await json2csvAsync(rosterData.map(entry => {
-      // Convert column 'name' keys to column 'displayName' keys.
-      const row: RosterFileRow<RosterColumnValue> = {
-        Unit: unitIdNameMap[entry.unit],
-      };
-
-      for (const columnName of Object.keys(entry)) {
-        const column = columnsLookup[columnName];
-        if (column == null || column.name === 'unit') {
-          continue;
-        }
-
-        row[column.displayName] = entry[columnName];
-      }
-
-      return row;
-    }));
-
+    const csv = Roster.getCsv(req.appOrg!, req.appUserRole!);
     const date = new Date().toISOString();
-    const filename = `org_${orgId}_roster_export_${date}.csv`;
+    const filename = `org_${req.appOrg!.id}_roster_export_${date}.csv`;
+    res.header('Content-Type', 'text/csv');
+    res.attachment(filename);
+    res.send(csv);
+  }
+
+  async exportRosterHistoryToCsv(req: ApiRequest, res: Response) {
+    const csv = RosterHistory.getCsv(req.appOrg!);
+    const date = new Date().toISOString();
+    const filename = `org_${req.appOrg!.id}_roster_history_export_${date}.csv`;
     res.header('Content-Type', 'text/csv');
     res.attachment(filename);
     res.send(csv);

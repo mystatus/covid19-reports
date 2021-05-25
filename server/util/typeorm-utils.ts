@@ -20,6 +20,11 @@ export function getDatabaseErrorMessage(err: DatabaseError) {
   }
 }
 
+export function getTableName(entityType: EntityTarget<any>) {
+  const entityMetadata = getConnection().getMetadata(entityType);
+  return entityMetadata.tableName;
+}
+
 export function getColumnMetadata(entityType: EntityTarget<any>, columnName: string) {
   const entityMetadata = getConnection().getMetadata(entityType);
   return entityMetadata.columns.find(x => x.propertyName === columnName);

@@ -1,14 +1,17 @@
+import { json2csvAsync } from 'json-2-csv';
 import _ from 'lodash';
 import {
   Entity,
   EntityTarget,
   Unique,
 } from 'typeorm';
-import { snakeCase } from 'typeorm/util/StringUtils';
+import { Unit } from '../unit/unit.model';
 import {
   baseRosterColumns,
   RosterColumnInfo,
-  RosterColumnType,
+  RosterColumnValue,
+  RosterEntrySerialized,
+  RosterFileRow,
 } from './roster.types';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
@@ -33,22 +36,21 @@ export class Roster extends RosterEntity {
     return entry;
   }
 
-  static getColumnSelect(column: RosterColumnInfo) {
-    // Make sure custom columns are converted to appropriate types
-    if (column.custom) {
-      switch (column.type) {
-        case RosterColumnType.Boolean:
-          return `(roster.custom_columns ->> '${column.name}')::BOOLEAN`;
-        case RosterColumnType.Number:
-          return `(roster.custom_columns ->> '${column.name}')::DOUBLE PRECISION`;
-        default:
-          return `roster.custom_columns ->> '${column.name}'`;
-      }
-    }
-    return `roster.${snakeCase(column.name)}`;
+  static async getAllowedColumns(org: Org, role: Role) {
+    const allColumns = await Roster.getColumns(org.id);
+    return super._getAllowedColumns(org, role, allColumns);
   }
 
-  static async queryAllowedRoster(org: Org, userRole: UserRole, columns?: RosterColumnInfo[]) {
+  static async getColumns(orgId: number) {
+    return super._getColumns(orgId, baseRosterColumns);
+  }
+
+  static async getCsvTemplate(org: Org) {
+    const columns = await Roster.getColumns(org.id);
+    return super._getCsvTemplate(columns);
+  }
+
+  static async buildQuery(org: Org, userRole: UserRole, columns?: RosterColumnInfo[]) {
     //
     // Query the roster, returning only columns and rows that are allowed for the role of the requester.
     //
@@ -78,18 +80,49 @@ export class Roster extends RosterEntity {
     return queryBuilder;
   }
 
-  static async getAllowedColumns(org: Org, role: Role) {
-    const allColumns = await Roster.getColumns(org.id);
-    return Roster._getAllowedColumns(org, role, allColumns);
-  }
+  static async getCsv(org: Org, userRole: UserRole) {
+    const queryBuilder = await Roster.buildQuery(org, userRole);
+    const rosterData = await queryBuilder
+      .orderBy({
+        edipi: 'ASC',
+      })
+      .getRawMany<RosterEntrySerialized>();
 
-  static async getColumns(orgId: number) {
-    return Roster._getColumns(orgId, baseRosterColumns);
-  }
+    const unitIdNameMap: { [key: number]: string } = {};
+    const units = await Unit.find({
+      where: {
+        org: org.id,
+      },
+    });
 
-  static async getCsvTemplate(org: Org) {
-    const columns = await Roster.getColumns(org.id);
-    return Roster._getCsvTemplate(columns);
+    units.forEach(unit => {
+      unitIdNameMap[unit.id] = unit.name;
+    });
+
+    const columns = await Roster.getAllowedColumns(org, userRole.role);
+    const columnsLookup: { [columnName: string]: RosterColumnInfo } = {};
+    for (const column of columns) {
+      columnsLookup[column.name] = column;
+    }
+
+    // Convert json data to csv and return the csv.
+    return json2csvAsync(rosterData.map(entry => {
+      // Return data using display names for headers.
+      const row: RosterFileRow<RosterColumnValue> = {
+        Unit: unitIdNameMap[entry.unit],
+      };
+
+      for (const columnName of Object.keys(entry)) {
+        const column = columnsLookup[columnName];
+        if (column == null || column.name === 'unit') {
+          continue;
+        }
+
+        row[column.displayName] = entry[columnName];
+      }
+
+      return row;
+    }));
   }
 
 }

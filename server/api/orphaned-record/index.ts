@@ -59,5 +59,12 @@ router.delete(
   controller.deleteOrphanedRecordAction,
 );
 
+router.get(
+  '/:orgId/:documentId/status',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageRoster),
+  controller.getStatusForDocumentId,
+);
+
 
 export default router;

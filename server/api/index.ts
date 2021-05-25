@@ -88,6 +88,10 @@ export type DashboardParam = {
   dashboardUuid: string
 };
 
+export type DocumentParam = {
+  documentId: string
+};
+
 export type OrgRoleParams = OrgParam & RoleParam;
 export type OrgReportParams = OrgParam & ReportParam;
 export type OrgEdipiParams = OrgParam & EdipiParam;

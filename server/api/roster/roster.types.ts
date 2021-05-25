@@ -1,3 +1,4 @@
+import { RosterHistory } from '../roster-history/roster-history.model';
 import { CustomColumnConfig } from './custom-roster-column.model';
 import { RosterEntity } from './roster-entity';
 
@@ -27,6 +28,12 @@ export interface RosterColumnInfo {
   updatable: boolean,
   config?: CustomColumnConfig
   exampleValue?: string
+}
+
+export enum RosterHistoryChangeType {
+  Added = 'added',
+  Changed = 'changed',
+  Deleted = 'deleted',
 }
 
 export interface BaseRosterColumnInfo extends RosterColumnInfo {
@@ -73,16 +80,11 @@ export const baseRosterColumnLookup: Readonly<{
   },
 };
 
-export const baseRosterColumns: Readonly<Readonly<BaseRosterColumnInfo>>[] = Object.values(baseRosterColumnLookup);
-
-export enum RosterHistoryChangeType {
-  Added = 'added',
-  Changed = 'changed',
-  Deleted = 'deleted',
-}
-
-export const baseRosterHistoryColumns: Readonly<Readonly<BaseRosterHistoryColumnInfo>>[] = (baseRosterColumns as BaseRosterHistoryColumnInfo[])
-  .concat([{
+export const baseRosterHistoryColumnLookup: Readonly<{
+  [K in BaseRosterHistoryColumnInfo['name']]: Readonly<BaseRosterHistoryColumnInfo>
+}> = {
+  ...baseRosterColumnLookup,
+  timestamp: {
     name: 'timestamp',
     displayName: 'Timestamp',
     type: RosterColumnType.DateTime,
@@ -91,7 +93,8 @@ export const baseRosterHistoryColumns: Readonly<Readonly<BaseRosterHistoryColumn
     custom: false,
     required: true,
     updatable: false,
-  }, {
+  },
+  changeType: {
     name: 'changeType',
     displayName: 'Change Type',
     type: RosterColumnType.Enum,
@@ -101,24 +104,33 @@ export const baseRosterHistoryColumns: Readonly<Readonly<BaseRosterHistoryColumn
     required: true,
     updatable: false,
     exampleValue: RosterHistoryChangeType.Added,
-  }]);
+  },
+};
+
+export const baseRosterColumns: Readonly<Readonly<BaseRosterColumnInfo>>[] = Object.values(baseRosterColumnLookup);
+export const baseRosterHistoryColumns: Readonly<Readonly<BaseRosterHistoryColumnInfo>>[] = Object.values(baseRosterHistoryColumnLookup);
 
 export const edipiColumnDisplayName = baseRosterColumnLookup.edipi.displayName;
 export const unitColumnDisplayName = 'Unit';
 
-export type RosterEntryData = {
+export type RosterEntrySerialized = {
   edipi: RosterEntity['edipi'],
   unit: number,
   firstName?: RosterEntity['firstName'],
   lastName?: RosterEntity['lastName'],
 } & CustomColumns;
 
+export type RosterHistoryEntrySerialized = RosterEntrySerialized & {
+  timestamp: string
+  changeType: RosterHistory['changeType']
+};
+
 export interface RosterFileRow<TColumnValue = string> {
   Unit: TColumnValue
   [columnName: string]: TColumnValue
 }
 
-export interface RosterHistoryFileRow extends RosterFileRow {
-  Timestamp: string
-  'Change Type': RosterHistoryChangeType
+export interface RosterHistoryFileRow<TColumnValue = string> extends RosterFileRow<TColumnValue> {
+  Timestamp: TColumnValue
+  'Change Type': TColumnValue
 }

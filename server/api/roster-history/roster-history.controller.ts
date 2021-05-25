@@ -6,6 +6,7 @@ import moment from 'moment';
 import { In } from 'typeorm';
 import {
   BadRequestError,
+  CsvColumnError,
   CsvRowError,
   RosterUploadError,
   UnprocessableEntity,
@@ -18,12 +19,15 @@ import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { Roster } from '../roster/roster.model';
 import {
+  baseRosterHistoryColumnLookup,
+  baseRosterHistoryColumns,
   RosterColumnInfo,
   RosterHistoryChangeType,
   RosterHistoryFileRow,
   unitColumnDisplayName,
 } from '../roster/roster.types';
 import { Unit } from '../unit/unit.model';
+import { RosterHistoryBackup } from './roster-history-backup.model';
 import { RosterHistory } from './roster-history.model';
 
 class RosterHistoryController {
@@ -71,7 +75,7 @@ class RosterHistoryController {
     // Order is important here. We need to make sure the roster history gets rebuilt AFTER rebuilding
     // the roster table. Otherwise the roster history table will have extra rows from the trigger.
     await rebuildRosterTable(historyEntries, orgUnits);
-    await rebuildRosterHistoryTable(historyEntries, orgUnits, csvRows);
+    await rebuildRosterHistoryTable(historyEntries, orgUnits, req.appOrg!, csvRows);
 
     res.json({ message: 'ok' });
   }
@@ -189,15 +193,30 @@ async function rebuildRosterTable(historyEntries: RosterHistory[], orgUnits: Uni
   }
 }
 
-async function rebuildRosterHistoryTable(historyEntries: RosterHistory[], orgUnits: Unit[], csvRows: RosterHistoryFileRow[]) {
+async function rebuildRosterHistoryTable(historyEntries: RosterHistory[], orgUnits: Unit[], org: Org, csvRows: RosterHistoryFileRow[]) {
   validateRosterHistory(historyEntries, csvRows);
 
-  // Clear the roster history and insert our rebuilt entries.
+  // Backup current roster history.
   const existingHistoryEntries = await RosterHistory.find({
     where: {
       unit: In(orgUnits.map(x => x.id)),
     },
   });
+
+  //
+  // TODO: Pickup here...
+  //
+  // TODO: Test to make sure roster/rosterHistory csv export works.
+  //
+  // TODO: Make backup with csv data from roster history.
+  //
+  // const backups: RosterHistoryBackup[] = [];
+  // for (const entry of existingHistoryEntries) {
+  //   const backup = new RosterHistoryBackup();
+  // }
+
+  // Clear the roster history and insert our rebuilt entries.
+
   await RosterHistory.remove(existingHistoryEntries);
 
   const rowErrors: CsvRowError[] = [];
@@ -230,7 +249,12 @@ function validateRosterHistory(historyEntries: RosterHistory[], csvRows: RosterH
     try {
       validateRosterHistoryEntry(historyEntry, prevEntryStates[entryKey]);
     } catch (err) {
-      throw new CsvRowError(err.message, csvRows[i], i);
+      let columnDisplayName: string | undefined;
+      if (err instanceof CsvColumnError) {
+        columnDisplayName = err.columnDisplayName;
+      }
+
+      throw new CsvRowError(err.message, csvRows[i], i, columnDisplayName);
     }
 
     prevEntryStates[entryKey] = historyEntry;
@@ -243,7 +267,10 @@ function validateRosterHistoryEntry(entry: RosterHistory, prevEntry: RosterHisto
   if (!prevEntry) {
     // The first entry for an individual on the unit must be an "added" change type.
     if (entry.changeType !== RosterHistoryChangeType.Added) {
-      throw new Error('Individual was not on the unit at the time.');
+      throw new CsvColumnError(
+        'Value "added" is invalid here: the individual was not on the unit at the time.',
+        baseRosterHistoryColumnLookup.changeType.displayName,
+      );
     }
 
     return;
@@ -253,19 +280,34 @@ function validateRosterHistoryEntry(entry: RosterHistory, prevEntry: RosterHisto
 
   switch (changeType) {
     case RosterHistoryChangeType.Added:
-      if (prevChangeType === RosterHistoryChangeType.Changed
-        || prevChangeType === RosterHistoryChangeType.Added) {
-        throw new Error('Unable to add individual. They were already on the unit at the time.');
+      if (prevChangeType === RosterHistoryChangeType.Changed || prevChangeType === RosterHistoryChangeType.Added) {
+        throw new CsvColumnError(
+          'Value "added" is invalid here: the individual was already on the unit at the time.',
+          baseRosterHistoryColumnLookup.changeType.displayName,
+        );
       }
       break;
     case RosterHistoryChangeType.Changed:
+      if (prevChangeType === RosterHistoryChangeType.Deleted) {
+        throw new CsvColumnError(
+          'Value "changed" is invalid here: the individual was not on the unit at the time.',
+          baseRosterHistoryColumnLookup.changeType.displayName,
+        );
+      }
+      break;
     case RosterHistoryChangeType.Deleted:
       if (prevChangeType === RosterHistoryChangeType.Deleted) {
-        throw new Error('Unable to update individual. They were not on the unit at the time.');
+        throw new CsvColumnError(
+          'Value "deleted" is invalid here: the individual was not on the unit at the time.',
+          baseRosterHistoryColumnLookup.changeType.displayName,
+        );
       }
       break;
     default:
-      throw new Error('Unrecognized change type. Supported types are: added, changed, deleted');
+      throw new CsvColumnError(
+        'Value is not recognized. Supported values are: added, changed, deleted',
+        baseRosterHistoryColumnLookup.changeType.displayName,
+      );
   }
 }
 
