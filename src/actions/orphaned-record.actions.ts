@@ -29,10 +29,10 @@ export namespace OrphanedRecord {
     }
   }
 
-  export const fetchPage = (orgId: number, page: number, limit: number) => async (dispatch: Dispatch) => {
+  export const fetchPage = (orgId: number, page: number, limit: number, unit?: string) => async (dispatch: Dispatch) => {
     dispatch(new Actions.FetchPage());
     try {
-      const data = await OrphanedRecordClient.fetchPage(orgId, page, limit);
+      const data = await OrphanedRecordClient.fetchPage(orgId, page, limit, unit);
       dispatch(new Actions.FetchPageSuccess(data));
     } catch (error) {
       dispatch(new Actions.FetchPageFailure({ error }));

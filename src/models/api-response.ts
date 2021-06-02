@@ -176,7 +176,10 @@ export interface ApiOrphanedRecord {
   rosterHistoryId?: number;
 }
 
-export interface ApiOrphanedRecordsPaginated extends ApiPaginated<ApiOrphanedRecord> {}
+export interface ApiOrphanedRecordsPaginated extends ApiPaginated<ApiOrphanedRecord> {
+  totalOrphanedRecordsCount: number
+  units: string[]
+}
 
 export interface ApiWorkspaceTemplate {
   id: number,

@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Checkbox,
   Container,
@@ -6,6 +7,7 @@ import {
   Menu,
   MenuItem,
   Paper,
+  Select,
   TableContainer,
 } from '@material-ui/core';
 import BackupIcon from '@material-ui/icons/Backup';
@@ -109,6 +111,7 @@ export const RosterPage = () => {
   const [orphanedRecordsWaiting, setOrphanedRecordsWaiting] = useState(false);
   const [orphanedRecordsPage, setOrphanedRecordsPage] = useState(0);
   const [orphanedRecordsRowsPerPage, setOrphanedRecordsRowsPerPage] = usePersistedState('orphanRowsPerPage', 10);
+  const [orphanedRecordsSelectedUnitIndex, setOrphanedRecordsSelectedUnitIndex] = useState(-1);
   const [rows, setRows] = useState<ApiRosterEntry[]>([]);
   const [page, setPage] = useState(0);
   const [totalRowsCount, setTotalRowsCount] = useState(0);
@@ -228,14 +231,16 @@ export const RosterPage = () => {
   const fetchOrphanedRecords = useCallback(async () => {
     if (canManageRoster(user)) {
       try {
-        await dispatch(OrphanedRecord.fetchPage(orgId!, orphanedRecordsPage, orphanedRecordsRowsPerPage));
+        const unit = orphanedRecords.units[orphanedRecordsSelectedUnitIndex];
+        await dispatch(OrphanedRecord.fetchPage(orgId!, orphanedRecordsPage, orphanedRecordsRowsPerPage, unit));
       } catch (error) {
         dispatch(Modal.alert('Get Orphaned Records', formatErrorMessage(error, 'Failed to get orphaned records'))).then();
       }
     } else {
       dispatch(OrphanedRecord.clear());
     }
-  }, [dispatch, orgId, orphanedRecordsPage, orphanedRecordsRowsPerPage, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, orphanedRecordsSelectedUnitIndex, dispatch, orgId, orphanedRecordsPage, orphanedRecordsRowsPerPage]);
 
   const fetchUnits = useCallback(async () => {
     dispatch(Unit.fetch(orgId!));
@@ -279,6 +284,7 @@ export const RosterPage = () => {
       initialLoad.current = false;
       dispatch(AppFrame.setPageLoading(false));
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Orphaned records reload.
@@ -580,6 +586,10 @@ export const RosterPage = () => {
     setOrphanedRecordsPage(pageNew);
   };
 
+  const handleOrphanedRecordsUnitChange = (event: ChangeEvent<{ name?: string, value: unknown }>) => {
+    setOrphanedRecordsSelectedUnitIndex(event.target.value as number);
+  };
+
   //
   // Render
   //
@@ -595,50 +605,67 @@ export const RosterPage = () => {
           }}
         />
 
-        {orphanedRecords.totalRowsCount > 0 && (
-          <TableContainer component={Paper} className={classes.table}>
-            <TableCustomColumnsContent
-              rows={orphanedRecords.rows}
-              columns={[
-                { name: 'edipi', displayName: 'DoD ID' },
-                { name: 'unit', displayName: 'Unit' },
-                { name: 'phone', displayName: 'Phone' },
-                { name: 'count', displayName: 'Count' },
-                { name: 'earliestReportDate', displayName: 'First Report' },
-                { name: 'latestReportDate', displayName: 'Latest Report' },
-              ]}
-              title={`Orphaned Records (${orphanedRecords.totalRowsCount})`}
-              idColumn={row => row.id + row.unitId}
-              rowOptions={{
-                menuItems: row => ([{
-                  callback: addOrphanToRosterClicked,
-                  disabled: orphanedRecordsWaiting,
-                  name: 'Add to Roster...',
-                  hidden: row.unitId,
-                }, {
-                  callback: editOrphanOnRosterClicked,
-                  disabled: orphanedRecordsWaiting,
-                  name: 'Edit Existing Entry...',
-                  hidden: !row.unitId,
-                }, {
-                  callback: ignoreOrphanClicked,
-                  disabled: orphanedRecordsWaiting,
-                  name: 'Ignore...',
-                }]),
-                renderCell: getOrphanCellDisplayValue,
-              }}
-            />
-            <TablePagination
-              className={classes.pagination}
-              count={orphanedRecords.totalRowsCount}
-              page={orphanedRecordsPage}
-              rowsPerPage={orphanedRecordsRowsPerPage}
-              rowsPerPageOptions={[10, 25, 50]}
-              onChangePage={handleOrphanedRecordsChangePage}
-              onChangeRowsPerPage={handleOrphanedRecordsChangeRowsPerPage}
-            />
-          </TableContainer>
-        )}
+        <TableContainer component={Paper} className={classes.table}>
+          <Box className={classes.tableHeader}>
+            <h2>Orphaned Records ({orphanedRecords.totalOrphanedRecordsCount})</h2>
+
+            <Select
+              value={orphanedRecordsSelectedUnitIndex}
+              displayEmpty
+              onChange={handleOrphanedRecordsUnitChange}
+            >
+              <MenuItem value={-1}>
+                <em>All Units</em>
+              </MenuItem>
+
+              {orphanedRecords.units.map((unit, index) => (
+                <MenuItem key={unit} value={index}>
+                  {unit}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+
+          <TableCustomColumnsContent
+            rows={orphanedRecords.rows}
+            columns={[
+              { name: 'edipi', displayName: 'DoD ID' },
+              { name: 'unit', displayName: 'Unit' },
+              { name: 'phone', displayName: 'Phone' },
+              { name: 'count', displayName: 'Count' },
+              { name: 'earliestReportDate', displayName: 'First Report' },
+              { name: 'latestReportDate', displayName: 'Latest Report' },
+            ]}
+            idColumn={row => row.id + row.unitId}
+            rowOptions={{
+              menuItems: row => ([{
+                callback: addOrphanToRosterClicked,
+                disabled: orphanedRecordsWaiting,
+                name: 'Add to Roster...',
+                hidden: row.unitId,
+              }, {
+                callback: editOrphanOnRosterClicked,
+                disabled: orphanedRecordsWaiting,
+                name: 'Edit Existing Entry...',
+                hidden: !row.unitId,
+              }, {
+                callback: ignoreOrphanClicked,
+                disabled: orphanedRecordsWaiting,
+                name: 'Ignore...',
+              }]),
+              renderCell: getOrphanCellDisplayValue,
+            }}
+          />
+          <TablePagination
+            className={classes.pagination}
+            count={orphanedRecords.totalRowsCount}
+            page={orphanedRecordsPage}
+            rowsPerPage={orphanedRecordsRowsPerPage}
+            rowsPerPageOptions={[10, 25, 50]}
+            onChangePage={handleOrphanedRecordsChangePage}
+            onChangeRowsPerPage={handleOrphanedRecordsChangeRowsPerPage}
+          />
+        </TableContainer>
 
         <ButtonSet>
           {canManageRoster(user) && (
@@ -719,15 +746,15 @@ export const RosterPage = () => {
         </ButtonSet>
 
         <TableContainer component={Paper}>
-          <div className={classes.secondaryButtons}>
+          <div className={classes.tableHeader}>
             <Button
               aria-label="Filters"
-              className={classes.secondaryButton}
+              className={classes.tableHeaderButton}
               onClick={() => setFiltersOpen(!filtersOpen)}
               size="small"
               startIcon={
                 queryFilterState
-                  ? <div className={classes.secondaryButtonCount}>{Object.keys(queryFilterState).length}</div>
+                  ? <div className={classes.tableHeaderButtonCount}>{Object.keys(queryFilterState).length}</div>
                   : <FilterListIcon />
               }
               variant="outlined"
@@ -736,7 +763,7 @@ export const RosterPage = () => {
             </Button>
             <Button
               aria-label="Visible columns"
-              className={classes.secondaryButton}
+              className={classes.tableHeaderButton}
               onClick={() => setVisibleColumnsMenuOpen(!visibleColumnsMenuOpen)}
               size="small"
               startIcon={<ViewWeekIcon />}

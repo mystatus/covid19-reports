@@ -113,11 +113,12 @@ export namespace ReportSchemaClient {
 }
 
 export namespace OrphanedRecordClient {
-  export const fetchPage = (orgId: number, page: number, limit: number): Promise<ApiOrphanedRecordsPaginated> => {
+  export const fetchPage = (orgId: number, page: number, limit: number, unit?: string): Promise<ApiOrphanedRecordsPaginated> => {
     return client.get(`orphaned-record/${orgId}`, {
       params: {
         page,
         limit,
+        unit,
       },
     });
   };

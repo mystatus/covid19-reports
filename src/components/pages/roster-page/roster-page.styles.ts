@@ -9,11 +9,11 @@ export default makeStyles((theme: Theme) => createStyles({
   fillWidth: {
     width: '100%',
   },
-  secondaryButtons: {
+  tableHeader: {
     marginLeft: theme.spacing(2),
     marginTop: theme.spacing(2),
   },
-  secondaryButton: {
+  tableHeaderButton: {
     borderWidth: 2,
     marginRight: theme.spacing(2),
 
@@ -21,7 +21,7 @@ export default makeStyles((theme: Theme) => createStyles({
       borderWidth: 2,
     },
   },
-  secondaryButtonCount: {
+  tableHeaderButtonCount: {
     backgroundColor: theme.palette.primary.main,
     borderRadius: '50%',
     color: '#fff',

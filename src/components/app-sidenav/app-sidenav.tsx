@@ -167,7 +167,7 @@ export const AppSidenav = () => {
               to="/roster"
               name="Roster"
               icon={(<AssignmentIndIcon />)}
-              badgeContent={orphanedRecords.totalRowsCount}
+              badgeContent={orphanedRecords.totalOrphanedRecordsCount}
             />
           )}
         </List>

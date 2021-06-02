@@ -37,13 +37,14 @@ import { OrphanedRecord } from './orphaned-record.model';
 
 class OrphanedRecordController {
 
-  async getOrphanedRecords(req: ApiRequest<OrgParam, null, PaginatedQuery>, res: Response<Paginated<OrphanedRecordResult>>) {
+  async getOrphanedRecords(req: ApiRequest<OrgParam, null, GetOrphanedRecordsQuery>, res: Response<GetOrphanedRecordsResponse>) {
     assertRequestQuery(req, [
       'page',
       'limit',
     ]);
     const page = parseInt(req.query.page);
     const limit = parseInt(req.query.limit);
+    const unit = req.query.unit;
     const offset = page * limit;
 
     // For some reason when calling getCount() on this query TypeORM completely modifies it and returns an erroneous
@@ -52,9 +53,22 @@ class OrphanedRecordController {
     const query = buildVisibleOrphanedRecordResultsQuery(req.appUser!.edipi, req.appOrg!.id);
     const orphanedRecords = await query.getRawMany<OrphanedRecordResult>();
 
+    // Return the units for the user to filter by.
+    const unitsDeduped: { [unit: string]: boolean } = {};
+    for (const record of orphanedRecords) {
+      unitsDeduped[record.unit] = true;
+    }
+
+    // Filter by unit if one was provided.
+    const orphanedRecordsFiltered = (unit != null)
+      ? orphanedRecords.filter(x => x.unit === unit)
+      : orphanedRecords;
+
     res.json({
-      rows: orphanedRecords.slice(offset, offset + limit),
-      totalRowsCount: orphanedRecords.length,
+      rows: orphanedRecordsFiltered.slice(offset, offset + limit),
+      totalRowsCount: orphanedRecordsFiltered.length,
+      totalOrphanedRecordsCount: orphanedRecords.length,
+      units: Object.keys(unitsDeduped).sort(),
     });
   }
 
@@ -273,6 +287,15 @@ export interface OrphanedRecordDeleteActionData extends OrphanedRecordActionPara
 
 type ResolveWithEditBody = RosterEntryData & {
   id: RosterEntity['id']
+};
+
+type GetOrphanedRecordsQuery = PaginatedQuery & {
+  unit?: string
+};
+
+type GetOrphanedRecordsResponse = Paginated<OrphanedRecordResult> & {
+  totalOrphanedRecordsCount: number
+  units: string[]
 };
 
 export default new OrphanedRecordController();
