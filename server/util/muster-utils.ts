@@ -1,5 +1,5 @@
 import { MSearchResponse } from 'elasticsearch';
-import moment from 'moment-timezone';
+import moment, { Moment } from 'moment-timezone';
 import { Org } from '../api/org/org.model';
 import { UserRole } from '../api/user/user-role.model';
 import { Roster } from '../api/roster/roster.model';
@@ -26,19 +26,19 @@ import {
 export async function getRosterMusterStats(args: {
   org: Org
   userRole: UserRole
-  interval: TimeInterval
-  intervalCount: number
   unitId?: number
+  fromDate: Moment
+  toDate: Moment
 }) {
-  const { org, userRole, interval, intervalCount, unitId } = args;
+  const { org, userRole, unitId, fromDate, toDate } = args;
 
   // Send ES request.
   const index = buildEsIndexPatternsForMuster(userRole, unitId);
   const body = [
     { index },
     buildIndividualsMusterBody({
-      interval,
-      intervalCount,
+      fromDate,
+      toDate,
     }),
 
     { index },
@@ -189,28 +189,49 @@ export async function getRosterMusterStats(args: {
  */
 export async function getUnitMusterStats(args: {
   userRole: UserRole
+  currentDate: Moment
   weeksCount: number
   monthsCount: number
 }) {
-  const { userRole, weeksCount, monthsCount } = args;
+  const { userRole, currentDate, weeksCount, monthsCount } = args;
 
   const unitNames = (await userRole.getUnits()).map(u => u.name);
 
+  // For week intervals, use the iso week range (Monday - Sunday) like ES does.
+  // Also make sure dates are in utc so that startOf/endOf match ES.
+  const fromDateWeek = moment.utc(currentDate)
+    .subtract(weeksCount, 'weeks')
+    .startOf('isoWeek');
+
+  const toDateWeek = moment.utc(currentDate)
+    .subtract(1, 'week')
+    .endOf('isoWeek');
+
+  const fromDateMonth = moment.utc(currentDate)
+    .subtract(monthsCount, 'months')
+    .startOf('month');
+
+  const toDateMonth = moment.utc(currentDate)
+    .subtract(1, 'month')
+    .endOf('month');
+
   //
-  // Build elastcisearch multisearch queries.
+  // Build elasticsearch multisearch queries.
   //
   const index = buildEsIndexPatternsForMuster(userRole);
   const esBody = [
     { index },
-    buildMusterEsBody({
+    buildUnitsMusterEsBody({
       interval: 'week',
-      intervalCount: weeksCount,
+      fromDate: fromDateWeek,
+      toDate: toDateWeek,
     }),
 
     { index },
-    buildMusterEsBody({
+    buildUnitsMusterEsBody({
       interval: 'month',
-      intervalCount: monthsCount,
+      fromDate: fromDateMonth,
+      toDate: toDateMonth,
     }),
   ] as any[];
 
@@ -235,12 +256,14 @@ export async function getUnitMusterStats(args: {
       unitNames,
       interval: 'week',
       intervalCount: weeksCount,
+      fromDate: fromDateWeek,
     }),
     monthly: buildUnitStats({
       aggregations: monthlyAggs,
       unitNames,
       interval: 'month',
       intervalCount: monthsCount,
+      fromDate: fromDateMonth,
     }),
   };
 }
@@ -316,13 +339,12 @@ function buildIndividualsPhoneNumberBody() {
   };
 }
 
-function buildIndividualsMusterBody({
-  interval,
-  intervalCount,
-}: {
-  interval: TimeInterval,
-  intervalCount: number
+function buildIndividualsMusterBody(args: {
+  fromDate: Moment,
+  toDate: Moment,
 }) {
+  const { fromDate, toDate } = args;
+
   /*
     Example ES Response:
     {
@@ -355,8 +377,6 @@ function buildIndividualsMusterBody({
     }
   */
 
-  const esInterval = getElasticsearchTimeInterval(interval);
-
   return {
     size: 0,
     query: {
@@ -365,8 +385,8 @@ function buildIndividualsMusterBody({
           {
             range: {
               Timestamp: {
-                gte: `now-${intervalCount}${esInterval}/${esInterval}`,
-                lte: `now/${esInterval}`,
+                gte: fromDate.valueOf(),
+                lte: toDate.valueOf(),
               },
             },
           },
@@ -400,13 +420,13 @@ function buildIndividualsMusterBody({
   };
 }
 
-function buildMusterEsBody({
-  interval,
-  intervalCount,
-}: {
+function buildUnitsMusterEsBody(args: {
+  fromDate: Moment,
+  toDate: Moment,
   interval: TimeInterval,
-  intervalCount: number
 }) {
+  const { fromDate, toDate, interval } = args;
+
   /*
     Example ES Response:
     {
@@ -452,8 +472,8 @@ function buildMusterEsBody({
           {
             range: {
               Timestamp: {
-                gte: `now-${intervalCount}${esInterval}/${esInterval}`,
-                lt: `now/${esInterval}`,
+                gte: fromDate.valueOf(),
+                lte: toDate.valueOf(),
               },
             },
           },
@@ -501,19 +521,16 @@ function buildUnitStats(args: {
   unitNames: string[]
   interval: TimeInterval
   intervalCount: number
+  fromDate: Moment
 }) {
-  const { aggregations, unitNames, interval, intervalCount } = args;
-
-  // For week intervals, start on Mondays like ES does.
-  const momentStartOf = (interval === 'week') ? 'isoWeek' : interval;
+  const { aggregations, unitNames, interval, intervalCount, fromDate } = args;
 
   // Initialize unit stats. Use our own set of dates and unit names, since ES may be missing some due to composite
   // aggregations not being able to return empty buckets.
   const unitStats = {} as UnitStatsByDate;
   for (let i = 0; i < intervalCount; i++) {
-    const dateStr = moment.utc()
-      .subtract(i + 1, interval)
-      .startOf(momentStartOf)
+    const dateStr = moment.utc(fromDate)
+      .add(i, interval)
       .format(getMomentDateFormat(interval));
 
     unitStats[dateStr] = {};

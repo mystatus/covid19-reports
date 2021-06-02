@@ -279,6 +279,7 @@ export const RosterPage = () => {
       initialLoad.current = false;
       dispatch(AppFrame.setPageLoading(false));
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Orphaned records reload.

@@ -94,8 +94,7 @@ export default makeStyles((theme: Theme) => createStyles({
     background: 'linear-gradient(to left, #dcdcdc73, #dcdcdc00)',
   },
   noData: {
-    textAlign: 'center',
-    marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(1),
+    margin: theme.spacing(1),
+    fontStyle: 'italic',
   },
 }));

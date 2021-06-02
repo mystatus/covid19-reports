@@ -218,7 +218,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
 
           {rows.length === 0 && (
             <TableRow>
-              <TableCell>
+              <TableCell colSpan={5}>
                 <Typography className={classes.noData} variant="h6">
                   {noDataText ?? 'No Data'}
                 </Typography>
