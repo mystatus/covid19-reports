@@ -53,7 +53,14 @@ export default (async function() {
     .execute();
 
   // Create lots of orphaned records to catch possible UI issues.
-  await seedOrphanedRecords(org1, { count: 1000 });
+  for (let i = 0; i < 10; i++) {
+    await seedOrphanedRecords(org1, {
+      count: 100,
+      customData: {
+        unit: uniqueString(),
+      },
+    });
+  }
 
   // Create some orphaned records that have the same composite id.
   await seedOrphanedRecords(org1, {

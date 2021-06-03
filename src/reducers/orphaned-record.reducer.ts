@@ -4,6 +4,8 @@ import { ApiOrphanedRecord } from '../models/api-response';
 export interface OrphanedRecordState {
   rows: ApiOrphanedRecord[],
   totalRowsCount: number
+  totalOrphanedRecordsCount: number
+  units: string[]
   isLoading: boolean
   lastUpdated: number
 }
@@ -11,6 +13,8 @@ export interface OrphanedRecordState {
 export const orphanedRecordInitialState: OrphanedRecordState = {
   rows: [],
   totalRowsCount: 0,
+  totalOrphanedRecordsCount: 0,
+  units: [],
   isLoading: false,
   lastUpdated: 0,
 };
@@ -22,6 +26,8 @@ export function orphanedRecordReducer(state = orphanedRecordInitialState, action
         ...state,
         rows: [],
         totalRowsCount: 0,
+        totalOrphanedRecordsCount: 0,
+        units: [],
         isLoading: false,
         lastUpdated: Date.now(),
       };
@@ -33,11 +39,13 @@ export function orphanedRecordReducer(state = orphanedRecordInitialState, action
       };
     }
     case OrphanedRecord.Actions.FetchPageSuccess.type: {
-      const { rows, totalRowsCount } = (action as OrphanedRecord.Actions.FetchPageSuccess).payload;
+      const { rows, totalRowsCount, totalOrphanedRecordsCount, units } = (action as OrphanedRecord.Actions.FetchPageSuccess).payload;
       return {
         ...state,
         rows,
         totalRowsCount,
+        totalOrphanedRecordsCount,
+        units,
         isLoading: false,
         lastUpdated: Date.now(),
       };
@@ -47,6 +55,8 @@ export function orphanedRecordReducer(state = orphanedRecordInitialState, action
         ...state,
         rows: [],
         totalRowsCount: 0,
+        totalOrphanedRecordsCount: 0,
+        units: [],
         isLoading: false,
       };
     }
