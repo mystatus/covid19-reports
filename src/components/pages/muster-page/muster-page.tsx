@@ -1,3 +1,4 @@
+import MomentUtils from '@date-io/moment';
 import {
   Box,
   Card,
@@ -7,20 +8,22 @@ import {
   MenuItem,
   Paper,
   Select,
-  Table,
   TableContainer,
-  TableFooter,
-  TableRow,
   Typography,
 } from '@material-ui/core';
-import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
-import ToggleButton from '@material-ui/lab/ToggleButton';
+import {
+  DateTimePicker,
+  MuiPickersUtilsProvider,
+} from '@material-ui/pickers';
+import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
+import { Moment } from 'moment-timezone';
 import * as Plotly from 'plotly.js';
 import React, {
   ChangeEvent,
   MouseEvent,
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 import axios from 'axios';
@@ -59,23 +62,6 @@ import { DataExportIcon } from '../../icons/data-export-icon';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
-
-interface TimeRange {
-  interval: 'day' | 'hour'
-  intervalCount: number
-}
-
-const timeRangeToString = (timeRange: TimeRange) => {
-  return `${timeRange.interval}-${timeRange.intervalCount}`;
-};
-
-const stringToTimeRange = (str: string) => {
-  const parts = str.split('-');
-  return {
-    interval: parts[0],
-    intervalCount: parseInt(parts[1]),
-  } as TimeRange;
-};
 
 export const MusterPage = () => {
   const classes = useStyles();
@@ -123,10 +109,9 @@ export const MusterPage = () => {
     ...trendChart,
   };
 
-  const [individualsTimeRangeString, setIndividualsTimeRangeString] = useState(timeRangeToString({
-    interval: 'day',
-    intervalCount: 1,
-  }));
+  const [selectedTimeRangeIndex, setSelectedTimeRangeIndex] = useState(0);
+  const [fromDate, setFromDate] = useState<Moment>(moment().startOf('day'));
+  const [toDate, setToDate] = useState<Moment>(moment().endOf('day'));
   const [individualsUnitId, setIndividualsUnitId] = useState<number>(-1);
   const [individualsPage, setIndividualsPage] = useState(0);
   const [individualsRowsPerPage, setIndividualsRowsPerPage] = useState(10);
@@ -147,6 +132,60 @@ export const MusterPage = () => {
   const orgName = org?.name;
   const isPageLoading = useSelector<AppState, boolean>(state => state.appFrame.isPageLoading);
 
+  const timeRanges: Readonly<Readonly<TimeRange>[]> = useMemo(() => ([
+    {
+      label: 'Today',
+      getRange: () => ({
+        fromDate: moment().startOf('day'),
+        toDate: moment().endOf('day'),
+      }),
+    },
+    {
+      label: 'Yesterday',
+      getRange: () => ({
+        fromDate: moment().subtract(1, 'day').startOf('day'),
+        toDate: moment().subtract(1, 'day').endOf('day'),
+      }),
+    },
+    {
+      label: 'Last 2 Days',
+      getRange: () => ({
+        fromDate: moment().subtract(2, 'day').startOf('day'),
+        toDate: moment().subtract(1, 'day').endOf('day'),
+      }),
+    },
+    {
+      label: 'Last 3 Days',
+      getRange: () => ({
+        fromDate: moment().subtract(3, 'day').startOf('day'),
+        toDate: moment().subtract(1, 'day').endOf('day'),
+      }),
+    },
+    {
+      label: 'Last 4 Days',
+      getRange: () => ({
+        fromDate: moment().subtract(4, 'day').startOf('day'),
+        toDate: moment().subtract(1, 'day').endOf('day'),
+      }),
+    },
+    {
+      label: 'Last 5 Days',
+      getRange: () => ({
+        fromDate: moment().subtract(5, 'day').startOf('day'),
+        toDate: moment().subtract(1, 'day').endOf('day'),
+      }),
+    },
+    {
+      label: 'Custom',
+      getRange: () => ({
+        fromDate,
+        toDate,
+      }),
+    },
+  ]), [fromDate, toDate]);
+
+  const customTimeRangeIndex = timeRanges.length - 1;
+
   //
   // Effects
   //
@@ -162,13 +201,12 @@ export const MusterPage = () => {
   }, [dispatch]);
 
   const reloadTable = useCallback(async () => {
-    const { interval, intervalCount } = stringToTimeRange(individualsTimeRangeString);
     let data: ApiMusterIndividualsPaginated;
     try {
       data = (await axios.get(`api/muster/${orgId}/individuals`, {
         params: {
-          interval,
-          intervalCount,
+          fromDate: fromDate.toISOString(),
+          toDate: toDate.toISOString(),
           unitId: individualsUnitId >= 0 ? individualsUnitId : null,
           page: individualsPage,
           limit: individualsRowsPerPage,
@@ -194,12 +232,13 @@ export const MusterPage = () => {
     } else {
       setIndividualsData(data);
     }
-  }, [individualsTimeRangeString, individualsRowsPerPage, individualsPage, orgId, individualsUnitId, showErrorDialog]);
+  }, [fromDate, toDate, individualsRowsPerPage, individualsPage, orgId, individualsUnitId, showErrorDialog]);
 
   const reloadTrendData = useCallback(async () => {
     try {
       const data = (await axios.get(`api/muster/${orgId}/trends`, {
         params: {
+          currentDate: moment().toISOString(),
           weeksCount: 6,
           monthsCount: 6,
         },
@@ -306,25 +345,23 @@ export const MusterPage = () => {
   };
 
   const downloadCSVExport = async () => {
-    const { interval, intervalCount } = stringToTimeRange(individualsTimeRangeString);
-
     try {
       setExportLoading(true);
       const response = await axios({
         url: `api/export/${orgId}/muster/individuals`,
         params: {
-          interval,
-          intervalCount,
+          fromDate: fromDate.toISOString(),
+          toDate: toDate.toISOString(),
           unitId: individualsUnitId >= 0 ? individualsUnitId : null,
         },
         method: 'GET',
         responseType: 'blob',
       });
 
-      const startDate = moment().startOf('day').subtract(intervalCount, 'days').format('YYYY-MM-DD');
-      const endDate = moment().startOf('day').format('YYYY-MM-DD');
+      const fromDateStr = fromDate.format('YYYY-MM-DD_h-mm-a');
+      const toDateStr = toDate.format('YYYY-MM-DD_h-mm-a');
       const unitId = individualsUnitId >= 0 ? `${individualsUnitId}` : 'all-units';
-      const filename = `${_.kebabCase(orgName)}_${unitId}_muster-noncompliance_${startDate}_to_${endDate}`;
+      const filename = `${_.kebabCase(orgName)}_${unitId}_muster-noncompliance_${fromDateStr}_to_${toDateStr}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
       dispatch(Modal.alert('Export to CSV', formatErrorMessage(error, 'Unable to export'))).then();
@@ -386,27 +423,36 @@ export const MusterPage = () => {
     ]).slice(0, maxNumColumnsToShow);
   };
 
-  const handleIndividualsTimeRangeChange = (event: MouseEvent<HTMLElement>, individualsTimeRangeStringNew: string | null) => {
-    if (individualsTimeRangeStringNew == null) {
-      return;
-    }
-
-    setIndividualsTimeRangeString(individualsTimeRangeStringNew);
-  };
-
   const handleIndividualsUnitChange = (event: ChangeEvent<{ name?: string, value: unknown }>) => {
     const unitId = event.target.value as number;
     setIndividualsUnitId(unitId);
   };
 
-  const timeRangeToggleButton = (timeRange: TimeRange) => {
-    const intervalStr = (timeRange.intervalCount === 1) ? timeRange.interval : `${timeRange.interval}s`;
+  const handleFromDateChange = (date: MaterialUiPickersDate) => {
+    if (!date) {
+      return;
+    }
 
-    return (
-      <ToggleButton value={timeRangeToString(timeRange)}>
-        {`${timeRange.intervalCount} ${_.startCase(intervalStr)}`}
-      </ToggleButton>
-    );
+    setFromDate(date);
+    setSelectedTimeRangeIndex(customTimeRangeIndex);
+  };
+
+  const handleToDateChange = (date: MaterialUiPickersDate) => {
+    if (!date) {
+      return;
+    }
+
+    setToDate(date);
+    setSelectedTimeRangeIndex(customTimeRangeIndex);
+  };
+
+  const handleTimeRangeSelectChange = (e: ChangeEvent<{ value: unknown }>) => {
+    const index = parseInt(e.target.value as string);
+    const range = timeRanges[index].getRange();
+
+    setSelectedTimeRangeIndex(index);
+    setFromDate(range.fromDate);
+    setToDate(range.toDate);
   };
 
   //
@@ -415,7 +461,7 @@ export const MusterPage = () => {
 
   return (
     <main className={classes.root}>
-      <Container maxWidth="md">
+      <Container maxWidth={false}>
         <PageHeader
           title="Muster Non-Compliance"
           help={{
@@ -430,80 +476,128 @@ export const MusterPage = () => {
             <Grid item xs={12}>
               <Paper>
                 <TableContainer>
-                  <div className={classes.tableOptions}>
-                    <ToggleButtonGroup
-                      value={individualsTimeRangeString}
-                      exclusive
-                      onChange={handleIndividualsTimeRangeChange}
-                      aria-label="table time range"
+                  <Box display="flex">
+                    <Box display="flex" flexWrap="wrap">
+                      <Box className={classes.tableHeaderControls}>
+                        <Box fontWeight="bold" marginBottom={1}>
+                          <span>Time Range</span>
+
+                          <Select
+                            className={classes.timeRangeSelect}
+                            value={selectedTimeRangeIndex}
+                            onChange={handleTimeRangeSelectChange}
+                          >
+                            {timeRanges.map((timeRange, index) => (
+                              <MenuItem key={index} value={index}>
+                                {timeRange.label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </Box>
+
+                        <Box display="flex" alignItems="center">
+                          <MuiPickersUtilsProvider utils={MomentUtils}>
+                            <DateTimePicker
+                              id="from-date"
+                              format="M/D/YY h:mm A"
+                              placeholder="mm/dd/yy hh:mm:ss"
+                              value={fromDate}
+                              maxDate={toDate}
+                              onChange={handleFromDateChange}
+                              inputProps={{
+                                size: 17,
+                              }}
+                            />
+                          </MuiPickersUtilsProvider>
+
+                          <Box marginX={1}>to</Box>
+
+                          <MuiPickersUtilsProvider utils={MomentUtils}>
+                            <DateTimePicker
+                              id="to-date"
+                              format="M/D/YY h:mm A"
+                              placeholder="mm/dd/yy hh:mm:ss"
+                              value={toDate}
+                              minDate={fromDate}
+                              maxDate={moment()}
+                              onChange={handleToDateChange}
+                              inputProps={{
+                                size: 17,
+                              }}
+                            />
+                          </MuiPickersUtilsProvider>
+                        </Box>
+                      </Box>
+
+                      <Box className={classes.tableHeaderControls}>
+                        <Box fontWeight="bold" marginBottom={1}>
+                          <label>Unit</label>
+                        </Box>
+
+                        <Box display="flex" alignItems="center">
+                          <Select
+                            value={individualsUnitId}
+                            displayEmpty
+                            onChange={handleIndividualsUnitChange}
+                          >
+                            <MenuItem value={-1}>
+                              <em>All Units</em>
+                            </MenuItem>
+
+                            {units.map(unit => (
+                              <MenuItem key={unit.id} value={unit.id}>
+                                {unit.name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </Box>
+                      </Box>
+                    </Box>
+
+                    <Box
+                      className={classes.tableHeaderControls}
+                      flex={1}
+                      display="flex"
+                      alignItems="flex-start"
+                      justifyContent="flex-end"
                     >
-                      {timeRangeToggleButton({ intervalCount: 1, interval: 'day' })}
-                      {timeRangeToggleButton({ intervalCount: 2, interval: 'day' })}
-                      {timeRangeToggleButton({ intervalCount: 3, interval: 'day' })}
-                      {timeRangeToggleButton({ intervalCount: 4, interval: 'day' })}
-                      {timeRangeToggleButton({ intervalCount: 5, interval: 'day' })}
-                    </ToggleButtonGroup>
+                      <ButtonWithSpinner
+                        size="large"
+                        variant="text"
+                        color="primary"
+                        startIcon={<DataExportIcon />}
+                        onClick={() => downloadCSVExport()}
+                        loading={exportLoading}
+                      >
+                        Export to CSV
+                      </ButtonWithSpinner>
+                    </Box>
+                  </Box>
 
-                    <Select
-                      value={individualsUnitId}
-                      displayEmpty
-                      onChange={handleIndividualsUnitChange}
-                    >
-                      <MenuItem value={-1}>
-                        <em>All Units</em>
-                      </MenuItem>
+                  <TableCustomColumnsContent
+                    rows={individualsData.rows}
+                    columns={getVisibleColumns()}
+                    idColumn="edipi"
+                    noDataText={isPageLoading ? 'Loading...' : 'All Individuals Compliant'}
+                    rowOptions={{
+                      renderCell: (row, column) => {
+                        const value = row[column.name];
+                        if (column.name === 'unitId') {
+                          return units.find(unit => unit.id === value)?.name || value;
+                        }
+                        return value;
+                      },
+                    }}
+                  />
 
-                      {units.map(unit => (
-                        <MenuItem key={unit.id} value={unit.id}>
-                          {unit.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-
-                    <Box flex={1} />
-
-                    <ButtonWithSpinner
-                      size="large"
-                      variant="text"
-                      color="primary"
-                      startIcon={<DataExportIcon />}
-                      onClick={() => downloadCSVExport()}
-                      loading={exportLoading}
-                    >
-                      Export to CSV
-                    </ButtonWithSpinner>
-                  </div>
-
-                  <Table aria-label="muster table">
-                    <TableCustomColumnsContent
-                      rows={individualsData.rows}
-                      columns={getVisibleColumns()}
-                      idColumn="id"
-                      noDataText={isPageLoading ? 'Loading...' : 'All Individuals Compliant'}
-                      rowOptions={{
-                        renderCell: (row, column) => {
-                          const value = row[column.name];
-                          if (column.name === 'unitId') {
-                            return units.find(unit => unit.id === value)?.name || value;
-                          }
-                          return value;
-                        },
-                      }}
-                    />
-
-                    <TableFooter>
-                      <TableRow>
-                        <TablePagination
-                          count={individualsData.totalRowsCount}
-                          page={individualsPage}
-                          rowsPerPage={individualsRowsPerPage}
-                          rowsPerPageOptions={[10, 25, 50]}
-                          onChangePage={handleIndividualsChangePage}
-                          onChangeRowsPerPage={handleIndividualsChangeRowsPerPage}
-                        />
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
+                  <TablePagination
+                    count={individualsData.totalRowsCount}
+                    page={individualsPage}
+                    rowsPerPage={individualsRowsPerPage}
+                    rowsPerPageOptions={[10, 25, 50]}
+                    onChangePage={handleIndividualsChangePage}
+                    onChangeRowsPerPage={handleIndividualsChangeRowsPerPage}
+                  />
                 </TableContainer>
               </Paper>
             </Grid>
@@ -576,4 +670,12 @@ export const MusterPage = () => {
       </Container>
     </main>
   );
+};
+
+type TimeRange = {
+  label: string
+  getRange: () => {
+    fromDate: Moment
+    toDate: Moment
+  }
 };

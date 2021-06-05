@@ -12,7 +12,7 @@ export const MusterPageHelp = () => {
       bullets={[
         'Identify individuals who have a high Non-muster Rate',
         'Identify units that have a high Non-muster Rate',
-        'Export a CSV file containing all non-compliant individuals&apos; muster data',
+        `Export a CSV file containing all non-compliant individuals' muster data`,
       ]}
     />
   );

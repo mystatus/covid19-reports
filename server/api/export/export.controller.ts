@@ -12,9 +12,6 @@ import {
   getCsvValueForRosterColumn,
 } from '../../util/roster-utils';
 import {
-  TimeInterval,
-} from '../../util/util';
-import {
   ApiRequest,
   OrgParam,
   PaginatedQuery,
@@ -157,19 +154,19 @@ class ExportController {
 
   async exportMusterIndividualsToCsv(req: ApiRequest<OrgParam, null, ExportMusterIndividualsQuery>, res: Response) {
     assertRequestQuery(req, [
-      'interval',
-      'intervalCount',
+      'fromDate',
+      'toDate',
     ]);
 
-    const interval = req.query.interval;
-    const intervalCount = parseInt(req.query.intervalCount);
+    const fromDate = moment(req.query.fromDate);
+    const toDate = moment(req.query.toDate);
 
     const individuals = await getRosterMusterStats({
       org: req.appOrg!,
       userRole: req.appUserRole!,
-      interval,
-      intervalCount,
       unitId: req.query.unitId,
+      fromDate,
+      toDate,
     });
 
     // Delete roster ids since they're meaningless to the user.
@@ -192,8 +189,8 @@ type ExportOrgQuery = {
 };
 
 type ExportMusterIndividualsQuery = {
-  interval: TimeInterval
-  intervalCount: string
+  fromDate: string
+  toDate: string
   unitId?: number
 } & PaginatedQuery;
 

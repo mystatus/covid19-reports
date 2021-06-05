@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { Brackets } from 'typeorm';
+import moment from 'moment-timezone';
 import { assertRequestQuery } from '../../util/api-utils';
 import { NotFoundError } from '../../util/error-types';
 import {
@@ -28,30 +29,29 @@ import {
   DaysOfTheWeek,
   nextDay,
   oneDaySeconds,
-  TimeInterval,
 } from '../../util/util';
 
 class MusterController {
 
   async getIndividuals(req: ApiRequest<OrgRoleParams, null, GetIndividualsQuery>, res: Response<Paginated<Partial<Roster>>>) {
     assertRequestQuery(req, [
-      'interval',
-      'intervalCount',
+      'fromDate',
+      'toDate',
       'limit',
       'page',
     ]);
 
-    const interval = req.query.interval;
-    const intervalCount = parseInt(req.query.intervalCount);
+    const fromDate = moment(req.query.fromDate);
+    const toDate = moment(req.query.toDate);
     const limit = parseInt(req.query.limit);
     const page = parseInt(req.query.page);
 
     const individuals = await getRosterMusterStats({
       org: req.appOrg!,
       userRole: req.appUserRole!,
-      interval,
-      intervalCount,
       unitId: req.query.unitId || undefined,
+      fromDate,
+      toDate,
     });
 
     const offset = page * limit;
@@ -64,15 +64,18 @@ class MusterController {
 
   async getTrends(req: ApiRequest<null, null, GetTrendsQuery>, res: Response) {
     assertRequestQuery(req, [
+      'currentDate',
       'weeksCount',
       'monthsCount',
     ]);
 
+    const currentDate = moment(req.query.currentDate);
     const weeksCount = parseInt(req.query.weeksCount ?? '6');
     const monthsCount = parseInt(req.query.monthsCount ?? '6');
 
     const unitTrends = await getUnitMusterStats({
       userRole: req.appUserRole!,
+      currentDate,
       weeksCount,
       monthsCount,
     });
@@ -214,12 +217,13 @@ class MusterController {
 }
 
 type GetIndividualsQuery = {
-  interval: TimeInterval
-  intervalCount: string
+  fromDate: string
+  toDate: string
   unitId: number | null
 } & PaginatedQuery;
 
 type GetTrendsQuery = {
+  currentDate: string
   weeksCount?: string
   monthsCount?: string
 };

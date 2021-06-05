@@ -18,6 +18,7 @@ import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 import FavoriteIcon from '@material-ui/icons/Favorite';
 import clsx from 'clsx';
 import axios from 'axios';
+import moment from 'moment';
 import { UserSelector } from '../../../selectors/user.selector';
 import { WorkspaceSelector } from '../../../selectors/workspace.selector';
 import { Link } from '../../link/link';
@@ -148,6 +149,7 @@ export const HomePage = () => {
         const requestsPromise = AccessRequestClient.fetchAll(orgId!);
         const { weekly } = (await axios.get(`api/muster/${orgId}/trends`, {
           params: {
+            currentDate: moment().toISOString(),
             weeksCount: 2,
             monthsCount: 0,
           },
