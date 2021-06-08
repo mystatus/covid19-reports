@@ -7,6 +7,13 @@ import { requireInternalUser, requireOrgAccess, requireRolePermission } from '..
 const router = express.Router() as any;
 
 router.get(
+  '/:orgId/count',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageRoster),
+  controller.getOrphanedRecordsCount,
+);
+
+router.get(
   '/:orgId',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),

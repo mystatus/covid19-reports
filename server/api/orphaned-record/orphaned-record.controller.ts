@@ -10,9 +10,11 @@ import {
   OrphanedRecordsNotFoundError,
 } from '../../util/error-types';
 import {
-  buildVisibleOrphanedRecordResultsQuery,
+  getVisibleOrphanedRecordResults,
   deleteOrphanedRecordActionsForUser,
   getOrphanedRecordsForResolve,
+  OrphanedRecordResult,
+  getVisibleOrphanedRecordResultsCount,
 } from '../../util/orphaned-records-utils';
 import { convertDateParam } from '../../util/reingest-utils';
 import {
@@ -37,7 +39,16 @@ import { OrphanedRecord } from './orphaned-record.model';
 
 class OrphanedRecordController {
 
-  async getOrphanedRecords(req: ApiRequest<OrgParam, null, GetOrphanedRecordsQuery>, res: Response<GetOrphanedRecordsResponse>) {
+  async getOrphanedRecordsCount(req: ApiRequest, res: Response) {
+    const count = await getVisibleOrphanedRecordResultsCount({
+      userEdipi: req.appUser!.edipi,
+      orgId: req.appOrg!.id,
+    });
+
+    res.json({ count });
+  }
+
+  async getOrphanedRecords(req: ApiRequest<OrgParam, null, GetOrphanedRecordsQuery>, res: Response<Paginated<OrphanedRecordResult>>) {
     assertRequestQuery(req, [
       'page',
       'limit',
@@ -47,28 +58,15 @@ class OrphanedRecordController {
     const unit = req.query.unit;
     const offset = page * limit;
 
-    // For some reason when calling getCount() on this query TypeORM completely modifies it and returns an erroneous
-    // count (returning the total row count instead of the aggregated count). So as a workaround just query
-    // for all of the records and do pagination after.
-    const query = buildVisibleOrphanedRecordResultsQuery(req.appUser!.edipi, req.appOrg!.id);
-    const orphanedRecords = await query.getRawMany<OrphanedRecordResult>();
-
-    // Return the units for the user to filter by.
-    const unitsDeduped: { [unit: string]: boolean } = {};
-    for (const record of orphanedRecords) {
-      unitsDeduped[record.unit] = true;
-    }
-
-    // Filter by unit if one was provided.
-    const orphanedRecordsFiltered = (unit != null)
-      ? orphanedRecords.filter(x => x.unit === unit)
-      : orphanedRecords;
+    const orphanedRecords = await getVisibleOrphanedRecordResults({
+      userEdipi: req.appUser!.edipi,
+      orgId: req.appOrg!.id,
+      unit,
+    });
 
     res.json({
-      rows: orphanedRecordsFiltered.slice(offset, offset + limit),
-      totalRowsCount: orphanedRecordsFiltered.length,
-      totalOrphanedRecordsCount: orphanedRecords.length,
-      units: Object.keys(unitsDeduped).sort(),
+      rows: orphanedRecords.slice(offset, offset + limit),
+      totalRowsCount: orphanedRecords.length,
     });
   }
 
@@ -245,20 +243,6 @@ class OrphanedRecordController {
 
 }
 
-interface OrphanedRecordResult {
-  id: string;
-  edipi: string;
-  phone: string;
-  unit: string;
-  count: number;
-  action?: string;
-  claimedUntil?: Date;
-  latestReportDate: Date;
-  earliestReportDate: Date;
-  unitId?: number;
-  rosterHistoryId?: number;
-}
-
 export interface OrphanedRecordActionParam extends OrgParam {
   orphanId: string;
 }
@@ -291,11 +275,6 @@ type ResolveWithEditBody = RosterEntryData & {
 
 type GetOrphanedRecordsQuery = PaginatedQuery & {
   unit?: string
-};
-
-type GetOrphanedRecordsResponse = Paginated<OrphanedRecordResult> & {
-  totalOrphanedRecordsCount: number
-  units: string[]
 };
 
 export default new OrphanedRecordController();

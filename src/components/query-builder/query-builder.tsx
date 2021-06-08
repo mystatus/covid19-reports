@@ -1,16 +1,25 @@
-import React, { useEffect } from 'react';
+import MomentUtils from '@date-io/moment';
 import {
-  Button, Collapse, Grid, IconButton, Select, Switch, TextField,
+  Button,
+  Collapse,
+  Grid,
+  IconButton,
+  Select,
+  Switch,
+  TextField,
 } from '@material-ui/core';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
-import MomentUtils from '@date-io/moment';
-import { DatePicker, DateTimePicker, MuiPickersUtilsProvider } from '@material-ui/pickers';
+import {
+  DatePicker,
+  DateTimePicker,
+  MuiPickersUtilsProvider,
+} from '@material-ui/pickers';
 import moment, { Moment } from 'moment';
-import useStyles from './query-builder.styles';
-import useDebounced from '../../hooks/use-debounced';
+import React, { useEffect } from 'react';
 import useDeepEquality from '../../hooks/use-deep-equality';
 import usePersistedState from '../../hooks/use-persisted-state';
+import useStyles from './query-builder.styles';
 
 const toDate = (date: Moment) => date.format('YYYY-MM-DD');
 
@@ -100,7 +109,7 @@ const DateTimeValue = ({ hasTime, onChange, row }: DateTimeValueEditorProps) => 
     if (!row.value) {
       onChange({ ...row, value: getDefaultValueForType(row.field) });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const Picker = hasTime ? DateTimePicker : DatePicker;
@@ -413,7 +422,6 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
   const [rows, setRows] = usePersistedState<QueryRow[]>(persistKey, []);
   const availableFields = fields.filter(field => !rows.some(row => row.field.name === field.name));
   const [filterState, setFilterState] = useDeepEquality<QueryFilterState | undefined>();
-  const debouncedRows = useDebounced(rows, 333);
 
   const addRow = () => {
     if (availableFields.length > 0) {
@@ -434,13 +442,13 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
   };
 
   useEffect(() => {
-    const queryableRows = debouncedRows.filter(row => row.field && row.value !== '');
+    const queryableRows = rows.filter(row => row.field && row.value !== '');
     const query: QueryFilterState = {};
     for (const { field, op, value } of queryableRows) {
       query[field!.name] = { op, value };
     }
     setFilterState(queryableRows.length ? query : undefined);
-  }, [debouncedRows, setFilterState]);
+  }, [rows, setFilterState]);
 
   useEffect(() => {
     onChange(filterState);
@@ -450,7 +458,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
     if (open && rows.length === 0) {
       addRow();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   return (

@@ -96,8 +96,7 @@ export const AppSidenav = () => {
 
   useEffect(() => {
     if (user.activeRole?.role.canManageRoster) {
-      // Set the limit to 0 here since we only need the total rows count for the Roster badge.
-      dispatch(OrphanedRecord.fetchPage(orgId!, 0, 0));
+      dispatch(OrphanedRecord.fetchCount(orgId!));
     } else {
       dispatch(OrphanedRecord.clear());
     }
@@ -167,7 +166,7 @@ export const AppSidenav = () => {
               to="/roster"
               name="Roster"
               icon={(<AssignmentIndIcon />)}
-              badgeContent={orphanedRecords.totalOrphanedRecordsCount}
+              badgeContent={orphanedRecords.count}
             />
           )}
         </List>
