@@ -384,7 +384,7 @@ function buildIndividualsMusterBody(args: {
         filter: [
           {
             range: {
-              Timestamp: {
+              'Muster.startTimestamp': {
                 gte: fromDate.valueOf(),
                 lte: toDate.valueOf(),
               },
@@ -471,7 +471,7 @@ function buildUnitsMusterEsBody(args: {
         filter: [
           {
             range: {
-              Timestamp: {
+              'Muster.startTimestamp': {
                 gte: fromDate.valueOf(),
                 lte: toDate.valueOf(),
               },
@@ -488,7 +488,7 @@ function buildUnitsMusterEsBody(args: {
             {
               date: {
                 date_histogram: {
-                  field: 'Timestamp',
+                  field: 'Muster.startTimestamp',
                   interval: `1${esInterval}`,
                   format: getElasticsearchDateFormat(interval),
                 },
