@@ -6,7 +6,7 @@ import { elasticsearch } from '../../elasticsearch/elasticsearch';
 import { assertRequestQuery } from '../../util/api-utils';
 import { buildEsIndexPatternsForDataExport } from '../../util/elasticsearch-utils';
 import { InternalServerError } from '../../util/error-types';
-import { getRosterMusterStats } from '../../util/muster-utils';
+import { getMusterRosterStats } from '../../util/muster-utils';
 import {
   getCsvHeaderForRosterColumn,
   getCsvValueForRosterColumn,
@@ -152,7 +152,7 @@ class ExportController {
     res.send(csv);
   }
 
-  async exportMusterIndividualsToCsv(req: ApiRequest<OrgParam, null, ExportMusterIndividualsQuery>, res: Response) {
+  async exportMusterRosterToCsv(req: ApiRequest<OrgParam, null, ExportMusterIndividualsQuery>, res: Response) {
     assertRequestQuery(req, [
       'fromDate',
       'toDate',
@@ -161,7 +161,7 @@ class ExportController {
     const fromDate = moment(req.query.fromDate);
     const toDate = moment(req.query.toDate);
 
-    const individuals = await getRosterMusterStats({
+    const individuals = await getMusterRosterStats({
       org: req.appOrg!,
       userRole: req.appUserRole!,
       unitId: req.query.unitId,
@@ -177,7 +177,7 @@ class ExportController {
     const csv = await json2csvAsync(individuals);
 
     res.header('Content-Type', 'text/csv');
-    res.attachment('muster-noncompliance.csv');
+    res.attachment('muster-compliance.csv');
     res.send(csv);
   }
 

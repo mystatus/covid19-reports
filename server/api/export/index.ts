@@ -21,10 +21,10 @@ router.get(
 );
 
 router.get(
-  '/:orgId/muster/individuals',
+  '/:orgId/muster/roster',
   requireOrgAccess,
   requireRolePermission(role => role.canViewMuster),
-  controller.exportMusterIndividualsToCsv,
+  controller.exportMusterRosterToCsv,
 );
 
 export default router;

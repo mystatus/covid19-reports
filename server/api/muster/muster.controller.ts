@@ -8,8 +8,8 @@ import {
   getDistanceToWindow,
   getEarliestMusterWindowTime,
   getOneTimeMusterWindowTime,
-  getRosterMusterStats,
-  getUnitMusterStats,
+  getMusterRosterStats,
+  getMusterUnitTrends,
   MusterWindow,
 } from '../../util/muster-utils';
 import {
@@ -33,7 +33,7 @@ import {
 
 class MusterController {
 
-  async getIndividuals(req: ApiRequest<OrgRoleParams, null, GetIndividualsQuery>, res: Response<Paginated<Partial<Roster>>>) {
+  async getMusterRoster(req: ApiRequest<OrgRoleParams, null, GetMusterRosterQuery>, res: Response<Paginated<Partial<Roster>>>) {
     assertRequestQuery(req, [
       'fromDate',
       'toDate',
@@ -46,7 +46,7 @@ class MusterController {
     const limit = parseInt(req.query.limit);
     const page = parseInt(req.query.page);
 
-    const individuals = await getRosterMusterStats({
+    const rosterStats = await getMusterRosterStats({
       org: req.appOrg!,
       userRole: req.appUserRole!,
       unitId: req.query.unitId || undefined,
@@ -57,12 +57,12 @@ class MusterController {
     const offset = page * limit;
 
     return res.json({
-      rows: individuals.slice(offset, offset + limit),
-      totalRowsCount: individuals.length,
+      rows: rosterStats.slice(offset, offset + limit),
+      totalRowsCount: rosterStats.length,
     });
   }
 
-  async getTrends(req: ApiRequest<null, null, GetTrendsQuery>, res: Response) {
+  async getMusterUnitTrends(req: ApiRequest<null, null, GetMusterUnitTrendsQuery>, res: Response) {
     assertRequestQuery(req, [
       'currentDate',
       'weeksCount',
@@ -73,7 +73,7 @@ class MusterController {
     const weeksCount = parseInt(req.query.weeksCount ?? '6');
     const monthsCount = parseInt(req.query.monthsCount ?? '6');
 
-    const unitTrends = await getUnitMusterStats({
+    const unitTrends = await getMusterUnitTrends({
       userRole: req.appUserRole!,
       currentDate,
       weeksCount,
@@ -216,13 +216,13 @@ class MusterController {
   }
 }
 
-type GetIndividualsQuery = {
+type GetMusterRosterQuery = {
   fromDate: string
   toDate: string
   unitId: number | null
 } & PaginatedQuery;
 
-type GetTrendsQuery = {
+type GetMusterUnitTrendsQuery = {
   currentDate: string
   weeksCount?: string
   monthsCount?: string

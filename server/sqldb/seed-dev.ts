@@ -16,10 +16,12 @@ import { defaultReportSchemas, ReportSchema } from '../api/report-schema/report-
 import {
   uniqueEdipi,
   uniquePhone,
-  uniqueString,
 } from '../util/test-utils/unique';
 
 require('dotenv').config();
+
+let orgCount = 0;
+let unitCount = 0;
 
 export default (async function() {
   if (!env.isDev) {
@@ -32,19 +34,19 @@ export default (async function() {
 
   // Create Group Admin
   const groupAdmin = User.create({
-    edipi: '0000000001',
+    edipi: uniqueEdipi(),
     firstName: 'Group',
     lastName: 'Admin',
-    phone: '123-456-7890',
-    email: 'groupadmin@statusengine.com',
+    phone: uniquePhone(),
+    email: `groupadmin@setest.com`,
     service: 'Space Force',
     isRegistered: true,
   });
   await groupAdmin.save();
 
   // Create Org 1 & 2 and their Users
-  const { org: org1, rosterEntries: org1RosterEntries } = await generateOrg(1, groupAdmin, 5, 20);
-  await generateOrg(2, groupAdmin, 5, 20);
+  const { org: org1, rosterEntries: org1RosterEntries } = await generateOrg(groupAdmin, 5, 20);
+  await generateOrg(groupAdmin, 5, 20);
 
   // Set the start date on each roster entry to some time in the past to help with repeatable testing
   await RosterHistory.createQueryBuilder()
@@ -53,11 +55,14 @@ export default (async function() {
     .execute();
 
   // Create lots of orphaned records to catch possible UI issues.
+  let orphanUnitCount = 0;
   for (let i = 0; i < 10; i++) {
+    orphanUnitCount += 1;
+
     await seedOrphanedRecords(org1, {
       count: 100,
       customData: {
-        unit: uniqueString(),
+        unit: `Orphan Unit ${orphanUnitCount}`,
       },
     });
 
@@ -66,34 +71,37 @@ export default (async function() {
       count: 3,
       customData: {
         edipi: uniqueEdipi(),
-        unit: uniqueString(),
+        unit: `Orphan Unit ${orphanUnitCount}`,
+        phone: uniquePhone(),
+      },
+    });
+
+    // Create some orphaned records for an individual in the roster.
+    orphanUnitCount += 1;
+    await seedOrphanedRecords(org1, {
+      count: 3,
+      customData: {
+        edipi: org1RosterEntries[0].edipi,
+        unit: `Orphan Unit ${orphanUnitCount}`,
         phone: uniquePhone(),
       },
     });
   }
-
-  // Create some orphaned records for an individual in the roster.
-  await seedOrphanedRecords(org1, {
-    count: 3,
-    customData: {
-      edipi: org1RosterEntries[0].edipi,
-      unit: uniqueString(),
-      phone: uniquePhone(),
-    },
-  });
 
   await connection.close();
 
   Log.info('Finished!');
 }());
 
-async function generateOrg(orgNum: number, admin: User, numUsers: number, numRosterEntries: number) {
+async function generateOrg(admin: User, numUsers: number, numRosterEntries: number) {
+  orgCount += 1;
+
   const org = Org.create({
-    name: `Test Group ${orgNum}`,
-    description: `Group ${orgNum} for testing.`,
+    name: `Group ${orgCount}`,
+    description: `Group ${orgCount} for testing.`,
     contact: admin,
-    indexPrefix: `testgroup${orgNum}`,
-    reportingGroup: `test${orgNum}`,
+    indexPrefix: `testgroup${orgCount}`,
+    reportingGroup: `test${orgCount}`,
     defaultMusterConfiguration: [],
   });
   await org.save();
@@ -106,7 +114,7 @@ async function generateOrg(orgNum: number, admin: User, numUsers: number, numRos
 
   const customColumn = CustomRosterColumn.create({
     org,
-    display: `My Custom Column : Group ${orgNum}`,
+    display: `My Custom Column ${orgCount}`,
     type: RosterColumnType.String,
     phi: false,
     pii: false,
@@ -116,9 +124,10 @@ async function generateOrg(orgNum: number, admin: User, numUsers: number, numRos
 
   const units: Unit[] = [];
   for (let i = 1; i <= 5; i++) {
+    unitCount += 1;
     const unit = Unit.create({
       org,
-      name: `Unit ${i} : Group ${orgNum}`,
+      name: `Unit ${unitCount}`,
       musterConfiguration: [],
       includeDefaultConfig: true,
     });
@@ -136,12 +145,14 @@ async function generateOrg(orgNum: number, admin: User, numUsers: number, numRos
   await groupUserRole.save();
 
   for (let i = 0; i < numUsers; i++) {
+    const edipi = uniqueEdipi();
+    const edipiNum = parseInt(edipi);
     const user = User.create({
-      edipi: `${orgNum}00000000${i}`,
-      firstName: 'User',
-      lastName: `${i}`,
-      phone: randomPhoneNumber(),
-      email: `user${i}@org${orgNum}.com`,
+      edipi,
+      firstName: `UserFirst${edipiNum}`,
+      lastName: `UserLast${edipiNum}`,
+      phone: uniquePhone(),
+      email: `user${edipiNum}@setest.com`,
       service: 'Space Force',
       isRegistered: true,
     });
@@ -153,10 +164,12 @@ async function generateOrg(orgNum: number, admin: User, numUsers: number, numRos
   for (let i = 0; i < numRosterEntries; i++) {
     const customColumns: any = {};
     customColumns[customColumn.name] = `custom column value`;
+    const edipi = uniqueEdipi();
+    const edipiNum = parseInt(edipi);
     const rosterEntry = Roster.create({
-      edipi: `${orgNum}${`${i}`.padStart(9, '0')}`,
-      firstName: 'Roster',
-      lastName: `Entry${i}`,
+      edipi,
+      firstName: `RosterFirst${edipiNum}`,
+      lastName: `RosterLast${edipiNum}`,
       unit: units[i % 5],
       customColumns,
     });
@@ -167,17 +180,9 @@ async function generateOrg(orgNum: number, admin: User, numUsers: number, numRos
   return { org, rosterEntries };
 }
 
-function randomPhoneNumber() {
-  return `${randomNumber(100, 999)}-${randomNumber(100, 999)}-${randomNumber(1000, 9999)}`;
-}
-
-function randomNumber(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
 function createGroupAdminRole(org: Org, workspaces?: Workspace[]) {
   return Role.create({
-    name: `Group Admin : Group ${org.id}`,
+    name: 'Admin',
     description: 'For managing the group.',
     org,
     allowedRosterColumns: ['*'],
@@ -194,7 +199,7 @@ function createGroupAdminRole(org: Org, workspaces?: Workspace[]) {
 
 function createGroupUserRole(org: Org, workspaces?: Workspace[]) {
   return Role.create({
-    name: `Group User : Group ${org.id}`,
+    name: 'User',
     description: `Basic role for all Group ${org.id} users.`,
     org,
     allowedRosterColumns: ['edipi', 'lastName'],

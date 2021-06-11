@@ -23,7 +23,7 @@ import {
  * Get muster stats for each individual on the roster, given a time range and optional unit to filter by. The returned
  * data will include each individual's muster stats merged with their roster data.
  */
-export async function getRosterMusterStats(args: {
+export async function getMusterRosterStats(args: {
   org: Org
   userRole: UserRole
   unitId?: number
@@ -36,13 +36,13 @@ export async function getRosterMusterStats(args: {
   const index = buildEsIndexPatternsForMuster(userRole, unitId);
   const body = [
     { index },
-    buildIndividualsMusterBody({
+    buildMusterRosterBody({
       fromDate,
       toDate,
     }),
 
     { index },
-    buildIndividualsPhoneNumberBody(),
+    buildRosterPhoneNumberBody(),
   ];
 
   let response: MSearchResponse<never>;
@@ -92,67 +92,74 @@ export async function getRosterMusterStats(args: {
       .getMany();
   }
 
+  const rosterStats: MusterRosterStats = {};
+
   const rosterEntriesByEdipi: { [edipi: string]: Roster } = {};
-  rosterEntries.forEach(e => {
-    rosterEntriesByEdipi[e.edipi] = e;
+  rosterEntries.forEach(entry => {
+    const { edipi } = entry;
+
+    rosterEntriesByEdipi[edipi] = entry;
+
+    if (!rosterStats[edipi]) {
+      rosterStats[edipi] = {
+        totalMusters: 0,
+        mustersReported: 0,
+        musterPercent: 0,
+      };
+    }
 
     // Fill in any missing phone numbers that weren't in ES.
     // HACK: Just try to find any custom column with "phone" in its name. Maybe we need a special type
     // for phone number, or need to make it a non-custom column...
-    const phoneKey = Object.keys(e.customColumns)
+    const phoneKey = Object.keys(entry.customColumns)
       .find(key => key.toLowerCase().indexOf('phone') !== -1);
 
-    if (phoneKey && edipiToPhone[e.edipi] == null) {
-      edipiToPhone[e.edipi] = e.customColumns[phoneKey] as string;
+    if (phoneKey && edipiToPhone[entry.edipi] == null) {
+      edipiToPhone[entry.edipi] = entry.customColumns[phoneKey] as string;
     }
   });
 
   const allowedRosterColumns = await Roster.getAllowedColumns(org, userRole.role);
 
   // Collect reports and reports missed.
-  const individualStats: IndividualStats = {};
-
-  const aggs = musterAggsResponse.aggregations as IndividualsMusterAggregations | undefined;
+  const aggs = musterAggsResponse.aggregations as MusterRosterAggregations | undefined;
   const buckets = aggs?.muster.buckets ?? [];
   for (const bucket of buckets) {
     const { edipi, reported } = bucket.key;
 
-    if (!individualStats[edipi]) {
-      individualStats[edipi] = {
+    if (!rosterStats[edipi]) {
+      rosterStats[edipi] = {
+        totalMusters: 0,
         mustersReported: 0,
-        mustersNotReported: 0,
-        nonMusterPercent: 0,
+        musterPercent: 0,
       };
     }
 
+    rosterStats[edipi].totalMusters += bucket.doc_count;
+
     if (reported) {
-      individualStats[edipi].mustersReported = bucket.doc_count;
-    } else {
-      individualStats[edipi].mustersNotReported = bucket.doc_count;
+      rosterStats[edipi].mustersReported = bucket.doc_count;
     }
   }
 
-  // Calculate non-muster percents.
-  for (const edipi of Object.keys(individualStats)) {
-    const data = individualStats[edipi];
-    individualStats[edipi].nonMusterPercent = calcNonMusterPercent(data.mustersReported, data.mustersNotReported);
+  // Calculate muster percents.
+  for (const edipi of Object.keys(rosterStats)) {
+    const data = rosterStats[edipi];
+    rosterStats[edipi].musterPercent = calcMusterPercent(data.totalMusters, data.mustersReported);
   }
 
-  // Build a sorted array of the individuals' stats merged with their roster data.
-  const individuals = Object.keys(individualStats)
+  // Return a sorted array of the individuals' stats merged with their roster data.
+  return Object.keys(rosterStats)
     .filter(edipi => {
-      return (
-        rosterEntriesByEdipi[edipi]
-        && individualStats[edipi].nonMusterPercent > 0
-      );
+      return (rosterEntriesByEdipi[edipi] != null);
     })
     .sort((edipiA, edipiB) => {
       const entryA = rosterEntriesByEdipi[edipiA];
       const entryB = rosterEntriesByEdipi[edipiB];
-      const individualA = individualStats[edipiA];
-      const individualB = individualStats[edipiB];
+      const individualA = rosterStats[edipiA];
+      const individualB = rosterStats[edipiB];
 
-      let diff = individualB.nonMusterPercent - individualA.nonMusterPercent;
+      let diff = individualA.musterPercent - individualB.musterPercent;
       if (diff === 0) {
         diff = entryA.unit?.name.localeCompare(entryB.unit!.name) ?? 0;
       }
@@ -167,7 +174,7 @@ export async function getRosterMusterStats(args: {
     .map(edipi => {
       const rosterEntryCleaned: Partial<Roster> = {};
       const rosterEntry = rosterEntriesByEdipi[edipi];
-      const individual = individualStats[edipi];
+      const individual = rosterStats[edipi];
       for (const columnInfo of allowedRosterColumns) {
         const columnValue = rosterEntry.getColumnValue(columnInfo);
         Reflect.set(rosterEntryCleaned, columnInfo.name, columnValue);
@@ -178,16 +185,14 @@ export async function getRosterMusterStats(args: {
         ...rosterEntryCleaned,
         unitId: rosterEntry.unit.id,
         phone: (phone) ? formatPhoneNumber(phone) : undefined,
-      } as IndividualStats[string] & Partial<Roster>;
+      } as MusterRosterStats[string] & Partial<Roster>;
     });
-
-  return individuals;
 }
 
 /**
  * Get aggregated unit muster stats over the given weeks/months.
  */
-export async function getUnitMusterStats(args: {
+export async function getMusterUnitTrends(args: {
   userRole: UserRole
   currentDate: Moment
   weeksCount: number
@@ -221,14 +226,14 @@ export async function getUnitMusterStats(args: {
   const index = buildEsIndexPatternsForMuster(userRole);
   const esBody = [
     { index },
-    buildUnitsMusterEsBody({
+    buildMusterUnitsEsBody({
       interval: 'week',
       fromDate: fromDateWeek,
       toDate: toDateWeek,
     }),
 
     { index },
-    buildUnitsMusterEsBody({
+    buildMusterUnitsEsBody({
       interval: 'month',
       fromDate: fromDateMonth,
       toDate: toDateMonth,
@@ -247,8 +252,8 @@ export async function getUnitMusterStats(args: {
   //
   // Organize and return data.
   //
-  const weeklyAggs = response.responses![0].aggregations as MusterAggregation | undefined;
-  const monthlyAggs = response.responses![1].aggregations as MusterAggregation | undefined;
+  const weeklyAggs = response.responses![0].aggregations as MusterUnitAggregation | undefined;
+  const monthlyAggs = response.responses![1].aggregations as MusterUnitAggregation | undefined;
 
   return {
     weekly: buildUnitStats({
@@ -268,19 +273,18 @@ export async function getUnitMusterStats(args: {
   };
 }
 
-export function calcNonMusterPercent(mustersReported: number, mustersNotReported: number) {
-  const totalReports = mustersReported + mustersNotReported;
-  if (totalReports === 0) {
-    return 0;
+export function calcMusterPercent(totalMusters: number, mustersReported: number) {
+  if (totalMusters === 0) {
+    return 100;
   }
 
-  const nonMusterPercent = (mustersNotReported / totalReports) * 100;
+  const musterPercent = (mustersReported / totalMusters) * 100;
 
-  if (nonMusterPercent < 0 || nonMusterPercent > 100) {
-    Log.warn(`Invalid non-muster percent (${nonMusterPercent}). It should be between 0 and 100.`);
+  if (musterPercent < 0 || musterPercent > 100) {
+    Log.warn(`Invalid muster percent (${musterPercent}). It should be between 0 and 100.`);
   }
 
-  return nonMusterPercent;
+  return musterPercent;
 }
 
 export function getOneTimeMusterWindowTime(muster: MusterConfiguration) {
@@ -324,7 +328,7 @@ export function getDistanceToWindow(start: number, end: number, time: number) {
   return 0;
 }
 
-function buildIndividualsPhoneNumberBody() {
+function buildRosterPhoneNumberBody() {
   return {
     size: 10000,
     _source: ['EDIPI', 'Timestamp', 'Details.PhoneNumber'],
@@ -339,7 +343,7 @@ function buildIndividualsPhoneNumberBody() {
   };
 }
 
-function buildIndividualsMusterBody(args: {
+function buildMusterRosterBody(args: {
   fromDate: Moment,
   toDate: Moment,
 }) {
@@ -420,7 +424,7 @@ function buildIndividualsMusterBody(args: {
   };
 }
 
-function buildUnitsMusterEsBody(args: {
+function buildMusterUnitsEsBody(args: {
   fromDate: Moment,
   toDate: Moment,
   interval: TimeInterval,
@@ -517,7 +521,7 @@ function buildUnitsMusterEsBody(args: {
 }
 
 function buildUnitStats(args: {
-  aggregations: MusterAggregation | undefined,
+  aggregations: MusterUnitAggregation | undefined,
   unitNames: string[]
   interval: TimeInterval
   intervalCount: number
@@ -527,7 +531,7 @@ function buildUnitStats(args: {
 
   // Initialize unit stats. Use our own set of dates and unit names, since ES may be missing some due to composite
   // aggregations not being able to return empty buckets.
-  const unitStats = {} as UnitStatsByDate;
+  const unitStats = {} as MusterUnitStatsByDate;
   for (let i = 0; i < intervalCount; i++) {
     const dateStr = moment.utc(fromDate)
       .add(i, interval)
@@ -536,9 +540,9 @@ function buildUnitStats(args: {
     unitStats[dateStr] = {};
     for (const unitName of unitNames) {
       unitStats[dateStr][unitName] = {
+        totalMusters: 0,
         mustersReported: 0,
-        mustersNotReported: 0,
-        nonMusterPercent: 0,
+        musterPercent: 0,
       };
     }
   }
@@ -553,25 +557,25 @@ function buildUnitStats(args: {
       continue;
     }
 
+    unitStats[date][unit].totalMusters += bucket.doc_count;
+
     if (reported) {
       unitStats[date][unit].mustersReported = bucket.doc_count;
-    } else {
-      unitStats[date][unit].mustersNotReported = bucket.doc_count;
     }
   }
 
-  // Calculate non-muster percents.
+  // Calculate muster percents.
   for (const date of Object.keys(unitStats)) {
     for (const unit of Object.keys(unitStats[date])) {
       const data = unitStats[date][unit];
-      unitStats[date][unit].nonMusterPercent = calcNonMusterPercent(data.mustersReported, data.mustersNotReported);
+      unitStats[date][unit].musterPercent = calcMusterPercent(data.totalMusters, data.mustersReported);
     }
   }
 
   return unitStats;
 }
 
-type IndividualsMusterAggregations = {
+type MusterRosterAggregations = {
   muster: {
     buckets: Array<{
       key: {
@@ -583,26 +587,26 @@ type IndividualsMusterAggregations = {
   }
 };
 
-type IndividualStats = {
+type MusterRosterStats = {
   [edipi: string]: {
+    totalMusters: number
     mustersReported: number
-    mustersNotReported: number
-    nonMusterPercent: number
+    musterPercent: number
     unitId?: number
   }
 };
 
-type UnitStatsByDate = {
+type MusterUnitStatsByDate = {
   [date: string]: {
     [unitName: string]: {
+      totalMusters: number
       mustersReported: number
-      mustersNotReported: number
-      nonMusterPercent: number
+      musterPercent: number
     }
   }
 };
 
-type MusterAggregation = {
+type MusterUnitAggregation = {
   muster: {
     buckets: Array<{
       key: {

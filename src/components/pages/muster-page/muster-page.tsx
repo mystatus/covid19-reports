@@ -16,7 +16,6 @@ import {
   MuiPickersUtilsProvider,
 } from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
-import { Moment } from 'moment-timezone';
 import * as Plotly from 'plotly.js';
 import React, {
   ChangeEvent,
@@ -49,7 +48,7 @@ import useStyles from './muster-page.styles';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
 import {
-  ApiMusterIndividualsPaginated,
+  ApiMusterRosterEntriesPaginated,
   ApiMusterTrends,
   ApiRosterColumnInfo,
   ApiRosterColumnType,
@@ -62,6 +61,7 @@ import { DataExportIcon } from '../../icons/data-export-icon';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
+import usePersistedState from '../../../hooks/use-persisted-state';
 
 export const MusterPage = () => {
   const classes = useStyles();
@@ -109,20 +109,20 @@ export const MusterPage = () => {
     ...trendChart,
   };
 
-  const [selectedTimeRangeIndex, setSelectedTimeRangeIndex] = useState(0);
-  const [fromDate, setFromDate] = useState<Moment>(moment().startOf('day'));
-  const [toDate, setToDate] = useState<Moment>(moment().endOf('day'));
-  const [individualsUnitId, setIndividualsUnitId] = useState<number>(-1);
-  const [individualsPage, setIndividualsPage] = useState(0);
-  const [individualsRowsPerPage, setIndividualsRowsPerPage] = useState(10);
+  const [rosterSelectedTimeRangeIndex, setRosterSelectedTimeRangeIndex] = usePersistedState('musterRosterSelectedTimeRangeIndex', 0);
+  const [rosterFromDateIso, setRosterFromDateIso] = usePersistedState('musterRosterFromDateIso', moment().startOf('day').toISOString());
+  const [rosterToDateIso, setRosterToDateIso] = usePersistedState('musterRosterToDateIso', moment().endOf('day').toISOString());
+  const [rosterUnitId, setRosterUnitId] = usePersistedState('musterRosterUnitId', -1);
+  const [rosterPage, setRosterPage] = useState(0);
+  const [rosterRowsPerPage, setRosterRowsPerPage] = usePersistedState('musterRosterRowsPerPage', 10);
   const [exportLoading, setExportLoading] = useState(false);
   const [rosterColumnInfos, setRosterColumnInfos] = useState<ApiRosterColumnInfo[]>([]);
   const [rawTrendData, setRawTrendData] = useState<ApiMusterTrends>({ weekly: {}, monthly: {} });
-  const [weeklyTrendTopUnitCount, setWeeklyTrendTopUnitCount] = useState(5);
-  const [monthlyTrendTopUnitCount, setMonthlyTrendTopUnitCount] = useState(5);
+  const [weeklyTrendTopUnitCount, setWeeklyTrendTopUnitCount] = usePersistedState('musterWeeklyTrendTopUnitCount', 5);
+  const [monthlyTrendTopUnitCount, setMonthlyTrendTopUnitCount] = usePersistedState('musterMonthlyTrendTopUnitCount', 5);
   const [weeklyTrendData, setWeeklyTrendData] = useState<Plotly.Data[]>([]);
   const [monthlyTrendData, setMonthlyTrendData] = useState<Plotly.Data[]>([]);
-  const [individualsData, setIndividualsData] = useState<ApiMusterIndividualsPaginated>({
+  const [rosterData, setRosterData] = useState<ApiMusterRosterEntriesPaginated>({
     rows: [],
     totalRowsCount: 0,
   });
@@ -136,53 +136,53 @@ export const MusterPage = () => {
     {
       label: 'Today',
       getRange: () => ({
-        fromDate: moment().startOf('day'),
-        toDate: moment().endOf('day'),
+        fromDateIso: moment().startOf('day').toISOString(),
+        toDateIso: moment().endOf('day').toISOString(),
       }),
     },
     {
       label: 'Yesterday',
       getRange: () => ({
-        fromDate: moment().subtract(1, 'day').startOf('day'),
-        toDate: moment().subtract(1, 'day').endOf('day'),
+        fromDateIso: moment().subtract(1, 'day').startOf('day').toISOString(),
+        toDateIso: moment().subtract(1, 'day').endOf('day').toISOString(),
       }),
     },
     {
       label: 'Last 2 Days',
       getRange: () => ({
-        fromDate: moment().subtract(2, 'day').startOf('day'),
-        toDate: moment().subtract(1, 'day').endOf('day'),
+        fromDateIso: moment().subtract(2, 'day').startOf('day').toISOString(),
+        toDateIso: moment().subtract(1, 'day').endOf('day').toISOString(),
       }),
     },
     {
       label: 'Last 3 Days',
       getRange: () => ({
-        fromDate: moment().subtract(3, 'day').startOf('day'),
-        toDate: moment().subtract(1, 'day').endOf('day'),
+        fromDateIso: moment().subtract(3, 'day').startOf('day').toISOString(),
+        toDateIso: moment().subtract(1, 'day').endOf('day').toISOString(),
       }),
     },
     {
       label: 'Last 4 Days',
       getRange: () => ({
-        fromDate: moment().subtract(4, 'day').startOf('day'),
-        toDate: moment().subtract(1, 'day').endOf('day'),
+        fromDateIso: moment().subtract(4, 'day').startOf('day').toISOString(),
+        toDateIso: moment().subtract(1, 'day').endOf('day').toISOString(),
       }),
     },
     {
       label: 'Last 5 Days',
       getRange: () => ({
-        fromDate: moment().subtract(5, 'day').startOf('day'),
-        toDate: moment().subtract(1, 'day').endOf('day'),
+        fromDateIso: moment().subtract(5, 'day').startOf('day').toISOString(),
+        toDateIso: moment().subtract(1, 'day').endOf('day').toISOString(),
       }),
     },
     {
       label: 'Custom',
       getRange: () => ({
-        fromDate,
-        toDate,
+        fromDateIso: rosterFromDateIso,
+        toDateIso: rosterToDateIso,
       }),
     },
-  ]), [fromDate, toDate]);
+  ]), [rosterFromDateIso, rosterToDateIso]);
 
   const customTimeRangeIndex = timeRanges.length - 1;
 
@@ -201,42 +201,36 @@ export const MusterPage = () => {
   }, [dispatch]);
 
   const reloadTable = useCallback(async () => {
-    let data: ApiMusterIndividualsPaginated;
+    let data: ApiMusterRosterEntriesPaginated;
     try {
-      data = (await axios.get(`api/muster/${orgId}/individuals`, {
+      data = (await axios.get(`api/muster/${orgId}/roster`, {
         params: {
-          fromDate: fromDate.toISOString(),
-          toDate: toDate.toISOString(),
-          unitId: individualsUnitId >= 0 ? individualsUnitId : null,
-          page: individualsPage,
-          limit: individualsRowsPerPage,
+          fromDate: rosterFromDateIso,
+          toDate: rosterToDateIso,
+          unitId: rosterUnitId >= 0 ? rosterUnitId : null,
+          page: rosterPage,
+          limit: rosterRowsPerPage,
         },
-      })).data as ApiMusterIndividualsPaginated;
+      })).data as ApiMusterRosterEntriesPaginated;
     } catch (error) {
-      showErrorDialog('Get Individuals', error);
+      showErrorDialog('Get Roster Muster', error);
       throw error;
-    }
-
-    // Convert percents to strings for better display.
-    for (const individual of data.rows) {
-      const percent = (individual.nonMusterPercent! as number).toFixed(1);
-      individual.nonMusterPercent = `${percent}%`;
     }
 
     // If our current page is now out of range, put us on the last page for this new data.
     // Switching pages will force a reload of the table data, and we don't want to show anything in the meantime,
     // so only set the new individuals data here if our page is valid.
-    const maxPageIndex = getMaxPageIndex(individualsRowsPerPage, data.totalRowsCount);
-    if (individualsPage > maxPageIndex) {
-      setIndividualsPage(maxPageIndex);
+    const maxPageIndex = getMaxPageIndex(rosterRowsPerPage, data.totalRowsCount);
+    if (rosterPage > maxPageIndex) {
+      setRosterPage(maxPageIndex);
     } else {
-      setIndividualsData(data);
+      setRosterData(data);
     }
-  }, [fromDate, toDate, individualsRowsPerPage, individualsPage, orgId, individualsUnitId, showErrorDialog]);
+  }, [rosterFromDateIso, rosterToDateIso, rosterRowsPerPage, rosterPage, orgId, rosterUnitId, showErrorDialog]);
 
   const reloadTrendData = useCallback(async () => {
     try {
-      const data = (await axios.get(`api/muster/${orgId}/trends`, {
+      const data = (await axios.get(`api/muster/${orgId}/unit-trends`, {
         params: {
           currentDate: moment().toISOString(),
           weeksCount: 6,
@@ -260,16 +254,26 @@ export const MusterPage = () => {
 
   const initialize = useCallback(async () => {
     dispatch(AppFrame.setPageLoading(true));
-    await Promise.all([
-      initializeRosterColumnInfo(),
-      getUnits(),
-    ]);
-    await Promise.all([
-      reloadTable(),
-      reloadTrendData(),
-    ]);
-    dispatch(AppFrame.setPageLoading(false));
-  }, [dispatch, initializeRosterColumnInfo, reloadTable, reloadTrendData, getUnits]);
+
+    try {
+      await Promise.all([
+        initializeRosterColumnInfo(),
+        getUnits(),
+      ]);
+
+      await Promise.all([
+        reloadTable(),
+        reloadTrendData(),
+      ]);
+
+      // Make sure non-custom time ranges like Today/Yesterday/etc override persisted dates.
+      const range = timeRanges[rosterSelectedTimeRangeIndex].getRange();
+      setRosterFromDateIso(range.fromDateIso);
+      setRosterToDateIso(range.toDateIso);
+    } finally {
+      dispatch(AppFrame.setPageLoading(false));
+    }
+  }, [dispatch, initializeRosterColumnInfo, getUnits, reloadTable, reloadTrendData, timeRanges, rosterSelectedTimeRangeIndex, setRosterFromDateIso, setRosterToDateIso]);
 
   const getTrendData = useCallback((unitStatsByDate: ApiUnitStatsByDate, topUnitCount: number) => {
     // Sum up each unit's non-muster percent to figure out who's performing worst overall.
@@ -279,7 +283,7 @@ export const MusterPage = () => {
         if (nonMusterPercentSumByUnit[unitName] == null) {
           nonMusterPercentSumByUnit[unitName] = 0;
         }
-        nonMusterPercentSumByUnit[unitName] += unitStatsByDate[date][unitName].nonMusterPercent;
+        nonMusterPercentSumByUnit[unitName] += 100 - unitStatsByDate[date][unitName].musterPercent;
       }
     }
 
@@ -303,7 +307,7 @@ export const MusterPage = () => {
       };
 
       for (const date of datesSorted) {
-        const nonMusterPercent = unitStatsByDate[date][unitName].nonMusterPercent;
+        const nonMusterPercent = 100 - unitStatsByDate[date][unitName].musterPercent;
         chartData.y.push(nonMusterPercent);
       }
 
@@ -333,35 +337,35 @@ export const MusterPage = () => {
   // Functions
   //
 
-  const handleIndividualsChangePage = (event: MouseEvent<HTMLButtonElement> | null, pageNew: number) => {
-    setIndividualsPage(pageNew);
+  const handleRosterChangePage = (event: MouseEvent<HTMLButtonElement> | null, pageNew: number) => {
+    setRosterPage(pageNew);
   };
 
-  const handleIndividualsChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const individualsRowsPerPageNew = parseInt(event.target.value);
-    const individualsPageNew = getNewPageIndex(individualsRowsPerPage, individualsPage, individualsRowsPerPageNew);
-    setIndividualsRowsPerPage(individualsRowsPerPageNew);
-    setIndividualsPage(individualsPageNew);
+  const handleRosterChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const rosterRowsPerPageNew = parseInt(event.target.value);
+    const rosterPageNew = getNewPageIndex(rosterRowsPerPage, rosterPage, rosterRowsPerPageNew);
+    setRosterRowsPerPage(rosterRowsPerPageNew);
+    setRosterPage(rosterPageNew);
   };
 
   const downloadCSVExport = async () => {
     try {
       setExportLoading(true);
       const response = await axios({
-        url: `api/export/${orgId}/muster/individuals`,
+        url: `api/export/${orgId}/muster/roster`,
         params: {
-          fromDate: fromDate.toISOString(),
-          toDate: toDate.toISOString(),
-          unitId: individualsUnitId >= 0 ? individualsUnitId : null,
+          fromDate: rosterFromDateIso,
+          toDate: rosterToDateIso,
+          unitId: rosterUnitId >= 0 ? rosterUnitId : null,
         },
         method: 'GET',
         responseType: 'blob',
       });
 
-      const fromDateStr = fromDate.format('YYYY-MM-DD_h-mm-a');
-      const toDateStr = toDate.format('YYYY-MM-DD_h-mm-a');
-      const unitId = individualsUnitId >= 0 ? `${individualsUnitId}` : 'all-units';
-      const filename = `${_.kebabCase(orgName)}_${unitId}_muster-noncompliance_${fromDateStr}_to_${toDateStr}`;
+      const fromDateStr = moment(rosterFromDateIso).format('YYYY-MM-DD_h-mm-a');
+      const toDateStr = moment(rosterToDateIso).format('YYYY-MM-DD_h-mm-a');
+      const unitId = rosterUnitId >= 0 ? `${rosterUnitId}` : 'all-units';
+      const filename = `${_.kebabCase(orgName)}_${unitId}_muster-compliance_${fromDateStr}_to_${toDateStr}`;
       downloadFile(response.data, filename, 'csv');
     } catch (error) {
       dispatch(Modal.alert('Export to CSV', formatErrorMessage(error, 'Unable to export'))).then();
@@ -385,8 +389,8 @@ export const MusterPage = () => {
         config: {},
       },
       {
-        name: 'nonMusterPercent',
-        displayName: 'Non-Muster Rate',
+        name: 'musterPercent',
+        displayName: 'Muster Rate',
         type: ApiRosterColumnType.String,
         pii: false,
         phi: false,
@@ -419,40 +423,40 @@ export const MusterPage = () => {
       'lastName',
       'phone',
       'unitId',
-      'nonMusterPercent',
+      'musterPercent',
     ]).slice(0, maxNumColumnsToShow);
   };
 
-  const handleIndividualsUnitChange = (event: ChangeEvent<{ name?: string, value: unknown }>) => {
+  const handleRosterUnitChange = (event: ChangeEvent<{ name?: string, value: unknown }>) => {
     const unitId = event.target.value as number;
-    setIndividualsUnitId(unitId);
+    setRosterUnitId(unitId);
   };
 
-  const handleFromDateChange = (date: MaterialUiPickersDate) => {
+  const handleRosterFromDateChange = (date: MaterialUiPickersDate) => {
     if (!date) {
       return;
     }
 
-    setFromDate(date);
-    setSelectedTimeRangeIndex(customTimeRangeIndex);
+    setRosterFromDateIso(date.toISOString());
+    setRosterSelectedTimeRangeIndex(customTimeRangeIndex);
   };
 
-  const handleToDateChange = (date: MaterialUiPickersDate) => {
+  const handleRosterToDateChange = (date: MaterialUiPickersDate) => {
     if (!date) {
       return;
     }
 
-    setToDate(date);
-    setSelectedTimeRangeIndex(customTimeRangeIndex);
+    setRosterToDateIso(date.toISOString());
+    setRosterSelectedTimeRangeIndex(customTimeRangeIndex);
   };
 
-  const handleTimeRangeSelectChange = (e: ChangeEvent<{ value: unknown }>) => {
+  const handleRosterSelectedTimeRangeChange = (e: ChangeEvent<{ value: unknown }>) => {
     const index = parseInt(e.target.value as string);
     const range = timeRanges[index].getRange();
 
-    setSelectedTimeRangeIndex(index);
-    setFromDate(range.fromDate);
-    setToDate(range.toDate);
+    setRosterSelectedTimeRangeIndex(index);
+    setRosterFromDateIso(range.fromDateIso);
+    setRosterToDateIso(range.toDateIso);
   };
 
   //
@@ -463,7 +467,7 @@ export const MusterPage = () => {
     <main className={classes.root}>
       <Container maxWidth={false}>
         <PageHeader
-          title="Muster Non-Compliance"
+          title="Muster Compliance"
           help={{
             contentComponent: MusterPageHelp,
             cardId: 'musterPage',
@@ -484,8 +488,8 @@ export const MusterPage = () => {
 
                           <Select
                             className={classes.timeRangeSelect}
-                            value={selectedTimeRangeIndex}
-                            onChange={handleTimeRangeSelectChange}
+                            value={rosterSelectedTimeRangeIndex}
+                            onChange={handleRosterSelectedTimeRangeChange}
                           >
                             {timeRanges.map((timeRange, index) => (
                               <MenuItem key={index} value={index}>
@@ -501,9 +505,9 @@ export const MusterPage = () => {
                               id="from-date"
                               format="M/D/YY h:mm A"
                               placeholder="mm/dd/yy hh:mm:ss"
-                              value={fromDate}
-                              maxDate={toDate}
-                              onChange={handleFromDateChange}
+                              value={rosterFromDateIso}
+                              maxDate={rosterToDateIso}
+                              onChange={handleRosterFromDateChange}
                               inputProps={{
                                 size: 17,
                               }}
@@ -517,10 +521,10 @@ export const MusterPage = () => {
                               id="to-date"
                               format="M/D/YY h:mm A"
                               placeholder="mm/dd/yy hh:mm:ss"
-                              value={toDate}
-                              minDate={fromDate}
+                              value={rosterToDateIso}
+                              minDate={rosterFromDateIso}
                               maxDate={moment()}
-                              onChange={handleToDateChange}
+                              onChange={handleRosterToDateChange}
                               inputProps={{
                                 size: 17,
                               }}
@@ -536,9 +540,9 @@ export const MusterPage = () => {
 
                         <Box display="flex" alignItems="center">
                           <Select
-                            value={individualsUnitId}
+                            value={rosterUnitId}
                             displayEmpty
-                            onChange={handleIndividualsUnitChange}
+                            onChange={handleRosterUnitChange}
                           >
                             <MenuItem value={-1}>
                               <em>All Units</em>
@@ -575,15 +579,18 @@ export const MusterPage = () => {
                   </Box>
 
                   <TableCustomColumnsContent
-                    rows={individualsData.rows}
+                    rows={rosterData.rows}
                     columns={getVisibleColumns()}
                     idColumn="edipi"
-                    noDataText={isPageLoading ? 'Loading...' : 'All Individuals Compliant'}
+                    noDataText={isPageLoading ? 'Loading...' : 'No Data'}
                     rowOptions={{
                       renderCell: (row, column) => {
                         const value = row[column.name];
                         if (column.name === 'unitId') {
                           return units.find(unit => unit.id === value)?.name || value;
+                        }
+                        if (column.name === 'musterPercent') {
+                          return `${value.toFixed()}%`;
                         }
                         return value;
                       },
@@ -591,24 +598,24 @@ export const MusterPage = () => {
                   />
 
                   <TablePagination
-                    count={individualsData.totalRowsCount}
-                    page={individualsPage}
-                    rowsPerPage={individualsRowsPerPage}
+                    count={rosterData.totalRowsCount}
+                    page={rosterPage}
+                    rowsPerPage={rosterRowsPerPage}
                     rowsPerPageOptions={[10, 25, 50]}
-                    onChangePage={handleIndividualsChangePage}
-                    onChangeRowsPerPage={handleIndividualsChangeRowsPerPage}
+                    onChangePage={handleRosterChangePage}
+                    onChangeRowsPerPage={handleRosterChangeRowsPerPage}
                   />
                 </TableContainer>
               </Paper>
             </Grid>
           )}
 
-          {/* Weekly Trend */}
+          {/* Weekly Non-Compliance */}
           <Grid item xs={6}>
             <Card>
               <CardContent>
                 <Typography variant="h5" gutterBottom>
-                  Weekly Trend
+                  Weekly Non-Compliance
                 </Typography>
 
                 <div>
@@ -635,12 +642,12 @@ export const MusterPage = () => {
             </Card>
           </Grid>
 
-          {/* Monthly Trend */}
+          {/* Monthly Non-Compliance */}
           <Grid item xs={6}>
             <Card>
               <CardContent>
                 <Typography variant="h5" gutterBottom>
-                  Monthly Trend
+                  Monthly Non-Compliance
                 </Typography>
 
                 <div>
@@ -675,7 +682,7 @@ export const MusterPage = () => {
 type TimeRange = {
   label: string
   getRange: () => {
-    fromDate: Moment
-    toDate: Moment
+    fromDateIso: string
+    toDateIso: string
   }
 };

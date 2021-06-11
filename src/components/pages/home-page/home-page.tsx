@@ -115,7 +115,7 @@ export const HomePage = () => {
   const user = useSelector<AppState, UserState>(state => state.user);
   const orphanedRecords = useSelector(OrphanedRecordSelector.root);
   const [accessRequests, setAccessRequests] = useState<ApiAccessRequest[]>([]);
-  const [musterNonComplianceLastTwoWeeks, setMusterNonComplianceLastTwoWeek] = useState<number[]>([1.0, 0.0]);
+  const [musterComplianceLastTwoWeeks, setMusterComplianceLastTwoWeek] = useState<number[]>([1.0, 0.0]);
   const favoriteDashboards = useSelector(UserSelector.favoriteDashboards)!;
   const workspaces = useSelector(UserSelector.workspaces)!;
   const dashboards = useSelector(WorkspaceSelector.dashboards)!;
@@ -147,7 +147,7 @@ export const HomePage = () => {
     if (orgId) {
       try {
         const requestsPromise = AccessRequestClient.fetchAll(orgId!);
-        const { weekly } = (await axios.get(`api/muster/${orgId}/trends`, {
+        const { weekly } = (await axios.get(`api/muster/${orgId}/unit-trends`, {
           params: {
             currentDate: moment().toISOString(),
             weeksCount: 2,
@@ -155,12 +155,12 @@ export const HomePage = () => {
           },
         })).data as ApiMusterTrends;
 
-        // Sum up non-muster percent for each of the last two weeks
+        // Sum up muster percent for each of the last two weeks
         const weeklyAverages = Object.keys(weekly).sort().map(date => {
           const units = Object.keys(weekly[date]);
           let sum = 0;
           for (const unitName of units) {
-            sum += weekly[date][unitName].nonMusterPercent;
+            sum += weekly[date][unitName].musterPercent;
           }
           return units.length ? sum / units.length : 0;
         });
@@ -168,7 +168,7 @@ export const HomePage = () => {
         const twoWeeksOfAverages = [0, 0, ...weeklyAverages].slice(-2);
 
         const requests = await requestsPromise;
-        setMusterNonComplianceLastTwoWeek(twoWeeksOfAverages);
+        setMusterComplianceLastTwoWeek(twoWeeksOfAverages);
         setAccessRequests(requests);
       } catch (_) {
         // Error handling? This should probably just retry?
@@ -180,9 +180,9 @@ export const HomePage = () => {
     initializeTable().then();
   }, [initializeTable]);
 
-  const nonComplianceDelta = musterNonComplianceLastTwoWeeks[1] - musterNonComplianceLastTwoWeeks[0];
-  const trendingUp = nonComplianceDelta > 0;
-  const trendingDown = nonComplianceDelta < 0;
+  const complianceDelta = musterComplianceLastTwoWeeks[1] - musterComplianceLastTwoWeeks[0];
+  const trendingUp = complianceDelta > 0;
+  const trendingDown = complianceDelta < 0;
 
   const workspacesWithFavorites = workspaces
     .filter(workspace => (dashboards[workspace.id] ?? []).some(dashboard => isDashboardFavorited(workspace, dashboard)));
@@ -205,17 +205,17 @@ export const HomePage = () => {
               <Card className={classes.card}>
                 <CardContent>
                   <Typography className={classes.metricLabel}>
-                    Muster Non-Compliance
+                    Muster Compliance
                     <HtmlTooltip
                       arrow
                       placement="top"
-                      title="The average percentage of times individuals within the group did not report during muster for the last 7 days."
+                      title="The average muster rate for individuals within the group over the 7 days."
                     >
                       <InfoOutlinedIcon />
                     </HtmlTooltip>
                   </Typography>
                   <Typography className={classes.metricValue}>
-                    {Math.round(musterNonComplianceLastTwoWeeks[1])}%
+                    {Math.round(musterComplianceLastTwoWeeks[1])}%
                   </Typography>
                   <Typography className={clsx(classes.metricTrending, {
                     [classes.metricUp]: trendingUp,
@@ -225,7 +225,7 @@ export const HomePage = () => {
                     <span className={classes.metricTrendingIcon}>
                       <ArrowUpwardIcon />
                     </span>
-                    {(nonComplianceDelta).toFixed(2)}%
+                    {(complianceDelta).toFixed(2)}%
                     <Hidden smDown>
                       <span className={classes.subtle}>last 7 days</span>
                     </Hidden>
