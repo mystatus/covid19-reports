@@ -60,17 +60,17 @@ export default (async function() {
         unit: uniqueString(),
       },
     });
-  }
 
-  // Create some orphaned records that have the same composite id.
-  await seedOrphanedRecords(org1, {
-    count: 3,
-    customData: {
-      edipi: uniqueEdipi(),
-      unit: uniqueString(),
-      phone: uniquePhone(),
-    },
-  });
+    // Create some orphaned records that have the same composite id.
+    await seedOrphanedRecords(org1, {
+      count: 3,
+      customData: {
+        edipi: uniqueEdipi(),
+        unit: uniqueString(),
+        phone: uniquePhone(),
+      },
+    });
+  }
 
   // Create some orphaned records for an individual in the roster.
   await seedOrphanedRecords(org1, {

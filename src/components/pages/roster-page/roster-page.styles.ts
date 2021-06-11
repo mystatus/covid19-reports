@@ -53,6 +53,9 @@ export default makeStyles((theme: Theme) => createStyles({
   table: {
     marginBottom: '39px',
   },
+  orphanUnitFilterTextField: {
+    margin: `0 ${theme.spacing(1)}px`,
+  },
   claimedOrphanRow: {
     '& td': {
       fontWeight: 'bold',

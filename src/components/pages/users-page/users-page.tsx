@@ -57,7 +57,7 @@ export const UsersPage = () => {
     accessRequest: undefined as ApiAccessRequest | undefined,
   });
 
-  const { edipi: currentUserEdipi } = useSelector(UserSelector.current);
+  const { edipi: currentUserEdipi } = useSelector(UserSelector.root);
   const { id: orgId, name: orgName } = useSelector(UserSelector.org) ?? {};
 
   const initializeTable = React.useCallback(async () => {

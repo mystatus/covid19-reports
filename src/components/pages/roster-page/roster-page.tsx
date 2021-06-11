@@ -7,8 +7,8 @@ import {
   Menu,
   MenuItem,
   Paper,
-  Select,
   TableContainer,
+  TextField,
 } from '@material-ui/core';
 import BackupIcon from '@material-ui/icons/Backup';
 import FilterListIcon from '@material-ui/icons/FilterList';
@@ -37,6 +37,8 @@ import { OrphanedRecord } from '../../../actions/orphaned-record.actions';
 import { Roster } from '../../../actions/roster.actions';
 import { Unit } from '../../../actions/unit.actions';
 import { RosterClient } from '../../../client';
+import useEffectDebounced from '../../../hooks/use-effect-debounced';
+import useInitialLoading from '../../../hooks/use-initial-loading';
 import { downloadFile } from '../../../utility/download';
 import { getNewPageIndex } from '../../../utility/table';
 import PageHeader from '../../page-header/page-header';
@@ -75,8 +77,6 @@ import { ButtonSet } from '../../buttons/button-set';
 import { DataExportIcon } from '../../icons/data-export-icon';
 import { Modal } from '../../../actions/modal.actions';
 import { UserSelector } from '../../../selectors/user.selector';
-import { AppState } from '../../../store';
-import { UserState } from '../../../reducers/user.reducer';
 import usePersistedState from '../../../hooks/use-persisted-state';
 
 const unitColumn: ApiRosterColumnInfo = {
@@ -102,16 +102,15 @@ export const RosterPage = () => {
 
   const units = useSelector(UnitSelector.all);
   const orphanedRecords = useSelector(OrphanedRecordSelector.root);
-  const user = useSelector<AppState, UserState>(state => state.user);
   const org = useSelector(UserSelector.org)!;
+  const canManageRoster = useSelector(UserSelector.canManageRoster);
 
   const fileInputRef = createRef<HTMLInputElement>();
-  const initialLoad = useRef(true);
   const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
   const [orphanedRecordsWaiting, setOrphanedRecordsWaiting] = useState(false);
   const [orphanedRecordsPage, setOrphanedRecordsPage] = useState(0);
   const [orphanedRecordsRowsPerPage, setOrphanedRecordsRowsPerPage] = usePersistedState('orphanRowsPerPage', 10);
-  const [orphanedRecordsSelectedUnitIndex, setOrphanedRecordsSelectedUnitIndex] = useState(-1);
+  const [orphanedRecordsUnitFilter, setOrphanedRecordsUnitFilter] = usePersistedState('orphanUnitFilter', '');
   const [rows, setRows] = useState<ApiRosterEntry[]>([]);
   const [page, setPage] = useState(0);
   const [totalRowsCount, setTotalRowsCount] = useState(0);
@@ -136,6 +135,13 @@ export const RosterPage = () => {
   //
   // Effects
   //
+
+  const [
+    initialLoadStep,
+    incrementInitialLoadStep,
+    initialLoadComplete,
+  ] = useInitialLoading();
+
   const fetchRoster = useCallback(async () => {
     // fetchRoster can be called multiple times in close proximity resulting in possible a race condition
     // where API responses return out of order relative to the invocation order.
@@ -216,35 +222,81 @@ export const RosterPage = () => {
       const infos = (await axios.get(`api/roster/${orgId}/info`)).data as ApiRosterColumnInfo[];
       const unitColumnWithInfos = sortRosterColumns([unitColumn, ...infos]);
       setRosterColumnInfos(unitColumnWithInfos);
-      if (initialLoad.current && visibleColumns.length === 0) {
+
+      if (!initialLoadComplete && visibleColumns.length === 0) {
         setVisibleColumns(unitColumnWithInfos.slice(0, maxNumColumnsToShow));
       }
     } catch (error) {
       dispatch(Modal.alert('Get Roster Column Info', formatErrorMessage(error, 'Failed to get roster column info'))).then();
     }
-  }, [dispatch, orgId, setVisibleColumns, visibleColumns.length]);
-
-  const canManageRoster = (userState: UserState) => {
-    return Boolean(userState.activeRole?.role.canManageRoster);
-  };
-
-  const fetchOrphanedRecords = useCallback(async () => {
-    if (canManageRoster(user)) {
-      try {
-        const unit = orphanedRecords.units[orphanedRecordsSelectedUnitIndex];
-        await dispatch(OrphanedRecord.fetchPage(orgId!, orphanedRecordsPage, orphanedRecordsRowsPerPage, unit));
-      } catch (error) {
-        dispatch(Modal.alert('Get Orphaned Records', formatErrorMessage(error, 'Failed to get orphaned records'))).then();
-      }
-    } else {
-      dispatch(OrphanedRecord.clear());
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, orphanedRecordsSelectedUnitIndex, dispatch, orgId, orphanedRecordsPage, orphanedRecordsRowsPerPage]);
+  }, [dispatch, initialLoadComplete, orgId, setVisibleColumns, visibleColumns.length]);
 
   const fetchUnits = useCallback(async () => {
-    dispatch(Unit.fetch(orgId!));
+    dispatch(Unit.fetch(orgId));
   }, [dispatch, orgId]);
+
+  const fetchOrphanedRecords = useCallback(async () => {
+    if (!canManageRoster) {
+      dispatch(OrphanedRecord.clear());
+      return;
+    }
+
+    const unitFilter = orphanedRecordsUnitFilter || undefined;
+
+    try {
+      await dispatch(OrphanedRecord.fetchPage(orgId, orphanedRecordsPage, orphanedRecordsRowsPerPage, unitFilter));
+    } catch (error) {
+      dispatch(Modal.alert('Get Orphaned Records', formatErrorMessage(error, 'Failed to get orphaned records'))).then();
+    }
+  }, [canManageRoster, dispatch, orgId, orphanedRecordsPage, orphanedRecordsRowsPerPage, orphanedRecordsUnitFilter]);
+
+  // Initial load.
+  useEffect(() => {
+    dispatch(AppFrame.setPageLoading(!initialLoadComplete));
+  }, [dispatch, initialLoadComplete]);
+
+  useEffect(() => {
+    if (initialLoadStep === 0) {
+      Promise.all([
+        fetchRosterColumnInfo(),
+        fetchUnits(),
+      ]).then(incrementInitialLoadStep);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLoadStep]);
+
+  useEffect(() => {
+    if (initialLoadStep === 1) {
+      Promise.all([
+        fetchOrphanedRecords(),
+        fetchRoster(),
+      ]).then(() => incrementInitialLoadStep(true));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLoadStep]);
+
+  // Orphaned records reload.
+  useEffectDebounced(() => {
+    fetchOrphanedRecords().then();
+  }, [fetchOrphanedRecords]);
+
+  // Roster reload.
+  useEffectDebounced(() => {
+    fetchRoster().then();
+  }, [fetchRoster]);
+
+  // Units dropdown refresh.
+  useEffect(() => {
+    const unitNames: { [key: string]: string } = {};
+    for (const unit of units) {
+      unitNames[unit.id] = unit.name;
+    }
+    setUnitNameMap(unitNames);
+  }, [units]);
+
+  //
+  // Functions
+  //
 
   const sortRosterColumns = (columns: ApiRosterColumnInfo[]) => {
     const columnPriority: {
@@ -261,58 +313,6 @@ export const RosterPage = () => {
       return (columnPriority[a.name] || columnPriority.default) - (columnPriority[b.name] || columnPriority.default);
     });
   };
-
-  // Initial load
-  useEffect(() => {
-    if (!initialLoad.current) {
-      return;
-    }
-
-    (async () => {
-      dispatch(AppFrame.setPageLoading(true));
-
-      await Promise.all([
-        fetchRosterColumnInfo(),
-        fetchUnits(),
-      ]);
-
-      await Promise.all([
-        fetchOrphanedRecords(),
-        fetchRoster(),
-      ]);
-
-      initialLoad.current = false;
-      dispatch(AppFrame.setPageLoading(false));
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Orphaned records reload.
-  useEffect(() => {
-    if (!initialLoad.current) {
-      fetchOrphanedRecords().then();
-    }
-  }, [fetchOrphanedRecords]);
-
-  // Roster reload.
-  useEffect(() => {
-    if (!initialLoad.current) {
-      fetchRoster().then();
-    }
-  }, [fetchRoster]);
-
-  // Units dropdown refresh.
-  useEffect(() => {
-    const unitNames: { [key: string]: string } = {};
-    for (const unit of units) {
-      unitNames[unit.id] = unit.name;
-    }
-    setUnitNameMap(unitNames);
-  }, [units]);
-
-  //
-  // Functions
-  //
 
   const handleRosterOrOrphanedRecordsModified = async () => {
     await Promise.all([
@@ -425,7 +425,7 @@ export const RosterPage = () => {
     }
 
     try {
-      await dispatch(Roster.deleteAll(orgId!));
+      await dispatch(Roster.deleteAll(orgId));
     } catch (err) {
       dispatch(Modal.alert('Delete All Entries', formatErrorMessage(err, 'Unable to delete all entries'))).then();
     }
@@ -555,7 +555,7 @@ export const RosterPage = () => {
         action: 'ignore',
         timeToLiveMs: Math.max(0, result.button.value * 60 * 60 * 1000),
       });
-      await fetchOrphanedRecords();
+      await handleRosterOrOrphanedRecordsModified();
     } catch (error) {
       dispatch(Modal.alert('Ignore Orphan', formatErrorMessage(error, 'Unable to ignore the record'))).then();
     } finally {
@@ -586,8 +586,8 @@ export const RosterPage = () => {
     setOrphanedRecordsPage(pageNew);
   };
 
-  const handleOrphanedRecordsUnitChange = (event: ChangeEvent<{ name?: string, value: unknown }>) => {
-    setOrphanedRecordsSelectedUnitIndex(event.target.value as number);
+  const handleOrphanedRecordsUnitFilterChange = (event: ChangeEvent<{ name?: string, value: unknown }>) => {
+    setOrphanedRecordsUnitFilter(event.target.value as string);
   };
 
   //
@@ -607,23 +607,19 @@ export const RosterPage = () => {
 
         <TableContainer component={Paper} className={classes.table}>
           <Box className={classes.tableHeader}>
-            <h2>Orphaned Records ({orphanedRecords.totalOrphanedRecordsCount})</h2>
+            <h2>Orphaned Records ({orphanedRecords.count})</h2>
 
-            <Select
-              value={orphanedRecordsSelectedUnitIndex}
-              displayEmpty
-              onChange={handleOrphanedRecordsUnitChange}
-            >
-              <MenuItem value={-1}>
-                <em>All Units</em>
-              </MenuItem>
+            <Box display="flex" alignItems="center">
+              <Box fontWeight="bold">
+                <label>Unit contains</label>
+              </Box>
 
-              {orphanedRecords.units.map((unit, index) => (
-                <MenuItem key={unit} value={index}>
-                  {unit}
-                </MenuItem>
-              ))}
-            </Select>
+              <TextField
+                className={classes.orphanUnitFilterTextField}
+                onChange={handleOrphanedRecordsUnitFilterChange}
+                value={orphanedRecordsUnitFilter}
+              />
+            </Box>
           </Box>
 
           <TableCustomColumnsContent
@@ -668,10 +664,10 @@ export const RosterPage = () => {
         </TableContainer>
 
         <ButtonSet>
-          {canManageRoster(user) && (
+          {canManageRoster && (
             <>
               <input
-                hidden={!canManageRoster(user)}
+                hidden={!canManageRoster}
                 accept="text/csv"
                 id="raised-button-file"
                 type="file"
@@ -681,7 +677,7 @@ export const RosterPage = () => {
               />
               <label
                 htmlFor="raised-button-file"
-                hidden={!canManageRoster(user)}
+                hidden={!canManageRoster}
               >
                 <Button
                   size="large"
@@ -694,7 +690,7 @@ export const RosterPage = () => {
               </label>
 
               <ButtonWithSpinner
-                hidden={!canManageRoster(user)}
+                hidden={!canManageRoster}
                 type="button"
                 size="large"
                 variant="text"
@@ -718,10 +714,10 @@ export const RosterPage = () => {
             Export to CSV
           </ButtonWithSpinner>
 
-          {canManageRoster(user) && (
+          {canManageRoster && (
             <>
               <Button
-                hidden={!canManageRoster(user)}
+                hidden={!canManageRoster}
                 color="primary"
                 size="large"
                 variant="text"
@@ -732,7 +728,7 @@ export const RosterPage = () => {
               </Button>
 
               <Button
-                hidden={!canManageRoster(user)}
+                hidden={!canManageRoster}
                 color="primary"
                 size="large"
                 variant="text"
@@ -837,7 +833,7 @@ export const RosterPage = () => {
               idColumn="id"
               noDataText={applyingFilters ? 'Searching...' : 'No Data'}
               rowOptions={{
-                menuItems: canManageRoster(user) ? [{
+                menuItems: canManageRoster ? [{
                   name: 'Edit Entry',
                   callback: editEntryClicked,
                 }, {
