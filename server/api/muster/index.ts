@@ -18,17 +18,17 @@ router.get(
 );
 
 router.get(
-  '/:orgId/individuals',
+  '/:orgId/roster',
   requireOrgAccess,
   requireRolePermission(role => role.canViewMuster),
-  controller.getIndividuals,
+  controller.getMusterRoster,
 );
 
 router.get(
-  '/:orgId/trends',
+  '/:orgId/unit-trends',
   requireOrgAccess,
   requireRolePermission(role => role.canViewMuster),
-  controller.getTrends,
+  controller.getMusterUnitTrends,
 );
 
 export default router;

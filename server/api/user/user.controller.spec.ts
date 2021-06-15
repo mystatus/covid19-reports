@@ -51,7 +51,7 @@ describe(`User Controller`, () => {
       const body = {
         firstName: uniqueString(),
         lastName: uniqueString(),
-        phone: '1234567890',
+        phone: '5551234567',
         email: uniqueEmail(),
         service: 'Space Force',
       };
@@ -65,7 +65,7 @@ describe(`User Controller`, () => {
       expect(userAfter).to.containSubset({
         ...body,
         edipi,
-        phone: '123-456-7890',
+        phone: '(555) 123-4567',
       });
 
       expect(await User.count()).to.equal(usersCountBefore + 1);

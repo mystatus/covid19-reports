@@ -1,31 +1,36 @@
-const intGen = (function* (): Generator<number, number, void> {
-  let nextInt = 0;
-  while (true) {
-    yield nextInt;
-    nextInt += 1;
-  }
-}());
-
+let intCount = 0;
 export function uniqueInt() {
-  return intGen.next().value;
+  intCount += 1;
+  return intCount;
 }
 
+let stringCount = 0;
 export function uniqueString() {
-  return `${uniqueInt()}`;
+  stringCount += 1;
+  return `${stringCount}`;
 }
 
+let dateCount = 0;
 export function uniqueDate() {
-  return new Date(uniqueInt());
+  dateCount += 1;
+  return new Date(dateCount);
 }
 
+let edipiCount = 0;
 export function uniqueEdipi() {
-  return `${uniqueInt()}`.padStart(10, '0');
+  edipiCount += 1;
+  return `${edipiCount}`.padStart(10, '0');
 }
 
+let emailCount = 0;
 export function uniqueEmail() {
-  return `${uniqueString()}@statusenginetest.com`;
+  emailCount += 1;
+  return `${emailCount}@setest.com`;
 }
 
+let phoneCount = 0;
 export function uniquePhone() {
-  return `${uniqueInt()}`.padStart(10, '0');
+  phoneCount += 1;
+  const last7 = phoneCount.toString().slice(-7).padStart(7, '0');
+  return `(555) ${last7.slice(0, 3)}-${last7.slice(3)}`;
 }

@@ -52,6 +52,7 @@
     "form-data": "^2.3.3",
     "http-proxy-middleware": "^0.20.0",
     "json-2-csv": "^3.7.8",
+    "libphonenumber-js": "^1.9.19",
     "lodash": "^4.17.20",
     "material-ui-phone-number": "^2.2.6",
     "mocha": "^8.2.1",

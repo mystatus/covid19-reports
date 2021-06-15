@@ -209,14 +209,20 @@ export interface ApiDashboard {
 export interface ApiUnitStatsByDate {
   [date: string]: {
     [unitName: string]: {
+      totalMusters: number
       mustersReported: number
-      mustersNotReported: number
-      nonMusterPercent: number
+      musterPercent: number
     }
   }
 }
 
-export interface ApiMusterIndividualsPaginated extends ApiPaginated<ApiRosterEntry> {}
+export interface ApiMusterRosterEntry extends ApiRosterEntry {
+  totalMusters: number
+  mustersReported: number
+  musterPercent: number
+}
+
+export interface ApiMusterRosterEntriesPaginated extends ApiPaginated<ApiMusterRosterEntry> {}
 
 export interface ApiMusterTrends {
   weekly: ApiUnitStatsByDate
