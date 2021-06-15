@@ -18,6 +18,7 @@ import {
   getMomentDateFormat,
   TimeInterval,
 } from './util';
+import { diffEpsilon } from './math-utils';
 
 /**
  * Get muster stats for each individual on the roster, given a time range and optional unit to filter by. The returned
@@ -143,9 +144,8 @@ export async function getMusterRosterStats(args: {
   }
 
   // Calculate muster percents.
-  for (const edipi of Object.keys(rosterStats)) {
-    const data = rosterStats[edipi];
-    rosterStats[edipi].musterPercent = calcMusterPercent(data.totalMusters, data.mustersReported);
+  for (const stats of Object.values(rosterStats)) {
+    stats.musterPercent = calcMusterPercent(stats.totalMusters, stats.mustersReported);
   }
 
   // Return a sorted array of the individuals' stats merged with their roster data.
@@ -159,7 +159,7 @@ export async function getMusterRosterStats(args: {
       const individualA = rosterStats[edipiA];
       const individualB = rosterStats[edipiB];
 
-      let diff = individualA.musterPercent - individualB.musterPercent;
+      let diff = diffEpsilon(individualA.musterPercent, individualB.musterPercent);
       if (diff === 0) {
         diff = entryA.unit?.name.localeCompare(entryB.unit!.name) ?? 0;
       }
