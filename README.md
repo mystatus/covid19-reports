@@ -12,6 +12,9 @@ Ensure the following packages are installed.
 
 - [NodeJS 10+](https://nodejs.org/en/)
 - [PostgreSQL 12+](https://www.postgresql.org)
+  - Alternatively install [Postgres.app](https://postgresapp.com) and
+    add `/Applications/Postgres.app/Contents/Versions/13/bin` to your PATH
+
 
 ### Development
 
@@ -27,6 +30,16 @@ npm install
 npm run seed-dev
 npm run dev
 ```
+This will start both the frontend and the backend.
+
+In the logs you’ll see [0] and [1] at the start of each line.
+[0] is from the server and [1] is from the client.
+
+There are a couple of things in the app that won’t work unless you have
+elasticsearch/kibana running. If you try to go to the Muster page
+you’ll get an internal server error without them running. Anything
+involving Workspaces won’t work quite right, since those exist in
+ES/Kibana.
 
 ### Switching Users
 
@@ -46,7 +59,7 @@ SYNC_DATABASE=true
 to the schema.*
 
 ### Database Migrations
-
+We are using [TypeORM](https://typeorm.io/#/migrations)
 #### Running
 
 Migrations will automatically be run on app startup, or they can be manually run with `npm run migration-run`.
@@ -77,11 +90,11 @@ into a usable state.
 ### Testing
 
 - To run backend tests, you'll need to have an instance of Postgres running.
-- When initially running tests, a `dds_test` database will automatically be created in Postgres and migrations will be 
+- When initially running tests, a `dds_test` database will automatically be created in Postgres and migrations will be
   run on it.
-- After the initial run, tests will not run migrations by default, for the sake of speed. If you have migrations you 
+- After the initial run, tests will not run migrations by default, for the sake of speed. If you have migrations you
   want to run, you can pass the `--clean` flag.
-- The test database is cleared **_before_** each test, meaning you can potentially run a single test and look at the 
+- The test database is cleared **_before_** each test, meaning you can potentially run a single test and look at the
   database to help debug issues.
 
 ```bash
