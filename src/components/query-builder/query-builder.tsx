@@ -422,8 +422,11 @@ function toQuery(rows: QueryRow[]) {
     if (value) {
       if (op === 'in') {
         // handle "dirty" lists, e.g.  1000000001 ,,  ,1000000003 1000000004;1000000005
-        const arrayOfValues = String(value).split(/[ ,;]+/).filter(vl => vl);
-        query[field!.name] = { op, value: arrayOfValues };
+        const arrayOfValues = String(value).trim().split(/[\s,;]+/).filter(vl => vl);
+        // don't add empty queries
+        if (arrayOfValues && arrayOfValues.length) {
+          query[field!.name] = { op, value: arrayOfValues };
+        }
       } else {
         query[field!.name] = { op, value };
       }
