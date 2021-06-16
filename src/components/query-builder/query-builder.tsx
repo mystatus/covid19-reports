@@ -263,6 +263,7 @@ const getOpDesc = (field: QueryField): OpsDesc => {
   if (field.type === QueryFieldType.String) {
     return {
       '=': 'is',
+      in: 'in',
       '<>': 'is not',
       '~': 'contains',
       startsWith: 'starts with',
@@ -414,6 +415,26 @@ export interface QueryBuilderProps {
   persistKey?: string
 }
 
+function toQuery(rows: QueryRow[]) {
+  const queryableRows: QueryRow[] = rows.filter(row => row.field && row.value !== '');
+  const query: QueryFilterState = {};
+  for (const { field, op, value } of queryableRows) {
+    if (value) {
+      if (op === 'in') {
+        // handle "dirty" lists, e.g.  1000000001 ,,  ,1000000003 1000000004;1000000005
+        const arrayOfValues = String(value).trim().split(/[\s,;]+/).filter(vl => vl);
+        // don't add empty queries
+        if (arrayOfValues && arrayOfValues.length) {
+          query[field!.name] = { op, value: arrayOfValues };
+        }
+      } else {
+        query[field!.name] = { op, value };
+      }
+    }
+  }
+  return queryableRows.length ? query : undefined;
+}
+
 export const QueryBuilder = (props: QueryBuilderProps) => {
   const classes = useStyles();
   const {
@@ -442,12 +463,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
   };
 
   useEffect(() => {
-    const queryableRows = rows.filter(row => row.field && row.value !== '');
-    const query: QueryFilterState = {};
-    for (const { field, op, value } of queryableRows) {
-      query[field!.name] = { op, value };
-    }
-    setFilterState(queryableRows.length ? query : undefined);
+    setFilterState(toQuery(rows));
   }, [rows, setFilterState]);
 
   useEffect(() => {
