@@ -10,7 +10,9 @@ export class ObservationEntity extends BaseEntity {
   @Column({ length: 100 })
   documentId!: string;
 
-  // DOD unique ID that is associated with personnel and their CAC card
+  /* DOD unique ID that is associated with personnel and their CAC card.
+  We don't maintain the list of these IDs so the is no integrity constraint.
+  */
   @Column({ length: 10 })
   edipi!: string;
 
