@@ -17,6 +17,7 @@ import { UserRole } from './api/user/user-role.model';
 import { env } from './util/env';
 import { OrphanedRecord } from './api/orphaned-record/orphaned-record.model';
 import { OrphanedRecordAction } from './api/orphaned-record/orphaned-record-action.model';
+import { ObservationType } from './api/observation/type/observation-type.model';
 
 export const ormConfig: PostgresConnectionOptions = {
   type: 'postgres',
@@ -42,6 +43,7 @@ export const ormConfig: PostgresConnectionOptions = {
     UserNotificationSetting,
     OrphanedRecord,
     OrphanedRecordAction,
+    ObservationType,
   ],
   namingStrategy: new SnakeNamingStrategy(),
   synchronize: (env.isDev && process.env.SYNC_DATABASE === 'true'),

@@ -17,6 +17,7 @@ import {
   uniqueEdipi,
   uniquePhone,
 } from '../util/test-utils/unique';
+import { ObservationType } from '../api/observation/type/observation-type.model';
 
 require('dotenv').config();
 
@@ -93,7 +94,18 @@ export default (async function() {
   Log.info('Finished!');
 }());
 
+async function createObservationTypes() {
+  const observationTypes: ObservationType[] = [];
+  for (let i = 1; i <= 5; i++) {
+    observationTypes.push(ObservationType.create({ type: `Observation ${i} Type` }));
+  }
+  await ObservationType.save(observationTypes);
+}
+
 async function generateOrg(admin: User, numUsers: number, numRosterEntries: number) {
+
+  await createObservationTypes();
+
   orgCount += 1;
 
   const org = Org.create({
