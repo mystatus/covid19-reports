@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
 import { ObservationType } from './observation-type.model';
 
-class ObservationTypeController {
+class ObservationTypeGetController {
   async getAllObservationTypes(req: Request, res: Response) {
     return res.json(await ObservationType.find());
   }
 }
 
 
-export default new ObservationTypeController();
+export default new ObservationTypeGetController();
