@@ -5,5 +5,5 @@ import { BaseEntity, Entity, PrimaryColumn, Unique } from 'typeorm';
 export class ObservationType extends BaseEntity {
 
   @PrimaryColumn({ length: 100 })
-  type!: string;
+  type: string;
 }
