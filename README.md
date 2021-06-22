@@ -108,9 +108,13 @@ This step is for generating migration files with schema changes you made.
 1. Notice that the `seed-dev.ts` changes have been applied.
 
 
-*NOTE: There's currently a known bug in TypeORM's migration generator, where it will always add unnecessary alterations
+NOTE: There's currently a known bug in TypeORM's migration generator, where it will always add unnecessary alterations
 on date columns that use `default: () => 'null'`. So make sure you review the generated migration and remove any of
-these unnecessary alterations before committing them (and also format the generated file to match our eslint rules). Example: `await queryRunner.query(`COMMENT ON COLUMN "user_notification_setting"."last_notified_date" IS NULL`);`*
+these unnecessary alterations before committing them (and also format the generated file to match our eslint rules).
+
+Example: `COMMENT ON COLUMN "user_notification_setting"."last_notified_date" IS NULL`
+
+I also noticed these queries are generated `ALTER TABLE "user_notification_setting" ALTER COLUMN "last_notified_date" SET DEFAULT null` which I deleted as well.
 
 
 ### Creating New Migrations
