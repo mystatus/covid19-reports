@@ -53,5 +53,5 @@ export class Observation extends BaseEntity {
   If made a FK then we need to make sure we have all the FKs in the database and
   also we would need to handle any resulting errors if a given FK is not found */
   @Column({ length: 50 })
-  orgId: string;
+  orgName: string;
 }
