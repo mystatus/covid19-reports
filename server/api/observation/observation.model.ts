@@ -1,5 +1,6 @@
 import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { ObservationType } from './type/observation-type.model';
+import { timestampColumnTransformer } from '../../util/util';
 
 /**
  * Observation are created when users self-report COVID-19 symptoms via https://mystatus.mil/
@@ -22,11 +23,9 @@ export class Observation extends BaseEntity {
   @Column({ length: 10 })
   edipi: string;
 
-  /* timestamp when the observation was reported
-  TODO: https://app.asana.com/0/1198942245525292/1200506195976678/f
-   */
-  @Column({ length: 50 })
-  timestamp: string;
+  // timestamp when the observation was reported
+  @Column({ type: 'timestamp', transformer: timestampColumnTransformer })
+  timestamp!: Date;
 
   /* type of the observation symptoms
   this is a FK to the observation_type table
