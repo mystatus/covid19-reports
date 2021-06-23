@@ -36,7 +36,7 @@ export class Observation extends BaseEntity {
     { primary: false, onDelete: 'RESTRICT', eager: true, orphanedRowAction: 'nullify', cascade: false })
   @JoinColumn({ name: 'type' })
   @Column({ length: 50 })
-  type: string;
+  type: ObservationType;
 
   /* military unit description
    Initially we will not make this a FK (foreign key) but it is to be considered.
