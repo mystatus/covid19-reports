@@ -125,6 +125,8 @@
     "dev": "./run-dev.sh",
     "build": "./build-prod.sh",
     "test": "./run-tests.sh",
+    "start-db": "./start-db.sh",
+    "stop-db": "./stop-db.sh",
     "seed-dev": "./seed-dev.sh",
     "build-run-dev": "./build-run-dev.sh",
     "typeorm": "ts-node --project ./server/tsconfig.json ./node_modules/.bin/typeorm",

@@ -1,0 +1,1 @@
+docker-compose -f ./docker-compose/docker-compose-dev.yml up -d --remove-orphans

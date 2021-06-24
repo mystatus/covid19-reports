@@ -29,6 +29,7 @@ Ensure the following packages are installed.
 - [PostgreSQL 12+](https://www.postgresql.org)
   - Alternatively install [Postgres.app](https://postgresapp.com) and
     add `/Applications/Postgres.app/Contents/Versions/13/bin` to your PATH
+  - Better yet, install docker-compose and use `npm run start-db` for local dev
 
 
 ## Starting the Application
@@ -42,6 +43,10 @@ USER_EDIPI=0000000001
 - Navigate to the project root and run the following.
 ```
 npm install
+
+# Optional if using docker-compose
+npm run start-db  
+
 npm run seed-dev
 npm run dev
 ```
@@ -50,11 +55,17 @@ This will start both the frontend and the backend.
 In the logs you’ll see [0] and [1] at the start of each line.
 [0] is from the server and [1] is from the client.
 
+If you need to stop or reset the docker-compose dev database:
+```
+npm run stop-db
+```
+
 There are a couple of things in the app that won’t work unless you have
 elasticsearch/kibana running. If you try to go to the Muster page
 you’ll get an internal server error without them running. Anything
 involving Workspaces won’t work quite right, since those exist in
 ES/Kibana.
+
 
 
 ## Switching Users

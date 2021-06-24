@@ -200,10 +200,10 @@ export const RosterPage = () => {
         page: '0',
       };
       const query: QueryFilterState = {
-        edipi: { op: '=', value: orphanedRecord.edipi },
+        edipi: { op: '=', value: orphanedRecord.edipi, expression: '', expressionEnabled: false },
       };
       if (orphanedRecord.unitId) {
-        query.unit = { op: '=', value: orphanedRecord.unitId };
+        query.unit = { op: '=', value: orphanedRecord.unitId, expression: '', expressionEnabled: false  };
       }
       const response = await axios.post(`api/roster/${orgId}/search`, query, {
         params,
