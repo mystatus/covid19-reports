@@ -89,14 +89,32 @@ the production database to reflect the schema changes. For more information see 
 ### Generating Incremental Migrations
 This step is for generating migration files with schema changes you made.
 
-The recommended way to create a new migration is to run `npm run migration-generate {name}`, where `{name}` is the name of
-the migration you want to create. The generate script will automatically run migrations to make sure you're up to date,
-then it will generate a new migration for you in `/server/migrations` with the necessary changes to match your current
-models.
+1. Stop the application.
+1. Turn schema sync off by setting: `SYNC_DATABASE=false`
+1. Comment out or make sure you did not update `seed-dev.ts` to take advantage of your
+   schema changes.
+1. Restore the original schema so that the ORM can compare the current schema
+   with the ORM schema declared in the code base and generate the migration.
+   Execute: `npm run seed-dev`
+1. The recommended way to create a new migration is to run `npm run migration-generate {name}`, where `{name}`
+   is the name of the migration you want to create.
+   The script will automatically run migrations to make sure you're up to date, then it will generate a new migration
+   for you in `/server/migrations` with the necessary changes to match your current models.
+1. Make changes to `seed-dev.ts` if needed
+1. Start the application: `npm run dev` and notice that the DB schema matched the ORM schema code
+1. Stop the application and close all connection to the DB.
+1. If you made changed to `seed-dev.ts` then apply the change by running:
+   `npm run seed-dev`
+1. Notice that the `seed-dev.ts` changes have been applied.
 
-*NOTE: There's currently a known bug in TypeORM's migration generator, where it will always add unnecessary alterations
+
+NOTE: There's currently a known bug in TypeORM's migration generator, where it will always add unnecessary alterations
 on date columns that use `default: () => 'null'`. So make sure you review the generated migration and remove any of
-these unnecessary alterations before committing them (and also format the generated file to match our eslint rules).*
+these unnecessary alterations before committing them (and also format the generated file to match our eslint rules).
+
+Example: `COMMENT ON COLUMN "user_notification_setting"."last_notified_date" IS NULL`
+
+I also noticed these queries are generated `ALTER TABLE "user_notification_setting" ALTER COLUMN "last_notified_date" SET DEFAULT null` which I deleted as well.
 
 
 ### Creating New Migrations

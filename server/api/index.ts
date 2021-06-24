@@ -13,6 +13,7 @@ import musterRoutes from './muster';
 import reportRoutes from './report-schema';
 import exportRoutes from './export';
 import orphanedRecordRoutes from './orphaned-record';
+import observationRoutes from './observation/observation-router';
 import { User } from './user/user.model';
 import { Org } from './org/org.model';
 import { UserRole } from './user/user-role.model';
@@ -33,6 +34,7 @@ router.use('/report', reportRoutes);
 router.use('/export', exportRoutes);
 router.use('/reingest', reingestRoutes);
 router.use('/orphaned-record', orphanedRecordRoutes);
+router.use('/observation', observationRoutes);
 
 export interface ApiRequest<ReqParams = object, ReqBody = object, ReqQuery = object, ResBody = object> extends Request<ReqParams, ResBody, ReqBody, ReqQuery> {
   appUser: User,
