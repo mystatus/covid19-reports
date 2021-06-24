@@ -6,7 +6,7 @@ import { Org } from '../org/org.model';
 
 class ObservationCreateController {
   async createObservation(req: Request, res: Response) {
-    return res.json(await Observation.save(await toObservation(req, await toType(req, await toOrg(req))).save()));
+    return res.json(await (toObservation(req, await toType(req, await toOrg(req))).save()));
   }
 }
 
