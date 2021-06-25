@@ -25,7 +25,7 @@ export class Observation extends BaseEntity {
 
   // timestamp when the observation was reported
   @Column({ type: 'timestamp', transformer: timestampColumnTransformer })
-  timestamp!: Date;
+  timestamp: Date;
 
   // type of the observation symptoms
   @ManyToOne(() => ReportSchema,

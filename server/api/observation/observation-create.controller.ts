@@ -1,14 +1,16 @@
 import { getManager } from 'typeorm';
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { ApiRequest, EdipiParam } from '../index';
+import ObservationApiInterface from './observation-api-interface';
 
 class ObservationCreateController {
-  async createObservation(req: Request, res: Response) {
+  async createObservation(req: ApiRequest<EdipiParam, ObservationApiInterface>, res: Response) {
     return res.json(await createObservation(req));
   }
 }
 
-async function createObservation(req: Request) {
-  // getManager().query() does not return the inserted result
+async function createObservation(req: ApiRequest<EdipiParam, ObservationApiInterface>) {
+  // getManager().query() does not return the inserted row
   await getManager()
     .query(
       'INSERT INTO public.observation(document_id, edipi, timestamp, unit_id, unit, type_id, type_org)'
