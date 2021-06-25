@@ -94,7 +94,6 @@ export default (async function() {
 }());
 
 async function generateOrg(admin: User, numUsers: number, numRosterEntries: number) {
-
   orgCount += 1;
 
   const org = Org.create({
