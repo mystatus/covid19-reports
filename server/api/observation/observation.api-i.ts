@@ -1,4 +1,4 @@
-export default interface ObservationApiInterface {
+export default interface ObservationApiI {
   documentId: string;
   edipi: string;
   timestamp: Date;

@@ -13,7 +13,7 @@ import musterRoutes from './muster';
 import reportRoutes from './report-schema';
 import exportRoutes from './export';
 import orphanedRecordRoutes from './orphaned-record';
-import observationRoutes from './observation/observation-router';
+import observationRoutes from './observation/observation.router';
 import { User } from './user/user.model';
 import { Org } from './org/org.model';
 import { UserRole } from './user/user-role.model';
