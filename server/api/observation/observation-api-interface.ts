@@ -4,6 +4,6 @@ export default interface ObservationApiInterface {
   timestamp: Date;
   unitId: string;
   unit: string;
-  type_id: string;
-  type_org: string;
+  typeId: string;
+  orgId: string;
 }
