@@ -1,4 +1,5 @@
 import MomentUtils from '@date-io/moment';
+import { v4 as uuidv4 } from 'uuid';
 import {
   Button,
   Checkbox,
@@ -8,6 +9,7 @@ import {
   Select,
   Switch,
   TextField,
+  Tooltip
 } from '@material-ui/core';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
@@ -83,6 +85,7 @@ interface ValueEditorProps {
 const StringValue = ({ onChange, row }: ValueEditorProps) => {
   const classes = useStyles();
   const [isExpression, setIsExpression] : any[] = useState(false);
+  const [expressionValid, setExpressionValid] : any[] = useState(false);
   
   const validateExpression = (exp:string) => {
     // Ensure only mathematical expressions are allowed, we add the following annotation
@@ -96,12 +99,12 @@ const StringValue = ({ onChange, row }: ValueEditorProps) => {
         // the input as mathematical expression
         // eslint-disable-next-line
         row.value = eval(exp);
-        return true;
+        setExpressionValid(true);
       } catch(e) {
-          return false;
+        setExpressionValid(false);
       }
     } else {
-        return false;
+      setExpressionValid(false);
     }
   }; 
 
@@ -119,34 +122,39 @@ const StringValue = ({ onChange, row }: ValueEditorProps) => {
   };
 
   const expressionField = () => {
-    return <TextField
-      className={classes.textField}
-      onChange={event => {
-        validateExpression(event.target.value);
-        onChange({ ...row });
-      }}
-      error={!validateExpression(row.expression)}
-      helperText={!validateExpression(row.expression) ? 'Invalid expression' : row.value}
-      placeholder={isExpression === true ? '{{ expression... }}' : row.field.displayName}
-      type={'text'}
-      value={row.expression}
-    />
+    return <Tooltip title={'e.g. 1 + 2 - 3.8 * 4 / 5.0'}>
+      <TextField
+        className={classes.textField}
+        onChange={event => {
+          validateExpression(event.target.value);
+          onChange({ ...row });
+        }}
+        error={!expressionValid}
+        helperText={!expressionValid ? 'Invalid expression' : row.value}
+        placeholder={isExpression === true  && !row.expression ? '{{ expression... }}' : row.expression}
+        type={'text'}
+      />
+    </Tooltip>
   };
 
   return (
-    <>
+    <div id={uuidv4()}>
       {isExpression ? expressionField() : textField()}
-      <Checkbox 
-        onChange={event => {
-          setIsExpression(event.target.checked);
-          row.expressionEnabled = event.target.checked;
-          if(row.expressionEnabled ) {
-            validateExpression(row.expression);
-          }
-          onChange({ ...row });
-        }}
-      />
-    </> 
+      { (row.op !== 'in' && row.field.type !== QueryFieldType.String) &&
+        <Tooltip title={'Use Expression'}>
+          <Checkbox 
+            onChange={event => {
+              setIsExpression(event.target.checked);
+              row.expressionEnabled = event.target.checked;
+              if(row.expressionEnabled ) {
+                validateExpression(row.expression);
+              }
+              onChange({ ...row });
+            }}
+          />
+        </Tooltip>
+      }
+    </div> 
   );
 };
 
@@ -168,10 +176,12 @@ interface DateTimeValueEditorProps extends ValueEditorProps {
   hasTime: boolean
 }
 
+
 const DateTimeValue = ({ hasTime, onChange, row }: DateTimeValueEditorProps) => {
   const classes = useStyles();
-  const [isExpression, setIsExpression] : any[] = useState(false);
-
+  const [isExpression, setIsExpression] : any[] = useState(row.expressionEnabled);
+  const [expressionValid, setExpressionValid] : any[] = useState(false);
+  
   useEffect(() => {
     if (!row.value) {
       onChange({ ...row, value: getDefaultValueForType(row.field) });
@@ -185,12 +195,13 @@ const DateTimeValue = ({ hasTime, onChange, row }: DateTimeValueEditorProps) => 
       if(exp) {
         let jsonExp = JSON.parse(exp);
         row.value = moment().startOf('day').add(jsonExp).toISOString();
-        return true;
+        setExpressionValid(true);
       }
     } catch(e) {
-      return false;
+      setExpressionValid(false);
     }
   }; 
+   
 
   const Picker = hasTime ? DateTimePicker : DatePicker;
   const dateField = () => {
@@ -214,34 +225,38 @@ const DateTimeValue = ({ hasTime, onChange, row }: DateTimeValueEditorProps) => 
   };
 
   const expressionField = () => {
-    return <TextField
-      className={classes.textField}
-      onChange={event => {
-        validateExpression(event.target.value);
-        onChange({ ...row });
-      }}
-      error={!validateExpression(row.expression)}
-      helperText={!validateExpression(row.expression) ? 'Invalid expression' : row.value}
-      placeholder={isExpression === true ? '{{ expression... }}' : row.field.displayName}
-      type={'text'}
-      value={row.expression}
-    />
+    // This hack (wrapping the title with a span elem) is needed to get multi-line tooltip to work
+    return <Tooltip title={<span style={{ whiteSpace: 'pre-line' }}>{'e.g. { "days": -1, "hours" : 12, "mins": 15 } \nNote: format is relative to "today" at 00:00 hours'}</span>}>
+      <TextField
+        className={classes.textField}
+        onChange={event => {
+          validateExpression(event.target.value);
+          onChange({ ...row });
+        }}
+        error={!expressionValid}
+        helperText={!expressionValid ? 'Invalid expression' : row.value}
+        placeholder={isExpression === true  && !row.expression ? '{{ expression... }}' : row.expression}
+        type={'text'}
+      />
+    </Tooltip>
   };
 
   return (
-    <>
+    <div id={uuidv4()}>
       { isExpression === true ?  expressionField() : dateField() }
-      <Checkbox 
-        onChange={event => {
-          setIsExpression(event.target.checked);
-          row.expressionEnabled = event.target.checked;
-          if(row.expressionEnabled ) {
-            validateExpression(row.expression);
-          }
-          onChange({ ...row });
-        }}
-      />
-    </>
+      <Tooltip title={'Use Expression'}>
+        <Checkbox 
+          onChange={event => {
+            setIsExpression(event.target.checked);
+            row.expressionEnabled = event.target.checked;
+            if(row.expressionEnabled ) {
+              validateExpression(row.expression);
+            }
+            onChange({ ...row });
+          }}
+        />
+      </Tooltip>
+    </div>
   );
 };
 
@@ -257,6 +272,19 @@ const RangeValue = ({ component, onChange, row }: RangeValueEditorProps) => {
       return (Array.isArray(row.value) && row.value.length > index) ? row.value[index] : _;
     });
 
+  if(row.expressionEnabled) {
+    return (
+      <Grid item container spacing={2}>
+        {array.map((value: QueryValueType, index: number) => {
+          return (
+            <Grid item>
+              {React.cloneElement(component)}
+            </Grid>
+          )}
+        )}
+      </Grid>
+    );
+  }  else { 
   return (
     <Grid item container spacing={2}>
       {array.map((value: QueryValueType, index: number) => (
@@ -267,12 +295,13 @@ const RangeValue = ({ component, onChange, row }: RangeValueEditorProps) => {
               row.value = array.slice();
               onChange(row);
             },
-            row: { ...row, value },
+            row: { ...row, value }
           })}
         </Grid>
       ))}
     </Grid>
   );
+        }
 };
 
 const PickListValue = (props: ValueEditorProps) => {
