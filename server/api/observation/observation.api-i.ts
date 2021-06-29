@@ -1,7 +1,7 @@
 export default interface ObservationApiI {
   documentId: string;
   edipi: string;
-  timestamp: Date;
+  timestamp: number;
   unitId: string;
   unit: string;
   typeId: string;
