@@ -37,10 +37,10 @@ export class Observation extends BaseEntity {
    Initially we will not make this a FK (foreign key) but it is to be considered.
    If made a FK then we need to make sure we have all the FKs in the database and
    also we would need to handle any resulting errors if a given FK is not found */
-  @Column({ length: 50 })
+  @Column({ length: 300 })
   unitId: string;
 
   // military unit description
-  @Column({ length: 100 })
+  @Column({ length: 300 })
   unit: string;
 }
