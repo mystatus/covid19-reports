@@ -104,7 +104,7 @@ This step is for generating migration files with schema changes you made.
 1. Make changes to `seed-dev.ts` if needed
 1. Start the application: `npm run dev` and notice that the DB schema matched the ORM schema code
 1. Stop the application and close all connection to the DB.
-1. If you made changed to `seed-dev.ts` then apply the change by running:
+1. If you made changes to `seed-dev.ts` then apply the changes by running:
    `npm run seed-dev`
 1. Notice that the `seed-dev.ts` changes have been applied.
 
