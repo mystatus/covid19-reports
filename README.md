@@ -102,7 +102,7 @@ This step is for generating migration files with schema changes you made.
    The script will automatically run migrations to make sure you're up to date, then it will generate a new migration
    for you in `/server/migrations` with the necessary changes to match your current models.
 1. Make changes to `seed-dev.ts` if needed
-1. Start the application: `npm run dev` and notice that the DB schema matched the ORM schema code
+1. Start the application: `npm run dev` and notice that the DB schema matches the ORM schema code
 1. Stop the application and close all connections to the DB.
 1. If you made changes to `seed-dev.ts` then apply the changes by running:
    `npm run seed-dev`
