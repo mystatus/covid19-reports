@@ -1,12 +1,15 @@
 import MomentUtils from '@date-io/moment';
+import { v4 as uuidv4 } from 'uuid';
 import {
   Button,
+  Checkbox,
   Collapse,
   Grid,
   IconButton,
   Select,
   Switch,
   TextField,
+  Tooltip
 } from '@material-ui/core';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
@@ -16,7 +19,7 @@ import {
   MuiPickersUtilsProvider,
 } from '@material-ui/pickers';
 import moment, { Moment } from 'moment';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import useDeepEquality from '../../hooks/use-deep-equality';
 import usePersistedState from '../../hooks/use-persisted-state';
 import useStyles from './query-builder.styles';
@@ -49,16 +52,28 @@ export type QueryField = {
   items?: QueryFieldPickListItem[],
 };
 
+/**  
+This type is used as the react state for a given row/line
+in the query builder UI.
+*/
 export type QueryRow = {
   field: QueryField
   op: QueryOp
   value: QueryValueType
+  expression: string
+  expressionEnabled: boolean
 };
 
+/**  
+This type is what actually gets sent over the wire to the server
+for the query building.
+*/
 export type QueryFilterState = {
   [key: string]: {
     op: QueryOp
     value: QueryValueType
+    expression: string
+    expressionEnabled: boolean
   }
 };
 
@@ -69,18 +84,77 @@ interface ValueEditorProps {
 
 const StringValue = ({ onChange, row }: ValueEditorProps) => {
   const classes = useStyles();
+  const [isExpression, setIsExpression] : any[] = useState(false);
+  const [expressionValid, setExpressionValid] : any[] = useState(false);
+  
+  const validateExpression = (exp:string) => {
+    // Ensure only mathematical expressions are allowed, we add the following annotation
+    // so the linter doesn't complain about useless escape characters 
+    // eslint-disable-next-line
+    const regex = new RegExp('^([-+\/*]\d+(\.\d+)?)*');
+    if(regex.test(exp)) {
+      try {
+        row.expression = exp;
+        // Disable warning about eval since we use the regex to validate 
+        // the input as mathematical expression
+        // eslint-disable-next-line
+        row.value = eval(exp);
+        setExpressionValid(true);
+      } catch(e) {
+        setExpressionValid(false);
+      }
+    } else {
+      setExpressionValid(false);
+    }
+  }; 
+
+  const textField = () => {
+    return <TextField
+        className={classes.textField}
+        onChange={event => {
+          row.value = event.target.value;
+          onChange({ ...row });
+        }}
+        placeholder={isExpression === true ? '{{ expression... }}' : row.field.displayName}
+        type={row.field.type === QueryFieldType.Number ? 'number' : 'text'}
+        value={row.value}
+    />
+  };
+
+  const expressionField = () => {
+    return <Tooltip title={'e.g. 1 + 2 - 3.8 * 4 / 5.0'}>
+      <TextField
+        className={classes.textField}
+        onChange={event => {
+          validateExpression(event.target.value);
+          onChange({ ...row });
+        }}
+        error={!expressionValid}
+        helperText={!expressionValid ? 'Invalid expression' : row.value}
+        placeholder={isExpression === true  && !row.expression ? '{{ expression... }}' : row.expression}
+        type={'text'}
+      />
+    </Tooltip>
+  };
 
   return (
-    <TextField
-      className={classes.textField}
-      onChange={event => {
-        row.value = event.target.value;
-        onChange({ ...row });
-      }}
-      placeholder={row.field.displayName}
-      type={row.field.type === QueryFieldType.Number ? 'number' : 'text'}
-      value={row.value}
-    />
+    <div id={uuidv4()}>
+      {isExpression ? expressionField() : textField()}
+      { (row.op !== 'in' && row.field.type !== QueryFieldType.String) &&
+        <Tooltip title={'Use Expression'}>
+          <Checkbox 
+            onChange={event => {
+              setIsExpression(event.target.checked);
+              row.expressionEnabled = event.target.checked;
+              if(row.expressionEnabled ) {
+                validateExpression(row.expression);
+              }
+              onChange({ ...row });
+            }}
+          />
+        </Tooltip>
+      }
+    </div> 
   );
 };
 
@@ -102,9 +176,12 @@ interface DateTimeValueEditorProps extends ValueEditorProps {
   hasTime: boolean
 }
 
+
 const DateTimeValue = ({ hasTime, onChange, row }: DateTimeValueEditorProps) => {
   const classes = useStyles();
-
+  const [isExpression, setIsExpression] : any[] = useState(row.expressionEnabled);
+  const [expressionValid, setExpressionValid] : any[] = useState(false);
+  
   useEffect(() => {
     if (!row.value) {
       onChange({ ...row, value: getDefaultValueForType(row.field) });
@@ -112,10 +189,23 @@ const DateTimeValue = ({ hasTime, onChange, row }: DateTimeValueEditorProps) => 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const Picker = hasTime ? DateTimePicker : DatePicker;
+  const validateExpression = (exp:string) => {
+    row.expression = exp;
+    try {
+      if(exp) {
+        let jsonExp = JSON.parse(exp);
+        row.value = moment().startOf('day').add(jsonExp).toISOString();
+        setExpressionValid(true);
+      }
+    } catch(e) {
+      setExpressionValid(false);
+    }
+  }; 
+   
 
-  return (
-    <MuiPickersUtilsProvider utils={MomentUtils}>
+  const Picker = hasTime ? DateTimePicker : DatePicker;
+  const dateField = () => {
+    return <MuiPickersUtilsProvider utils={MomentUtils}>
       <Picker
         className={classes.textField}
         id={row.field.name}
@@ -132,8 +222,45 @@ const DateTimeValue = ({ hasTime, onChange, row }: DateTimeValueEditorProps) => 
         }}
       />
     </MuiPickersUtilsProvider>
+  };
+
+  const expressionField = () => {
+    // This hack (wrapping the title with a span elem) is needed to get multi-line tooltip to work
+    return <Tooltip title={<span style={{ whiteSpace: 'pre-line' }}>{'e.g. { "days": -1, "hours" : 12, "mins": 15 } \nNote: format is relative to "today" at 00:00 hours'}</span>}>
+      <TextField
+        className={classes.textField}
+        onChange={event => {
+          validateExpression(event.target.value);
+          onChange({ ...row });
+        }}
+        error={!expressionValid}
+        helperText={!expressionValid ? 'Invalid expression' : row.value}
+        placeholder={isExpression === true  && !row.expression ? '{{ expression... }}' : row.expression}
+        type={'text'}
+      />
+    </Tooltip>
+  };
+
+  return (
+    <div id={uuidv4()}>
+      { isExpression === true ?  expressionField() : dateField() }
+      <Tooltip title={'Use Expression'}>
+        <Checkbox 
+          onChange={event => {
+            setIsExpression(event.target.checked);
+            row.expressionEnabled = event.target.checked;
+            if(row.expressionEnabled ) {
+              validateExpression(row.expression);
+            }
+            onChange({ ...row });
+          }}
+        />
+      </Tooltip>
+    </div>
   );
 };
+
+
 
 interface RangeValueEditorProps extends ValueEditorProps {
   component: React.ReactElement<ValueEditorProps>
@@ -145,6 +272,19 @@ const RangeValue = ({ component, onChange, row }: RangeValueEditorProps) => {
       return (Array.isArray(row.value) && row.value.length > index) ? row.value[index] : _;
     });
 
+  if(row.expressionEnabled) {
+    return (
+      <Grid item container spacing={2}>
+        {array.map((value: QueryValueType, index: number) => {
+          return (
+            <Grid item>
+              {React.cloneElement(component)}
+            </Grid>
+          )}
+        )}
+      </Grid>
+    );
+  }  else { 
   return (
     <Grid item container spacing={2}>
       {array.map((value: QueryValueType, index: number) => (
@@ -155,12 +295,13 @@ const RangeValue = ({ component, onChange, row }: RangeValueEditorProps) => {
               row.value = array.slice();
               onChange(row);
             },
-            row: { ...row, value },
+            row: { ...row, value }
           })}
         </Grid>
       ))}
     </Grid>
   );
+        }
 };
 
 const PickListValue = (props: ValueEditorProps) => {
@@ -384,7 +525,7 @@ const QueryBuilderRow = (props: QueryBuilderRowProps) => {
           onChange={field => {
             const newOps = getOpDesc(field);
             const op = row.op in newOps ? row.op : getDefaultOp(field);
-            onChange({ field, op, value: getNewValue(row, field, op) });
+            onChange({ field, op, value: getNewValue(row, field, op), expression: "", expressionEnabled: false });
           }}
         />
       </Grid>
@@ -393,7 +534,7 @@ const QueryBuilderRow = (props: QueryBuilderRowProps) => {
         <Grid item xs={2}>
           <QueryOpSelector
             onChange={op => {
-              onChange({ field: row.field, op, value: getNewValue(row, row.field, op) });
+              onChange({ field: row.field, op, value: getNewValue(row, row.field, op), expression: "", expressionEnabled: false });
             }}
             ops={ops}
             value={row.op}
@@ -418,17 +559,17 @@ export interface QueryBuilderProps {
 function toQuery(rows: QueryRow[]) {
   const queryableRows: QueryRow[] = rows.filter(row => row.field && row.value !== '');
   const query: QueryFilterState = {};
-  for (const { field, op, value } of queryableRows) {
+  for (const { field, op, value, expression, expressionEnabled } of queryableRows) {
     if (value) {
       if (op === 'in') {
         // handle "dirty" lists, e.g.  1000000001 ,,  ,1000000003 1000000004;1000000005
         const arrayOfValues = String(value).trim().split(/[\s,;]+/).filter(vl => vl);
         // don't add empty queries
         if (arrayOfValues && arrayOfValues.length) {
-          query[field!.name] = { op, value: arrayOfValues };
+          query[field!.name] = { op, value: arrayOfValues, expression: expression, expressionEnabled: expressionEnabled };
         }
       } else {
-        query[field!.name] = { op, value };
+        query[field!.name] = { op, value, expression: expression, expressionEnabled: expressionEnabled };
       }
     }
   }
@@ -448,7 +589,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
     if (availableFields.length > 0) {
       const field = availableFields[0];
       const op = getDefaultOp(field);
-      setRows([...rows, { field, op, value: getDefaultValue(field, op) }]);
+      setRows([...rows, { field, op, value: getDefaultValue(field, op), expression: "", expressionEnabled: false }]);
     }
   };
 
