@@ -1,17 +1,21 @@
+import { Request, Response } from 'express';
 import { getManager } from 'typeorm';
-import { Response } from 'express';
+import { ObservationApiModel } from './observation-api.model';
+import { Observation } from './observation.model';
 import { ApiRequest, EdipiParam } from '../index';
-import Observation from './observation';
 import { timestampColumnTransformer } from '../../util/util';
 
+class ObservationController {
+  async getAllObservations(req: Request, res: Response) {
+    return res.json(await Observation.find());
+  }
 
-class ObservationControllerCreate {
-  async createObservation(req: ApiRequest<EdipiParam, Observation>, res: Response) {
+  async createObservation(req: ApiRequest<EdipiParam, ObservationApiModel>, res: Response) {
     return res.json(await createObservation(req));
   }
 }
 
-async function createObservation(req: ApiRequest<EdipiParam, Observation>) {
+async function createObservation(req: ApiRequest<EdipiParam, ObservationApiModel>) {
   // getManager().query() does not return the inserted row
   console.log(`Creating observation ${JSON.stringify(req.body)}`);
   await getManager()
@@ -23,5 +27,4 @@ async function createObservation(req: ApiRequest<EdipiParam, Observation>) {
     );
 }
 
-
-export default new ObservationControllerCreate();
+export default new ObservationController();

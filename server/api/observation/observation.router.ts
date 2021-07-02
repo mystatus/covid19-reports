@@ -1,6 +1,6 @@
 import express from 'express';
-import getObservationController from './observation.controller.get';
-import createObservationController from './observation.controller.create';
+import getObservationController from './observation.controller';
+import createObservationController from './observation.controller';
 import { requireInternalUser } from '../../auth';
 
 
