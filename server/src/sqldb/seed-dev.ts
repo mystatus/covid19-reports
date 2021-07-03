@@ -1,5 +1,5 @@
 import { getManager } from 'typeorm';
-import database from './index';
+import database from '.';
 import { Org } from '../api/org/org.model';
 import { seedOrphanedRecords } from '../api/orphaned-record/orphaned-record.model.mock';
 import { Role } from '../api/role/role.model';

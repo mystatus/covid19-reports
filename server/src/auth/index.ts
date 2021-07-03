@@ -13,7 +13,6 @@ import {
 } from '../util/error-types';
 import { Org } from '../api/org/org.model';
 import { TestRequest } from '../util/test-utils/test-request';
-import { Log } from '../util/log';
 
 const sslHeader = 'ssl-client-subject-dn';
 const internalAccessHeader = 'status-engine-internal-access-key';
@@ -119,8 +118,6 @@ export async function requireOrgAccess(reqAny: any, res: Response, next: NextFun
   if (Number.isNaN(orgId) || orgId < 0) {
     throw new BadRequestError(`Invalid organization id: ${orgId}`);
   }
-
-  // Log.test('appUser', req.appUser);
 
   if (orgId && req.appUser) {
     const orgUserRole = req.appUser.userRoles.find(userRole => userRole.role.org!.id === orgId);

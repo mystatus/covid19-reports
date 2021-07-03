@@ -45,7 +45,7 @@ export const ormConfig: PostgresConnectionOptions = {
   ],
   namingStrategy: new SnakeNamingStrategy(),
   synchronize: (env.isDev && process.env.SYNC_DATABASE === 'true'),
-  logging: false,
+  logging: (!env.isProd && process.env.ORM_LOGGING === 'true'),
   migrations: ['src/migration/*.ts'],
   cli: {
     migrationsDir: 'src/migration',

@@ -41,7 +41,7 @@ const start = async () => {
 
   app.use(requireUserAuth);
   app.use(cookieParser());
-  app.use(express.static(path.join(path.resolve(__dirname, 'public'))));
+  app.use(express.static(path.join(__dirname, 'public')));
   app.use(passport.initialize());
   if (!env.isTest) {
     app.use(morgan((tokens, req: any, res: any) => {
