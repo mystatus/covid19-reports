@@ -43,7 +43,7 @@ const HomePageHelp = () => {
     <Grid container direction="row">
       <Grid item xs={8}>
         <Typography variant="h5" gutterBottom>
-          Welcome to Status Engine!!!!
+          Welcome to Status Engine!
         </Typography>
 
         <Typography gutterBottom>
