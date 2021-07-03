@@ -15,6 +15,7 @@ import { timestampColumnTransformer } from '../../util/util';
  * This data is then replicated from the original storage to this entity.
  */
 @Entity()
+@Unique(['id', 'documentId'])
 export class Observation extends BaseEntity {
 
   @PrimaryGeneratedColumn()
