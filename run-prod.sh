@@ -2,5 +2,6 @@
 
 export NODE_ENV=production
 
-./migration-run.sh
+yarn run migration-run
+
 node ./build/app.js

@@ -1,17 +1,16 @@
 # dependencies
-/node_modules
-/.pnp
+node_modules/
+.pnp
 .pnp.js
 
 # test reports
-/coverage
+coverage/
 
 # build output
-/build
-/server/build
+build/
 
 # certs
-/server/certs
+/server/certs/
 
 # misc
 .DS_Store
@@ -20,10 +19,9 @@
 .env.development.local
 .env.test.local
 .env.production.local
-server/.env
 
 # ide files
-/.idea
+.idea/
 .vscode/launch.json
 
 # logs

@@ -1,8 +1,5 @@
 {
   "extends": "airbnb-typescript",
-  "parserOptions": {
-    "project": "./tsconfig.json"
-  },
   "env": {
     "es6": true,
     "jquery": true,
@@ -13,9 +10,6 @@
   "globals": {},
   "plugins": [
     "@typescript-eslint",
-    "jsx-a11y",
-    "react",
-    "react-hooks",
     "import",
     "chai-friendly",
     "mocha-no-only"
@@ -24,6 +18,7 @@
     "@typescript-eslint/lines-between-class-members": "off",
     "@typescript-eslint/no-unused-expressions": "off",
     "@typescript-eslint/no-use-before-define": "off",
+    "@typescript-eslint/object-curly-spacing": "off",
     "@typescript-eslint/quotes": ["error", "single", { "allowTemplateLiterals": true }],
     "@typescript-eslint/space-before-function-paren": ["error", {
       "anonymous": "never",
@@ -40,7 +35,6 @@
     "import/no-cycle": "off",
     "import/no-dynamic-require": "off",
     "import/prefer-default-export": "off",
-    "jsx-a11y/label-has-associated-control": "off",
     "max-classes-per-file": "off",
     "max-len": "off",
     "mocha-no-only/mocha-no-only": ["error"],
@@ -72,17 +66,10 @@
     "no-unused-expressions": "off",
     "no-use-before-define": "off",
     "object-curly-newline": ["error", { "consistent": true }],
+    "object-curly-spacing": "off",
     "padded-blocks": "off",
     "prefer-destructuring": "off",
     "radix": "off",
-    "react/destructuring-assignment": "off",
-    "react/jsx-one-expression-per-line": "off",
-    "react/jsx-props-no-spreading": "off",
-    "react/no-array-index-key": "off",
-    "react/require-default-props": "off",
-    "react-hooks/exhaustive-deps": ["error", {
-      "additionalHooks": "useEffectDebounced"
-    }],
     "space-before-function-paren": ["error", {
       "anonymous": "never",
       "named": "never",

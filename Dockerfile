@@ -1,4 +1,4 @@
-FROM node:10 as buildtime
+FROM node:14 as buildtime
 
 ARG NPM_TOKEN
 
@@ -12,13 +12,13 @@ RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > /usr/src/covid19-report
 
 COPY . /usr/src/covid19-reports
 
-RUN npm install -g npm
-RUN npm install
+RUN yarn install
 
-RUN chmod +x /usr/src/covid19-reports/build-prod.sh && \
-    npm run build
+RUN find /usr/src/covid19-reports -name "*.sh" -exec chmod +x {} \;
 
-FROM node:10 as runtime
+RUN yarn run build
+
+FROM node:14 as runtime
 
 ARG BUILD_DATE
 
@@ -30,18 +30,12 @@ LABEL maintainer="DDS - Devops <devops@ext-mystatus.dds.mil>" \
 
 ENV BUILD_DATE="${BUILD_DATE}" \
     NODE_ENV=prod \
-    NODE_OPTIONS="--max-old-space-size=2048"
+    NODE_OPTIONS="--max-old-space-size=4096"
 
 WORKDIR /covid19-reports
 
 COPY --from=buildtime /usr/src/covid19-reports /covid19-reports
-COPY package*.json /covid19-reports/
-COPY run-prod.sh /covid19-reports
-COPY migration-run.sh /covid19-reports
-
-RUN chmod +x /covid19-reports/run-prod.sh && \
-    chmod +x /covid19-reports/migration-run.sh
 
 EXPOSE 4000
 
-CMD [ "npm", "start" ]
+CMD [ "yarn", "start" ]

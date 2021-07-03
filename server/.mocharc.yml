@@ -1,2 +1,2 @@
 file:
-  - mocha-setup.ts
+  - src/mocha-setup.ts
