@@ -44,6 +44,20 @@ export default makeStyles((theme: Theme) => createStyles({
     paddingBottom: 0,
     paddingTop: 0,
   },
+  selectFilterItem: {
+    paddingBottom: 1,
+    paddingTop: 1,
+    minWidth: '130px',
+    width: '100%',
+  },
+  selectFilterItemNone: {
+    paddingBottom: 0,
+    paddingTop: 0,
+    marginBottom: '2px',
+    opacity: 0.9,
+    fontStyle: 'italic',
+    borderBottom: '1px solid #eee',
+  },
   deleteDialogActions: {
     justifyContent: 'center',
     backgroundColor: '#F0F1F1',
@@ -60,5 +74,27 @@ export default makeStyles((theme: Theme) => createStyles({
     '& td': {
       fontWeight: 'bold',
     },
+  },
+  tableHeaderButtonSelect: {
+    borderWidth: 2,
+    marginRight: theme.spacing(2),
+    width: '160px',
+    '&:hover': {
+      borderWidth: 2,
+    },
+    '& .MuiButton-label': {
+      justifyContent: 'space-between',
+    },
+  },
+  selectFilterMenu: {
+    marginTop: '39px',
+    marginLeft: '1px',
+    width: '100%',
+  },
+  separator: {
+    margin: '0 12px',
+    opacity: 0.7,
+    fontSize: '1rem',
+    verticalAlign: 'middle',
   },
 }));

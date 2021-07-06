@@ -18,6 +18,7 @@ import { CustomRosterColumn } from './api/roster/custom-roster-column.model';
 import { Workspace } from './api/workspace/workspace.model';
 import { Notification } from './api/notification/notification.model';
 import { Observation } from './api/observation/observation.model';
+import { SavedFilter } from './api/saved-filter/saved-filter.model';
 
 export const ormConfig: PostgresConnectionOptions = {
   type: 'postgres',
@@ -44,6 +45,7 @@ export const ormConfig: PostgresConnectionOptions = {
     OrphanedRecord,
     OrphanedRecordAction,
     Observation,
+    SavedFilter,
   ],
   namingStrategy: new SnakeNamingStrategy(),
   synchronize: (env.isDev && process.env.SYNC_DATABASE === 'true'),

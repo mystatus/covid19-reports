@@ -4,6 +4,7 @@ import {
   Checkbox,
   Container,
   FormControlLabel,
+  IconButton,
   Menu,
   MenuItem,
   Paper,
@@ -16,6 +17,7 @@ import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import DeleteSweepIcon from '@material-ui/icons/DeleteSweep';
 import ViewWeekIcon from '@material-ui/icons/ViewWeek';
+import DeleteIcon from '@material-ui/icons/Delete';
 import React, {
   ChangeEvent,
   createRef,
@@ -32,11 +34,13 @@ import {
 } from 'react-redux';
 import _ from 'lodash';
 import moment from 'moment';
+import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
+import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { OrphanedRecord } from '../../../actions/orphaned-record.actions';
 import { Roster } from '../../../actions/roster.actions';
 import { Unit } from '../../../actions/unit.actions';
-import { RosterClient } from '../../../client/api';
+import { RosterClient, SavedFilterClient } from '../../../client/api';
 import useEffectDebounced from '../../../hooks/use-effect-debounced';
 import useInitialLoading from '../../../hooks/use-initial-loading';
 import { downloadFile } from '../../../utility/download';
@@ -58,6 +62,7 @@ import {
   ApiRosterPaginated,
   ApiOrphanedRecord,
   ApiRosterEntryData,
+  ApiSavedFilter,
 } from '../../../models/api-response';
 import {
   EditRosterEntryDialog,
@@ -107,6 +112,7 @@ export const RosterPage = () => {
 
   const fileInputRef = createRef<HTMLInputElement>();
   const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
+  const selectFilterButtonRef = useRef<HTMLButtonElement>(null);
   const [orphanedRecordsWaiting, setOrphanedRecordsWaiting] = useState(false);
   const [orphanedRecordsPage, setOrphanedRecordsPage] = useState(0);
   const [orphanedRecordsRowsPerPage, setOrphanedRecordsRowsPerPage] = usePersistedState('orphanRowsPerPage', 10);
@@ -123,8 +129,11 @@ export const RosterPage = () => {
   const [sortState, setSortState] = usePersistedState<SortState>('rosterSort');
   const [rosterColumnInfos, setRosterColumnInfos] = useState<ApiRosterColumnInfo[]>([]);
   const [visibleColumns, setVisibleColumns] = usePersistedState<ApiRosterColumnInfo[]>('rosterVisibleColumns', []);
+  const [savedFilters, setSavedFilters] = useState<ApiSavedFilter[]>([]);
+  const [selectedSavedFilter, setSelectedSavedFilter] = usePersistedState<ApiSavedFilter | null>('savedFilter', null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
+  const [selectFilterMenuOpen, setSelectFilterMenuOpen] = useState(false);
   const [applyingFilters, setApplyingFilters] = useState(false);
   const fetchRosterInvokeCount = useRef(0);
 
@@ -231,6 +240,15 @@ export const RosterPage = () => {
     }
   }, [dispatch, initialLoadComplete, orgId, setVisibleColumns, visibleColumns.length]);
 
+  const fetchSavedFilters = useCallback(async () => {
+    try {
+      const filters = await SavedFilterClient.fetchAll(orgId, 'RosterEntry');
+      setSavedFilters(filters);
+    } catch (error) {
+      dispatch(Modal.alert('Get Saved Filters', formatErrorMessage(error, 'Failed to get saved filters'))).then();
+    }
+  }, [dispatch, orgId]);
+
   const fetchUnits = useCallback(async () => {
     dispatch(Unit.fetch(orgId));
   }, [dispatch, orgId]);
@@ -260,6 +278,7 @@ export const RosterPage = () => {
       Promise.all([
         fetchRosterColumnInfo(),
         fetchUnits(),
+        fetchSavedFilters(),
       ]).then(incrementInitialLoadStep);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -603,7 +622,9 @@ export const RosterPage = () => {
             contentComponent: RosterPageHelp,
             cardId: 'rosterPage',
           }}
-        />
+        >
+          <span>Roster</span>
+        </PageHeader>
 
         <TableContainer component={Paper} className={classes.table}>
           <Box className={classes.tableHeader}>
@@ -769,6 +790,86 @@ export const RosterPage = () => {
                 Columns
               </span>
             </Button>
+
+            {savedFilters.length ? (
+              <>
+                <Button
+                  aria-label="Select Filter"
+                  className={classes.tableHeaderButtonSelect}
+                  onClick={() => setSelectFilterMenuOpen(!selectFilterMenuOpen)}
+                  size="small"
+                  endIcon={selectFilterMenuOpen ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
+                  variant="outlined"
+                  ref={selectFilterButtonRef}
+                >
+                  <span style={{ whiteSpace: 'nowrap', maxWidth: 'calc(100%-26px)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {selectedSavedFilter ? selectedSavedFilter.name : 'Select a Filter'}
+                  </span>
+                </Button>
+                <Menu
+                  className={classes.selectFilterMenu}
+                  id="saved-filter-list"
+                  anchorEl={selectFilterButtonRef.current}
+                  keepMounted
+                  open={Boolean(selectFilterMenuOpen)}
+                  onClose={() => setSelectFilterMenuOpen(false)}
+                >
+                  <MenuItem
+                    className={classes.selectFilterItemNone}
+                    onClick={() => {
+                      setSelectedSavedFilter(null);
+                      setSelectFilterMenuOpen(false);
+                    }}
+                  >
+                    no filter
+                  </MenuItem>
+                  {savedFilters.map(savedFilter => (
+                    <MenuItem
+                      key={savedFilter.id}
+                      className={classes.selectFilterItem}
+                      onClick={() => {
+                        setSelectedSavedFilter(savedFilter);
+                        setSelectFilterMenuOpen(false);
+                      }}
+                    >
+                      {savedFilter.name}
+
+                      <IconButton
+                        aria-label="delete"
+                        size="small"
+                        onClick={e => {
+                          e.stopPropagation();
+                          setSavedFilters(savedFilters.filter(filter => filter.id !== savedFilter.id));
+                          SavedFilterClient.remove(orgId, savedFilter.id);
+                          setSelectFilterMenuOpen(false);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </>
+            ) : null}
+            {/* {savedFilters && (
+              <span>
+                <span className={classes.separator}>{'\u25B6'}</span>
+                {savedFilters.map(filter => <span key={filter.name}>{filter.name}</span>)}
+                <Menu
+                  id="saved-filter-list"
+                  // anchorEl={visibleColumnsButtonRef.current}
+                  // keepMounted
+                  open={Boolean(visibleColumnsMenuOpen)}
+                  onClose={() => setVisibleColumnsMenuOpen(false)}
+                >
+                  {savedFilters.map(column => (
+                    <MenuItem key={column.name} className={classes.columnItem}>
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </span>
+            )} */}
           </div>
           <Menu
             id="user-more-menu"
@@ -819,6 +920,8 @@ export const RosterPage = () => {
                   type: column.type as unknown as QueryFieldType,
                 };
               })}
+            savedFilters={[savedFilters, setSavedFilters]}
+            selectedSavedFilter={[selectedSavedFilter, setSelectedSavedFilter]}
             onChange={setQueryFilterState}
             open={filtersOpen}
             persistKey="rosterQuery"

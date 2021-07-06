@@ -7,6 +7,7 @@ import { UserRegisterData } from '../actions/user.actions';
 import {
   ApiAccessRequest,
   ApiDashboard,
+  ApiFilterConfiguration,
   ApiNotification,
   ApiOrphanedRecordsCount,
   ApiOrphanedRecordsPaginated,
@@ -14,6 +15,7 @@ import {
   ApiRole,
   ApiRosterColumnInfo,
   ApiRosterUploadInfo,
+  ApiSavedFilter,
   ApiUnit,
   ApiUser,
   ApiWorkspace,
@@ -176,6 +178,40 @@ export namespace WorkspaceClient {
 
   export const fetchDashboards = (orgId: number, workspaceId: number): Promise<ApiDashboard[]> => {
     return client.get(`workspace/${orgId}/${workspaceId}/dashboards`);
+  };
+}
+
+
+export namespace SavedFilterClient {
+  export const fetchAll = (orgId: number, entityType: 'RosterEntry'): Promise<ApiSavedFilter[]> => {
+    return client.get(`saved-filter/${orgId}/${entityType}`);
+  };
+
+  export const create = (
+    orgId: number,
+    body: {
+      name: string;
+      entityType: 'RosterEntry',
+      filterConfiguration: ApiFilterConfiguration;
+    },
+  ): Promise<ApiSavedFilter> => {
+    return client.post(`saved-filter/${orgId}`, body);
+  };
+
+  export const remove = (orgId: number, savedFilterId: number): Promise<ApiSavedFilter> => {
+    return client.delete(`saved-filter/${orgId}/${savedFilterId}`);
+  };
+
+  export const update = (
+    orgId: number,
+    body: {
+      id: number;
+      name: string;
+      entityType: 'RosterEntry',
+      filterConfiguration: ApiFilterConfiguration;
+    },
+  ): Promise<ApiSavedFilter> => {
+    return client.put(`saved-filter/${orgId}/${body.id}`, body);
   };
 }
 

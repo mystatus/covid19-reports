@@ -267,3 +267,16 @@ export interface ApiErrorResponse {
 export interface ApiRosterUploadInfo {
   count: number
 }
+
+export interface ApiFilterConfiguration extends Record<string, { op: string, value: string }> {
+}
+
+export type ApiEntityType = 'RosterEntry';
+
+export interface ApiSavedFilter {
+  id: number;
+  org?: ApiOrg,
+  name: string;
+  entityType: ApiEntityType;
+  filterConfiguration: ApiFilterConfiguration;
+}

@@ -8,26 +8,32 @@ import { HelpCard } from '../help/help-card/help-card';
 import useStyles from './page-header.styles';
 
 export interface PageHeaderProps {
-  title: string
+  title: string;
   help?: {
     contentComponent: ElementType
     cardId: string
     variant?: 'plain' | 'info'
   }
+  children?: React.ReactChild
 }
 
 const PageHeader = (props: PageHeaderProps) => {
-  const { title, help } = props;
+  const { children, help, title } = props;
   const HelpContent = help?.contentComponent;
   const classes = useStyles();
 
   return (
     <header className={classes.header}>
       <Box display="flex" alignItems="center">
-        <Typography className={classes.title}>
-          {title}
-        </Typography>
-
+        {children ? (
+          <div className={classes.title}>
+            {children}
+          </div>
+        ) : (
+          <Typography className={classes.title}>
+            {title}
+          </Typography>
+        )}
         {help && (
           <HelpButton
             title={title}

@@ -13,18 +13,22 @@ import {
 } from '@material-ui/core';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
+import SaveIcon from '@material-ui/icons/Save';
+import FileCopyIcon from '@material-ui/icons/FileCopy';
 import {
   DatePicker,
   DateTimePicker,
   MuiPickersUtilsProvider,
 } from '@material-ui/pickers';
 import moment, { Moment } from 'moment';
-import React, {
-  useEffect,
-  useState,
-} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useSelector } from 'react-redux';
+import deepEquals from 'fast-deep-equal';
+import { SavedFilterClient } from '../../client/api';
 import useDeepEquality from '../../hooks/use-deep-equality';
 import usePersistedState from '../../hooks/use-persisted-state';
+import { ApiFilterConfiguration, ApiSavedFilter } from '../../models/api-response';
+import { UserSelector } from '../../selectors/user.selector';
 import useStyles from './query-builder.styles';
 
 const toDate = (date: Moment) => date.format('YYYY-MM-DD');
@@ -574,6 +578,8 @@ export interface QueryBuilderProps {
   onChange: (query: QueryFilterState | undefined) => void
   open: boolean
   persistKey?: string
+  savedFilters?: [ApiSavedFilter[], React.Dispatch<React.SetStateAction<ApiSavedFilter[]>>]
+  selectedSavedFilter?: [ApiSavedFilter | null, React.Dispatch<React.SetStateAction<ApiSavedFilter | null>>]
 }
 
 function toQuery(rows: QueryRow[]) {
@@ -601,14 +607,30 @@ function toQuery(rows: QueryRow[]) {
   return queryableRows.length ? query : undefined;
 }
 
+function toRows(filterConfiguration: ApiFilterConfiguration, fields: QueryField[]) {
+  return Object.entries(filterConfiguration).map(([key, value]) => {
+    return {
+      field: fields.find(field => field.name === key)!,
+      op: value.op,
+      value: value.value,
+    } as QueryRow;
+  });
+}
+
 export const QueryBuilder = (props: QueryBuilderProps) => {
   const classes = useStyles();
   const {
     fields, onChange, open, persistKey,
   } = props;
+  const [savedFilters, setSavedFilters] = props.savedFilters ?? [];
+  const [selectedSavedFilter, setSelectedSavedFilter] = props.selectedSavedFilter ?? [];
   const [rows, setRows] = usePersistedState<QueryRow[]>(persistKey, []);
   const availableFields = fields.filter(field => !rows.some(row => row.field.name === field.name));
   const [filterState, setFilterState] = useDeepEquality<QueryFilterState | undefined>();
+  const [hasChanges, setHasChanges] = useState(false);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const filterNameRef = useRef<HTMLInputElement>();
+  const org = useSelector(UserSelector.org)!;
 
   const addRow = () => {
     if (availableFields.length > 0) {
@@ -628,9 +650,57 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
     setRows(newRows);
   };
 
+  const saveFilter = async () => {
+    if (!saveOpen && !selectedSavedFilter) {
+      setSaveOpen(true);
+    } else {
+      const query = toQuery(rows);
+      console.log({ filterNameRef });
+      if (query && filterNameRef.current) {
+        if (selectedSavedFilter && !saveOpen) {
+          const filter = await SavedFilterClient.update(org.id, {
+            ...selectedSavedFilter,
+            filterConfiguration: query as unknown as ApiFilterConfiguration,
+          });
+          if (setSavedFilters) {
+            setSavedFilters([...(savedFilters ?? []).filter(f => f.id !== filter.id), filter].sort((a, b) => (a.name < b.name ? -1 : 1)));
+          }
+          if (setSelectedSavedFilter) {
+            setSelectedSavedFilter(filter);
+          }
+
+        } else {
+          const filter = await SavedFilterClient.create(org.id, {
+            name: filterNameRef.current.value,
+            entityType: 'RosterEntry',
+            filterConfiguration: query as unknown as ApiFilterConfiguration,
+          });
+          if (setSavedFilters) {
+            setSavedFilters([...(savedFilters ?? []), filter].sort((a, b) => (a.name < b.name ? -1 : 1)));
+          }
+          if (setSelectedSavedFilter) {
+            setSelectedSavedFilter(filter);
+          }
+        }
+      }
+      setSaveOpen(false);
+    }
+  };
+
   useEffect(() => {
-    setFilterState(toQuery(rows));
+    const query = toQuery(rows);
+    setFilterState(query);
+    if (selectedSavedFilter) {
+      setHasChanges(!deepEquals(query, selectedSavedFilter.filterConfiguration));
+    } else {
+      setHasChanges(!!query);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, setFilterState]);
+
+  useEffect(() => {
+    onChange(filterState);
+  }, [filterState, onChange]);
 
   useEffect(() => {
     onChange(filterState);
@@ -642,6 +712,20 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  const firstRun = useRef(true);
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    if (!selectedSavedFilter) {
+      setRows([]);
+    } else {
+      setRows(toRows(selectedSavedFilter.filterConfiguration, fields));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSavedFilter, setRows]);
 
   return (
     <div className={classes.root}>
@@ -674,6 +758,52 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
           >
             Add Filter
           </Button>
+        )}
+        {hasChanges && (
+          <div>
+            <Collapse in={saveOpen}>
+              <TextField
+                className={classes.textField}
+                inputRef={filterNameRef}
+              />
+            </Collapse>
+            <Button
+              aria-label="Save Filter"
+              className={classes.addRowButton}
+              onClick={saveFilter}
+              size="small"
+              startIcon={<SaveIcon />}
+              variant="outlined"
+            >
+              Save {saveOpen ? '' : 'Filter'}
+            </Button>
+            {selectedSavedFilter && (
+              <>
+                {saveOpen ? (
+                  <Button
+                    aria-label="Cancel"
+                    className={classes.addRowButton}
+                    onClick={() => setSaveOpen(false)}
+                    size="small"
+                    variant="outlined"
+                  >
+                    Cancel
+                  </Button>
+                ) : (
+                  <Button
+                    aria-label="Save a Copy"
+                    className={classes.addRowButton}
+                    onClick={() => setSaveOpen(true)}
+                    size="small"
+                    startIcon={<FileCopyIcon />}
+                    variant="outlined"
+                  >
+                    Save a Copy
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
         )}
       </Collapse>
     </div>
