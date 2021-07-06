@@ -6,7 +6,7 @@ import {
   requireOrgAccess,
   requireRolePermission,
   requireWorkspaceAccess,
-} from '../../auth';
+} from '../../auth/auth-middleware';
 
 const router = express.Router() as any;
 

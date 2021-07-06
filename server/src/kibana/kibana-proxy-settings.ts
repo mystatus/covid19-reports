@@ -1,6 +1,6 @@
 import { ClientRequest, IncomingMessage } from 'http';
 import { Config } from 'http-proxy-middleware';
-import { ApiRequest } from '../api';
+import { ApiRequest } from '../api/api.router';
 import config from '../config';
 import { buildEsIndexPatternsForWorkspace } from '../util/elasticsearch-utils';
 

@@ -4,7 +4,7 @@ import {
   ApiRequest,
   OrgParam,
   OrgPrefixParam,
-} from '../index';
+} from '../api.router';
 import { User } from '../user/user.model';
 import { Org } from './org.model';
 import {

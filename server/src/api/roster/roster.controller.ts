@@ -37,7 +37,7 @@ import {
   OrgRosterParams,
   Paginated,
   PaginatedQuery,
-} from '../index';
+} from '../api.router';
 import { Org } from '../org/org.model';
 import { Unit } from '../unit/unit.model';
 import { UserRole } from '../user/user-role.model';

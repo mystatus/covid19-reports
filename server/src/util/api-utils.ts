@@ -1,4 +1,4 @@
-import { ApiRequest } from '../api';
+import { ApiRequest } from '../api/api.router';
 import { BadRequestError } from './error-types';
 import { getMissingKeys } from './util';
 

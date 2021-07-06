@@ -11,7 +11,7 @@ import {
   OrgParam,
   OrgWorkspaceParams,
   WorkspaceParam,
-} from '../index';
+} from '../api.router';
 import { Workspace } from './workspace.model';
 import {
   BadRequestError,

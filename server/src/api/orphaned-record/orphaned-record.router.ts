@@ -1,7 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import controller from './orphaned-record.controller';
-import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth';
+import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth/auth-middleware';
 
 
 const router = express.Router() as any;

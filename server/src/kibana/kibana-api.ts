@@ -3,7 +3,7 @@ import { NextFunction, Response } from 'express';
 import axiosCookieJarSupport from 'axios-cookiejar-support';
 import tough from 'tough-cookie';
 import * as https from 'https';
-import { ApiRequest } from '../api';
+import { ApiRequest } from '../api/api.router';
 import config from '../config';
 import { buildEsIndexPatternsForDataExport } from '../util/elasticsearch-utils';
 import { Log } from '../util/log';

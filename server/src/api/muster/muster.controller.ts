@@ -18,7 +18,7 @@ import {
   OrgUnitParams,
   PaginatedQuery,
   Paginated,
-} from '../index';
+} from '../api.router';
 import { Roster } from '../roster/roster.model';
 import {
   MusterConfiguration,

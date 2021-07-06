@@ -8,7 +8,7 @@ import {
   OrgEdipiParams,
   OrgParam,
   WorkspaceParam,
-} from '../index';
+} from '../api.router';
 import { User } from './user.model';
 import { Role } from '../role/role.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';

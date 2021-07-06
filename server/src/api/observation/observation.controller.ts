@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { getManager } from 'typeorm';
 import { ObservationApiModel } from './observation.types';
 import { Observation } from './observation.model';
-import { ApiRequest, EdipiParam } from '../index';
+import { ApiRequest, EdipiParam } from '../api.router';
 import { timestampColumnTransformer } from '../../util/util';
 
 class ObservationController {

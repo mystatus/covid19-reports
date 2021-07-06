@@ -15,7 +15,7 @@ import {
   ApiRequest,
   OrgParam,
   PaginatedQuery,
-} from '../index';
+} from '../api.router';
 import {
   RosterColumnInfo,
   RosterColumnValue,

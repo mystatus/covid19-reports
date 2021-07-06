@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import {
   ApiRequest, OrgParam, OrgSettingParams,
-} from '../index';
+} from '../api.router';
 import { Notification } from './notification.model';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
 import { UserNotificationSetting } from './user-notification-setting.model';

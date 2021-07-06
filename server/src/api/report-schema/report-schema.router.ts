@@ -4,7 +4,7 @@ import controller from './report-schema.controller';
 import {
   requireOrgAccess,
   requireRolePermission,
-} from '../../auth';
+} from '../../auth/auth-middleware';
 
 const router = express.Router() as any;
 

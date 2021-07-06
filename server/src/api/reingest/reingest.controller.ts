@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { Log } from '../../util/log';
-import { ApiRequest, EdipiParam } from '../index';
+import { ApiRequest, EdipiParam } from '../api.router';
 import { InternalServerError } from '../../util/error-types';
 import { reingestByEdipi } from '../../util/reingest-utils';
 

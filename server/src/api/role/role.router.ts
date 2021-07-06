@@ -2,7 +2,7 @@ import bodyParser from 'body-parser';
 import express from 'express';
 
 import controller from './role.controller';
-import { requireOrgAccess, requireRolePermission } from '../../auth';
+import { requireOrgAccess, requireRolePermission } from '../../auth/auth-middleware';
 
 const router = express.Router() as any;
 
