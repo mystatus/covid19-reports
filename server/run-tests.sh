@@ -38,11 +38,11 @@ fi
 # Create test database if it doesn't exist.
 if ! [[ "$(database_exists)" ]]; then
   create_database
-  ../migration-run.sh
+  ./migration-run.sh
 fi
 
 npx --silent ts-mocha \
   --project "tsconfig.json" \
-  --config "./.mocharc.yml" \
+  --config ".mocharc.yml" \
   --exit \
-  "./**/*.spec.ts"
+  "**/*.spec.ts"
