@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth';
+import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth/auth-middleware';
 import controller from './muster.controller';
 
 const router = express.Router() as any;

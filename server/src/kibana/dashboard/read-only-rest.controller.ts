@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { ApiRequest } from '../../api';
+import { ApiRequest } from '../../api/api.router';
 import { User } from '../../api/user/user.model';
 import { UserRole } from '../../api/user/user-role.model';
 import { Workspace } from '../../api/workspace/workspace.model';

@@ -1,6 +1,6 @@
 import { Dispatch } from 'redux';
 import { ApiRosterColumnInfo } from '../models/api-response';
-import { RosterClient } from '../client';
+import { RosterClient } from '../client/api';
 
 export namespace Roster {
 

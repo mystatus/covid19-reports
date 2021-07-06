@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { ApiRequest, OrgParam, OrgReportParams } from '../index';
+import { ApiRequest, OrgParam, OrgReportParams } from '../api.router';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
 import { ReportSchema, SchemaColumn } from './report-schema.model';
 

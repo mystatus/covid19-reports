@@ -26,7 +26,7 @@ import {
   OrgParam,
   Paginated,
   PaginatedQuery,
-} from '../index';
+} from '../api.router';
 import { Org } from '../org/org.model';
 import { RosterEntity } from '../roster/roster-entity';
 import { Roster } from '../roster/roster.model';

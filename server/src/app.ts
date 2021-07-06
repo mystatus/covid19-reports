@@ -7,16 +7,16 @@ import fs from 'fs';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import path from 'path';
-import apiRoutes from './api';
-import kibanaProxy from './kibana';
-import kibanaDashboard from './kibana/dashboard';
-import database from './sqldb';
+import apiRoutes from './api/api.router';
+import kibanaProxy from './kibana/kibana-proxy.router';
+import kibanaDashboard from './kibana/dashboard/kibana-dashboard.router';
+import database from './sqldb/sqldb';
 import config from './config';
 import {
   requireOrgAccess,
   requireUserAuth,
   requireWorkspaceAccess,
-} from './auth';
+} from './auth/auth-middleware';
 import { env } from './util/env';
 import { errorHandler } from './util/error-handler';
 import { Log } from './util/log';

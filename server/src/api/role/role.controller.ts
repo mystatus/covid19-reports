@@ -4,7 +4,7 @@ import {
   ApiRequest,
   OrgParam,
   OrgRoleParams,
-} from '../index';
+} from '../api.router';
 import { Roster } from '../roster/roster.model';
 import { Role } from './role.model';
 import {

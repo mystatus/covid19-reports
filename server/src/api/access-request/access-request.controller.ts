@@ -9,7 +9,7 @@ import { assertRequestBody } from '../../util/api-utils';
 import {
   ApiRequest,
   OrgParam,
-} from '../index';
+} from '../api.router';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { User } from '../user/user.model';

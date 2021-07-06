@@ -1,7 +1,7 @@
 import { Request, Response, Router } from 'express';
 import proxy from 'http-proxy-middleware';
 import kibanaProxySettings from './kibana-proxy-settings';
-import { requireOrgAccess, requireWorkspaceAccess } from '../auth';
+import { requireOrgAccess, requireWorkspaceAccess } from '../auth/auth-middleware';
 
 const router = Router();
 

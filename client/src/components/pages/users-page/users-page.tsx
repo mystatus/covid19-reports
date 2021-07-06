@@ -21,7 +21,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import MailOutlineIcon from '@material-ui/icons/MailOutline';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ReportProblemOutlinedIcon from '@material-ui/icons/ReportProblemOutlined';
-import client, { AccessRequestClient, UserClient } from '../../../client';
+import client, { AccessRequestClient, UserClient } from '../../../client/api';
 import PageHeader from '../../page-header/page-header';
 import { UsersPageHelp } from './users-page-help';
 import useStyles from './users-page.styles';

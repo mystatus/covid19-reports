@@ -3,7 +3,7 @@ import { Response } from 'express';
 import { Log } from '../../util/log';
 import {
   ApiRequest, OrgParam, OrgUnitParams,
-} from '../index';
+} from '../api.router';
 import { MusterConfiguration, Unit } from './unit.model';
 import {
   BadRequestError, InternalServerError, NotFoundError,

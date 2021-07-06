@@ -29,7 +29,7 @@ import useStyles from './home-page.styles';
 import welcomeImage from '../../../media/images/welcome-image.png';
 import PageHeader from '../../page-header/page-header';
 import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
-import { AccessRequestClient } from '../../../client';
+import { AccessRequestClient } from '../../../client/api';
 import { ApiAccessRequest, ApiDashboard, ApiMusterTrends, ApiWorkspace } from '../../../models/api-response';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { Workspace } from '../../../actions/workspace.actions';

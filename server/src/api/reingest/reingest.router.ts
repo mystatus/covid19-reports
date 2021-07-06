@@ -1,7 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import controller from './reingest.controller';
-import { requireInternalUser } from '../../auth';
+import { requireInternalUser } from '../../auth/auth-middleware';
 
 const router = express.Router() as any;
 

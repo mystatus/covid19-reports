@@ -40,7 +40,7 @@ import { RoleSelector } from '../../../selectors/role.selector';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { UserSelector } from '../../../selectors/user.selector';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
-import { AccessRequestClient } from '../../../client';
+import { AccessRequestClient } from '../../../client/api';
 import RoleInfoPanel from '../../role-info-panel/role-info-panel';
 import useStyles from './view-access-request-dialog.styles';
 

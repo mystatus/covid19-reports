@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
   requireOrgAccess,
   requireRolePermission,
-} from '../../auth';
+} from '../../auth/auth-middleware';
 import controller from './export.controller';
 
 const router = Router() as any;

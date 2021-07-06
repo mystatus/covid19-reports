@@ -3,7 +3,7 @@ import {
   ApiRequest,
   OrgParam,
   WorkspaceParam,
-} from '../api';
+} from '../api/api.router';
 import { UserRole } from '../api/user/user-role.model';
 import { User } from '../api/user/user.model';
 import { Role } from '../api/role/role.model';
