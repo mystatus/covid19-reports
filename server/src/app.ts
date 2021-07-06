@@ -8,8 +8,8 @@ import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import path from 'path';
 import apiRoutes from './api/api.router';
-import kibanaProxy from './kibana/kibana.router';
-import kibanaDashboard from './kibana/dashboard';
+import kibanaProxy from './kibana/kibana-proxy.router';
+import kibanaDashboard from './kibana/dashboard/kibana-dashboard.router';
 import database from './sqldb/sqldb';
 import config from './config';
 import {
