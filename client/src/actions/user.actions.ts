@@ -1,7 +1,7 @@
 import { Dispatch } from 'redux';
 import { AppState } from '../store';
 import { ApiUser } from '../models/api-response';
-import { UserClient } from '../client';
+import { UserClient } from '../client/api';
 import { LocalStorageState } from '../reducers/local-storage.reducer';
 
 export namespace User {

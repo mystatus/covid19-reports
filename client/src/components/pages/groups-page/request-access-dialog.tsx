@@ -20,7 +20,7 @@ import React, {
   ChangeEvent,
   useState,
 } from 'react';
-import { AccessRequestClient } from '../../../client';
+import { AccessRequestClient } from '../../../client/api';
 import {
   ApiAccessRequest,
   ApiOrg,

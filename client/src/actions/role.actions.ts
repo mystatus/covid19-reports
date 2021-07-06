@@ -1,5 +1,5 @@
 import { Dispatch } from 'redux';
-import { RoleClient } from '../client';
+import { RoleClient } from '../client/api';
 import { ApiRole } from '../models/api-response';
 
 export namespace Role {

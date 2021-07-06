@@ -1,5 +1,5 @@
 import { Dispatch } from 'redux';
-import { OrphanedRecordClient } from '../client';
+import { OrphanedRecordClient } from '../client/api';
 import {
   ApiOrphanedRecordsCount,
   ApiOrphanedRecordsPaginated,

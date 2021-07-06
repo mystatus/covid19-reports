@@ -1,5 +1,5 @@
 import { Dispatch } from 'redux';
-import { WorkspaceClient } from '../client';
+import { WorkspaceClient } from '../client/api';
 import {
   ApiDashboard,
   ApiWorkspace,

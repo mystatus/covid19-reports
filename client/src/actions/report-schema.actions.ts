@@ -1,5 +1,5 @@
 import { Dispatch } from 'redux';
-import { ReportSchemaClient } from '../client';
+import { ReportSchemaClient } from '../client/api';
 import { ApiReportSchema } from '../models/api-response';
 
 export namespace ReportSchema {

@@ -36,7 +36,7 @@ import { AppFrame } from '../../../actions/app-frame.actions';
 import { OrphanedRecord } from '../../../actions/orphaned-record.actions';
 import { Roster } from '../../../actions/roster.actions';
 import { Unit } from '../../../actions/unit.actions';
-import { RosterClient } from '../../../client';
+import { RosterClient } from '../../../client/api';
 import useEffectDebounced from '../../../hooks/use-effect-debounced';
 import useInitialLoading from '../../../hooks/use-initial-loading';
 import { downloadFile } from '../../../utility/download';
