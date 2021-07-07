@@ -7,4 +7,4 @@ if [ -z "$NAME" ]; then
   exit
 fi
 
-npm run typeorm -- migration:create -n "$NAME" --config src/ormconfig.ts
+yarn run typeorm migration:create -n "$NAME"
