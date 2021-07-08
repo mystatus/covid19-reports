@@ -16,14 +16,15 @@ class ObservationController {
 }
 
 async function createObservation(req: ApiRequest<EdipiParam, ObservationApiModel>) {
+  const body = req.body;
+  console.log(`Creating observation ${JSON.stringify(body)}`);
   // getManager().query() does not return the inserted row
-  console.log(`Creating observation ${JSON.stringify(req.body)}`);
+  const timeStamp = timestampColumnTransformer.to(body.timestamp);
   await getManager()
     .query(
-      'INSERT INTO public.observation(document_id, edipi, timestamp, unit_id, unit, type_id, type_org)'
-      + 'VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [req.body.documentId, req.body.edipi, timestampColumnTransformer.to(req.body.timestamp),
-        req.body.unitId, req.body.unit, req.body.typeId, req.body.orgId],
+      'INSERT INTO public.observation(document_id, edipi, timestamp, unit, type_id, reporting_group)'
+      + 'VALUES ($1, $2, $3, $4, $5, $6)',
+      [body.documentId, body.edipi, timeStamp, body.unit, body.typeId, body.reportingGroup],
     );
 }
 

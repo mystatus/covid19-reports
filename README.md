@@ -47,7 +47,7 @@ USER_EDIPI=0000000001
 yarn install
 
 # Optional if using docker-compose
-yarn run start-db  
+yarn run start-db
 
 yarn run seed-dev
 yarn run dev
@@ -101,7 +101,7 @@ the production database to reflect the schema changes. For more information see 
 This step is for generating migration files with schema changes you made.
 
 1. Stop the application.
-1. Turn schema sync off by setting: `SYNC_DATABASE=false`
+1. Turn schema sync off by setting: `SYNC_DATABASE=false` in the `.env` file
 1. Comment out or make sure you did not update `seed-dev.ts` to take advantage of your
    schema changes.
 1. Restore the original schema so that the ORM can compare the current schema

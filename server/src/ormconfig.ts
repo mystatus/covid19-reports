@@ -17,6 +17,7 @@ import { ReportSchema } from './api/report-schema/report-schema.model';
 import { CustomRosterColumn } from './api/roster/custom-roster-column.model';
 import { Workspace } from './api/workspace/workspace.model';
 import { Notification } from './api/notification/notification.model';
+import { Observation } from './api/observation/observation.model';
 
 export const ormConfig: PostgresConnectionOptions = {
   type: 'postgres',
@@ -42,6 +43,7 @@ export const ormConfig: PostgresConnectionOptions = {
     UserNotificationSetting,
     OrphanedRecord,
     OrphanedRecordAction,
+    Observation,
   ],
   namingStrategy: new SnakeNamingStrategy(),
   synchronize: (env.isDev && process.env.SYNC_DATABASE === 'true'),
