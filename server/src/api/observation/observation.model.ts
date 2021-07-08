@@ -2,7 +2,6 @@ import {
   BaseEntity,
   Column,
   Entity,
-  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
@@ -41,7 +40,7 @@ export class Observation extends BaseEntity {
     { primary: false, onDelete: 'RESTRICT', eager: true, orphanedRowAction: 'nullify', cascade: false })
   type!: ReportSchema;
 
-  // military unit description
+  // military unit
   @Column({ length: 300 })
   unit!: string;
 
