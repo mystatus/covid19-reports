@@ -32,7 +32,7 @@ import { RosterEntity } from '../roster/roster-entity';
 import { Roster } from '../roster/roster.model';
 import { RosterEntryData } from '../roster/roster.types';
 import {
-  ActionType,
+  OrphanedRecordActionType,
   OrphanedRecordAction,
 } from './orphaned-record-action.model';
 import { OrphanedRecord } from './orphaned-record.model';
@@ -70,7 +70,7 @@ class OrphanedRecordController {
     });
   }
 
-  async addOrphanedRecord(req: ApiRequest<null, OrphanedRecordData>, res: Response) {
+  async addOrphanedRecord(req: ApiRequest<null, AddOrphanedRecordBody>, res: Response) {
     if (!req.body.reportingGroup) {
       throw new BadRequestError('Missing reportingGroup from body.');
     }
@@ -118,7 +118,7 @@ class OrphanedRecordController {
     res.json(result);
   }
 
-  async resolveOrphanedRecordWithAdd(req: ApiRequest<OrphanedRecordResolveParam, RosterEntryData>, res: Response) {
+  async resolveOrphanedRecordWithAdd(req: ApiRequest<OrphanedRecordResolveParam, ResolveOrphanedRecordWithAddBody>, res: Response) {
     const compositeId = req.params.orphanId;
     assertRequestBody(req, [
       'edipi',
@@ -153,7 +153,7 @@ class OrphanedRecordController {
     res.status(200).send();
   }
 
-  async resolveOrphanedRecordWithEdit(req: ApiRequest<OrphanedRecordResolveParam, ResolveWithEditBody>, res: Response) {
+  async resolveOrphanedRecordWithEdit(req: ApiRequest<OrphanedRecordResolveParam, ResolveOrphanedRecordWithEditBody>, res: Response) {
     const compositeId = req.params.orphanId;
     assertRequestBody(req, [
       'edipi',
@@ -204,7 +204,7 @@ class OrphanedRecordController {
     res.status(200).send();
   }
 
-  async addOrphanedRecordAction(req: ApiRequest<OrphanedRecordActionParam, OrphanedRecordActionData>, res: Response) {
+  async addOrphanedRecordAction(req: ApiRequest<OrphanedRecordActionParam, AddOrphanedRecordActionBody>, res: Response) {
     const { orphanId: compositeId } = assertRequestParams(req, ['orphanId']);
     const { action, timeToLiveMs } = assertRequestBody(req, ['action']);
 
@@ -230,7 +230,7 @@ class OrphanedRecordController {
     res.status(201).json(orphanedRecordAction);
   }
 
-  async deleteOrphanedRecordAction(req: ApiRequest<OrphanedRecordDeleteActionData>, res: Response) {
+  async deleteOrphanedRecordAction(req: ApiRequest<OrphanedRecordDeleteActionParams>, res: Response) {
     const { orphanId: compositeId, action } = assertRequestParams(req, [
       'orphanId',
       'action',
@@ -243,38 +243,40 @@ class OrphanedRecordController {
 
 }
 
-export interface OrphanedRecordActionParam extends OrgParam {
+export type OrphanedRecordActionParam = OrgParam & {
   orphanId: string;
-}
+};
 
-export interface OrphanedRecordResolveParam extends OrphanedRecordActionParam {
+export type OrphanedRecordResolveParam = OrphanedRecordActionParam & {
   rosterHistoryId: string;
-}
+};
 
-export interface OrphanedRecordData {
+export type AddOrphanedRecordBody = {
   documentId: string,
   timestamp: number,
   edipi: string,
   phone: string,
   reportingGroup: string,
   unit: string,
-}
+};
 
-export interface OrphanedRecordActionData {
-  action: ActionType,
+export type AddOrphanedRecordActionBody = {
+  action: OrphanedRecordActionType,
   timeToLiveMs?: number
-}
+};
 
-export interface OrphanedRecordDeleteActionData extends OrphanedRecordActionParam {
-  action: ActionType,
-}
+export type OrphanedRecordDeleteActionParams = OrphanedRecordActionParam & {
+  action: OrphanedRecordActionType,
+};
 
-type ResolveWithEditBody = RosterEntryData & {
+export type ResolveOrphanedRecordWithEditBody = RosterEntryData & {
   id: RosterEntity['id']
 };
 
-type GetOrphanedRecordsQuery = PaginatedQuery & {
+export type GetOrphanedRecordsQuery = PaginatedQuery & {
   unit?: string
 };
+
+export type ResolveOrphanedRecordWithAddBody = RosterEntryData;
 
 export default new OrphanedRecordController();

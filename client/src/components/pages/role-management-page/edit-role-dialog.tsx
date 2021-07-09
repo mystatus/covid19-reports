@@ -15,8 +15,8 @@ import {
   TextField,
   Typography,
 } from '@material-ui/core';
-import axios from 'axios';
 import { useSelector } from 'react-redux';
+import { AddRoleBody } from 'covid19-reports-server/src/api/role/role.controller';
 import useStyles from './edit-role-dialog.styles';
 import {
   ApiRole,
@@ -33,6 +33,7 @@ import { RosterSelector } from '../../../selectors/roster.selector';
 import { NotificationSelector } from '../../../selectors/notification.selector';
 import { WorkspaceSelector } from '../../../selectors/workspace.selector';
 import { formatErrorMessage } from '../../../utility/errors';
+import { RoleClient } from '../../../client/api';
 
 export interface EditRoleDialogProps {
   open: boolean,
@@ -144,7 +145,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
     setSaveRoleLoading(true);
     setFormDisabled(true);
     const allowedColumns = filterAllowedRosterColumns();
-    const body = {
+    const body: AddRoleBody = {
       name,
       description,
       workspaceIds: selectedWorkspaces.map(x => x.id),
@@ -160,9 +161,9 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
     };
     try {
       if (existingRole) {
-        await axios.put(`api/role/${orgId}/${role!.id}`, body);
+        await RoleClient.updateRole(orgId!, role!.id, body);
       } else {
-        await axios.post(`api/role/${orgId}`, body);
+        await RoleClient.addRole(orgId!, body);
       }
     } catch (error) {
       if (onError) {

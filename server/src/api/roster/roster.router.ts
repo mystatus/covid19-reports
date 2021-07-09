@@ -22,7 +22,14 @@ router.get(
   '/:orgId/column',
   requireOrgAccess,
   requireRolePermission(role => role.canViewRoster),
-  controller.getFullRosterInfo,
+  controller.getRosterColumnsInfo,
+);
+
+router.get(
+  '/:orgId/allowed-column',
+  requireOrgAccess,
+  requireRolePermission(role => role.canViewRoster),
+  controller.getAllowedRosterColumnsInfo,
 );
 
 router.post(
@@ -59,13 +66,6 @@ router.get(
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),
   controller.getRosterTemplate,
-);
-
-router.get(
-  '/:orgId/info',
-  requireOrgAccess,
-  requireRolePermission(role => role.canViewRoster),
-  controller.getRosterInfo,
 );
 
 router.get(

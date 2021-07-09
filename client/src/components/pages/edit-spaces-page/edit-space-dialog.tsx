@@ -7,11 +7,11 @@ import {
   DialogTitle,
   Grid, Select, Table, TableBody, TableCell, TableRow, TextField, Typography,
 } from '@material-ui/core';
-import axios from 'axios';
 import CheckIcon from '@material-ui/icons/Check';
 import useStyles from './edit-space-dialog.styles';
 import { ApiWorkspace, ApiWorkspaceTemplate } from '../../../models/api-response';
 import { formatErrorMessage } from '../../../utility/errors';
+import { WorkspaceClient } from '../../../client/api';
 
 export interface EditWorkspaceDialogProps {
   open: boolean,
@@ -76,16 +76,18 @@ export const EditSpaceDialog = (props: EditWorkspaceDialogProps) => {
 
   const onSave = async () => {
     setFormDisabled(true);
-    const body = {
-      name,
-      description,
-      templateId,
-    };
     try {
       if (existingWorkspace) {
-        await axios.put(`api/workspace/${orgId}/${workspace!.id}`, body);
+        await WorkspaceClient.updateWorkspace(orgId!, workspace!.id, {
+          name,
+          description,
+        });
       } else {
-        await axios.post(`api/workspace/${orgId}`, body);
+        await WorkspaceClient.addWorkspace(orgId!, {
+          name,
+          description,
+          templateId,
+        });
       }
     } catch (error) {
       if (onError) {

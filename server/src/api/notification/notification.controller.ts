@@ -47,7 +47,7 @@ class NotificationController {
     res.json(settings.map(sanitizeUserNotificationSetting));
   }
 
-  async addUserNotificationSetting(req: ApiRequest<OrgParam, UserNotificationSettingBody>, res: Response) {
+  async addUserNotificationSetting(req: ApiRequest<OrgParam, AddUserNotificationSettingBody>, res: Response) {
     if (!req.body.notificationId) {
       throw new BadRequestError('A notification id must be supplied when adding a workspace.');
     }
@@ -124,7 +124,7 @@ class NotificationController {
     res.json(sanitizeUserNotificationSetting(removedSetting));
   }
 
-  async updateUserNotificationSetting(req: ApiRequest<OrgSettingParams, UserNotificationSettingBody>, res: Response) {
+  async updateUserNotificationSetting(req: ApiRequest<OrgSettingParams, UpdateUserNotificationSettingBody>, res: Response) {
     const settingId = parseInt(req.params.settingId);
 
     const setting = await UserNotificationSetting.findOne({
@@ -146,6 +146,7 @@ class NotificationController {
 
     res.json(sanitizeUserNotificationSetting(updatedSetting));
   }
+
 }
 
 // Remove message templates and other information that doesn't need to be sent to the client
@@ -211,5 +212,9 @@ type UserNotificationSettingBody = {
   emailEnabled?: boolean,
   lastNotifiedDate?: number,
 };
+
+export type UpdateUserNotificationSettingBody = UserNotificationSettingBody;
+
+export type AddUserNotificationSettingBody = UserNotificationSettingBody;
 
 export default new NotificationController();

@@ -117,7 +117,7 @@ export namespace User {
   export const register = (data: UserRegisterData) => async (dispatch: Dispatch<Actions.Register>, getState: () => AppState) => {
     console.log('register', data);
 
-    const userData = await UserClient.register({
+    const userData = await UserClient.registerUser({
       firstName: data.firstName,
       lastName: data.lastName,
       phone: data.phone,

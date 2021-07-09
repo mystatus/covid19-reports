@@ -52,7 +52,7 @@ export namespace OrphanedRecord {
   export const fetchCount = (orgId: number) => async (dispatch: Dispatch) => {
     dispatch(new Actions.FetchCount());
     try {
-      const data = await OrphanedRecordClient.fetchCount(orgId);
+      const data = await OrphanedRecordClient.getOrphanedRecordsCount(orgId);
       dispatch(new Actions.FetchCountSuccess(data));
     } catch (error) {
       dispatch(new Actions.FetchCountFailure({ error }));
@@ -62,7 +62,7 @@ export namespace OrphanedRecord {
   export const fetchPage = (orgId: number, page: number, limit: number, unit?: string) => async (dispatch: Dispatch) => {
     dispatch(new Actions.FetchPage());
     try {
-      const data = await OrphanedRecordClient.fetchPage(orgId, page, limit, unit);
+      const data = await OrphanedRecordClient.getOrphanedRecords(orgId, page, limit, unit);
       dispatch(new Actions.FetchPageSuccess(data));
     } catch (error) {
       dispatch(new Actions.FetchPageFailure({ error }));

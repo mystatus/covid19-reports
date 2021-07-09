@@ -39,7 +39,7 @@ export enum QueryFieldType {
 }
 
 export type QueryOp = '=' | '<>' | '~' | '>' | '<' | 'startsWith' | 'endsWith' | 'in' | 'between';
-export type QueryValueScalarType = string | number | boolean | undefined;
+export type QueryValueScalarType = string | number | boolean;
 export type QueryValueType = QueryValueScalarType | QueryValueScalarType[];
 
 export type QueryFieldPickListItem = {

@@ -25,7 +25,6 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import axios from 'axios';
 import {
   useDispatch,
   useSelector,
@@ -33,6 +32,7 @@ import {
 import Plot from 'react-plotly.js';
 import _ from 'lodash';
 import moment from 'moment';
+import { RosterColumnType } from 'covid19-reports-server/src/api/roster/roster.types';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { downloadFile } from '../../../utility/download';
 import {
@@ -51,7 +51,6 @@ import {
   ApiMusterRosterEntriesPaginated,
   ApiMusterTrends,
   ApiRosterColumnInfo,
-  ApiRosterColumnType,
   ApiUnitStatsByDate,
 } from '../../../models/api-response';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
@@ -62,6 +61,11 @@ import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
 import usePersistedState from '../../../hooks/use-persisted-state';
+import {
+  ExportClient,
+  MusterClient,
+  RosterClient,
+} from '../../../client/api';
 
 export const MusterPage = () => {
   const classes = useStyles();
@@ -127,9 +131,9 @@ export const MusterPage = () => {
     totalRowsCount: 0,
   });
 
-  const org = useSelector(UserSelector.org);
-  const orgId = org?.id;
-  const orgName = org?.name;
+  const org = useSelector(UserSelector.org)!;
+  const orgId = org.id;
+  const orgName = org.name;
   const isPageLoading = useSelector<AppState, boolean>(state => state.appFrame.isPageLoading);
 
   const timeRanges: Readonly<Readonly<TimeRange>[]> = useMemo(() => ([
@@ -203,15 +207,13 @@ export const MusterPage = () => {
   const reloadTable = useCallback(async () => {
     let data: ApiMusterRosterEntriesPaginated;
     try {
-      data = (await axios.get(`api/muster/${orgId}/roster`, {
-        params: {
-          fromDate: rosterFromDateIso,
-          toDate: rosterToDateIso,
-          unitId: rosterUnitId >= 0 ? rosterUnitId : null,
-          page: rosterPage,
-          limit: rosterRowsPerPage,
-        },
-      })).data as ApiMusterRosterEntriesPaginated;
+      data = await MusterClient.getMusterRoster(orgId, {
+        fromDate: rosterFromDateIso,
+        toDate: rosterToDateIso,
+        unitId: rosterUnitId >= 0 ? `${rosterUnitId}` : undefined,
+        page: `${rosterPage}`,
+        limit: `${rosterRowsPerPage}`,
+      });
     } catch (error) {
       showErrorDialog('Get Roster Muster', error);
       throw error;
@@ -230,13 +232,11 @@ export const MusterPage = () => {
 
   const reloadTrendData = useCallback(async () => {
     try {
-      const data = (await axios.get(`api/muster/${orgId}/unit-trends`, {
-        params: {
-          currentDate: moment().toISOString(),
-          weeksCount: 6,
-          monthsCount: 6,
-        },
-      })).data as ApiMusterTrends;
+      const data = await MusterClient.getMusterUnitTrends(orgId, {
+        currentDate: moment().toISOString(),
+        weeksCount: '6',
+        monthsCount: '6',
+      });
       setRawTrendData(data);
     } catch (error) {
       showErrorDialog('Get Trends', error);
@@ -245,7 +245,7 @@ export const MusterPage = () => {
 
   const initializeRosterColumnInfo = useCallback(async () => {
     try {
-      const infos = (await axios.get(`api/roster/${orgId}/info`)).data as ApiRosterColumnInfo[];
+      const infos = await RosterClient.getAllowedRosterColumnsInfo(orgId);
       setRosterColumnInfos(infos);
     } catch (error) {
       showErrorDialog('Get Roster Info', error);
@@ -351,22 +351,17 @@ export const MusterPage = () => {
   const downloadCSVExport = async () => {
     try {
       setExportLoading(true);
-      const response = await axios({
-        url: `api/export/${orgId}/muster/roster`,
-        params: {
-          fromDate: rosterFromDateIso,
-          toDate: rosterToDateIso,
-          unitId: rosterUnitId >= 0 ? rosterUnitId : null,
-        },
-        method: 'GET',
-        responseType: 'blob',
+      const data = await ExportClient.exportMusterRosterToCsv(orgId, {
+        fromDate: rosterFromDateIso,
+        toDate: rosterToDateIso,
+        unitId: rosterUnitId >= 0 ? `${rosterUnitId}` : undefined,
       });
 
       const fromDateStr = moment(rosterFromDateIso).format('YYYY-MM-DD_h-mm-a');
       const toDateStr = moment(rosterToDateIso).format('YYYY-MM-DD_h-mm-a');
       const unitId = rosterUnitId >= 0 ? `${rosterUnitId}` : 'all-units';
       const filename = `${_.kebabCase(orgName)}_${unitId}_muster-compliance_${fromDateStr}_to_${toDateStr}`;
-      downloadFile(response.data, filename, 'csv');
+      downloadFile(data, filename, 'csv');
     } catch (error) {
       dispatch(Modal.alert('Export to CSV', formatErrorMessage(error, 'Unable to export'))).then();
     } finally {
@@ -380,7 +375,7 @@ export const MusterPage = () => {
       {
         name: 'unitId',
         displayName: 'Unit',
-        type: ApiRosterColumnType.String,
+        type: RosterColumnType.String,
         pii: false,
         phi: false,
         custom: false,
@@ -391,7 +386,7 @@ export const MusterPage = () => {
       {
         name: 'musterPercent',
         displayName: 'Muster Rate',
-        type: ApiRosterColumnType.String,
+        type: RosterColumnType.String,
         pii: false,
         phi: false,
         custom: false,
@@ -408,7 +403,7 @@ export const MusterPage = () => {
     filteredCustomRosterColumnInfos.push({
       name: 'phone',
       displayName: 'Phone',
-      type: ApiRosterColumnType.String,
+      type: RosterColumnType.String,
       pii: true,
       phi: false,
       custom: true,

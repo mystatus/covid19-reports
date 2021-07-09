@@ -24,7 +24,6 @@ import {
   MoreVert,
 } from '@material-ui/icons';
 import { Alert } from '@material-ui/lab';
-import axios, { AxiosResponse } from 'axios';
 import React, {
   useEffect,
   useState,
@@ -45,6 +44,11 @@ import {
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { RequestAccessDialog } from './request-access-dialog';
+import {
+  AccessRequestClient,
+  OrgClient,
+  UserClient,
+} from '../../../client/api';
 
 export const GroupsPage = () => {
   const classes = useStyles();
@@ -64,13 +68,11 @@ export const GroupsPage = () => {
   });
 
   async function fetchAllOrgs() {
-    const response = await axios.get('api/org') as AxiosResponse<ApiOrg[]>;
-    setAllOrgs(response.data);
+    setAllOrgs(await OrgClient.getOrgList());
   }
 
   async function fetchAccessRequests() {
-    const response = await axios.get('api/user/access-requests') as AxiosResponse<ApiAccessRequest[]>;
-    setAccessRequests(response.data);
+    setAccessRequests(await UserClient.getAccessRequests());
   }
 
   function updateAccessRequestsLoading(org: ApiOrg, isLoading: boolean) {
@@ -82,8 +84,8 @@ export const GroupsPage = () => {
 
   async function requestAccess(org: ApiOrg) {
     updateAccessRequestsLoading(org, true);
-    const response = await axios.post(`api/access-request/${org.id}`) as AxiosResponse<ApiAccessRequest>;
-    const newRequest = response.data;
+    // TODO: Figure out how to get required info for creating access request here.
+    const newRequest = await AccessRequestClient.issueAccessRequest(org.id, {} as any);
 
     // If we already have a request for this org, replace it. Otherwise, add the new request.
     const existingIndex = accessRequests.findIndex(req => req.org.id === newRequest.org.id);
@@ -99,7 +101,7 @@ export const GroupsPage = () => {
   }
 
   async function cancelRequest(org: MyOrg) {
-    await axios.post(`api/access-request/${org.id}/cancel`);
+    await AccessRequestClient.cancelAccessRequest(org.id);
     const accessRequestsUpdated = [...accessRequests];
     const index = accessRequests.findIndex(req => req.org.id === org.id);
     if (index !== -1) {

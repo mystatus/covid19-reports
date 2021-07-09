@@ -25,7 +25,6 @@ import {
   useDispatch,
   useSelector,
 } from 'react-redux';
-import axios from 'axios';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PageHeader from '../../page-header/page-header';
@@ -38,6 +37,7 @@ import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
+import { RosterClient } from '../../../client/api';
 
 interface ColumnMenuState {
   anchor: HTMLElement | null,
@@ -53,11 +53,11 @@ export const RosterColumnsPage = () => {
   const [editColumnDialogProps, setEditColumnDialogProps] = useState<EditColumnDialogProps>({ open: false });
   const [columnMenu, setColumnMenu] = React.useState<ColumnMenuState>({ anchor: null });
 
-  const orgId = useSelector(UserSelector.orgId);
+  const orgId = useSelector(UserSelector.orgId)!;
 
   const initializeTable = React.useCallback(async () => {
     dispatch(AppFrame.setPageLoading(true));
-    const allColumns = (await axios.get(`api/roster/${orgId}/column`)).data as ApiRosterColumnInfo[];
+    const allColumns = await RosterClient.getRosterColumnsInfo(orgId);
     const customColumns = allColumns.filter(column => column.custom);
     setColumns(customColumns);
     dispatch(AppFrame.setPageLoading(false));
@@ -109,7 +109,7 @@ export const RosterColumnsPage = () => {
       return;
     }
     try {
-      await axios.delete(`api/roster/${orgId}/column/${columnToDelete.name}`);
+      await RosterClient.deleteCustomColumn(orgId, columnToDelete.name);
     } catch (error) {
       dispatch(Modal.alert('Delete Column', formatErrorMessage(error, 'Unable to delete column'))).then();
     }

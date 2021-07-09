@@ -1,3 +1,5 @@
+import { RosterColumnType } from 'covid19-reports-server/src/api/roster/roster.types';
+import { OrphanedRecordActionType } from 'covid19-reports-server/src/api/orphaned-record/orphaned-record-action.model';
 import { DaysOfTheWeek } from '../utility/days';
 
 export type RosterColumnValue = string | boolean | number | null;
@@ -73,28 +75,19 @@ export interface ApiAccessRequest {
 
 export interface ApiRosterPaginated extends ApiPaginated<ApiRosterEntry> {}
 
-export enum ApiRosterColumnType {
-  String = 'string',
-  Number = 'number',
-  Date = 'date',
-  DateTime = 'datetime',
-  Boolean = 'boolean',
-  Enum = 'enum',
-}
-
-export function rosterColumnTypeDisplayName(type: ApiRosterColumnType) {
+export function rosterColumnTypeDisplayName(type: RosterColumnType) {
   switch (type) {
-    case ApiRosterColumnType.Boolean:
+    case RosterColumnType.Boolean:
       return 'Yes/No';
-    case ApiRosterColumnType.Number:
+    case RosterColumnType.Number:
       return 'Number';
-    case ApiRosterColumnType.String:
+    case RosterColumnType.String:
       return 'Text';
-    case ApiRosterColumnType.Enum:
+    case RosterColumnType.Enum:
       return 'Option';
-    case ApiRosterColumnType.Date:
+    case RosterColumnType.Date:
       return 'Date';
-    case ApiRosterColumnType.DateTime:
+    case RosterColumnType.DateTime:
       return 'Date and Time';
     default:
       return 'Unknown';
@@ -139,7 +132,7 @@ export interface ApiRosterEnumColumnConfig extends ApiRosterCustomColumnConfig {
 }
 
 export interface ApiRosterColumnInfo extends ColumnInfo {
-  type: ApiRosterColumnType,
+  type: RosterColumnType,
   pii: boolean,
   phi: boolean,
   custom: boolean,
@@ -149,7 +142,7 @@ export interface ApiRosterColumnInfo extends ColumnInfo {
 }
 
 export type ApiCustomColumns = {
-  [columnName: string]: RosterColumnValue | undefined
+  [columnName: string]: RosterColumnValue
 };
 
 export type ApiRosterEntryData = {
@@ -181,6 +174,13 @@ export interface ApiOrphanedRecordsPaginated extends ApiPaginated<ApiOrphanedRec
 
 export interface ApiOrphanedRecordsCount {
   count: number
+}
+
+export interface ApiOrphanedRecordAction {
+  id: string;
+  createdOn: string;
+  expiresOn?: string;
+  type: OrphanedRecordActionType;
 }
 
 export interface ApiWorkspaceTemplate {
@@ -217,11 +217,11 @@ export interface ApiUnitStatsByDate {
   }
 }
 
-export interface ApiMusterRosterEntry extends ApiRosterEntry {
+export type ApiMusterRosterEntry = ApiRosterEntry & {
   totalMusters: number
   mustersReported: number
   musterPercent: number
-}
+};
 
 export interface ApiMusterRosterEntriesPaginated extends ApiPaginated<ApiMusterRosterEntry> {}
 

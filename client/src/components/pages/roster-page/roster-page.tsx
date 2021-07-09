@@ -32,11 +32,21 @@ import {
 } from 'react-redux';
 import _ from 'lodash';
 import moment from 'moment';
+import { RosterColumnType } from 'covid19-reports-server/src/api/roster/roster.types';
+import {
+  SearchRosterBody,
+  SearchRosterQuery,
+} from 'covid19-reports-server/src/api/roster/roster.controller';
+import { OrphanedRecordActionType } from 'covid19-reports-server/src/api/orphaned-record/orphaned-record-action.model';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { OrphanedRecord } from '../../../actions/orphaned-record.actions';
 import { Roster } from '../../../actions/roster.actions';
 import { Unit } from '../../../actions/unit.actions';
-import { RosterClient } from '../../../client/api';
+import {
+  ExportClient,
+  OrphanedRecordClient,
+  RosterClient,
+} from '../../../client/api';
 import useEffectDebounced from '../../../hooks/use-effect-debounced';
 import useInitialLoading from '../../../hooks/use-initial-loading';
 import { downloadFile } from '../../../utility/download';
@@ -52,10 +62,8 @@ import { RosterPageHelp } from './roster-page-help';
 import useStyles from './roster-page.styles';
 import {
   ApiRosterColumnInfo,
-  ApiRosterColumnType,
   ApiRosterEnumColumnConfig,
   ApiRosterEntry,
-  ApiRosterPaginated,
   ApiOrphanedRecord,
   ApiRosterEntryData,
 } from '../../../models/api-response';
@@ -85,7 +93,7 @@ const unitColumn: ApiRosterColumnInfo = {
   custom: false,
   phi: false,
   pii: false,
-  type: ApiRosterColumnType.String,
+  type: RosterColumnType.String,
   updatable: true,
   required: false,
   config: {},
@@ -154,7 +162,7 @@ export const RosterPage = () => {
     const fetchRosterInvocation = fetchRosterInvokeCount.current;
 
     try {
-      const params: Record<string, string> = {
+      const params: SearchRosterQuery = {
         limit: `${rowsPerPage}`,
         page: `${page}`,
       };
@@ -167,11 +175,7 @@ export const RosterPage = () => {
           setApplyingFilters(true);
           setTotalRowsCount(0);
         }
-        const response = await axios.post(`api/roster/${orgId}/search`, queryFilterState, {
-          params,
-        });
-
-        const data = response.data as ApiRosterPaginated;
+        const data = await RosterClient.searchRoster(orgId, queryFilterState, params);
 
         setApplyingFilters(false);
         if (fetchRosterInvokeCount.current === fetchRosterInvocation) {
@@ -179,10 +183,7 @@ export const RosterPage = () => {
           setTotalRowsCount(data.totalRowsCount);
         }
       } else {
-        const response = await axios(`api/roster/${orgId}`, {
-          params,
-        });
-        const data = response.data as ApiRosterPaginated;
+        const data = await RosterClient.getRoster(orgId, params);
         if (fetchRosterInvokeCount.current === fetchRosterInvocation) {
           setRows(data.rows);
           setTotalRowsCount(data.totalRowsCount);
@@ -195,20 +196,17 @@ export const RosterPage = () => {
 
   const fetchRosterEntry = useCallback(async (orphanedRecord: ApiOrphanedRecord) => {
     try {
-      const params = {
+      const query: SearchRosterQuery = {
         limit: '1',
         page: '0',
       };
-      const query: QueryFilterState = {
+      const body: SearchRosterBody = {
         edipi: { op: '=', value: orphanedRecord.edipi, expression: '', expressionEnabled: false },
       };
       if (orphanedRecord.unitId) {
-        query.unit = { op: '=', value: orphanedRecord.unitId, expression: '', expressionEnabled: false };
+        body.unit = { op: '=', value: orphanedRecord.unitId, expression: '', expressionEnabled: false };
       }
-      const response = await axios.post(`api/roster/${orgId}/search`, query, {
-        params,
-      });
-      const data = response.data as ApiRosterPaginated;
+      const data = await RosterClient.searchRoster(orgId, body, query);
       return data.rows.length ? data.rows[0] : null;
 
     } catch (e) {
@@ -219,7 +217,7 @@ export const RosterPage = () => {
 
   const fetchRosterColumnInfo = useCallback(async () => {
     try {
-      const infos = (await axios.get(`api/roster/${orgId}/info`)).data as ApiRosterColumnInfo[];
+      const infos = await RosterClient.getAllowedRosterColumnsInfo(orgId);
       const unitColumnWithInfos = sortRosterColumns([unitColumn, ...infos]);
       setRosterColumnInfos(unitColumnWithInfos);
 
@@ -346,7 +344,7 @@ export const RosterPage = () => {
 
     let uploadCount: number;
     try {
-      const data = await RosterClient.upload(orgId, e.target.files[0]);
+      const data = await RosterClient.uploadRosterEntries(orgId, e.target.files[0]);
       uploadCount = data.count;
     } catch (err) {
       const message = formatErrorMessage(err);
@@ -370,11 +368,11 @@ export const RosterPage = () => {
       return unitNameMap[value as string];
     }
     switch (column.type) {
-      case ApiRosterColumnType.Date:
+      case RosterColumnType.Date:
         return new Date(value as string).toLocaleDateString();
-      case ApiRosterColumnType.DateTime:
+      case RosterColumnType.DateTime:
         return new Date(value as string).toUTCString();
-      case ApiRosterColumnType.Boolean:
+      case RosterColumnType.Boolean:
         return value ? 'Yes' : 'No';
       default:
         return value;
@@ -446,7 +444,7 @@ export const RosterPage = () => {
     }
 
     try {
-      await axios.delete(`api/roster/${orgId}/${rosterEntry.id}`);
+      await RosterClient.deleteRosterEntry(orgId, rosterEntry.id);
     } catch (err) {
       dispatch(Modal.alert('Remove Roster Entry', formatErrorMessage(err, 'Unable to remove roster entry'))).then();
     }
@@ -457,15 +455,11 @@ export const RosterPage = () => {
   const downloadCSVExport = async () => {
     try {
       setExportRosterLoading(true);
-      const response = await axios({
-        url: `api/export/${orgId}/roster`,
-        method: 'GET',
-        responseType: 'blob',
-      });
+      const data = await ExportClient.exportRosterToCsv(orgId);
 
       const date = new Date().toISOString();
       const filename = `${_.kebabCase(orgName)}_roster_export_${date}`;
-      downloadFile(response.data, filename, 'csv');
+      downloadFile(data, filename, 'csv');
     } catch (error) {
       dispatch(Modal.alert('Roster CSV Export', formatErrorMessage(error, 'Unable to export roster to CSV'))).then();
     } finally {
@@ -476,13 +470,8 @@ export const RosterPage = () => {
   const downloadCSVTemplate = async () => {
     try {
       setDownloadTemplateLoading(true);
-      const response = await axios({
-        url: `api/roster/${orgId}/template`,
-        method: 'GET',
-        responseType: 'blob',
-      });
-
-      downloadFile(response.data, 'roster-template', 'csv');
+      const data = await RosterClient.getRosterTemplate(orgId);
+      downloadFile(data, 'roster-template', 'csv');
     } catch (error) {
       dispatch(Modal.alert('CSV Template Download', formatErrorMessage(error, 'Unable to download CSV template'))).then();
     } finally {
@@ -500,7 +489,7 @@ export const RosterPage = () => {
         unit: units.find(unit => unit.name === row.unit)?.id,
       },
       onSave: async (body: ApiRosterEntryData) => {
-        return axios.put(`api/orphaned-record/${orgId}/${row.id}/resolve-with-add`, body);
+        return OrphanedRecordClient.resolveOrphanedRecordWithAdd(orgId, row.id, body);
       },
       onClose: async () => {
         setEditRosterEntryDialogProps({ open: false });
@@ -525,7 +514,7 @@ export const RosterPage = () => {
       rosterEntry,
       orphanedRecord: row,
       onSave: async (body: ApiRosterEntry) => {
-        return axios.put(`api/orphaned-record/${orgId}/${row.id}/resolve-with-edit`, body);
+        return OrphanedRecordClient.resolveOrphanedRecordWithEdit(orgId, row.id, body);
       },
       onClose: async () => {
         setEditRosterEntryDialogProps({ open: false });
@@ -551,8 +540,8 @@ export const RosterPage = () => {
 
     try {
       setOrphanedRecordsWaiting(true);
-      await axios.put(`api/orphaned-record/${orgId}/${row.id}/action`, {
-        action: 'ignore',
+      await OrphanedRecordClient.addOrphanedRecordAction(orgId, row.id, {
+        action: OrphanedRecordActionType.Ignore,
         timeToLiveMs: Math.max(0, result.button.value * 60 * 60 * 1000),
       });
       await handleRosterOrOrphanedRecordsModified();
@@ -805,7 +794,7 @@ export const RosterPage = () => {
                 let items: QueryFieldPickListItem[] | undefined;
                 if (column.name === 'unit') {
                   items = units.map(({ id, name }) => ({ label: name, value: id }));
-                } else if (column.type === ApiRosterColumnType.Enum) {
+                } else if (column.type === RosterColumnType.Enum) {
                   const options = (column.config as ApiRosterEnumColumnConfig)?.options?.slice() ?? [];
                   options.unshift({ id: '', label: '' });
                   items = options.map(({ id, label }) => ({ label, value: id }));

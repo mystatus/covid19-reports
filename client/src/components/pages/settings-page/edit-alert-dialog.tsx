@@ -7,7 +7,7 @@ import {
   DialogTitle, FormControlLabel,
   Grid, Paper, TextField, Typography,
 } from '@material-ui/core';
-import axios from 'axios';
+import { UpdateUserNotificationSettingBody } from 'covid19-reports-server/src/api/notification/notification.controller';
 import useStyles from './edit-alert-dialog.styles';
 import {
   ApiNotification,
@@ -16,6 +16,7 @@ import {
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { buildSettingText } from './notifications-tab';
 import { formatErrorMessage } from '../../../utility/errors';
+import { NotificationClient } from '../../../client/api';
 
 export interface EditAlertDialogProps {
   open: boolean,
@@ -55,17 +56,15 @@ export const EditAlertDialog = (props: EditAlertDialogProps) => {
   const onSave = async () => {
     setSaveSettingLoading(true);
     setFormDisabled(true);
-    const body = {
-      id: setting!.id,
-      notificationId: setting!.notificationId,
-      threshold,
-      minMinutesBetweenAlerts: Math.round(minHoursBetweenAlerts * 60),
-      maxDailyCount,
-      smsEnabled,
-      emailEnabled,
-    };
     try {
-      const updatedSetting = (await axios.put(`api/notification/${orgId}/setting/${setting!.id}`, body)).data as ApiUserNotificationSetting;
+      const updatedSetting = await NotificationClient.updateUserNotificationSetting(orgId!, setting!.id, {
+        notificationId: setting!.notificationId,
+        threshold,
+        minMinutesBetweenAlerts: Math.round(minHoursBetweenAlerts * 60),
+        maxDailyCount,
+        smsEnabled,
+        emailEnabled,
+      });
       setSaveSettingLoading(false);
       if (onClose) {
         onClose(updatedSetting);

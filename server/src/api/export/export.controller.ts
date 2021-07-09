@@ -14,7 +14,6 @@ import {
 import {
   ApiRequest,
   OrgParam,
-  PaginatedQuery,
 } from '../api.router';
 import {
   RosterColumnInfo,
@@ -160,11 +159,12 @@ class ExportController {
 
     const fromDate = moment(req.query.fromDate);
     const toDate = moment(req.query.toDate);
+    const unitId = (req.query.unitId != null) ? parseInt(req.query.unitId) : undefined;
 
     const individuals = await getMusterRosterStats({
       org: req.appOrg!,
       userRole: req.appUserRole!,
-      unitId: req.query.unitId,
+      unitId,
       fromDate,
       toDate,
     });
@@ -183,15 +183,15 @@ class ExportController {
 
 }
 
-type ExportOrgQuery = {
+export type ExportOrgQuery = {
   startDate?: string
   endDate?: string
 };
 
-type ExportMusterIndividualsQuery = {
+export type ExportMusterIndividualsQuery = {
   fromDate: string
   toDate: string
-  unitId?: number
-} & PaginatedQuery;
+  unitId?: string
+};
 
 export default new ExportController();

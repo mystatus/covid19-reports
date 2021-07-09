@@ -241,12 +241,12 @@ describe(`Roster Controller`, () => {
 
   });
 
-  describe(`${basePath}/:orgId/info : get`, () => {
+  describe(`${basePath}/:orgId/allowed-column : get`, () => {
 
     it(`gets the org's roster column info`, async () => {
       const customColumn = await seedCustomRosterColumn(org);
 
-      const res = await req.get(`/${org.id}/info`);
+      const res = await req.get(`/${org.id}/allowed-column`);
 
       expectNoErrors(res);
       expect(res.data).to.be.array();

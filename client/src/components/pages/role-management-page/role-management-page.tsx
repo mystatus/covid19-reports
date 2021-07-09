@@ -11,7 +11,6 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import axios from 'axios';
 import PageHeader from '../../page-header/page-header';
 import { RoleManagementPageHelp } from './role-management-page-help';
 import useStyles from './role-management-page.styles';
@@ -26,6 +25,7 @@ import { Workspace } from '../../../actions/workspace.actions';
 import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
+import { RoleClient } from '../../../client/api';
 
 
 export const RoleManagementPage = () => {
@@ -84,7 +84,7 @@ export const RoleManagementPage = () => {
   const deleteRole = async () => {
     setDeleteRoleLoading(true);
     try {
-      await axios.delete(`api/role/${orgId}/${roles[selectedRoleIndex].id}`);
+      await RoleClient.deleteRole(orgId!, roles[selectedRoleIndex].id);
     } catch (error) {
       dispatch(Modal.alert('Delete Role', formatErrorMessage(error, 'Unable to delete role'))).then();
     }

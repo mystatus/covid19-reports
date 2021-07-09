@@ -17,12 +17,12 @@ import {
 } from '@material-ui/core';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
-import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import { UpdateCustomColumnBody } from 'covid19-reports-server/src/api/roster/roster.controller';
+import { RosterColumnType } from 'covid19-reports-server/src/api/roster/roster.types';
 import useStyles from './edit-column-dialog.styles';
 import {
   ApiRosterColumnInfo,
-  ApiRosterColumnType,
   ApiRosterCustomColumnConfig,
   ApiRosterEnumColumnConfig,
   ApiRosterEnumColumnConfigOption,
@@ -31,6 +31,7 @@ import {
 } from '../../../models/api-response';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
 import { formatErrorMessage } from '../../../utility/errors';
+import { RosterClient } from '../../../client/api';
 
 export interface EditColumnDialogProps {
   open: boolean,
@@ -45,9 +46,9 @@ type CustomFlag = {
   key: keyof Pick<ApiRosterStringColumnConfig, 'multiline'>
 };
 
-const customFlagsForType = (type: ApiRosterColumnType): CustomFlag[] => {
+const customFlagsForType = (type: RosterColumnType): CustomFlag[] => {
   switch (type) {
-    case ApiRosterColumnType.String:
+    case RosterColumnType.String:
       return [{
         label: 'Multiline',
         key: 'multiline',
@@ -57,30 +58,30 @@ const customFlagsForType = (type: ApiRosterColumnType): CustomFlag[] => {
   }
 };
 
-const isCustomFlagSet = (config: ApiRosterCustomColumnConfig, type: ApiRosterColumnType, customFlag: CustomFlag): boolean => {
-  if (type === ApiRosterColumnType.String) {
+const isCustomFlagSet = (config: ApiRosterCustomColumnConfig, type: RosterColumnType, customFlag: CustomFlag): boolean => {
+  if (type === RosterColumnType.String) {
     const cfg = config as ApiRosterStringColumnConfig;
     return cfg[customFlag.key] === true;
   }
   return false;
 };
 
-const setCustomFlag = (config: ApiRosterCustomColumnConfig, type: ApiRosterColumnType, customFlag: CustomFlag, value: boolean) => {
-  if (type === ApiRosterColumnType.String) {
+const setCustomFlag = (config: ApiRosterCustomColumnConfig, type: RosterColumnType, customFlag: CustomFlag, value: boolean) => {
+  if (type === RosterColumnType.String) {
     const cfg = config as ApiRosterStringColumnConfig;
     cfg[customFlag.key] = value;
   }
   return { ...config };
 };
 
-const getEnumOptions = (config: ApiRosterCustomColumnConfig, type: ApiRosterColumnType): ApiRosterEnumColumnConfigOption[] => {
-  if (type !== ApiRosterColumnType.Enum) {
+const getEnumOptions = (config: ApiRosterCustomColumnConfig, type: RosterColumnType): ApiRosterEnumColumnConfigOption[] => {
+  if (type !== RosterColumnType.Enum) {
     throw new Error('Invalid call to getEnumOptions for non-enum type');
   }
   return (config as ApiRosterEnumColumnConfig).options ?? [];
 };
 
-const addEnumOption = (config: ApiRosterCustomColumnConfig, type: ApiRosterColumnType): ApiRosterEnumColumnConfig => {
+const addEnumOption = (config: ApiRosterCustomColumnConfig, type: RosterColumnType): ApiRosterEnumColumnConfig => {
   return {
     ...config,
     options: [...getEnumOptions(config, type), {
@@ -90,7 +91,7 @@ const addEnumOption = (config: ApiRosterCustomColumnConfig, type: ApiRosterColum
   };
 };
 
-const editEnumOption = (config: ApiRosterCustomColumnConfig, type: ApiRosterColumnType, id: string, label: string): ApiRosterEnumColumnConfig => {
+const editEnumOption = (config: ApiRosterCustomColumnConfig, type: RosterColumnType, id: string, label: string): ApiRosterEnumColumnConfig => {
   return {
     ...config,
     options: getEnumOptions(config, type).map(option => {
@@ -102,7 +103,7 @@ const editEnumOption = (config: ApiRosterCustomColumnConfig, type: ApiRosterColu
   };
 };
 
-const deleteEnumOption = (config: ApiRosterCustomColumnConfig, type: ApiRosterColumnType, id: string): ApiRosterEnumColumnConfig => {
+const deleteEnumOption = (config: ApiRosterCustomColumnConfig, type: RosterColumnType, id: string): ApiRosterEnumColumnConfig => {
   return {
     ...config,
     options: getEnumOptions(config, type).filter(option => option.id !== id),
@@ -118,7 +119,7 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
 
   const existingColumn = !!column;
   const [displayName, setDisplayName] = useState(column?.displayName || '');
-  const [type, setType] = useState(column?.type || ApiRosterColumnType.String);
+  const [type, setType] = useState(column?.type || RosterColumnType.String);
   const [pii, setPII] = useState(column?.pii || false);
   const [phi, setPHI] = useState(column?.phi || false);
   const [required, setRequired] = useState(column?.required || false);
@@ -133,7 +134,7 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
   };
 
   const onColumnTypeChanged = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setType(event.target.value as ApiRosterColumnType);
+    setType(event.target.value as RosterColumnType);
   };
 
   const onFlagChanged = (func: (f: boolean) => any) => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,9 +151,7 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
 
   const onSave = async () => {
     setFormDisabled(true);
-    const body = {
-      displayName,
-      type,
+    const body: UpdateCustomColumnBody = {
       pii: pii || phi,
       phi,
       required,
@@ -160,9 +159,13 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
     };
     try {
       if (existingColumn) {
-        await axios.put(`api/roster/${orgId}/column/${column!.name}`, body);
+        await RosterClient.updateCustomColumn(orgId!, column!.name, body);
       } else {
-        await axios.post(`api/roster/${orgId}/column`, body);
+        await RosterClient.addCustomColumn(orgId!, {
+          ...body,
+          displayName,
+          type,
+        });
       }
     } catch (error) {
       if (onError) {
@@ -206,7 +209,7 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
               value={type}
               onChange={onColumnTypeChanged}
             >
-              {Object.values(ApiRosterColumnType).map(columnType => (
+              {Object.values(RosterColumnType).map(columnType => (
                 <MenuItem key={columnType} value={columnType}>
                   {rosterColumnTypeDisplayName(columnType)}
                 </MenuItem>
@@ -214,7 +217,7 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
             </Select>
           </Grid>
 
-          {type === ApiRosterColumnType.Enum && (
+          {type === RosterColumnType.Enum && (
             <Grid item xs={12}>
               <Typography className={classes.headerLabel}>Options:</Typography>
 

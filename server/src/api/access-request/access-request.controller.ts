@@ -221,7 +221,7 @@ class AccessRequestController {
     });
   }
 
-  async denyAccessRequest(req: ApiRequest<OrgParam, AccessRequestBody>, res: Response) {
+  async denyAccessRequest(req: ApiRequest<OrgParam, DenyAccessRequestBody>, res: Response) {
     if (!req.appOrg) {
       throw new NotFoundError('Organization was not found');
     }
@@ -265,5 +265,7 @@ export type IssueAccessRequestBody = {
   sponsorPhone: string
   justification: string
 };
+
+export type DenyAccessRequestBody = AccessRequestBody;
 
 export default new AccessRequestController();

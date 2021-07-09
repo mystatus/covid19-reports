@@ -62,6 +62,16 @@ import {
 
 class RosterController {
 
+  async getRosterColumnsInfo(req: ApiRequest<OrgParam>, res: Response) {
+    const columns = await Roster.getColumns(req.appOrg!.id);
+    res.json(columns);
+  }
+
+  async getAllowedRosterColumnsInfo(req: ApiRequest<OrgParam>, res: Response) {
+    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
+    res.json(columns);
+  }
+
   async addCustomColumn(req: ApiRequest<OrgParam, AddCustomColumnBody>, res: Response) {
     assertRequestBody(req, [
       'displayName',
@@ -76,7 +86,7 @@ class RosterController {
     res.status(201).json(column);
   }
 
-  async updateCustomColumn(req: ApiRequest<OrgColumnParams, CustomColumnData>, res: Response) {
+  async updateCustomColumn(req: ApiRequest<OrgColumnParams, UpdateCustomColumnBody>, res: Response) {
     const existingColumn = await CustomRosterColumn.findOne({
       relations: ['org'],
       where: {
@@ -257,16 +267,6 @@ class RosterController {
     res.status(200).send();
   }
 
-  async getFullRosterInfo(req: ApiRequest<OrgParam>, res: Response) {
-    const columns = await Roster.getColumns(req.appOrg!.id);
-    res.json(columns);
-  }
-
-  async getRosterInfo(req: ApiRequest<OrgParam>, res: Response) {
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
-    res.json(columns);
-  }
-
   async getRosterInfosForIndividual(req: ApiRequest<EdipiParam, null, ReportDateQuery>, res: Response) {
     const reportDate = dateFromString(req.query.reportDate);
     if (!reportDate) {
@@ -308,7 +308,7 @@ class RosterController {
     });
   }
 
-  async addRosterEntry(req: ApiRequest<OrgParam, RosterEntryData>, res: Response) {
+  async addRosterEntry(req: ApiRequest<OrgParam, AddRosterEntryBody>, res: Response) {
     const newRosterEntry = await getManager().transaction(async manager => {
       return addRosterEntry(req.appOrg!, req.appUserRole!.role, req.body, manager);
     });
@@ -349,7 +349,7 @@ class RosterController {
     res.json(deletedEntry);
   }
 
-  async updateRosterEntry(req: ApiRequest<OrgRosterParams, RosterEntryData>, res: Response) {
+  async updateRosterEntry(req: ApiRequest<OrgRosterParams, UpdateRosterEntryBody>, res: Response) {
     assertRequestParams(req, ['rosterId']);
     const entryId = +req.params.rosterId;
 
@@ -542,26 +542,36 @@ interface RosterInfo {
   columns: RosterColumnInfo[],
 }
 
-type GetRosterQuery = {
+export type GetRosterQuery = {
   orderBy?: string
   sortDirection?: 'ASC' | 'DESC'
 } & PaginatedQuery;
 
-type QueryOp = '=' | '<>' | '~' | '>' | '<' | 'startsWith' | 'endsWith' | 'in' | 'between';
+export type QueryOp = '=' | '<>' | '~' | '>' | '<' | 'startsWith' | 'endsWith' | 'in' | 'between';
 
-type SearchRosterBodyEntry = {
+export type SearchRosterQuery = GetRosterQuery;
+
+export type SearchRosterBodyEntry = {
   op: QueryOp
   value: RosterColumnValue | RosterColumnValue[]
+  expression?: string
+  expressionEnabled?: boolean
 };
 
-type SearchRosterBody = {
+export type SearchRosterBody = {
   [column: string]: SearchRosterBodyEntry
 };
 
-type ReportDateQuery = {
+export type ReportDateQuery = {
   reportDate: string
 };
 
-type AddCustomColumnBody = CustomColumnData & Required<Pick<CustomColumnData, 'displayName' | 'type'>>;
+export type AddCustomColumnBody = CustomColumnData & Required<Pick<CustomColumnData, 'displayName' | 'type'>>;
+
+export type UpdateCustomColumnBody = CustomColumnData;
+
+export type AddRosterEntryBody = RosterEntryData;
+
+export type UpdateRosterEntryBody = RosterEntryData;
 
 export default new RosterController();

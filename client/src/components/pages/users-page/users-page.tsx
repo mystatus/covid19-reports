@@ -66,8 +66,8 @@ export const UsersPage = () => {
         dispatch(AppFrame.setPageLoading(true));
         dispatch(Unit.fetch(orgId));
         const [users, requests] = await Promise.all([
-          UserClient.fetchAll(orgId!),
-          AccessRequestClient.fetchAll(orgId!),
+          UserClient.getOrgUsers(orgId!),
+          AccessRequestClient.getAccessRequests(orgId!),
         ]);
         setUserRows(users as ApiUser[]);
         setAccessRequests(requests);

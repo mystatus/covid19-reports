@@ -1,4 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import {
   Avatar,
   Button,
@@ -22,20 +26,31 @@ import {
 import clsx from 'clsx';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
-import axios from 'axios';
 import moment from 'moment-timezone';
 import { v4 as uuidv4 } from 'uuid';
 import { Autocomplete } from '@material-ui/lab';
-import { DatePicker, MuiPickersUtilsProvider, TimePicker } from '@material-ui/pickers';
+import {
+  DatePicker,
+  MuiPickersUtilsProvider,
+  TimePicker,
+} from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import { useSelector } from 'react-redux';
+import { AddUnitBody } from 'covid19-reports-server/src/api/unit/unit.controller';
 import useStyles from './edit-unit-dialog.styles';
-import { ApiUnit, MusterConfiguration } from '../../../models/api-response';
+import {
+  ApiUnit,
+  MusterConfiguration,
+} from '../../../models/api-response';
 import { DaysOfTheWeek } from '../../../utility/days';
 import { formatErrorMessage } from '../../../utility/errors';
 import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
-import { mustersConfigurationsAreEqual, validateMusterConfiguration } from '../../../utility/muster-utils';
+import {
+  mustersConfigurationsAreEqual,
+  validateMusterConfiguration,
+} from '../../../utility/muster-utils';
+import { UnitClient } from '../../../client/api';
 
 export interface EditUnitDialogProps {
   open: boolean;
@@ -205,12 +220,11 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
       return;
     }
     setFormDisabled(true);
-    const body = {
-      id: unit?.id,
+    const body: AddUnitBody = {
       name,
       musterConfiguration: musterConfiguration.map(muster => ({
         days: muster.days,
-        startTime: muster.days ? muster.startTime : muster.startTimeDate,
+        startTime: muster.days ? muster.startTime : muster.startTimeDate.toISOString(),
         timezone: muster.timezone,
         durationMinutes: muster.durationMinutes,
         reportId: muster.reportId,
@@ -219,9 +233,9 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
     };
     try {
       if (existingUnit) {
-        await axios.put(`api/unit/${orgId}/${unit!.id}`, body);
+        await UnitClient.updateUnit(orgId!, unit!.id, body);
       } else {
-        await axios.post(`api/unit/${orgId}`, body);
+        await UnitClient.addUnit(orgId!, body);
       }
     } catch (error) {
       if (onError) {
@@ -329,11 +343,11 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
                           onChange={setMusterReportId(index)}
                         >
                           {reports
-                            && reports.map(report => (
-                              <option key={report.id} value={report.id}>
-                                {report.name}
-                              </option>
-                            ))}
+                          && reports.map(report => (
+                            <option key={report.id} value={report.id}>
+                              {report.name}
+                            </option>
+                          ))}
                         </Select>
                       </TableCell>
                       <TableCell>

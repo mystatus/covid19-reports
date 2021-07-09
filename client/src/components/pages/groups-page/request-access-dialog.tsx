@@ -134,7 +134,7 @@ export const RequestAccessDialog = (props: RequestAccessDialogProps) => {
     // Send request.
     let newRequest: ApiAccessRequest;
     try {
-      newRequest = await AccessRequestClient.issue(org!.id, {
+      newRequest = await AccessRequestClient.issueAccessRequest(org!.id, {
         whatYouDo,
         sponsorName: inputData.sponsorName,
         sponsorEmail: inputData.sponsorEmail,

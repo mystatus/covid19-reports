@@ -19,7 +19,6 @@ import {
 } from '@material-ui/core';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
-import axios from 'axios';
 import moment from 'moment-timezone';
 import { v4 as uuidv4 } from 'uuid';
 import { Autocomplete } from '@material-ui/lab';
@@ -28,6 +27,7 @@ import MomentUtils from '@date-io/moment';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import { useSelector } from 'react-redux';
 import clsx from 'clsx';
+import { UpdateOrgDefaultMusterBody } from 'covid19-reports-server/src/api/org/org.controller';
 import useStyles from './default-muster-dialog.styles';
 import { MusterConfiguration } from '../../../models/api-response';
 import { DaysOfTheWeek } from '../../../utility/days';
@@ -38,6 +38,7 @@ import { HelpCard } from '../../help/help-card/help-card';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
 import { formatErrorMessage } from '../../../utility/errors';
+import { OrgClient } from '../../../client/api';
 
 export interface DefaultMusterDialogProps {
   open: boolean,
@@ -238,19 +239,17 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
       return;
     }
     setFormDisabled(true);
-    const body = {
-      defaultMusterConfiguration: musterConfiguration.map(muster => {
-        return {
-          days: muster.days,
-          startTime: muster.days ? muster.startTime : muster.startTimeDate,
-          timezone: muster.timezone,
-          durationMinutes: muster.durationMinutes,
-          reportId: muster.reportId,
-        };
-      }),
+    const body: UpdateOrgDefaultMusterBody = {
+      defaultMusterConfiguration: musterConfiguration.map(muster => ({
+        days: muster.days,
+        startTime: muster.days ? muster.startTime : muster.startTimeDate.toISOString(),
+        timezone: muster.timezone,
+        durationMinutes: muster.durationMinutes,
+        reportId: muster.reportId,
+      })),
     };
     try {
-      await axios.put(`api/org/${orgId}/default-muster`, body);
+      await OrgClient.updateOrgDefaultMuster(orgId!, body);
     } catch (error) {
       if (onError) {
         onError(formatErrorMessage(error));

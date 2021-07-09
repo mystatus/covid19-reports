@@ -10,7 +10,7 @@ import {
 import { timestampColumnTransformer } from '../../util/util';
 import { User } from '../user/user.model';
 
-export enum ActionType {
+export enum OrphanedRecordActionType {
   Claim = 'claim',
   Ignore = 'ignore',
 }
@@ -44,8 +44,8 @@ export class OrphanedRecordAction extends BaseEntity {
 
   @Column({
     type: 'enum',
-    enum: ActionType,
-    default: ActionType.Ignore,
+    enum: OrphanedRecordActionType,
+    default: OrphanedRecordActionType.Ignore,
   })
-  type!: ActionType;
+  type!: OrphanedRecordActionType;
 }

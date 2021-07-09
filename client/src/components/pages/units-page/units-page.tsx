@@ -30,26 +30,32 @@ import {
   useDispatch,
   useSelector,
 } from 'react-redux';
-import axios from 'axios';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import { UnitsPageHelp } from './units-page-help';
 import useStyles from './units-page.styles';
 import { ApiUnit } from '../../../models/api-response';
-import { EditUnitDialog, EditUnitDialogProps } from './edit-unit-dialog';
+import {
+  EditUnitDialog,
+  EditUnitDialogProps,
+} from './edit-unit-dialog';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { Unit } from '../../../actions/unit.actions';
 import PageHeader from '../../page-header/page-header';
 import { musterConfigurationsToStrings } from '../../../utility/muster-utils';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
-import { DefaultMusterDialog, DefaultMusterDialogProps } from './default-muster-dialog';
+import {
+  DefaultMusterDialog,
+  DefaultMusterDialogProps,
+} from './default-muster-dialog';
 import { User } from '../../../actions/user.actions';
 import { UserSelector } from '../../../selectors/user.selector';
 import MusterConfigReadable from './muster-config-readable';
 import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
 import { ReportSchema } from '../../../actions/report-schema.actions';
+import { UnitClient } from '../../../client/api';
 
 interface UnitMenuState {
   anchor: HTMLElement | null,
@@ -57,9 +63,13 @@ interface UnitMenuState {
 }
 
 export const UnitsPage = () => {
-  const { id: orgId, defaultMusterConfiguration = [] } = useSelector(UserSelector.org) ?? {};
   const classes = useStyles();
   const dispatch = useDispatch();
+
+  const org = useSelector(UserSelector.org)!;
+  const orgId = org.id;
+  const defaultMusterConfiguration = org.defaultMusterConfiguration;
+
   const units = useSelector(UnitSelector.all);
   const reports = useSelector(ReportSchemaSelector.all);
   const initialEditUnitState = { open: false, defaultMusterConfiguration };
@@ -139,7 +149,7 @@ export const UnitsPage = () => {
       return;
     }
     try {
-      await axios.delete(`api/unit/${orgId}/${unitToDelete.id}`);
+      await UnitClient.deleteUnit(orgId, unitToDelete.id);
     } catch (error) {
       dispatch(Modal.alert('Delete Unit', formatErrorMessage(error, 'Unable to delete unit'))).then();
     }

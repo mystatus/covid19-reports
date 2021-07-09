@@ -6,26 +6,37 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle, FormControl,
-  Grid, InputLabel, Select,
+  DialogTitle,
+  FormControl,
+  Grid,
+  InputLabel,
+  Select,
   TableCell,
   TableRow,
   TextField,
 } from '@material-ui/core';
-import { DatePicker, DateTimePicker, MuiPickersUtilsProvider } from '@material-ui/pickers';
+import {
+  DatePicker,
+  DateTimePicker,
+  MuiPickersUtilsProvider,
+} from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import MomentUtils from '@date-io/moment';
-import axios from 'axios';
 import { useSelector } from 'react-redux';
+import { RosterColumnType } from 'covid19-reports-server/src/api/roster/roster.types';
 import useStyles from './edit-roster-entry-dialog.style';
 import {
   ApiOrphanedRecord,
-  ApiRosterColumnInfo, ApiRosterColumnType, ApiRosterEntry, ApiRosterEnumColumnConfig, ApiRosterStringColumnConfig,
+  ApiRosterColumnInfo,
+  ApiRosterEntry,
+  ApiRosterEnumColumnConfig,
+  ApiRosterStringColumnConfig,
 } from '../../../models/api-response';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { formatErrorMessage } from '../../../utility/errors';
+import { RosterClient } from '../../../client/api';
 
 export interface EditRosterEntryDialogProps {
   open: boolean,
@@ -117,9 +128,9 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
       if (props.onSave) {
         await props.onSave(data);
       } else if (existingRosterEntry) {
-        await axios.put(`api/roster/${orgId}/${rosterEntry!.id}`, data);
+        await RosterClient.updateRosterEntry(orgId!, rosterEntry.id, data);
       } else {
-        await axios.post(`api/roster/${orgId}`, data);
+        await RosterClient.addRosterEntry(orgId!, data);
       }
     } catch (error) {
       if (onError) {
@@ -153,9 +164,9 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
         }
 
         switch (column.type) {
-          case ApiRosterColumnType.String:
-          case ApiRosterColumnType.Date:
-          case ApiRosterColumnType.DateTime:
+          case RosterColumnType.String:
+          case RosterColumnType.Date:
+          case RosterColumnType.DateTime:
             if (value.trim().length === 0) {
               return false;
             }
@@ -207,8 +218,8 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   };
 
   const buildTextInput = (columnInfo: ApiRosterColumnInfo) => {
-    const numberField = columnInfo.type === ApiRosterColumnType.Number;
-    const multiline = columnInfo.type === ApiRosterColumnType.String && (columnInfo?.config as ApiRosterStringColumnConfig)?.multiline === true;
+    const numberField = columnInfo.type === RosterColumnType.Number;
+    const multiline = columnInfo.type === RosterColumnType.String && (columnInfo?.config as ApiRosterStringColumnConfig)?.multiline === true;
     return (
       <TextField
         className={classes.textField}
@@ -312,14 +323,14 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
 
   const buildInputFieldForColumnType = (column: ApiRosterColumnInfo) => {
     switch (column.type) {
-      case ApiRosterColumnType.String:
-      case ApiRosterColumnType.Number:
+      case RosterColumnType.String:
+      case RosterColumnType.Number:
         return buildTextInput(column);
-      case ApiRosterColumnType.DateTime:
+      case RosterColumnType.DateTime:
         return buildDateTimeInput(column);
-      case ApiRosterColumnType.Date:
+      case RosterColumnType.Date:
         return buildDateInput(column);
-      case ApiRosterColumnType.Enum:
+      case RosterColumnType.Enum:
         return buildEnumInput(column);
       default:
         console.warn(`Unhandled column type found while creating input fields: ${column.type}`);

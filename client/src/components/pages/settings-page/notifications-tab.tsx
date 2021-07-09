@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import axios from 'axios';
 import {
   Button, Divider, IconButton, Paper, Switch, Table, TableCell, TableRow, Typography,
 } from '@material-ui/core';
@@ -12,6 +11,7 @@ import { EditAlertDialog, EditAlertDialogProps } from './edit-alert-dialog';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
+import { NotificationClient } from '../../../client/api';
 
 interface NotificationSettings {
   [key: string]: ApiUserNotificationSetting,
@@ -33,20 +33,20 @@ export const NotificationsTab = (props: TabPanelProps) => {
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [editAlertDialogProps, setEditAlertDialogProps] = useState<EditAlertDialogProps>({ open: false });
 
-  const orgId = useSelector(UserSelector.orgId);
+  const orgId = useSelector(UserSelector.orgId)!;
 
   const initializeTable = React.useCallback(async () => {
-    const notificationsResponse = (await axios.get(`api/notification/${orgId}`)).data as ApiNotification[];
-    const settingsResponse = (await axios.get(`api/notification/${orgId}/setting`)).data as ApiUserNotificationSetting[];
+    const availableNotifications = await NotificationClient.getAvailableNotifications(orgId);
+    const userNotificationSettings = await NotificationClient.getUserNotificationSettings(orgId);
     const settings: NotificationSettings = {};
-    settingsResponse.forEach(setting => {
+    userNotificationSettings.forEach(setting => {
       settings[setting.notificationId] = setting;
     });
     const saving: NotificationSaving = {};
-    notificationsResponse.forEach(notification => {
+    availableNotifications.forEach(notification => {
       saving[notification.id] = false;
     });
-    setNotifications(notificationsResponse);
+    setNotifications(availableNotifications);
     setNotificationSettings(settings);
     setNotificationSaving(saving);
   }, [orgId]);
@@ -84,22 +84,19 @@ export const NotificationsTab = (props: TabPanelProps) => {
         return newState;
       });
       if (checked) {
-        const newSetting: ApiUserNotificationSetting = {
-          id: -1,
+        const newSetting = await NotificationClient.addUserNotificationSetting(orgId, {
           notificationId: notification.id,
           threshold: notification.defaultThreshold,
           minMinutesBetweenAlerts: notification.defaultMinMinutesBetweenAlerts,
           maxDailyCount: notification.defaultMaxDailyCount,
           smsEnabled: false,
           emailEnabled: true,
-        };
+        });
         setNotificationSettings(prevState => {
           const newState = { ...prevState };
           newState[notification.id] = newSetting;
           return newState;
         });
-        const response = (await axios.post(`api/notification/${orgId}/setting`, newSetting)).data as ApiUserNotificationSetting;
-        newSetting.id = response.id;
       } else {
         const setting = notificationSettings[notification.id];
         setNotificationSettings(prevState => {
@@ -107,7 +104,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
           delete newState[notification.id];
           return newState;
         });
-        await axios.delete(`api/notification/${orgId}/setting/${setting.id}`);
+        await NotificationClient.deleteUserNotificationSetting(orgId, setting.id);
       }
       setNotificationSaving(prevState => {
         const newState = { ...prevState };

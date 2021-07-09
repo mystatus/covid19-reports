@@ -92,7 +92,7 @@ export const ViewAccessRequestDialog = (props: ViewAccessRequestDialogProps) => 
     setDenyLoading(true);
 
     try {
-      await AccessRequestClient.deny(orgId, {
+      await AccessRequestClient.denyAccessRequest(orgId, {
         requestId: accessRequest.id,
       });
 
@@ -109,7 +109,7 @@ export const ViewAccessRequestDialog = (props: ViewAccessRequestDialogProps) => 
     setApproveLoading(true);
 
     try {
-      await AccessRequestClient.approve(orgId, {
+      await AccessRequestClient.approveAccessRequest(orgId, {
         requestId: accessRequest.id,
         roleId: roles[selectedRoleIndex].id,
         unitIds: selectedUnitIds,

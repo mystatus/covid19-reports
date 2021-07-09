@@ -50,5 +50,4 @@ router.put(
   controller.updateUserNotificationSetting,
 );
 
-
 export default router;

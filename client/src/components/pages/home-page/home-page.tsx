@@ -17,7 +17,6 @@ import InfoOutlinedIcon from '@material-ui/icons/InfoOutlined';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 import FavoriteIcon from '@material-ui/icons/Favorite';
 import clsx from 'clsx';
-import axios from 'axios';
 import moment from 'moment';
 import { UserSelector } from '../../../selectors/user.selector';
 import { WorkspaceSelector } from '../../../selectors/workspace.selector';
@@ -29,8 +28,15 @@ import useStyles from './home-page.styles';
 import welcomeImage from '../../../media/images/welcome-image.png';
 import PageHeader from '../../page-header/page-header';
 import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
-import { AccessRequestClient } from '../../../client/api';
-import { ApiAccessRequest, ApiDashboard, ApiMusterTrends, ApiWorkspace } from '../../../models/api-response';
+import {
+  AccessRequestClient,
+  MusterClient,
+} from '../../../client/api';
+import {
+  ApiAccessRequest,
+  ApiDashboard,
+  ApiWorkspace,
+} from '../../../models/api-response';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { Workspace } from '../../../actions/workspace.actions';
 import { getDashboardUrl } from '../../../utility/url-utils';
@@ -146,14 +152,12 @@ export const HomePage = () => {
   const initializeTable = React.useCallback(async () => {
     if (orgId) {
       try {
-        const requestsPromise = AccessRequestClient.fetchAll(orgId!);
-        const { weekly } = (await axios.get(`api/muster/${orgId}/unit-trends`, {
-          params: {
-            currentDate: moment().toISOString(),
-            weeksCount: 2,
-            monthsCount: 0,
-          },
-        })).data as ApiMusterTrends;
+        const requestsPromise = AccessRequestClient.getAccessRequests(orgId!);
+        const { weekly } = await MusterClient.getMusterUnitTrends(orgId!, {
+          currentDate: moment().toISOString(),
+          weeksCount: '2',
+          monthsCount: '0',
+        });
 
         // Sum up muster percent for each of the last two weeks
         const weeklyAverages = Object.keys(weekly).sort().map(date => {

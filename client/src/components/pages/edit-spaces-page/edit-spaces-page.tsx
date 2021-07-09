@@ -1,6 +1,14 @@
 import {
   Button,
-  Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Menu, MenuItem,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  Menu,
+  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -9,21 +17,33 @@ import {
   TableHead,
   TableRow,
 } from '@material-ui/core';
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import axios from 'axios';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
+import {
+  useDispatch,
+  useSelector,
+} from 'react-redux';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import CheckIcon from '@material-ui/icons/Check';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PageHeader from '../../page-header/page-header';
 import useStyles from './edit-spaces-page.styles';
-import { ApiWorkspace, ApiWorkspaceTemplate } from '../../../models/api-response';
-import { EditSpaceDialog, EditWorkspaceDialogProps } from './edit-space-dialog';
+import {
+  ApiWorkspace,
+  ApiWorkspaceTemplate,
+} from '../../../models/api-response';
+import {
+  EditSpaceDialog,
+  EditWorkspaceDialogProps,
+} from './edit-space-dialog';
 import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
 import { EditSpacesPageHelp } from './edit-spaces-page-help';
+import { WorkspaceClient } from '../../../client/api';
 
 interface WorkspaceMenuState {
   anchor: HTMLElement | null,
@@ -39,11 +59,11 @@ export const EditSpacesPage = () => {
   const [editWorkspaceDialogProps, setEditWorkspaceDialogProps] = useState<EditWorkspaceDialogProps>({ open: false });
   const [workspaceMenu, setWorkspaceMenu] = React.useState<WorkspaceMenuState>({ anchor: null });
 
-  const orgId = useSelector(UserSelector.orgId);
+  const orgId = useSelector(UserSelector.orgId)!;
 
   const initializeTable = React.useCallback(async () => {
-    const ws = (await axios.get(`api/workspace/${orgId}`)).data as ApiWorkspace[];
-    const templates = (await axios.get(`api/workspace/${orgId}/templates`)).data as ApiWorkspaceTemplate[];
+    const ws = await WorkspaceClient.getOrgWorkspaces(orgId);
+    const templates = await WorkspaceClient.getOrgWorkspaceTemplates(orgId);
     setWorkspaces(ws);
     setWorkspaceTemplates(templates);
   }, [orgId]);
@@ -94,7 +114,7 @@ export const EditSpacesPage = () => {
       return;
     }
     try {
-      await axios.delete(`api/workspace/${orgId}/${workspaceToDelete.id}`);
+      await WorkspaceClient.deleteWorkspace(orgId, workspaceToDelete.id);
     } catch (error) {
       dispatch(Modal.alert('Delete Space', formatErrorMessage(error, 'Unable to delete space'))).then();
     }

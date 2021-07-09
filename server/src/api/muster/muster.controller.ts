@@ -43,13 +43,14 @@ class MusterController {
 
     const fromDate = moment(req.query.fromDate);
     const toDate = moment(req.query.toDate);
+    const unitId = (req.query.unitId != null) ? parseInt(req.query.unitId) : undefined;
     const limit = parseInt(req.query.limit);
     const page = parseInt(req.query.page);
 
     const rosterStats = await getMusterRosterStats({
       org: req.appOrg!,
       userRole: req.appUserRole!,
-      unitId: req.query.unitId || undefined,
+      unitId,
       fromDate,
       toDate,
     });
@@ -216,13 +217,13 @@ class MusterController {
   }
 }
 
-type GetMusterRosterQuery = {
+export type GetMusterRosterQuery = {
   fromDate: string
   toDate: string
-  unitId: number | null
+  unitId?: string
 } & PaginatedQuery;
 
-type GetMusterUnitTrendsQuery = {
+export type GetMusterUnitTrendsQuery = {
   currentDate: string
   weeksCount?: string
   monthsCount?: string

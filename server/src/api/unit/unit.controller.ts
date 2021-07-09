@@ -23,7 +23,7 @@ class UnitController {
     res.json(_.sortBy(await req.appUserRole.getUnits(), ['id']));
   }
 
-  async addUnit(req: ApiRequest<OrgParam, UnitData>, res: Response) {
+  async addUnit(req: ApiRequest<OrgParam, AddUnitBody>, res: Response) {
     if (!req.body.name) {
       throw new BadRequestError('A name must be supplied when adding a unit.');
     }
@@ -47,7 +47,7 @@ class UnitController {
     res.status(201).json(newUnit);
   }
 
-  async updateUnit(req: ApiRequest<OrgUnitParams, UnitData>, res: Response) {
+  async updateUnit(req: ApiRequest<OrgUnitParams, UpdateUnitBody>, res: Response) {
     const existingUnit = await req.appUserRole?.getUnit(parseInt(req.params.unitId));
     if (!existingUnit) {
       throw new NotFoundError('The unit could not be found.');
@@ -118,8 +118,8 @@ class UnitController {
 
     res.json(roster.filter(entry => entry.changeType !== ChangeType.Deleted).map(entry => entry.edipi));
   }
-}
 
+}
 
 async function setUnitFromBody(orgId: number, unit: Unit, body: UnitData) {
   if (body.name) {
@@ -146,14 +146,17 @@ async function setUnitFromBody(orgId: number, unit: Unit, body: UnitData) {
   }
 }
 
-
-export interface UnitData {
+export type UnitData = {
   name?: string,
   musterConfiguration?: MusterConfiguration[],
   includeDefaultConfig?: boolean
-}
+};
 
-type GetUnitRosterQuery = {
+export type AddUnitBody = UnitData;
+
+export type UpdateUnitBody = UnitData;
+
+export type GetUnitRosterQuery = {
   timestamp: string
 };
 

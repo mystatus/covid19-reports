@@ -125,17 +125,17 @@ class OrgController {
 
 }
 
-type OrgBody = {
+export type OrgBody = {
   name?: string
   description?: string
   reportingGroup?: string
 };
 
-type AddOrgBody = OrgBody & {
+export type AddOrgBody = OrgBody & {
   contactEdipi: string
 };
 
-type UpdateOrgDefaultMusterBody = {
+export type UpdateOrgDefaultMusterBody = {
   defaultMusterConfiguration: MusterConfiguration[]
 };
 

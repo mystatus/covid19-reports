@@ -29,7 +29,7 @@ export namespace Notification {
   export const fetch = (orgId: number) => async (dispatch: Dispatch) => {
     dispatch(new Actions.Fetch());
     try {
-      const notifications = await NotificationClient.fetchAll(orgId);
+      const notifications = await NotificationClient.getAllNotifications(orgId);
       dispatch(new Actions.FetchSuccess({ notifications }));
     } catch (error) {
       dispatch(new Actions.FetchFailure({ error }));
