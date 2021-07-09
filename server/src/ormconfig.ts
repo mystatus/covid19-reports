@@ -17,6 +17,7 @@ import { ReportSchema } from './api/report-schema/report-schema.model';
 import { CustomRosterColumn } from './api/roster/custom-roster-column.model';
 import { Workspace } from './api/workspace/workspace.model';
 import { Notification } from './api/notification/notification.model';
+import { Observation } from './api/observation/observation.model';
 
 export const ormConfig: PostgresConnectionOptions = {
   type: 'postgres',
@@ -26,22 +27,23 @@ export const ormConfig: PostgresConnectionOptions = {
   password: process.env.SQL_PASSWORD || 'postgres',
   database: process.env.SQL_DATABASE || 'dds',
   entities: [
-    UserRole,
-    User,
-    Role,
-    Org,
-    RosterHistory,
-    Roster,
     AccessRequest,
-    Unit,
-    Workspace,
-    ReportSchema,
-    WorkspaceTemplate,
     CustomRosterColumn,
     Notification,
-    UserNotificationSetting,
+    Observation,
+    Org,
     OrphanedRecord,
     OrphanedRecordAction,
+    ReportSchema,
+    Role,
+    Roster,
+    RosterHistory,
+    Unit,
+    User,
+    UserNotificationSetting,
+    UserRole,
+    Workspace,
+    WorkspaceTemplate,
   ],
   namingStrategy: new SnakeNamingStrategy(),
   synchronize: (env.isDev && process.env.SYNC_DATABASE === 'true'),
