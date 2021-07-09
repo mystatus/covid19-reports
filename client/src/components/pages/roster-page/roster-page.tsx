@@ -42,11 +42,6 @@ import { AppFrame } from '../../../actions/app-frame.actions';
 import { OrphanedRecord } from '../../../actions/orphaned-record.actions';
 import { Roster } from '../../../actions/roster.actions';
 import { Unit } from '../../../actions/unit.actions';
-import {
-  ExportClient,
-  OrphanedRecordClient,
-  RosterClient,
-} from '../../../client/api';
 import useEffectDebounced from '../../../hooks/use-effect-debounced';
 import useInitialLoading from '../../../hooks/use-initial-loading';
 import { downloadFile } from '../../../utility/download';
@@ -86,6 +81,9 @@ import { DataExportIcon } from '../../icons/data-export-icon';
 import { Modal } from '../../../actions/modal.actions';
 import { UserSelector } from '../../../selectors/user.selector';
 import usePersistedState from '../../../hooks/use-persisted-state';
+import { ExportClient } from '../../../client/export.client';
+import { OrphanedRecordClient } from '../../../client/orphaned-record.client';
+import { RosterClient } from '../../../client/roster.client';
 
 const unitColumn: ApiRosterColumnInfo = {
   name: 'unit',

@@ -1,6 +1,6 @@
 import { Dispatch } from 'redux';
-import { NotificationClient } from '../client/api';
 import { ApiNotification } from '../models/api-response';
+import { NotificationClient } from '../client/notification.client';
 
 export namespace Notification {
 

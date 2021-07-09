@@ -45,7 +45,7 @@ router.delete(
   '/:orgId/:edipi',
   requireOrgAccess,
   requireRolePermission(role => role.canManageGroup),
-  controller.removeUserFromGroup,
+  controller.removeUserFromOrg,
 );
 
 router.post(

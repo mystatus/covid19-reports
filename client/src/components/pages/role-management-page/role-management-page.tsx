@@ -25,7 +25,7 @@ import { Workspace } from '../../../actions/workspace.actions';
 import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
-import { RoleClient } from '../../../client/api';
+import { RoleClient } from '../../../client/role.client';
 
 
 export const RoleManagementPage = () => {

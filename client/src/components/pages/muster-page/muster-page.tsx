@@ -61,11 +61,9 @@ import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
 import usePersistedState from '../../../hooks/use-persisted-state';
-import {
-  ExportClient,
-  MusterClient,
-  RosterClient,
-} from '../../../client/api';
+import { ExportClient } from '../../../client/export.client';
+import { MusterClient } from '../../../client/muster.client';
+import { RosterClient } from '../../../client/roster.client';
 
 export const MusterPage = () => {
   const classes = useStyles();

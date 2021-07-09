@@ -19,10 +19,8 @@ import {
   useDispatch,
   useSelector,
 } from 'react-redux';
-import {
-  User,
-  UserRegisterData,
-} from '../../../actions/user.actions';
+import { RegisterUserBody } from 'covid19-reports-server/src/api/user/user.controller';
+import { User } from '../../../actions/user.actions';
 import services from '../../../data/services';
 import { UserState } from '../../../reducers/user.reducer';
 import { AppState } from '../../../store';
@@ -34,8 +32,8 @@ import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { Link } from '../../link/link';
 import useStyles from './user-registration-page.styles';
 
-type UserRegisterDataWithValidation = {
-  [key in keyof UserRegisterData]: {
+type RegisterUserBodyWithValidation = {
+  [key in keyof RegisterUserBody]: {
     hasBlurred: boolean;
     hasChanged: boolean;
     helperText: string;
@@ -48,7 +46,7 @@ export const UserRegistrationPage = () => {
   const dispatch = useDispatch();
   const user = useSelector<AppState, UserState>(state => state.user);
   const [registerUserLoading, setRegisterUserLoading] = useState(false);
-  const [inputData, setInputData] = useState<UserRegisterDataWithValidation>({
+  const [inputData, setInputData] = useState<RegisterUserBodyWithValidation>({
     firstName: { hasBlurred: false, hasChanged: false, helperText: '', value: '' },
     lastName: { hasBlurred: false, hasChanged: false, helperText: '', value: '' },
     phone: { hasBlurred: false, hasChanged: false, helperText: '', value: '' },
@@ -56,7 +54,7 @@ export const UserRegistrationPage = () => {
     email: { hasBlurred: false, hasChanged: false, helperText: '', value: '' },
   });
 
-  function getInputValidation(key: keyof UserRegisterData) {
+  function getInputValidation(key: keyof RegisterUserBody) {
     const { hasBlurred, hasChanged, helperText } = inputData[key] ?? {};
     if (helperText && hasBlurred && hasChanged) {
       return {
@@ -67,7 +65,7 @@ export const UserRegistrationPage = () => {
     return null;
   }
 
-  function handleValidation(key: keyof UserRegisterData, value: string, fromBlur = true) {
+  function handleValidation(key: keyof RegisterUserBody, value: string, fromBlur = true) {
     let helperText = '';
     if (value) {
       if (key === 'email' && !validateEmail(value)) {
@@ -85,7 +83,7 @@ export const UserRegistrationPage = () => {
     setInputData({ ...inputData });
   }
 
-  function handleChange(key: keyof UserRegisterData, value: string) {
+  function handleChange(key: keyof RegisterUserBody, value: string) {
     setInputData({
       ...inputData,
       [key]: value,
@@ -93,7 +91,7 @@ export const UserRegistrationPage = () => {
     handleValidation(key, value, false);
   }
 
-  function handleInputChange(key: keyof UserRegisterData, e: React.ChangeEvent<{ value: unknown }>) {
+  function handleInputChange(key: keyof RegisterUserBody, e: React.ChangeEvent<{ value: unknown }>) {
     handleChange(key, e.target.value as string);
   }
 

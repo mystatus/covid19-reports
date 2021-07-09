@@ -33,7 +33,7 @@ import { RosterSelector } from '../../../selectors/roster.selector';
 import { NotificationSelector } from '../../../selectors/notification.selector';
 import { WorkspaceSelector } from '../../../selectors/workspace.selector';
 import { formatErrorMessage } from '../../../utility/errors';
-import { RoleClient } from '../../../client/api';
+import { RoleClient } from '../../../client/role.client';
 
 export interface EditRoleDialogProps {
   open: boolean,

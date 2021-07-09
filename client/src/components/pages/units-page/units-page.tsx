@@ -55,7 +55,7 @@ import { UserSelector } from '../../../selectors/user.selector';
 import MusterConfigReadable from './muster-config-readable';
 import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
 import { ReportSchema } from '../../../actions/report-schema.actions';
-import { UnitClient } from '../../../client/api';
+import { UnitClient } from '../../../client/unit.client';
 
 interface UnitMenuState {
   anchor: HTMLElement | null,

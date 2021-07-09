@@ -44,11 +44,9 @@ import {
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { RequestAccessDialog } from './request-access-dialog';
-import {
-  AccessRequestClient,
-  OrgClient,
-  UserClient,
-} from '../../../client/api';
+import { AccessRequestClient } from '../../../client/access-request.client';
+import { OrgClient } from '../../../client/org.client';
+import { UserClient } from '../../../client/user.client';
 
 export const GroupsPage = () => {
   const classes = useStyles();

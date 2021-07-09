@@ -50,7 +50,7 @@ import {
   mustersConfigurationsAreEqual,
   validateMusterConfiguration,
 } from '../../../utility/muster-utils';
-import { UnitClient } from '../../../client/api';
+import { UnitClient } from '../../../client/unit.client';
 
 export interface EditUnitDialogProps {
   open: boolean;

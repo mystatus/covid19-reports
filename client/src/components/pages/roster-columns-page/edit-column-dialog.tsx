@@ -31,7 +31,7 @@ import {
 } from '../../../models/api-response';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
 import { formatErrorMessage } from '../../../utility/errors';
-import { RosterClient } from '../../../client/api';
+import { RosterClient } from '../../../client/roster.client';
 
 export interface EditColumnDialogProps {
   open: boolean,

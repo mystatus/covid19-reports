@@ -1,6 +1,6 @@
 import { Dispatch } from 'redux';
-import { ReportSchemaClient } from '../client/api';
 import { ApiReportSchema } from '../models/api-response';
+import { ReportSchemaClient } from '../client/report-schema.client';
 
 export namespace ReportSchema {
 
@@ -29,7 +29,7 @@ export namespace ReportSchema {
   export const fetch = (orgId: number) => async (dispatch: Dispatch) => {
     dispatch(new Actions.Fetch());
     try {
-      const reports = await ReportSchemaClient.fetchAll(orgId);
+      const reports = await ReportSchemaClient.getOrgReports(orgId);
       dispatch(new Actions.FetchSuccess({ reports }));
     } catch (error) {
       dispatch(new Actions.FetchFailure({ error }));

@@ -1,6 +1,6 @@
 import { Dispatch } from 'redux';
-import { UnitClient } from '../client/api';
 import { ApiUnit } from '../models/api-response';
+import { UnitClient } from '../client/unit.client';
 
 export namespace Unit {
 

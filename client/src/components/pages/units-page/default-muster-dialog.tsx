@@ -38,7 +38,7 @@ import { HelpCard } from '../../help/help-card/help-card';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
 import { formatErrorMessage } from '../../../utility/errors';
-import { OrgClient } from '../../../client/api';
+import { OrgClient } from '../../../client/org.client';
 
 export interface DefaultMusterDialogProps {
   open: boolean,

@@ -20,7 +20,6 @@ import React, {
   ChangeEvent,
   useState,
 } from 'react';
-import { AccessRequestClient } from '../../../client/api';
 import {
   ApiAccessRequest,
   ApiOrg,
@@ -31,6 +30,7 @@ import {
 } from '../../../utility/validation-utils';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import useStyles from './request-access-dialog.styles';
+import { AccessRequestClient } from '../../../client/access-request.client';
 
 export type RequestAccessDialogProps = DialogProps & {
   onClose: () => void

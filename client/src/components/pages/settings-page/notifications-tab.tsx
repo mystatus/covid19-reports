@@ -11,7 +11,7 @@ import { EditAlertDialog, EditAlertDialogProps } from './edit-alert-dialog';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
-import { NotificationClient } from '../../../client/api';
+import { NotificationClient } from '../../../client/notification.client';
 
 interface NotificationSettings {
   [key: string]: ApiUserNotificationSetting,

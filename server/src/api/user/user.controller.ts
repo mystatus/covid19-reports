@@ -66,7 +66,7 @@ class UserController {
 
   async upsertUser(req: ApiRequest<OrgParam, UpsertUserBody>, res: Response) {
     const org = req.appOrg!;
-    const roleId = (req.body.role != null) ? parseInt(req.body.role) : undefined;
+    const roleId = req.body.role;
     const edipi = req.body.edipi;
     const firstName = req.body.firstName;
     const lastName = req.body.lastName;
@@ -161,7 +161,7 @@ class UserController {
     res.json(users);
   }
 
-  async removeUserFromGroup(req: ApiRequest<OrgEdipiParams>, res: Response) {
+  async removeUserFromOrg(req: ApiRequest<OrgEdipiParams>, res: Response) {
     const userEDIPI = req.params.edipi;
 
     if (req.appUser.edipi === userEDIPI) {
@@ -228,16 +228,16 @@ class UserController {
 
 }
 
-type UpsertUserBody = {
+export type UpsertUserBody = {
   edipi: string
-  role: string
+  role: number
   firstName: string
   lastName: string
   units: number[]
   allUnits: boolean
 };
 
-type RegisterUserBody = {
+export type RegisterUserBody = {
   firstName: string
   lastName: string
   phone: string

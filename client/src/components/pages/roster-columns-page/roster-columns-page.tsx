@@ -37,7 +37,7 @@ import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
-import { RosterClient } from '../../../client/api';
+import { RosterClient } from '../../../client/roster.client';
 
 interface ColumnMenuState {
   anchor: HTMLElement | null,

@@ -1,8 +1,9 @@
 import { Dispatch } from 'redux';
+import { RegisterUserBody } from 'covid19-reports-server/src/api/user/user.controller';
 import { AppState } from '../store';
 import { ApiUser } from '../models/api-response';
-import { UserClient } from '../client/api';
 import { LocalStorageState } from '../reducers/local-storage.reducer';
+import { UserClient } from '../client/user.client';
 
 export namespace User {
 
@@ -114,7 +115,7 @@ export namespace User {
     dispatch(new Actions.ChangeOrg({ orgId }));
   };
 
-  export const register = (data: UserRegisterData) => async (dispatch: Dispatch<Actions.Register>, getState: () => AppState) => {
+  export const register = (data: RegisterUserBody) => async (dispatch: Dispatch<Actions.Register>, getState: () => AppState) => {
     console.log('register', data);
 
     const userData = await UserClient.registerUser({
@@ -152,12 +153,4 @@ export namespace User {
       dispatch(new Actions.RemoveFavoriteDashboardFailure({ workspaceId, dashboardUuid, error }));
     }
   };
-}
-
-export interface UserRegisterData {
-  firstName: string
-  lastName: string
-  phone: string
-  service: string
-  email: string
 }

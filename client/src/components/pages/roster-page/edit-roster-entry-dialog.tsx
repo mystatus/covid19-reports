@@ -36,7 +36,7 @@ import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { formatErrorMessage } from '../../../utility/errors';
-import { RosterClient } from '../../../client/api';
+import { RosterClient } from '../../../client/roster.client';
 
 export interface EditRosterEntryDialogProps {
   open: boolean,

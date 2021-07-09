@@ -16,7 +16,7 @@ import {
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { buildSettingText } from './notifications-tab';
 import { formatErrorMessage } from '../../../utility/errors';
-import { NotificationClient } from '../../../client/api';
+import { NotificationClient } from '../../../client/notification.client';
 
 export interface EditAlertDialogProps {
   open: boolean,

@@ -43,7 +43,7 @@ import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
 import { EditSpacesPageHelp } from './edit-spaces-page-help';
-import { WorkspaceClient } from '../../../client/api';
+import { WorkspaceClient } from '../../../client/workspace.client';
 
 interface WorkspaceMenuState {
   anchor: HTMLElement | null,

@@ -11,7 +11,7 @@ import CheckIcon from '@material-ui/icons/Check';
 import useStyles from './edit-space-dialog.styles';
 import { ApiWorkspace, ApiWorkspaceTemplate } from '../../../models/api-response';
 import { formatErrorMessage } from '../../../utility/errors';
-import { WorkspaceClient } from '../../../client/api';
+import { WorkspaceClient } from '../../../client/workspace.client';
 
 export interface EditWorkspaceDialogProps {
   open: boolean,

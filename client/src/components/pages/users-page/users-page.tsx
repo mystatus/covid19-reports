@@ -21,7 +21,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import MailOutlineIcon from '@material-ui/icons/MailOutline';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ReportProblemOutlinedIcon from '@material-ui/icons/ReportProblemOutlined';
-import client, { AccessRequestClient, UserClient } from '../../../client/api';
 import PageHeader from '../../page-header/page-header';
 import { UsersPageHelp } from './users-page-help';
 import useStyles from './users-page.styles';
@@ -35,6 +34,8 @@ import { Modal } from '../../../actions/modal.actions';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { Unit } from '../../../actions/unit.actions';
 import { ViewAccessRequestDialog } from './view-access-request-dialog';
+import { AccessRequestClient } from '../../../client/access-request.client';
+import { UserClient } from '../../../client/user.client';
 
 type UserMoreMenuState = {
   element: HTMLElement
@@ -58,7 +59,8 @@ export const UsersPage = () => {
   });
 
   const { edipi: currentUserEdipi } = useSelector(UserSelector.root);
-  const { id: orgId, name: orgName } = useSelector(UserSelector.org) ?? {};
+
+  const { id: orgId, name: orgName } = useSelector(UserSelector.org)!;
 
   const initializeTable = React.useCallback(async () => {
     if (orgId) {
@@ -66,8 +68,8 @@ export const UsersPage = () => {
         dispatch(AppFrame.setPageLoading(true));
         dispatch(Unit.fetch(orgId));
         const [users, requests] = await Promise.all([
-          UserClient.getOrgUsers(orgId!),
-          AccessRequestClient.getAccessRequests(orgId!),
+          UserClient.getOrgUsers(orgId),
+          AccessRequestClient.getAccessRequests(orgId),
         ]);
         setUserRows(users as ApiUser[]);
         setAccessRequests(requests);
@@ -101,7 +103,7 @@ export const UsersPage = () => {
   const acceptRemoveFromGroup = async () => {
     try {
       patchMoreMenuState({ loading: true });
-      await client.delete(`user/${orgId}/${userMoreMenu!.user.edipi}`);
+      await UserClient.removeUserFromOrg(orgId, userMoreMenu!.user.edipi);
     } catch (error) {
       showAlertDialog(error, 'Remove User from Group', 'Unable to remove user from group');
     }
@@ -122,7 +124,7 @@ export const UsersPage = () => {
       onChange: async (role: ApiRole, unitIds: number[] | null) => {
         try {
           patchMoreMenuState({ loading: true });
-          await client.post(`user/${orgId}`, {
+          await UserClient.upsertUser(orgId, {
             firstName: userMoreMenu!.user.firstName,
             lastName: userMoreMenu!.user.lastName,
             edipi: userMoreMenu!.user.edipi,

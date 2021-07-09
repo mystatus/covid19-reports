@@ -1,9 +1,9 @@
 import { Dispatch } from 'redux';
-import { WorkspaceClient } from '../client/api';
 import {
   ApiDashboard,
   ApiWorkspace,
 } from '../models/api-response';
+import { WorkspaceClient } from '../client/workspace.client';
 
 export namespace Workspace {
 

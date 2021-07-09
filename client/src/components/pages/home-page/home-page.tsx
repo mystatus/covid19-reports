@@ -29,10 +29,6 @@ import welcomeImage from '../../../media/images/welcome-image.png';
 import PageHeader from '../../page-header/page-header';
 import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
 import {
-  AccessRequestClient,
-  MusterClient,
-} from '../../../client/api';
-import {
   ApiAccessRequest,
   ApiDashboard,
   ApiWorkspace,
@@ -40,6 +36,8 @@ import {
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { Workspace } from '../../../actions/workspace.actions';
 import { getDashboardUrl } from '../../../utility/url-utils';
+import { AccessRequestClient } from '../../../client/access-request.client';
+import { MusterClient } from '../../../client/muster.client';
 
 
 const HomePageHelp = () => {
