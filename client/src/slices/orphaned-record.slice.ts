@@ -1,6 +1,6 @@
-import {createAsyncThunk, createSlice} from '@reduxjs/toolkit';
-import {OrphanedRecordClient} from '../client/api';
-import {ApiOrphanedRecord} from '../models/api-response';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { OrphanedRecordClient } from '../client/api';
+import { ApiOrphanedRecord } from '../models/api-response';
 
 export interface OrphanedRecordState {
   rows: ApiOrphanedRecord[],
@@ -20,71 +20,54 @@ export const orphanedRecordInitialState: OrphanedRecordState = {
   lastUpdated: 0,
 };
 
-export const fetchOrphanedRecordCount = createAsyncThunk(
-  'orphanedRecord/fetchCount',
+const name = 'orphanedRecord';
+
+export const fetchCount = createAsyncThunk(
+  `${name}/fetchCount`,
   async (orgId: number) => {
     return OrphanedRecordClient.fetchCount(orgId);
   },
 );
 
-export const fetchOrphanedRecordPage = createAsyncThunk(
-  'orphanedRecord/fetchPage',
+export const fetchPage = createAsyncThunk(
+  `${name}/fetchPage`,
   async (args: {orgId: number, page: number, limit: number, unit?: string}) => {
     return OrphanedRecordClient.fetchPage(args.orgId, args.page, args.limit, args.unit);
   },
 );
 
 export const orphanedSlice = createSlice({
-  name: 'orphanedRecord',
-  initialState: orphanedRecordInitialState as OrphanedRecordState,
+  name,
+  initialState: orphanedRecordInitialState,
   reducers: {
     clear: () => {
       return { ...orphanedRecordInitialState};
     },
   },
   extraReducers: builder => {
-    builder.addCase(fetchOrphanedRecordCount.pending, state => {
-      return {
-        ...state,
-        countLoading: true,
-      };
+    builder.addCase(fetchCount.pending, state => {
+      state.countLoading = true;
     })
-      .addCase(fetchOrphanedRecordCount.fulfilled, (state, action) => {
+      .addCase(fetchCount.fulfilled, (state, action) => {
         const count = action.payload.count;
-        return {
-          ...state,
-          count,
-          countLoading: false,
-          lastUpdated: Date.now(),
-        };
+        Object.assign(state, { count, countLoading: false, lastUpdated: Date.now()});
       })
-      .addCase(fetchOrphanedRecordCount.rejected, state => {
-        return {
-          ...state,
-          countLoading: false,
-        };
+      .addCase(fetchCount.rejected, state => {
+        state.countLoading = false;
       })
-      .addCase(fetchOrphanedRecordPage.pending, state => {
-        return {
-          ...state,
-          pageLoading: true,
-        };
+      .addCase(fetchPage.pending, state => {
+        state.pageLoading = true;
       })
-      .addCase(fetchOrphanedRecordPage.fulfilled, (state, action) => {
+      .addCase(fetchPage.fulfilled, (state, action) => {
         const {rows, totalRowsCount} = action.payload;
-        return {
-          ...state,
-          rows,
-          totalRowsCount,
-          pageLoading: false,
-          lastUpdated: Date.now(),
-        };
+        state.pageLoading = false;
+        state.rows = rows;
+        state.totalRowsCount = totalRowsCount;
+        state.pageLoading = false;
+        state.lastUpdated = Date.now();
       })
-      .addCase(fetchOrphanedRecordPage.rejected, state => {
-        return {
-          ...state,
-          pageLoading: false,
-        };
+      .addCase(fetchPage.rejected, state => {
+        state.pageLoading = false;
       })
       .addDefaultCase(state => {
         return state;
@@ -92,5 +75,8 @@ export const orphanedSlice = createSlice({
   },
 });
 
-export const OrphanedRecordActions = orphanedSlice.actions;
-export default orphanedSlice.reducer;
+export const OrphanedRecordActions = {
+  ...orphanedSlice.actions,
+  fetchCount,
+  fetchPage,
+};

@@ -35,8 +35,7 @@ import {
 } from '../link/link';
 import useStyles from './app-sidenav.styles';
 import { AppFrameActions} from '../../slices/app-frame.slice';
-
-import {OrphanedRecordActions, fetchOrphanedRecordCount} from '../../slices/orphaned-record.slice';
+import { OrphanedRecordActions } from '../../slices/orphaned-record.slice';
 
 import { DataExportIcon } from '../icons/data-export-icon';
 
@@ -95,7 +94,7 @@ export const AppSidenav = () => {
 
   useEffect(() => {
     if (user.activeRole?.role.canManageRoster) {
-      dispatch(fetchOrphanedRecordCount(orgId!));
+      dispatch(OrphanedRecordActions.fetchCount(orgId!));
     } else {
       dispatch(OrphanedRecordActions.clear());
     }
