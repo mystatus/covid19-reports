@@ -1,4 +1,4 @@
-import {createReducer} from '@reduxjs/toolkit';
+import { createReducer } from '@reduxjs/toolkit';
 import { HelpCard } from '../actions/help-card.actions';
 import { Persist } from '../actions/persist.actions';
 import { User } from '../actions/user.actions';

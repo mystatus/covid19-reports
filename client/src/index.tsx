@@ -5,7 +5,7 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { CssBaseline } from '@material-ui/core';
 import { ThemeProvider } from '@material-ui/styles';
 import { PersistGate } from 'redux-persist/integration/react';
-import {persistStore} from 'redux-persist';
+import { persistStore } from 'redux-persist';
 import { App } from './components/app';
 import { store } from './store';
 import theme from './theme';
