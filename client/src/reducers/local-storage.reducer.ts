@@ -8,8 +8,7 @@ import { getLoggedInState } from '../utility/user-utils';
 
 // We need to be careful about what goes into local storage due to security concerns. So make sure not to add anything
 // that is clearly identifying of groups, units, or individuals, such as PII/PHI data, group name, etc.
-
-export interface LocalStorageState extends Record<string, unknown>{
+export interface LocalStorageState extends Record<string, any>{
   orgId?: number
   hideHelpCard?: Dict<boolean>
 }

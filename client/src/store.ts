@@ -5,7 +5,6 @@ import {
 } from 'redux';
 
 import { configureStore } from '@reduxjs/toolkit';
-import thunk from 'redux-thunk';
 import {
   persistReducer,
 } from 'redux-persist';
@@ -135,7 +134,7 @@ const reducers = combineReducers({
 });
 const persistedReducer = persistReducer(persistConfig, reducers);
 
-const middleware = [modalResolverHandler, thunk, createPlainObjectMiddleware()];
+const middleware = [modalResolverHandler, createPlainObjectMiddleware()];
 
 export const store = configureStore({
   reducer: persistedReducer,
@@ -143,6 +142,7 @@ export const store = configureStore({
     return getDefaultMiddleware().concat(middleware);
   },
   devTools: process.env.NODE_ENV !== 'production',
+  preloadedState: initialState,
 });
 
 
