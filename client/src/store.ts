@@ -37,8 +37,8 @@ import {
 } from './reducers/local-storage.reducer';
 import {
   userInitialState,
-  userReducer,
-} from './reducers/user.reducer';
+  userSlice,
+} from './slices/user.slice';
 import {
   workspaceInitialState,
   workspaceReducer,
@@ -129,7 +129,7 @@ const reducers = combineReducers({
   roster: rosterReducer,
   reportSchema: reportSchemaReducer,
   orphanedRecord: orphanedSlice.reducer,
-  user: userReducer,
+  user: userSlice.reducer,
   workspace: workspaceReducer,
   localStorage: localStorageReducer,
 });

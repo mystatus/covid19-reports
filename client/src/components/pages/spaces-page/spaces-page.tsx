@@ -1,9 +1,5 @@
 import React, { useEffect } from 'react';
 import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
-import {
   Card,
   CardContent,
   Container,
@@ -19,8 +15,9 @@ import {
 } from '@material-ui/core';
 import FavoriteBorderIcon from '@material-ui/icons/FavoriteBorder';
 import FavoriteIcon from '@material-ui/icons/Favorite';
-import { AppFrame } from '../../../actions/app-frame.actions';
-import { User } from '../../../actions/user.actions';
+import { useAppDispatch, useAppSelector} from '../../../hooks/app-dispatch';
+import { AppFrameActions } from '../../../slices/app-frame.slice';
+import { UserActions } from '../../../slices/user.slice';
 import { Workspace } from '../../../actions/workspace.actions';
 import {
   ApiDashboard,
@@ -36,16 +33,16 @@ import useStyles from './spaces-page.styles';
 
 export const SpacesPage = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
-  const orgId = useSelector(UserSelector.orgId)!;
-  const favoriteDashboards = useSelector(UserSelector.favoriteDashboards)!;
-  const workspaces = useSelector(UserSelector.workspaces)!;
-  const dashboards = useSelector(WorkspaceSelector.dashboards)!;
+  const orgId = useAppSelector(UserSelector.orgId)!;
+  const favoriteDashboards = useAppSelector(UserSelector.favoriteDashboards)!;
+  const workspaces = useAppSelector(UserSelector.workspaces)!;
+  const dashboards = useAppSelector(WorkspaceSelector.dashboards)!;
 
   useEffect(() => {
-    dispatch(AppFrame.setPageLoading(true));
-    dispatch(User.refresh());
+    dispatch(AppFrameActions.setPageLoading({isLoading: true}));
+    dispatch(UserActions.refresh());
     dispatch(Workspace.fetch(orgId));
   }, [dispatch, orgId]);
 
@@ -55,15 +52,15 @@ export const SpacesPage = () => {
         await dispatch(Workspace.fetchDashboards(orgId, workspace.id));
       }
 
-      dispatch(AppFrame.setPageLoading(false));
+      dispatch(AppFrameActions.setPageLoading({isLoading: false}));
     })();
   }, [dispatch, orgId, workspaces]);
 
   const handleFavoriteButtonClick = (workspace: ApiWorkspace, dashboard: ApiDashboard) => {
     if (isDashboardFavorited(workspace, dashboard)) {
-      dispatch(User.removeFavoriteDashboard(orgId, workspace.id, dashboard.uuid));
+      dispatch(UserActions.removeFavoriteDashboard({orgId, workspaceId: workspace.id, dashboardUuid: dashboard.uuid}));
     } else {
-      dispatch(User.addFavoriteDashboard(orgId, workspace.id, dashboard.uuid));
+      dispatch(UserActions.addFavoriteDashboard({orgId, workspaceId: workspace.id, dashboardUuid: dashboard.uuid}));
     }
   };
 

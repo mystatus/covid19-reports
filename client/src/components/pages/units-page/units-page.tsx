@@ -28,12 +28,15 @@ import React, {
 } from 'react';
 import {
   useDispatch,
-  useSelector,
 } from 'react-redux';
 import axios from 'axios';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
+import {
+  useAppDispatch,
+  useAppSelector,
+} from '../../../hooks/app-dispatch';
 import { UnitsPageHelp } from './units-page-help';
 import useStyles from './units-page.styles';
 import { ApiUnit } from '../../../models/api-response';
@@ -45,8 +48,8 @@ import { musterConfigurationsToStrings } from '../../../utility/muster-utils';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { DefaultMusterDialog, DefaultMusterDialogProps } from './default-muster-dialog';
-import { User } from '../../../actions/user.actions';
 import { UserSelector } from '../../../selectors/user.selector';
+import { UserActions } from '../../../slices/user.slice';
 import MusterConfigReadable from './muster-config-readable';
 import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
 import { ReportSchema } from '../../../actions/report-schema.actions';
@@ -57,11 +60,12 @@ interface UnitMenuState {
 }
 
 export const UnitsPage = () => {
-  const { id: orgId, defaultMusterConfiguration = [] } = useSelector(UserSelector.org) ?? {};
+  const { id: orgId, defaultMusterConfiguration = [] } = useAppSelector(UserSelector.org) ?? {};
   const classes = useStyles();
   const dispatch = useDispatch();
-  const units = useSelector(UnitSelector.all);
-  const reports = useSelector(ReportSchemaSelector.all);
+  const appDispatch = useAppDispatch();
+  const units = useAppSelector(UnitSelector.all);
+  const reports = useAppSelector(ReportSchemaSelector.all);
   const initialEditUnitState = { open: false, defaultMusterConfiguration };
   const [unitToDelete, setUnitToDelete] = useState<null | ApiUnit>(null);
   const [editUnitDialogProps, setEditUnitDialogProps] = useState<EditUnitDialogProps>(initialEditUnitState);
@@ -82,7 +86,7 @@ export const UnitsPage = () => {
       onClose: async (success?: boolean) => {
         setDefaultMusterDialogProps({ open: false });
         if (success) {
-          await dispatch(User.refresh());
+          await appDispatch(UserActions.refresh());
           await initializeTable();
           setDefaultMusterSaved(true);
         }

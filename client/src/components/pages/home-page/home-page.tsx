@@ -1,8 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
 import { Box,
   Card,
   CardContent,
@@ -19,25 +15,25 @@ import FavoriteIcon from '@material-ui/icons/Favorite';
 import clsx from 'clsx';
 import axios from 'axios';
 import moment from 'moment';
+
+import { useAppDispatch, useAppSelector } from '../../../hooks/app-dispatch';
 import { UserSelector } from '../../../selectors/user.selector';
 import { WorkspaceSelector } from '../../../selectors/workspace.selector';
 import { Link } from '../../link/link';
-import { User } from '../../../actions/user.actions';
-import { UserState } from '../../../reducers/user.reducer';
-import { AppState } from '../../../store';
+import { UserActions } from '../../../slices/user.slice';
 import useStyles from './home-page.styles';
 import welcomeImage from '../../../media/images/welcome-image.png';
 import PageHeader from '../../page-header/page-header';
 import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
 import { AccessRequestClient } from '../../../client/api';
 import { ApiAccessRequest, ApiDashboard, ApiMusterTrends, ApiWorkspace } from '../../../models/api-response';
-import { AppFrame } from '../../../actions/app-frame.actions';
 import { Workspace } from '../../../actions/workspace.actions';
 import { getDashboardUrl } from '../../../utility/url-utils';
+import { AppFrameActions } from '../../../slices/app-frame.slice';
 
 
 const HomePageHelp = () => {
-  const user = useSelector<AppState, UserState>(state => state.user);
+  const user = useAppSelector(state => state.user);
 
   return (
     <Grid container direction="row">
@@ -110,19 +106,19 @@ const HtmlTooltip = withStyles((theme: Theme) => ({
 
 export const HomePage = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
-  const orgId = useSelector(UserSelector.orgId)!;
-  const user = useSelector<AppState, UserState>(state => state.user);
-  const orphanedRecords = useSelector(OrphanedRecordSelector.root);
+  const dispatch = useAppDispatch();
+  const orgId = useAppSelector(UserSelector.orgId)!;
+  const user = useAppSelector(state => state.user);
+  const orphanedRecords = useAppSelector(OrphanedRecordSelector.root);
   const [accessRequests, setAccessRequests] = useState<ApiAccessRequest[]>([]);
   const [musterComplianceLastTwoWeeks, setMusterComplianceLastTwoWeek] = useState<number[]>([1.0, 0.0]);
-  const favoriteDashboards = useSelector(UserSelector.favoriteDashboards)!;
-  const workspaces = useSelector(UserSelector.workspaces)!;
-  const dashboards = useSelector(WorkspaceSelector.dashboards)!;
+  const favoriteDashboards = useAppSelector(UserSelector.favoriteDashboards)!;
+  const workspaces = useAppSelector(UserSelector.workspaces)!;
+  const dashboards = useAppSelector(WorkspaceSelector.dashboards)!;
 
   useEffect(() => {
-    dispatch(AppFrame.setPageLoading(true));
-    dispatch(User.refresh());
+    dispatch(AppFrameActions.setPageLoading({isLoading: true}));
+    dispatch(UserActions.refresh());
     dispatch(Workspace.fetch(orgId));
   }, [dispatch, orgId]);
 
@@ -132,7 +128,7 @@ export const HomePage = () => {
         await dispatch(Workspace.fetchDashboards(orgId, workspace.id));
       }
 
-      dispatch(AppFrame.setPageLoading(false));
+      dispatch(AppFrameActions.setPageLoading({isLoading: false}));
     })();
   }, [dispatch, orgId, workspaces]);
 

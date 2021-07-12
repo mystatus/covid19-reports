@@ -1,6 +1,8 @@
+import {createReducer} from '@reduxjs/toolkit';
 import { HelpCard } from '../actions/help-card.actions';
 import { Persist } from '../actions/persist.actions';
 import { User } from '../actions/user.actions';
+import { UserActions } from '../slices/user.slice';
 import { Dict } from '../utility/typescript-utils';
 import { getLoggedInState } from '../utility/user-utils';
 
@@ -14,35 +16,34 @@ export interface LocalStorageState extends Record<string, unknown>{
 
 export const localStorageInitialState: LocalStorageState = {};
 
-export function localStorageReducer(state = localStorageInitialState, action: any): LocalStorageState {
-  switch (action.type) {
-    case User.Actions.Register.type: {
+export const localStorageReducer = createReducer(localStorageInitialState, builder => {
+  builder.addCase(UserActions.refresh.fulfilled, (state, action) => {
+    const { userData, localStorage } = action.payload;
+    const loggedInState = getLoggedInState(userData, localStorage);
+    return {
+      ...state,
+      orgId: loggedInState.activeRole?.role.org?.id,
+    };
+  })
+    .addCase(UserActions.register.fulfilled, (state, action) => {
       const { userData, localStorage } = (action as User.Actions.Register).payload;
       const loggedInState = getLoggedInState(userData, localStorage);
       return {
         ...state,
         orgId: loggedInState.activeRole?.role.org?.id,
       };
-    }
-    case User.Actions.Refresh.type: {
-      const { userData, localStorage } = (action as User.Actions.Refresh).payload;
-      const loggedInState = getLoggedInState(userData, localStorage);
-      return {
-        ...state,
-        orgId: loggedInState.activeRole?.role.org?.id,
-      };
-    }
-    case User.Actions.Logout.type: {
+    })
+    .addCase(UserActions.logout.type, () => {
       return localStorageInitialState;
-    }
-    case User.Actions.ChangeOrg.type: {
+    })
+    .addCase(UserActions.changeOrg.type, (state, action) => {
       const { orgId } = (action as User.Actions.ChangeOrg).payload;
       return {
         ...state,
         orgId,
       };
-    }
-    case HelpCard.Actions.Hide.type: {
+    })
+    .addCase(HelpCard.Actions.Hide.type, (state, action) => {
       const { helpCardId } = (action as HelpCard.Actions.Hide).payload;
       return {
         ...state,
@@ -51,15 +52,13 @@ export function localStorageReducer(state = localStorageInitialState, action: an
           [helpCardId]: true,
         },
       };
-    }
-    case Persist.Actions.Set.type: {
+    })
+    .addCase(Persist.Actions.Set.type, (state, action) => {
       const { persistKey, value } = (action as Persist.Actions.Set).payload;
       return {
         ...state,
         [persistKey]: value,
       };
-    }
-    default:
-      return state;
-  }
-}
+    })
+    .addDefaultCase(state => state);
+});

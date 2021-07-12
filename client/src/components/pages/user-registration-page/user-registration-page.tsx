@@ -15,17 +15,12 @@ import {
 } from '@material-ui/icons';
 import MuiPhoneNumber from 'material-ui-phone-number';
 import React, { useState } from 'react';
+import { useAppDispatch, useAppSelector} from '../../../hooks/app-dispatch';
 import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
-import {
-  User,
+  UserActions,
   UserRegisterData,
-} from '../../../actions/user.actions';
+} from '../../../slices/user.slice';
 import services from '../../../data/services';
-import { UserState } from '../../../reducers/user.reducer';
-import { AppState } from '../../../store';
 import {
   validateEmail,
   validatePhone,
@@ -45,8 +40,8 @@ type UserRegisterDataWithValidation = {
 
 export const UserRegistrationPage = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
-  const user = useSelector<AppState, UserState>(state => state.user);
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(state => state.user);
   const [registerUserLoading, setRegisterUserLoading] = useState(false);
   const [inputData, setInputData] = useState<UserRegisterDataWithValidation>({
     firstName: { hasBlurred: false, hasChanged: false, helperText: '', value: '' },
@@ -99,7 +94,7 @@ export const UserRegistrationPage = () => {
 
   async function handleCreateAccountClick() {
     setRegisterUserLoading(true);
-    await dispatch(User.register({
+    await dispatch(UserActions.register({
       firstName: inputData.firstName.value,
       lastName: inputData.lastName.value,
       phone: inputData.phone.value,
