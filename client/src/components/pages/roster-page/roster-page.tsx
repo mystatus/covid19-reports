@@ -28,12 +28,11 @@ import React, {
 import axios from 'axios';
 import {
   useDispatch,
-  useSelector,
 } from 'react-redux';
 import _ from 'lodash';
 import moment from 'moment';
+import { useAppDispatch, useAppSelector } from '../../../hooks/app-dispatch';
 import { AppFrame } from '../../../actions/app-frame.actions';
-import { OrphanedRecord } from '../../../actions/orphaned-record.actions';
 import { Roster } from '../../../actions/roster.actions';
 import { Unit } from '../../../actions/unit.actions';
 import { RosterClient } from '../../../client/api';
@@ -78,6 +77,7 @@ import { DataExportIcon } from '../../icons/data-export-icon';
 import { Modal } from '../../../actions/modal.actions';
 import { UserSelector } from '../../../selectors/user.selector';
 import usePersistedState from '../../../hooks/use-persisted-state';
+import { OrphanedRecordActions } from '../../../slices/orphaned-record.slice';
 
 const unitColumn: ApiRosterColumnInfo = {
   name: 'unit',
@@ -99,11 +99,12 @@ interface SortState {
 export const RosterPage = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
+  const appDispatch = useAppDispatch();
 
-  const units = useSelector(UnitSelector.all);
-  const orphanedRecords = useSelector(OrphanedRecordSelector.root);
-  const org = useSelector(UserSelector.org)!;
-  const canManageRoster = useSelector(UserSelector.canManageRoster);
+  const units = useAppSelector(UnitSelector.all);
+  const orphanedRecords = useAppSelector(OrphanedRecordSelector.root);
+  const org = useAppSelector(UserSelector.org)!;
+  const canManageRoster = useAppSelector(UserSelector.canManageRoster);
 
   const fileInputRef = createRef<HTMLInputElement>();
   const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
@@ -237,18 +238,18 @@ export const RosterPage = () => {
 
   const fetchOrphanedRecords = useCallback(async () => {
     if (!canManageRoster) {
-      dispatch(OrphanedRecord.clear());
+      appDispatch(OrphanedRecordActions.clear());
       return;
     }
 
     const unitFilter = orphanedRecordsUnitFilter || undefined;
 
     try {
-      await dispatch(OrphanedRecord.fetchPage(orgId, orphanedRecordsPage, orphanedRecordsRowsPerPage, unitFilter));
+      await appDispatch(OrphanedRecordActions.fetchPage({orgId, page: orphanedRecordsPage, limit: orphanedRecordsRowsPerPage, unit: unitFilter}));
     } catch (error) {
       dispatch(Modal.alert('Get Orphaned Records', formatErrorMessage(error, 'Failed to get orphaned records'))).then();
     }
-  }, [canManageRoster, dispatch, orgId, orphanedRecordsPage, orphanedRecordsRowsPerPage, orphanedRecordsUnitFilter]);
+  }, [canManageRoster, appDispatch, dispatch, orgId, orphanedRecordsPage, orphanedRecordsRowsPerPage, orphanedRecordsUnitFilter]);
 
   // Initial load.
   useEffect(() => {

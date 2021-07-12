@@ -1,14 +1,11 @@
 import {
-  createStore,
   combineReducers,
-  applyMiddleware,
-  compose,
   Middleware,
   AnyAction,
 } from 'redux';
-import thunk from 'redux-thunk';
+
+import { configureStore } from '@reduxjs/toolkit';
 import {
-  persistStore,
   persistReducer,
 } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
@@ -18,17 +15,9 @@ import {
   modalResolverHandler,
 } from './reducers/modal.reducer';
 import {
-  appFrameInitialState,
-  appFrameReducer,
-} from './reducers/app-frame.reducer';
-import {
   notificationInitialState,
   notificationReducer,
 } from './reducers/notification.reducer';
-import {
-  orphanedRecordInitialState,
-  orphanedRecordReducer,
-} from './reducers/orphaned-record.reducer';
 import {
   roleInitialState,
   roleReducer,
@@ -47,8 +36,8 @@ import {
 } from './reducers/local-storage.reducer';
 import {
   userInitialState,
-  userReducer,
-} from './reducers/user.reducer';
+  userSlice,
+} from './slices/user.slice';
 import {
   workspaceInitialState,
   workspaceReducer,
@@ -57,6 +46,16 @@ import {
   unitInitialState,
   unitReducer,
 } from './reducers/unit.reducer';
+
+import {
+  appFrameInitialState,
+  appFrameSlice,
+} from './slices/app-frame.slice';
+
+import {
+  orphanedSlice,
+  orphanedRecordInitialState,
+} from './slices/orphaned-record.slice';
 
 export const initialState = {
   appFrame: appFrameInitialState,
@@ -75,11 +74,11 @@ export const initialState = {
 export type AppState = typeof initialState;
 
 // React Devtools Extension
-const composeEnhancers = typeof window === 'object' && (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
+/* const composeEnhancers = typeof window === 'object' && (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
   ? (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({
     // Specify extension’s options like name, actionsBlacklist, actionsCreators, serialize...
   })
-  : compose;
+  : compose; */
 
 
 /**
@@ -120,36 +119,33 @@ const persistConfig = {
   whitelist: ['localStorage'],
 };
 
-export const configureStore = () => {
-  const store = createStore(
-    persistReducer<any>(
-      persistConfig,
-      combineReducers({
-        appFrame: appFrameReducer,
-        notification: notificationReducer,
-        modal: modalReducer,
-        role: roleReducer,
-        unit: unitReducer,
-        roster: rosterReducer,
-        reportSchema: reportSchemaReducer,
-        orphanedRecord: orphanedRecordReducer,
-        user: userReducer,
-        workspace: workspaceReducer,
-        localStorage: localStorageReducer,
-      }),
-    ),
-    initialState,
-    composeEnhancers(
-      applyMiddleware(
-        modalResolverHandler,
-        thunk,
-        createPlainObjectMiddleware(),
-      ),
-    ),
-  );
+const reducers = combineReducers({
+  appFrame: appFrameSlice.reducer,
+  notification: notificationReducer,
+  modal: modalReducer,
+  role: roleReducer,
+  unit: unitReducer,
+  roster: rosterReducer,
+  reportSchema: reportSchemaReducer,
+  orphanedRecord: orphanedSlice.reducer,
+  user: userSlice.reducer,
+  workspace: workspaceReducer,
+  localStorage: localStorageReducer,
+});
+const persistedReducer = persistReducer(persistConfig, reducers);
 
-  return {
-    store,
-    persistor: persistStore(store),
-  };
-};
+const middleware = [modalResolverHandler, createPlainObjectMiddleware()];
+
+export const store = configureStore({
+  reducer: persistedReducer,
+  middleware: getDefaultMiddleware => {
+    return getDefaultMiddleware().concat(middleware);
+  },
+  devTools: process.env.NODE_ENV !== 'production',
+  preloadedState: initialState,
+});
+
+
+export type RootState = ReturnType<typeof store.getState>;
+
+export type AppDispatch = typeof store.dispatch;

@@ -5,13 +5,14 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { CssBaseline } from '@material-ui/core';
 import { ThemeProvider } from '@material-ui/styles';
 import { PersistGate } from 'redux-persist/integration/react';
+import { persistStore } from 'redux-persist';
 import { App } from './components/app';
-import { configureStore } from './store';
+import { store } from './store';
 import theme from './theme';
 import { ErrorBoundary } from './components/error-boundary/error-boundary';
 import { ModalProvider } from './components/modal/modal';
 
-const { store, persistor } = configureStore();
+const persistor = persistStore(store);
 
 ReactDOM.render(
   <React.StrictMode>
