@@ -41,14 +41,13 @@ function hasReportingGroup(rosterInfo: RosterInfo, reportingGroup: string | unde
 }
 
 async function findReportSchema(reportSchemaId: string, orgId: number | undefined) {
-  const reportSchema = await ReportSchema.findOne({
+  return ReportSchema.findOne({
     relations: ['org'],
     where: {
       id: reportSchemaId,
       org: orgId,
     },
   });
-  return reportSchema;
 }
 
 async function saveObservationWithReportSchema(req: ApiRequest<EdipiParam, ObservationApiModel>, reportSchema: ReportSchema) {
