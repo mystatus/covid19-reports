@@ -270,7 +270,7 @@ class RosterController {
   async getRosterInfosForIndividual(req: ApiRequest<EdipiParam, null, ReportDateQuery>, res: Response) {
 
     res.json({
-      rosters: await getRostersForIndividual(req.query.reportDate, req.params.edipi),
+      rosters: await getRostersForIndividual(req.params.edipi, req.query.reportDate),
     });
   }
 
@@ -328,7 +328,7 @@ class RosterController {
 
 }
 
-export async function getRostersForIndividual(dateStr: string, edipi: string) {
+export async function getRostersForIndividual(edipi: string, dateStr: string) {
   const reportDate = dateFromString(dateStr);
 
   if (!reportDate) {

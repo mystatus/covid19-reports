@@ -14,46 +14,53 @@ class ObservationController {
   }
 
   async createObservation(req: ApiRequest<EdipiParam, ObservationApiModel>, res: Response) {
-    return res.json(await createObservation(req));
-  }
-}
 
-function hasReportingGroup(roster: RosterInfo, reportingGroup: string | undefined) {
-  return reportingGroup && roster.unit.org?.reportingGroup === reportingGroup;
-}
+    Log.info('Creating observation', req.body);
 
-async function createObservation(req: ApiRequest<EdipiParam, ObservationApiModel>) {
-  Log.info('Creating observation', req.body);
+    const reportingGroup = req.body.reportingGroup;
+    const typeId = req.body.typeId;
 
-  const reportingGroup = req.body.reportingGroup;
-  const rosters: RosterInfo[] = await getRostersForIndividual((req.body.timestamp).toString(10), req.body.edipi);
+    const rosters: RosterInfo[] = await getRostersForIndividual(req.body.edipi, req.body.timestamp.toString(10));
 
-  for (const roster of rosters) {
-    if (hasReportingGroup(roster, reportingGroup)) {
-
-      const reportSchema = await ReportSchema.findOne({
-        relations: ['org'],
-        where: {
-          id: req.body.typeId,
-          org: roster.unit.org?.id,
-        },
-      });
-
-      if (reportSchema) {
-        const observation = new Observation();
-        observation.documentId = req.body.documentId;
-        observation.edipi = req.body.edipi;
-        observation.timestamp = timestampColumnTransformer.to(req.body.timestamp);
-        observation.type = reportSchema;
-        observation.unit = req.body.unit;
-        observation.reportingGroup = req.body.reportingGroup;
-        Log.info(`Saving new observation for ${observation.documentId} documentId`);
-        return observation.save();
+    for (const roster of rosters) {
+      if (hasReportingGroup(roster, reportingGroup)) {
+        const reportSchema = await findReportSchema(typeId, roster.unit.org?.id);
+        if (reportSchema) {
+          return res.json(saveObservationWithReportSchema(req, reportSchema));
+        }
       }
     }
+    Log.error(`Unable to save observation from: ${req.body}`);
+    return res.json(new Observation());
+
   }
-  Log.error(`Unable to save observation from: ${req.body}`);
-  return Promise.reject(new Observation());
+}
+
+function hasReportingGroup(rosterInfo: RosterInfo, reportingGroup: string | undefined) {
+  return reportingGroup && rosterInfo.unit.org?.reportingGroup === reportingGroup;
+}
+
+async function findReportSchema(reportSchemaId: string, orgId: number | undefined) {
+  const reportSchema = await ReportSchema.findOne({
+    relations: ['org'],
+    where: {
+      id: reportSchemaId,
+      org: orgId,
+    },
+  });
+  return reportSchema;
+}
+
+async function saveObservationWithReportSchema(req: ApiRequest<EdipiParam, ObservationApiModel>, reportSchema: ReportSchema) {
+  const observation = new Observation();
+  observation.documentId = req.body.documentId;
+  observation.edipi = req.body.edipi;
+  observation.timestamp = timestampColumnTransformer.to(req.body.timestamp);
+  observation.type = reportSchema;
+  observation.unit = req.body.unit;
+  observation.reportingGroup = req.body.reportingGroup;
+  Log.info(`Saving new observation for ${observation.documentId} documentId`);
+  return observation.save();
 }
 
 export default new ObservationController();
