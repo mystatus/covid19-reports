@@ -35,9 +35,7 @@ export class Observation extends BaseEntity {
   timestamp!: Date;
 
   // type of the observation symptoms
-  @ManyToOne(() => ReportSchema,
-    type => type.id,
-    { primary: false, onDelete: 'RESTRICT', eager: true, orphanedRowAction: 'nullify', cascade: false })
+  @ManyToOne(() => ReportSchema, { onDelete: 'RESTRICT' })
   type!: ReportSchema;
 
   // military unit
