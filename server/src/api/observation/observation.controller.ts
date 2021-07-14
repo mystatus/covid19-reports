@@ -4,7 +4,7 @@ import { Observation } from './observation.model';
 import { ApiRequest, EdipiParam } from '../api.router';
 import { Log } from '../../util/log';
 import { ReportSchema } from '../report-schema/report-schema.model';
-import { RosterInfo, getRostersForIndividual } from '../roster/roster.controller';
+import rosterController, { RosterInfo, getRostersForIndividual} from '../roster/roster.controller';
 import { timestampColumnTransformer } from '../../util/util';
 import { BadRequestError } from '../../util/error-types';
 import { assertRequestBody } from '../../util/api-utils';
@@ -18,10 +18,11 @@ class ObservationController {
   async createObservation(req: ApiRequest<EdipiParam, ObservationApiModel>, res: Response) {
     Log.info('Creating observation', req.body);
 
-    const { reportingGroup, reportSchemaId, edipi, timestamp } = assertRequestBody(req, [
+    const { reportingGroup, reportSchemaId, edipi, timestamp, phoneNumber } = assertRequestBody(req, [
       'reportSchemaId',
       'edipi',
       'timestamp',
+      'phoneNumber',
     ]);
 
     const rosters: RosterInfo[] = await getRostersForIndividual(edipi, `${timestamp}`);
@@ -30,6 +31,7 @@ class ObservationController {
       if (hasReportingGroup(roster, reportingGroup)) {
         const reportSchema = await findReportSchema(reportSchemaId, roster.unit.org?.id);
         if (reportSchema) {
+          await rosterController.savePhoneNumber(edipi, phoneNumber);
           return res.json(saveObservationWithReportSchema(req, reportSchema));
         }
       }
