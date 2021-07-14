@@ -4,7 +4,7 @@ import { Observation } from './observation.model';
 import { ApiRequest, EdipiParam } from '../api.router';
 import { Log } from '../../util/log';
 import { ReportSchema } from '../report-schema/report-schema.model';
-import { RosterInfo, getRostersForIndividual } from '../roster/roster.controller';
+import { RosterInfo, getRosterInfosForIndividualOnDate } from '../roster/roster.controller';
 import { timestampColumnTransformer } from '../../util/util';
 import { BadRequestError } from '../../util/error-types';
 import { assertRequestBody } from '../../util/api-utils';
@@ -24,7 +24,7 @@ class ObservationController {
       'timestamp',
     ]);
 
-    const rosters: RosterInfo[] = await getRostersForIndividual(edipi, `${timestamp}`);
+    const rosters: RosterInfo[] = await getRosterInfosForIndividualOnDate(edipi, `${timestamp}`);
 
     for (const roster of rosters) {
       if (hasReportingGroup(roster, reportingGroup)) {
