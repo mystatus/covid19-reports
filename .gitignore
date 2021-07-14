@@ -10,7 +10,7 @@ coverage/
 build/
 
 # certs
-/server/certs/
+/covid19-reports-server/certs/
 
 # misc
 .DS_Store

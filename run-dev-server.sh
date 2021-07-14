@@ -7,5 +7,5 @@ set -o allexport
 source .env
 set +o allexport
 
-cd server || exit
+cd covid19-reports-server || exit
 ./run-dev.sh

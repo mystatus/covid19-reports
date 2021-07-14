@@ -7,17 +7,17 @@ rm -rf ./build
 mkdir ./build
 
 # Server
-cd server || exit
+cd covid19-reports-server || exit
 ./build.sh
 cd ..
 
-mv ./server/build/* ./build
-rmdir ./server/build
+mv ./covid19-reports-server/build/* ./build
+rmdir ./covid19-reports-server/build
 
 # Client
-cd client || exit
+cd covid19-reports-client || exit
 ./build.sh
 cd ..
 
-mv ./client/build/* ./build
-rmdir ./client/build
+mv ./covid19-reports-client/build/* ./build
+rmdir ./covid19-reports-client/build
