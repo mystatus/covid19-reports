@@ -72,26 +72,35 @@ export const edipiColumnDisplayName = baseRosterColumnLookup.edipi.displayName;
 export const unitColumnDisplayName = 'Unit';
 
 export type RosterEntryData = {
-  edipi: string,
-  unit: number,
-  firstName?: string,
-  lastName?: string,
+  edipi: string
+  unit: number
+  firstName?: string
+  lastName?: string
 } & CustomColumns;
 
 export type RosterFileRow<TColumnValue = string> = {
-  Unit: TColumnValue,
-  [columnDisplayName: string]: TColumnValue,
+  Unit: TColumnValue
+  [columnDisplayName: string]: TColumnValue
 };
 
-export type QueryOp = '=' | '<>' | '~' | '>' | '<' | 'startsWith' | 'endsWith' | 'in' | 'between';
+export type QueryOp =
+  | '='
+  | '<>'
+  | '~'
+  | '>'
+  | '<'
+  | 'startsWith'
+  | 'endsWith'
+  | 'in'
+  | 'between';
 
 export type RosterColumnInfoWithValue = RosterColumnInfo & {
-  value: RosterColumnValue,
+  value: RosterColumnValue
 };
 
 export type RosterInfo = {
-  unit: UnitSerialized,
-  columns: RosterColumnInfo[],
+  unit: UnitSerialized
+  columns: RosterColumnInfo[]
 };
 
 export type CustomColumnConfig = {};
