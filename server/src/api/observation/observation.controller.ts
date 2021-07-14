@@ -7,6 +7,7 @@ import { ReportSchema } from '../report-schema/report-schema.model';
 import { RosterInfo, getRostersForIndividual } from '../roster/roster.controller';
 import { timestampColumnTransformer } from '../../util/util';
 import { BadRequestError } from '../../util/error-types';
+import { assertRequestBody } from '../../util/api-utils';
 
 
 class ObservationController {
@@ -15,13 +16,15 @@ class ObservationController {
   }
 
   async createObservation(req: ApiRequest<EdipiParam, ObservationApiModel>, res: Response) {
-
     Log.info('Creating observation', req.body);
 
-    const reportingGroup = req.body.reportingGroup;
-    const reportSchemaId = req.body.reportSchemaId;
+    const { reportingGroup, reportSchemaId, edipi, timestamp } = assertRequestBody(req, [
+      'reportSchemaId',
+      'edipi',
+      'timestamp',
+    ]);
 
-    const rosters: RosterInfo[] = await getRostersForIndividual(req.body.edipi, req.body.timestamp.toString(10));
+    const rosters: RosterInfo[] = await getRostersForIndividual(edipi, timestamp.toString(10));
 
     for (const roster of rosters) {
       if (hasReportingGroup(roster, reportingGroup)) {
