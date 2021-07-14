@@ -6,6 +6,7 @@ import { Log } from '../../util/log';
 import { ReportSchema } from '../report-schema/report-schema.model';
 import { RosterInfo, getRostersForIndividual } from '../roster/roster.controller';
 import { timestampColumnTransformer } from '../../util/util';
+import { BadRequestError } from '../../util/error-types';
 
 
 class ObservationController {
@@ -31,8 +32,7 @@ class ObservationController {
       }
     }
     Log.error(`Unable to save observation from: ${req.body}`);
-    return res.json(new Observation());
-
+    throw new BadRequestError('Unable to save observation');
   }
 }
 
