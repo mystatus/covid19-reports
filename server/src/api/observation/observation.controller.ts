@@ -24,7 +24,7 @@ class ObservationController {
       'timestamp',
     ]);
 
-    const rosters: RosterInfo[] = await getRostersForIndividual(edipi, timestamp.toString(10));
+    const rosters: RosterInfo[] = await getRostersForIndividual(edipi, `${timestamp}`);
 
     for (const roster of rosters) {
       if (hasReportingGroup(roster, reportingGroup)) {
