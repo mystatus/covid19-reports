@@ -19,13 +19,13 @@ class ObservationController {
     Log.info('Creating observation', req.body);
 
     const reportingGroup = req.body.reportingGroup;
-    const typeId = req.body.typeId;
+    const reportSchemaId = req.body.reportSchemaId;
 
     const rosters: RosterInfo[] = await getRostersForIndividual(req.body.edipi, req.body.timestamp.toString(10));
 
     for (const roster of rosters) {
       if (hasReportingGroup(roster, reportingGroup)) {
-        const reportSchema = await findReportSchema(typeId, roster.unit.org?.id);
+        const reportSchema = await findReportSchema(reportSchemaId, roster.unit.org?.id);
         if (reportSchema) {
           return res.json(saveObservationWithReportSchema(req, reportSchema));
         }
@@ -55,7 +55,7 @@ async function saveObservationWithReportSchema(req: ApiRequest<EdipiParam, Obser
   observation.documentId = req.body.documentId;
   observation.edipi = req.body.edipi;
   observation.timestamp = timestampColumnTransformer.to(req.body.timestamp);
-  observation.type = reportSchema;
+  observation.reportSchema = reportSchema;
   observation.unit = req.body.unit;
   observation.reportingGroup = req.body.reportingGroup;
   Log.info(`Saving new observation for ${observation.documentId} documentId`);

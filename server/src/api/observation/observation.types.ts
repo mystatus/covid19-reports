@@ -3,6 +3,6 @@ export interface ObservationApiModel {
   edipi: string;
   timestamp: number;
   unit: string;
-  typeId: string;
+  reportSchemaId: string;
   reportingGroup?: string;
 }

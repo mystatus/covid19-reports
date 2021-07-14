@@ -36,7 +36,7 @@ export class Observation extends BaseEntity {
 
   // type of the observation symptoms
   @ManyToOne(() => ReportSchema, { onDelete: 'RESTRICT' })
-  type!: ReportSchema;
+  reportSchema!: ReportSchema;
 
   // military unit
   @Column({ length: 300 })
