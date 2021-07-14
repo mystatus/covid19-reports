@@ -57,6 +57,11 @@ export abstract class RosterEntity extends BaseEntity {
   })
   lastName!: string;
 
+  @Column({
+    length: 20, default: 'Missing',
+  })
+  phoneNumber!: string;
+
   // The get/set column functions abstract this json data structure away and treat
   // custom columns as if they were directly on the model.
   // This column should ONLY be modified in the setColumn() function.
@@ -78,6 +83,7 @@ export abstract class RosterEntity extends BaseEntity {
       unit: this.unit.id,
       firstName: this.firstName,
       lastName: this.lastName,
+      phoneNumber: this.phoneNumber,
     };
 
     for (const columnName of Object.keys(this.customColumns ?? {})) {
