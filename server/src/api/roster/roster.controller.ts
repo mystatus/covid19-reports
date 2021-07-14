@@ -326,6 +326,14 @@ class RosterController {
     res.json(entry);
   }
 
+  async savePhoneNumber(edipi: string, phoneNumber: string) {
+    const roster = await Roster.findOne({ where: { edipi }});
+    if (roster) {
+      roster.phoneNumber = phoneNumber;
+      return roster.save();
+    }
+    throw new BadRequestError(`Unable to find ${edipi} in Roster`);
+  }
 }
 
 export async function getRosterInfosForIndividualOnDate(edipi: string, dateStr: string) {

@@ -1,6 +1,7 @@
 {
   "ignore": ["**/*.test.ts", "**/*.spec.ts", ".git", "node_modules"],
   "watch": ["./"],
-  "exec": "ts-node ./src/app.ts",
-  "ext": "ts"
+  "exec": "node -r ts-node/register --inspect=127.0.0.1:9229 ./src/app.ts",
+  "ext": "ts",
+  "delay": 5000
 }
