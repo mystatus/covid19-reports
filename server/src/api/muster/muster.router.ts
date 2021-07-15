@@ -1,6 +1,7 @@
 import express from 'express';
 import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth/auth-middleware';
 import controller from './muster.controller';
+import masterController from './muster.master.contoller';
 
 const router = express.Router() as any;
 
@@ -21,7 +22,7 @@ router.get(
   '/:orgId/roster',
   requireOrgAccess,
   requireRolePermission(role => role.canViewMuster),
-  controller.getMusterRoster,
+  masterController.getMusterRoster,
 );
 
 router.get(
