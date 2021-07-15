@@ -4,10 +4,11 @@ import { Observation } from './observation.model';
 import { ApiRequest, EdipiParam } from '../api.router';
 import { Log } from '../../util/log';
 import { ReportSchema } from '../report-schema/report-schema.model';
-import rosterController, { RosterInfo, getRosterInfosForIndividualOnDate} from '../roster/roster.controller';
+import { RosterInfo, getRosterInfosForIndividualOnDate} from '../roster/roster.controller';
 import { timestampColumnTransformer } from '../../util/util';
 import { BadRequestError } from '../../util/error-types';
 import { assertRequestBody } from '../../util/api-utils';
+import { saveRosterPhoneNumber } from '../roster/roster-utils';
 
 
 class ObservationController {
@@ -31,7 +32,7 @@ class ObservationController {
       if (hasReportingGroup(roster, reportingGroup)) {
         const reportSchema = await findReportSchema(reportSchemaId, roster.unit.org?.id);
         if (reportSchema) {
-          await rosterController.savePhoneNumber(edipi, phoneNumber);
+          await saveRosterPhoneNumber(edipi, phoneNumber);
           return res.json(saveObservationWithReportSchema(req, reportSchema));
         }
       }
