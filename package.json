@@ -7,9 +7,9 @@
     "yarn": ">=1"
   },
   "workspaces": [
-    "covid19-reports-shared",
-    "covid19-reports-client",
-    "covid19-reports-server"
+    "client",
+    "server",
+    "shared"
   ],
   "scripts": {
     "start": "./run-prod.sh",
@@ -18,11 +18,11 @@
     "build": "./build.sh",
     "start-db": "./start-db.sh",
     "stop-db": "./stop-db.sh",
-    "seed-dev": "cd covid19-reports-server && ./seed-dev.sh",
-    "migration-create": "cd covid19-reports-server && ./migration-create.sh",
-    "migration-generate": "cd covid19-reports-server && ./migration-generate.sh",
-    "migration-revert": "cd covid19-reports-server && ./migration-revert.sh",
-    "migration-run": "cd covid19-reports-server && ./migration-run.sh"
+    "seed-dev": "cd server && ./seed-dev.sh",
+    "migration-create": "cd server && ./migration-create.sh",
+    "migration-generate": "cd server && ./migration-generate.sh",
+    "migration-revert": "cd server && ./migration-revert.sh",
+    "migration-run": "cd server && ./migration-run.sh"
   },
   "dependencies": {
     "concurrently": "^6.2.0",

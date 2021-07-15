@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "outDir": "build",
+    "rootDir": "src",
+    "target": "es6"
+  },
+  "exclude": [
+    "craco.config.js"
+  ],
+  "references": [{
+    "path": "../shared"
+  }]
+}
