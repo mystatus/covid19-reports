@@ -2,7 +2,6 @@ import {
   BaseEntity,
   Column,
   Entity,
-  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
@@ -36,19 +35,13 @@ export class Observation extends BaseEntity {
   timestamp!: Date;
 
   // type of the observation symptoms
-  @ManyToOne(() => ReportSchema,
-    type => type.id,
-    { primary: false, onDelete: 'RESTRICT', eager: true, orphanedRowAction: 'nullify', cascade: false })
-  type!: ReportSchema;
+  @ManyToOne(() => ReportSchema, { onDelete: 'RESTRICT' })
+  reportSchema!: ReportSchema;
 
-  /* military unit description
-   Initially we will not make this a FK (foreign key) but it is to be considered.
-   If made a FK then we need to make sure we have all the FKs in the database and
-   also we would need to handle any resulting errors if a given FK is not found */
-  @Column({ length: 300 })
-  unitId!: string;
-
-  // military unit description
+  // military unit
   @Column({ length: 300 })
   unit!: string;
+
+  @Column({ length: 100, nullable: true})
+  reportingGroup?: string;
 }

@@ -1,5 +1,5 @@
 import {
-  BaseEntity,
+  BaseEntity, BeforeInsert, BeforeUpdate,
   Column,
   EntityTarget,
   ManyToOne,
@@ -25,6 +25,7 @@ import {
   RosterEntryData,
   RosterFileRow,
 } from './roster.types';
+import { formatPhoneNumber } from '../../util/string-utils';
 
 /**
  * This class serves as the base entity for both Roster and RosterHistory.  This allows both Roster and RosterHistory
@@ -57,6 +58,11 @@ export abstract class RosterEntity extends BaseEntity {
   })
   lastName!: string;
 
+  @Column({
+    length: 20, nullable: true,
+  })
+  phoneNumber!: string;
+
   // The get/set column functions abstract this json data structure away and treat
   // custom columns as if they were directly on the model.
   // This column should ONLY be modified in the setColumn() function.
@@ -78,6 +84,7 @@ export abstract class RosterEntity extends BaseEntity {
       unit: this.unit.id,
       firstName: this.firstName,
       lastName: this.lastName,
+      phoneNumber: this.phoneNumber,
     };
 
     for (const columnName of Object.keys(this.customColumns ?? {})) {
@@ -200,6 +207,12 @@ export abstract class RosterEntity extends BaseEntity {
     return value;
   }
 
+  @BeforeInsert()
+  @BeforeUpdate()
+  formatPhoneNumber() {
+    this.phoneNumber = formatPhoneNumber(this.phoneNumber);
+  }
+
 }
 
 function columnTypeToEntryDataType(columnType: RosterColumnType) {
@@ -217,3 +230,4 @@ function columnTypeToEntryDataType(columnType: RosterColumnType) {
 function isEdipiColumn(column: RosterColumnInfo) {
   return (column.displayName === edipiColumnDisplayName);
 }
+

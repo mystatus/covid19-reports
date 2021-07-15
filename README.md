@@ -37,9 +37,13 @@ Ensure the following packages are installed.
 ## Starting the Application
 
 - Create a file named `.env` at project root with the following in it. You can change the `USER_EDIPI` value to any
-10 digit number greater than 1 to create a new user.
+10 digit number greater than 1 to create a new user. `INTERNAL_ACCESS_KEY` is used for local development when working
+  with `se-ingest-processor`. It allows the processor to authenticate with the exposed server APIs. `SYNC_DATABASE` is
+  described in the [Database Schema Synchronizing](#database-schema-synchronizing) section.
 ```
 USER_EDIPI=0000000001
+INTERNAL_ACCESS_KEY=anything
+SYNC_DATABASE=false
 ```
 
 - Navigate to the project root and run the following.
@@ -47,7 +51,7 @@ USER_EDIPI=0000000001
 yarn install
 
 # Optional if using docker-compose
-yarn run start-db  
+yarn run start-db
 
 yarn run seed-dev
 yarn run dev
@@ -101,7 +105,7 @@ the production database to reflect the schema changes. For more information see 
 This step is for generating migration files with schema changes you made.
 
 1. Stop the application.
-1. Turn schema sync off by setting: `SYNC_DATABASE=false`
+1. Turn schema sync off by setting: `SYNC_DATABASE=false` in the `.env` file
 1. Comment out or make sure you did not update `seed-dev.ts` to take advantage of your
    schema changes.
 1. Restore the original schema so that the ORM can compare the current schema

@@ -268,43 +268,9 @@ class RosterController {
   }
 
   async getRosterInfosForIndividual(req: ApiRequest<EdipiParam, null, ReportDateQuery>, res: Response) {
-    const reportDate = dateFromString(req.query.reportDate);
-    if (!reportDate) {
-      throw new BadRequestError('Missing reportDate.');
-    }
-    const timestamp = reportDate.getTime() / 1000;
-    const entries = await RosterHistory.createQueryBuilder('roster')
-      .leftJoinAndSelect('roster.unit', 'unit')
-      .leftJoinAndSelect('unit.org', 'org')
-      .where('roster.edipi = :edipi', { edipi: req.params.edipi })
-      .andWhere(`roster.timestamp <= to_timestamp(:timestamp) AT TIME ZONE '+0'`, { timestamp })
-      .select()
-      .distinctOn(['roster.unit_id'])
-      .orderBy('roster.unit_id')
-      .addOrderBy('roster.timestamp', 'DESC')
-      .addOrderBy('roster.change_type', 'DESC')
-      .getMany();
-
-    const responseData: RosterInfo[] = [];
-    for (const roster of entries) {
-      if (roster.changeType === ChangeType.Deleted) {
-        continue;
-      }
-
-      const columns = (await Roster.getColumns(roster.unit.org!.id)).map(column => ({
-        ...column,
-        value: roster.getColumnValue(column),
-      } as RosterColumnInfoWithValue));
-
-      const rosterInfo: RosterInfo = {
-        unit: roster.unit,
-        columns,
-      };
-      responseData.push(rosterInfo);
-    }
 
     res.json({
-      rosters: responseData,
+      rosters: await getRosterInfosForIndividualOnDate(req.params.edipi, req.query.reportDate),
     });
   }
 
@@ -359,7 +325,45 @@ class RosterController {
 
     res.json(entry);
   }
+}
 
+export async function getRosterInfosForIndividualOnDate(edipi: string, dateStr: string) {
+  const reportDate = dateFromString(dateStr);
+
+  if (!reportDate) {
+    throw new BadRequestError('Missing reportDate.');
+  }
+  const timestamp = reportDate.getTime() / 1000;
+  const entries = await RosterHistory.createQueryBuilder('roster')
+    .leftJoinAndSelect('roster.unit', 'unit')
+    .leftJoinAndSelect('unit.org', 'org')
+    .where('roster.edipi = :edipi', { edipi })
+    .andWhere(`roster.timestamp <= to_timestamp(:timestamp) AT TIME ZONE '+0'`, { timestamp })
+    .select()
+    .distinctOn(['roster.unit_id'])
+    .orderBy('roster.unit_id')
+    .addOrderBy('roster.timestamp', 'DESC')
+    .addOrderBy('roster.change_type', 'DESC')
+    .getMany();
+
+  const responseData: RosterInfo[] = [];
+  for (const roster of entries) {
+    if (roster.changeType === ChangeType.Deleted) {
+      continue;
+    }
+
+    const columns = (await Roster.getColumns(roster.unit.org!.id)).map(column => ({
+      ...column,
+      value: roster.getColumnValue(column),
+    } as RosterColumnInfoWithValue));
+
+    const rosterInfo: RosterInfo = {
+      unit: roster.unit,
+      columns,
+    };
+    responseData.push(rosterInfo);
+  }
+  return responseData;
 }
 
 const formatValue = (val: RosterColumnValue, column: RosterColumnInfo) => {
@@ -537,7 +541,7 @@ interface RosterColumnInfoWithValue extends RosterColumnInfo {
   value: RosterColumnValue,
 }
 
-interface RosterInfo {
+export interface RosterInfo {
   unit: Unit,
   columns: RosterColumnInfo[],
 }
