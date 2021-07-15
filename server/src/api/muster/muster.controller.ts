@@ -216,7 +216,7 @@ class MusterController {
   }
 }
 
-type GetMusterRosterQuery = {
+export type GetMusterRosterQuery = {
   fromDate: string
   toDate: string
   unitId: number | null
