@@ -59,7 +59,7 @@ export abstract class RosterEntity extends BaseEntity {
   lastName!: string;
 
   @Column({
-    length: 20, default: 'Missing',
+    length: 20, nullable: true,
   })
   phoneNumber!: string;
 
