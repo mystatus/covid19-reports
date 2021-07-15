@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { EntityManager, getConnection } from 'typeorm';
 import { ObservationApiModel } from './observation.types';
 import { Observation } from './observation.model';
 import { ApiRequest, EdipiParam } from '../api.router';
@@ -28,17 +29,22 @@ class ObservationController {
 
     const rosters: RosterInfo[] = await getRosterInfosForIndividualOnDate(edipi, `${timestamp}`);
 
-    for (const roster of rosters) {
-      if (hasReportingGroup(roster, reportingGroup)) {
-        const reportSchema = await findReportSchema(reportSchemaId, roster.unit.org?.id);
-        if (reportSchema) {
-          await saveRosterPhoneNumber(edipi, phoneNumber);
-          return res.json(saveObservationWithReportSchema(req, reportSchema));
+    if (!rosters || rosters.length === 0) {
+      Log.error(`Unable to save observation from: ${req.body}`);
+      throw new BadRequestError('Unable to save observation');
+    }
+
+    await getConnection().transaction(async transactionalEntityManager => {
+      for (const roster of rosters) {
+        if (hasReportingGroup(roster, reportingGroup)) {
+          const reportSchema = await findReportSchema(reportSchemaId, roster.unit.org?.id);
+          if (reportSchema) {
+            await saveRosterPhoneNumber(edipi, phoneNumber, transactionalEntityManager);
+            return res.json(saveObservationWithReportSchema(req, reportSchema, transactionalEntityManager));
+          }
         }
       }
-    }
-    Log.error(`Unable to save observation from: ${req.body}`);
-    throw new BadRequestError('Unable to save observation');
+    });
   }
 }
 
@@ -56,16 +62,16 @@ async function findReportSchema(reportSchemaId: string, orgId: number | undefine
   });
 }
 
-async function saveObservationWithReportSchema(req: ApiRequest<EdipiParam, ObservationApiModel>, reportSchema: ReportSchema) {
+async function saveObservationWithReportSchema(req: ApiRequest<EdipiParam, ObservationApiModel>, rs: ReportSchema, em: EntityManager) {
   const observation = new Observation();
   observation.documentId = req.body.documentId;
   observation.edipi = req.body.edipi;
   observation.timestamp = timestampColumnTransformer.to(req.body.timestamp);
-  observation.reportSchema = reportSchema;
+  observation.reportSchema = rs;
   observation.unit = req.body.unit;
   observation.reportingGroup = req.body.reportingGroup;
   Log.info(`Saving new observation for ${observation.documentId} documentId`);
-  return observation.save();
+  return em.save(observation);
 }
 
 export default new ObservationController();
