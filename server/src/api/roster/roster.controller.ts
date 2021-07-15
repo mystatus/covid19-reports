@@ -325,7 +325,6 @@ class RosterController {
 
     res.json(entry);
   }
-
 }
 
 export async function getRosterInfosForIndividualOnDate(edipi: string, dateStr: string) {

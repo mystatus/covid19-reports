@@ -37,9 +37,13 @@ Ensure the following packages are installed.
 ## Starting the Application
 
 - Create a file named `.env` at project root with the following in it. You can change the `USER_EDIPI` value to any
-10 digit number greater than 1 to create a new user.
+10 digit number greater than 1 to create a new user. `INTERNAL_ACCESS_KEY` is used for local development when working
+  with `se-ingest-processor`. It allows the processor to authenticate with the exposed server APIs. `SYNC_DATABASE` is
+  described in the [Database Schema Synchronizing](#database-schema-synchronizing) section.
 ```
 USER_EDIPI=0000000001
+INTERNAL_ACCESS_KEY=anything
+SYNC_DATABASE=false
 ```
 
 - Navigate to the project root and run the following.
