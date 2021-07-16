@@ -65,11 +65,11 @@ class MusterPostgresController {
   }
 
   /** Get an array of unique Unit IDs */
-  private static getUnitIds(rosters: Roster[]) {
+  private static getUnitIds(rosters: Roster[]): number[] {
     return Array.from(new Set(rosters.map(r => r.unit.id)));
   }
 
-  private static async getRosters(unitId: number, orgId: number) {
+  private static async getRosters(unitId: number, orgId: number): Promise<Roster[]> {
     let rosters;
     if (unitId) {
       rosters = await Roster.find({ relations: ['unit', 'unit.org'], where: { unit: unitId } });
@@ -79,7 +79,7 @@ class MusterPostgresController {
     return rosters.filter(roster => roster.unit.org!.id === orgId);
   }
 
-  private static async getMusterUnitConf(unitIds: number[]) {
+  private static async getMusterUnitConf(unitIds: number[]): Promise<MusterUnitConfiguration[]> {
     return (await Unit.find({ where: { id: In(unitIds) } })).map(unitConf => {
       return {
         unitId: unitConf.id,
@@ -107,12 +107,12 @@ class MusterPostgresController {
     return musterUnitConf;
   }
 
-  private static isMusterConfMissing(musterUnitConf: MusterUnitConfiguration[]) {
+  private static isMusterConfMissing(musterUnitConf: MusterUnitConfiguration[]): boolean {
     const confWithMissingMusterConf = musterUnitConf.filter(conf => !conf.musterConf || conf.musterConf.length === 0);
     return confWithMissingMusterConf.length > 0;
   }
 
-  private static toMasterInfo(roster: Roster) {
+  private static toMasterInfo(roster: Roster): MusterComplianceReport {
     return {
       totalMusters: 1,
       mustersReported: 0,
@@ -126,7 +126,7 @@ class MusterPostgresController {
     };
   }
 
-  private static toPageWithRowLimit(musterInfo: MusterComplianceReport[], page: number, limit: number) {
+  private static toPageWithRowLimit(musterInfo: MusterComplianceReport[], page: number, limit: number): MusterComplianceReport[] {
     const offset = page * limit;
     return musterInfo.slice(offset, offset + limit);
   }
