@@ -1,3 +1,3 @@
 #!/bin/bash
 
-npx react-app-rewired start
+npx craco start

@@ -16,7 +16,7 @@ RUN yarn install
 
 RUN find /usr/src/covid19-reports -name "*.sh" -exec chmod +x {} \;
 
-RUN yarn run build
+RUN yarn build
 
 FROM node:14 as runtime
 
