@@ -35,32 +35,19 @@ class MusterPostgresController {
     const unitId = req.query.unitId!;
     const orgId = req.appOrg!.id;
 
+    const rosters: Roster[] = await MusterPostgresController.getRosters(unitId, orgId);
 
-    const filteredRosters: Roster[] = await MusterPostgresController.getRosters(unitId, orgId);
-    const unitsInRosters: number[] = MusterPostgresController.getUnitIds(filteredRosters);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const unitsMusterConf: MusterUnitConfiguration[] = await MusterPostgresController.setDefaultMusterConf(
-      await MusterPostgresController.getMusterUnitConf(unitsInRosters), orgId,
+      await MusterPostgresController.getMusterUnitConf(MusterPostgresController.getUnitIds(rosters)), orgId,
     );
 
-    const intermediateMusterInfo: MusterComplianceReport[] = filteredRosters.map(roster => MusterPostgresController.toMasterInfo(roster));
+    const MusterComplianceReport: MusterComplianceReport[] = rosters.map(roster => MusterPostgresController.toMusterComplianceReport(roster));
 
-    /*
-      The muster page needs:
-        MUSTER RATE - calculated:
-          - we need the unit muster configuration
-            - unit.muster_configuration
-              [] when using the default one - Default: org.default_muster_configuration:
-                [{"days":7,"startTime":"00:00","timezone":"America/Chicago","durationMinutes":120,"reportId":"es6ddssymptomobs"},
-                {"days":32,"startTime":"09:00","timezone":"America/Chicago","durationMinutes":60,"reportId":"es6ddssymptomobs"}]
-          - determine muster time windows
-          - read the observation table to see when the user mustered
-          - do the % compliance calculation
-     */
 
     return res.json({
-      rows: MusterPostgresController.toPageWithRowLimit(intermediateMusterInfo, pageNumber, rowLimit),
-      totalRowsCount: intermediateMusterInfo.length,
+      rows: MusterPostgresController.toPageWithRowLimit(MusterComplianceReport, pageNumber, rowLimit),
+      totalRowsCount: MusterComplianceReport.length,
     });
   }
 
@@ -112,7 +99,7 @@ class MusterPostgresController {
     return confWithMissingMusterConf.length > 0;
   }
 
-  private static toMasterInfo(roster: Roster): MusterComplianceReport {
+  private static toMusterComplianceReport(roster: Roster): MusterComplianceReport {
     return {
       totalMusters: 1,
       mustersReported: 0,
