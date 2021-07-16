@@ -7,6 +7,7 @@ import { Roster } from '../roster/roster.model';
 import { GetMusterRosterQuery } from './muster.controller';
 import { Unit, MusterConfiguration } from '../unit/unit.model';
 import { Org } from '../org/org.model';
+import { Observation } from '../observation/observation.model';
 
 
 class MusterPostgresController {
@@ -22,14 +23,15 @@ class MusterPostgresController {
       'page',
     ]);
 
-    // TODO later
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const fromDate = moment(req.query.fromDate);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const toDate = moment(req.query.toDate);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // TODO ??
     const userRole = req.appUserRole!;
 
+    // dates come in GMT e.g.
+    // Request URL: http://localhost:3000/api/muster/1/roster?
+    // fromDate=2021-07-01T05:00:00.000Z&
+    // toDate=2021-07-08T04:59:00.000Z
+    const fromDate = moment(req.query.fromDate);
+    const toDate = moment(req.query.toDate);
     const rowLimit = parseInt(req.query.limit);
     const pageNumber = parseInt(req.query.page);
     const unitId = req.query.unitId!;
@@ -37,21 +39,26 @@ class MusterPostgresController {
 
     const rosters: Roster[] = await MusterPostgresController.getRosters(unitId, orgId);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const unitIds = MusterPostgresController.getUnitIds(rosters);
+
     const unitsMusterConf: MusterUnitConfiguration[] = await MusterPostgresController.setDefaultMusterConf(
-      await MusterPostgresController.getMusterUnitConf(MusterPostgresController.getUnitIds(rosters)), orgId,
+      await MusterPostgresController.getMusterUnitConf(unitIds), orgId,
     );
 
-    const MusterComplianceReport: MusterComplianceReport[] = rosters.map(roster => MusterPostgresController.toMusterComplianceReport(roster));
+    const musterComplianceReport: MusterComplianceReport[] = rosters.map(roster => MusterPostgresController.toMusterComplianceReport(roster));
 
-    // TODO: get observations per unit/org/timeframe for each person
-    // TODO: use the observations and unitsMusterConf to calculate % compliance
-    // TODO: enhance MusterComplianceReport with the % compliance data
+    // TODO we want to fetch observations (edipi & ts only), figure out to which unit this observation belongs to
+    // by going to roster with edipi, then we know which muster config we should use.
 
+    const observations = await MusterPostgresController.getObservations(unitIds, fromDate, toDate);
+
+    const musterCompliance = await MusterPostgresController.calculateMusterCompliance(observations, unitsMusterConf);
+
+    MusterPostgresController.enrichMusterComplianceReport(musterComplianceReport, musterCompliance);
 
     return res.json({
-      rows: MusterPostgresController.toPageWithRowLimit(MusterComplianceReport, pageNumber, rowLimit),
-      totalRowsCount: MusterComplianceReport.length,
+      rows: MusterPostgresController.toPageWithRowLimit(musterComplianceReport, pageNumber, rowLimit),
+      totalRowsCount: musterComplianceReport.length,
     });
   }
 
@@ -115,6 +122,26 @@ class MusterPostgresController {
       unitId: roster.unit.id,
       phone: roster.phoneNumber,
     };
+  }
+
+  private static async getObservations(unitIds: number[], fromDate: any | moment.Moment, toDate: any | moment.Moment) {
+    console.log(fromDate, toDate, unitIds);
+
+    const observations = await Observation.createQueryBuilder('observation')
+      .select('observation.edipi, observation.timestamp, observation.unit')
+      .getRawMany();
+
+
+    console.log(JSON.stringify(observations));
+
+  }
+
+  private static async calculateMusterCompliance(observations: any, unitsMusterConf: MusterUnitConfiguration[]) {
+
+  }
+
+  private static enrichMusterComplianceReport(musterComplianceReport: MusterComplianceReport[], musterCompliance: void) {
+
   }
 
   private static toPageWithRowLimit(musterInfo: MusterComplianceReport[], page: number, limit: number): MusterComplianceReport[] {
