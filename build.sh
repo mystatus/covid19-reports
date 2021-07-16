@@ -2,9 +2,8 @@
 
 export NODE_OPTIONS="--max-old-space-size=4096"
 
-# Clean
-rm -rf ./build
-mkdir ./build
+./clean.sh
+mkdir build
 
 # Server
 cd server || exit
@@ -15,9 +14,6 @@ mv ./server/build/* ./build
 rmdir ./server/build
 
 # Client
-cd client || exit
-./build.sh
-cd ..
-
-mv ./client/build/* ./build
-rmdir ./client/build
+#yarn workspace @covid19-reports/client run build
+#mv ./client/build/* ./build
+#rmdir ./client/build

@@ -18,8 +18,10 @@ import {
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import { v4 as uuidv4 } from 'uuid';
-import { UpdateCustomColumnBody } from '@covid19-reports/shared';
-import { RosterColumnType } from '@covid19-reports/shared';
+import {
+  RosterColumnType,
+  UpdateCustomColumnBody,
+} from '@covid19-reports/shared';
 import useStyles from './edit-column-dialog.styles';
 import {
   ApiRosterColumnInfo,

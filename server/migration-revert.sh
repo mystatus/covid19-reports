@@ -1,3 +1,3 @@
 #!/bin/bash
 
-yarn run typeorm migration:revert
+./typeorm.sh migration:revert

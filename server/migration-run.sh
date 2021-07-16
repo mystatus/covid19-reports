@@ -1,3 +1,3 @@
 #!/bin/bash
 
-yarn run typeorm migration:run
+./typeorm.sh migration:run

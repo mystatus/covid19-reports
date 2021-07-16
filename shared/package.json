@@ -2,6 +2,18 @@
   "name": "@covid19-reports/shared",
   "private": true,
   "version": "0.0.1",
-  "main": "src/index.ts",
-  "types": "src/index.d.ts"
+  "engines": {
+    "node": ">=14",
+    "npm": ">=7",
+    "yarn": ">=1"
+  },
+  "main": "build/index",
+  "types": "build/index",
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "./build.sh",
+    "clean": "./clean.sh"
+  }
 }

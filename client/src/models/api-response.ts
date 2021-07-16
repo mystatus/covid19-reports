@@ -1,8 +1,8 @@
 import {
+  OrphanedRecordActionType,
   RosterColumnType,
   RosterColumnValue,
 } from '@covid19-reports/shared';
-import { OrphanedRecordActionType } from '@covid19-reports/shared';
 import { DaysOfTheWeek } from '../utility/days';
 
 export interface ApiPaginated<TData> {

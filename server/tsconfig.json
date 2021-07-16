@@ -1,17 +1,3 @@
 {
   "extends": "../tsconfig.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "build",
-    "baseUrl": ".",
-    "paths": {
-      "@covid19-reports/*": ["../*/src"]
-    }
-  },
-  "include": [
-    "src"
-  ],
-  "references": [{
-    "path": "../shared"
-  }]
 }

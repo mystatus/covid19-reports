@@ -16,7 +16,7 @@ import { User } from './api/user/user.model';
 import { Notification } from './api/notification/notification.model';
 import { WorkspaceTemplate } from './api/workspace/workspace-template.model';
 import { Workspace } from './api/workspace/workspace.model';
-import server from './app';
+import server from './index';
 import { ReportSchema } from './api/report-schema/report-schema.model';
 
 chai.use(chaiAsPromised);

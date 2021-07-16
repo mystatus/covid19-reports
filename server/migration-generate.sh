@@ -8,4 +8,4 @@ if [ -z "$NAME" ]; then
 fi
 
 ./migration-run.sh
-yarn run typeorm migration:generate -n "$NAME"
+./typeorm.sh migration:generate -n "$NAME"

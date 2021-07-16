@@ -31,12 +31,12 @@ import {
 } from 'react-redux';
 import _ from 'lodash';
 import moment from 'moment';
-import { RosterColumnType } from '@covid19-reports/shared';
 import {
+  OrphanedRecordActionType,
+  RosterColumnType,
   SearchRosterBody,
   SearchRosterQuery,
 } from '@covid19-reports/shared';
-import { OrphanedRecordActionType } from '@covid19-reports/shared';
 import { AppFrame } from '../../../actions/app-frame.actions';
 import { OrphanedRecord } from '../../../actions/orphaned-record.actions';
 import { Roster } from '../../../actions/roster.actions';

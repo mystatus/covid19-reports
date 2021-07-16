@@ -7,4 +7,4 @@ if [ -z "$NAME" ]; then
   exit
 fi
 
-yarn run typeorm migration:create -n "$NAME"
+./typeorm.sh migration:create -n "$NAME"

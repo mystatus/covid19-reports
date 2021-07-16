@@ -16,6 +16,7 @@
     "dev": "./run-dev.sh",
     "test": "./run-tests.sh",
     "build": "./build.sh",
+    "clean": "./clean.sh",
     "start-db": "./start-db.sh",
     "stop-db": "./stop-db.sh",
     "seed-dev": "cd server && ./seed-dev.sh",
