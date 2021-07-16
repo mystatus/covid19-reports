@@ -44,6 +44,10 @@ class MusterPostgresController {
 
     const MusterComplianceReport: MusterComplianceReport[] = rosters.map(roster => MusterPostgresController.toMusterComplianceReport(roster));
 
+    // TODO: get observations per unit/org/timeframe for each person
+    // TODO: use the observations and unitsMusterConf to calculate % compliance
+    // TODO: enhance MusterComplianceReport with the % compliance data
+
 
     return res.json({
       rows: MusterPostgresController.toPageWithRowLimit(MusterComplianceReport, pageNumber, rowLimit),
