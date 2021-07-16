@@ -14,6 +14,9 @@ mv ./server/build/* ./build
 rmdir ./server/build
 
 # Client
-#yarn workspace @covid19-reports/client run build
-#mv ./client/build/* ./build
-#rmdir ./client/build
+cd client || exit
+./build.sh
+cd ..
+
+mv ./client/build/* ./build
+rmdir ./client/build
