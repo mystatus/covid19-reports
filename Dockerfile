@@ -29,7 +29,7 @@ LABEL maintainer="DDS - Devops <devops@ext-mystatus.dds.mil>" \
       build-number="${BUILD_NUMBER}"
 
 ENV BUILD_DATE="${BUILD_DATE}" \
-    NODE_ENV=prod \
+    NODE_ENV=production \
     NODE_OPTIONS="--max-old-space-size=4096"
 
 WORKDIR /covid19-reports
