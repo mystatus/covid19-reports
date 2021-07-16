@@ -2,6 +2,6 @@
 
 export NODE_ENV=production
 
-yarn run migration-run
+yarn run server migration-run
 
 node ./build/index.js

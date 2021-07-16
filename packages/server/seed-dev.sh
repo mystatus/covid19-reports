@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ../utils.sh
+source utils.sh
 
 export NODE_ENV=development
 export SQL_HOST=${SQL_HOST:=localhost}
@@ -23,7 +23,7 @@ case "$response" in
 
     ./migration-run.sh
 
-    npx ts-node ./src/sqldb/seed-dev.ts
+    ./ts-node.sh ./src/sqldb/seed-dev.ts
     ;;
   *)
     echo "Aborted"

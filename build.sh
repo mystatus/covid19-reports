@@ -6,17 +6,13 @@ export NODE_OPTIONS="--max-old-space-size=4096"
 mkdir build
 
 # Server
-cd server || exit
-./build.sh
-cd ..
+yarn run server build
 
-mv ./server/build/* ./build
-rmdir ./server/build
+mv ./packages/server/build/* ./build
+rmdir ./packages/server/build
 
 # Client
-cd client || exit
-./build.sh
-cd ..
+yarn run client build
 
-mv ./client/build/* ./build
-rmdir ./client/build
+mv ./packages/client/build/* ./build
+rmdir ./packages/client/build

@@ -10,4 +10,4 @@ mkdir ./build/public
 mv ./build/*.* ./build/public
 mv ./build/static ./build/public/static
 
-echo "Client build complete!"
+echo -e "Client build complete!\n"

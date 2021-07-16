@@ -7,4 +7,4 @@ echo -e "\nBuilding server..."
 ./clean.sh
 tsc -b tsconfig.build.json
 
-echo "Server build complete!"
+echo -e "Server build complete!\n"

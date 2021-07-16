@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ../utils.sh
+source utils.sh
 
 LOG_LEVEL="test"
 CLEAN=false
@@ -45,4 +45,5 @@ npx --silent ts-mocha \
   --project "tsconfig.json" \
   --config ".mocharc.yml" \
   --exit \
+  -r tsconfig-paths/register \
   "**/*.spec.ts"

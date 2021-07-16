@@ -4,5 +4,5 @@ concurrently \
   --kill-others-on-fail \
   --names server,client \
   --prefix-colors green,blue \
-  "./run-dev-server.sh" \
-  "./run-dev-client.sh"
+  "./dev-server.sh" \
+  "./dev-client.sh"

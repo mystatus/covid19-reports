@@ -7,5 +7,4 @@ set -o allexport
 source .env
 set +o allexport
 
-cd client || exit
-./run-dev.sh
+yarn run client dev
