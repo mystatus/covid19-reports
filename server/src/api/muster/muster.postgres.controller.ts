@@ -40,19 +40,13 @@ class MusterPostgresCtr {
     const orgId = req.appOrg!.id;
 
     const rosters: Roster[] = await MusterPostgresCtr.getRosters(unitId, orgId);
-
     const unitIds = MusterPostgresCtr.getUnitIds(rosters);
-
     const edipis = MusterPostgresCtr.getEdipi(rosters);
-
     const unitsMusterConf = await MusterPostgresCtr.setDefaultMusterConf(
       await MusterPostgresCtr.getMusterUnitConf(unitIds), orgId,
     );
-
     const observations = await MusterPostgresCtr.getObservations(edipis, fromDate, toDate);
-
     const musterIntermediateCompliance = rosters.map(roster => MusterPostgresCtr.toMusterIntermediateCompliance(roster));
-
     const musterCompliance = await MusterPostgresCtr.calculateMusterCompliance(observations, unitsMusterConf, musterIntermediateCompliance);
 
     return res.json({
@@ -125,7 +119,7 @@ class MusterPostgresCtr {
     };
   }
 
-  private static async getObservations(edipis: string[], fromDate: any | moment.Moment, toDate: any | moment.Moment) : Promise<FilteredObservation[]> {
+  private static async getObservations(edipis: Edipi[], fromDate: any | moment.Moment, toDate: any | moment.Moment) : Promise<FilteredObservation[]> {
     const observations = await Observation.createQueryBuilder('observation')
       .select('observation.edipi, observation.timestamp')
       .where('observation.timestamp <= to_timestamp(:tsTo)', {tsTo: toDate.unix()})
@@ -159,10 +153,6 @@ class MusterPostgresCtr {
 
 type UnitId = number;
 type Edipi = string;
-
-type EdipiUnit = {
-  [edipi: string]: number
-};
 
 type FilteredObservation = {
   edipi: Edipi
