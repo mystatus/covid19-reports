@@ -24,6 +24,7 @@ class MusterPostgresCtr {
     ]);
 
     // TODO ??
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const userRole = req.appUserRole!;
 
     console.log(req.query.toDate);
@@ -140,10 +141,12 @@ class MusterPostgresCtr {
     return observations;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private static async calculateMusterCompliance(observations: any, unitsMusterConf: MusterUnitConfiguration[]) {
 
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private static enrichMusterComplianceReport(musterComplianceReport: MusterComplianceReport[], musterCompliance: void) {
 
   }
