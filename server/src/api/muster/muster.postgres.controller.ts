@@ -10,7 +10,7 @@ import { Org } from '../org/org.model';
 import { Observation } from '../observation/observation.model';
 
 
-class MusterPostgresController {
+class MusterPostgresCtr {
 
   /**
    * Provides Muster Compliance details for all service members
@@ -26,10 +26,11 @@ class MusterPostgresController {
     // TODO ??
     const userRole = req.appUserRole!;
 
-    // dates come in GMT e.g.
-    // Request URL: http://localhost:3000/api/muster/1/roster?
-    // fromDate=2021-07-01T05:00:00.000Z&
-    // toDate=2021-07-08T04:59:00.000Z
+    console.log(req.query.toDate);
+    /* Dates come in UTC timezone.
+      For example the date 2021-07-04 11:59 PM selected in a browser
+                  comes as 2021-07-05T04:59:00.000Z */
+    console.log(`from: ${req.query.fromDate}`, `to: ${req.query.toDate}`);
     const fromDate = moment(req.query.fromDate);
     const toDate = moment(req.query.toDate);
     const rowLimit = parseInt(req.query.limit);
@@ -37,27 +38,25 @@ class MusterPostgresController {
     const unitId = req.query.unitId!;
     const orgId = req.appOrg!.id;
 
-    const rosters: Roster[] = await MusterPostgresController.getRosters(unitId, orgId);
+    const rosters: Roster[] = await MusterPostgresCtr.getRosters(unitId, orgId);
 
-    const unitIds = MusterPostgresController.getUnitIds(rosters);
+    const unitIds = MusterPostgresCtr.getUnitIds(rosters);
+    const edipis = MusterPostgresCtr.getEdipi(rosters);
 
-    const unitsMusterConf: MusterUnitConfiguration[] = await MusterPostgresController.setDefaultMusterConf(
-      await MusterPostgresController.getMusterUnitConf(unitIds), orgId,
+    const unitsMusterConf: MusterUnitConfiguration[] = await MusterPostgresCtr.setDefaultMusterConf(
+      await MusterPostgresCtr.getMusterUnitConf(unitIds), orgId,
     );
 
-    const musterComplianceReport: MusterComplianceReport[] = rosters.map(roster => MusterPostgresController.toMusterComplianceReport(roster));
+    const musterComplianceReport: MusterComplianceReport[] = rosters.map(roster => MusterPostgresCtr.toMusterComplianceReport(roster));
 
-    // TODO we want to fetch observations (edipi & ts only), figure out to which unit this observation belongs to
-    // by going to roster with edipi, then we know which muster config we should use.
+    const observations = await MusterPostgresCtr.getObservations(edipis, fromDate, toDate);
 
-    const observations = await MusterPostgresController.getObservations(unitIds, fromDate, toDate);
+    const musterCompliance = await MusterPostgresCtr.calculateMusterCompliance(observations, unitsMusterConf);
 
-    const musterCompliance = await MusterPostgresController.calculateMusterCompliance(observations, unitsMusterConf);
-
-    MusterPostgresController.enrichMusterComplianceReport(musterComplianceReport, musterCompliance);
+    MusterPostgresCtr.enrichMusterComplianceReport(musterComplianceReport, musterCompliance);
 
     return res.json({
-      rows: MusterPostgresController.toPageWithRowLimit(musterComplianceReport, pageNumber, rowLimit),
+      rows: MusterPostgresCtr.toPageWithRowLimit(musterComplianceReport, pageNumber, rowLimit),
       totalRowsCount: musterComplianceReport.length,
     });
   }
@@ -65,6 +64,11 @@ class MusterPostgresController {
   /** Get an array of unique Unit IDs */
   private static getUnitIds(rosters: Roster[]): number[] {
     return Array.from(new Set(rosters.map(r => r.unit.id)));
+  }
+
+  /** Get an array of unique edipis */
+  private static getEdipi(rosters: Roster[]): string[] {
+    return Array.from(new Set(rosters.map(r => r.edipi)));
   }
 
   private static async getRosters(unitId: number, orgId: number): Promise<Roster[]> {
@@ -91,7 +95,7 @@ class MusterPostgresController {
    * This function has a side effect, it modifies musterUnitConf.
    */
   private static async setDefaultMusterConf(musterUnitConf: MusterUnitConfiguration[], orgId: number): Promise<MusterUnitConfiguration[]> {
-    if (MusterPostgresController.isMusterConfMissing(musterUnitConf)) {
+    if (MusterPostgresCtr.isMusterConfMissing(musterUnitConf)) {
       const org = await Org.findOne({ where: { id: orgId } });
       if (org) {
         const defaultOrgMusterConf = org.defaultMusterConfiguration;
@@ -124,16 +128,15 @@ class MusterPostgresController {
     };
   }
 
-  private static async getObservations(unitIds: number[], fromDate: any | moment.Moment, toDate: any | moment.Moment) {
-    console.log(fromDate, toDate, unitIds);
-
+  private static async getObservations(edipis: string[], fromDate: any | moment.Moment, toDate: any | moment.Moment) {
     const observations = await Observation.createQueryBuilder('observation')
-      .select('observation.edipi, observation.timestamp, observation.unit')
+      .select('observation.edipi, observation.timestamp')
+      .where('observation.timestamp <= to_timestamp(:tsTo)', {tsTo: toDate.unix()})
+      .andWhere('observation.timestamp >= to_timestamp(:tsFrom)', {tsFrom: fromDate.unix()})
+      .andWhere('observation.edipi IN (:...edipis)', {edipis})
       .getRawMany();
 
-
     console.log(JSON.stringify(observations));
-
   }
 
   private static async calculateMusterCompliance(observations: any, unitsMusterConf: MusterUnitConfiguration[]) {
@@ -167,4 +170,4 @@ type MusterComplianceReport = {
   phone: string
 };
 
-export default new MusterPostgresController();
+export default new MusterPostgresCtr();
