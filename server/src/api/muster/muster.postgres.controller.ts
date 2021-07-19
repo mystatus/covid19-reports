@@ -42,6 +42,7 @@ class MusterPostgresCtr {
     const rosters: Roster[] = await MusterPostgresCtr.getRosters(unitId, orgId);
 
     const unitIds = MusterPostgresCtr.getUnitIds(rosters);
+
     const edipis = MusterPostgresCtr.getEdipi(rosters);
 
     const unitsMusterConf: MusterUnitConfiguration[] = await MusterPostgresCtr.setDefaultMusterConf(
