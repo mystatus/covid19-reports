@@ -46,6 +46,8 @@ class MusterPostgresCtr {
     const unitsMusterConf = await MusterPostgresCtr.setDefaultMusterConf(musterUnitConf, orgId);
     const observations = await MusterPostgresCtr.getObservations(edipis, fromDate, toDate);
     const musterIntermediateCompliance = rosters.map(roster => MusterPostgresCtr.toMusterIntermediateCompliance(roster));
+    const musterTimeView = this.toMusterTimeView(musterUnitConf);
+    console.log(JSON.stringify(musterTimeView));
     const musterCompliance = MusterPostgresCtr.calculateMusterCompliance(observations, unitsMusterConf, musterIntermediateCompliance);
 
     return res.json({
@@ -130,6 +132,25 @@ class MusterPostgresCtr {
     return observations;
   }
 
+  /**
+   * Represents muster configuration for a given time window and all units.
+   * This structure then can be queried for muster compliance.
+   * Example of the structure:
+   * <pre>
+   {
+      1: [{startTimestamp: 1, endTimestamp: 2}, {startTimestamp: 3, endTimestamp: 4}],
+      2: [{startTimestamp: 5, endTimestamp: 6}],
+    }
+   * </pre>
+   */
+  toMusterTimeView(musterUnitConf: MusterUnitConfiguration[]): MusterTimeView {
+
+    return {
+      1: [{startTimestamp: 1, endTimestamp: 2}, {startTimestamp: 3, endTimestamp: 4}],
+      2: [{startTimestamp: 5, endTimestamp: 6}],
+    };
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private static calculateMusterCompliance(
     observations: FilteredObservation[],
@@ -138,7 +159,7 @@ class MusterPostgresCtr {
   ) : MusterCompliance[] {
 
     console.log(observations);
-    console.log(unitsMusterConf);
+    console.log(JSON.stringify(unitsMusterConf));
     console.log(musterComplianceReport);
 
     return [];
@@ -148,9 +169,11 @@ class MusterPostgresCtr {
     const offset = page * limit;
     return musterInfo.slice(offset, offset + limit);
   }
+
 }
 
 type UnitId = number;
+
 type Edipi = string;
 
 type FilteredObservation = {
@@ -158,7 +181,7 @@ type FilteredObservation = {
   timestamp: string
 };
 
-type MusterUnitConfiguration = {
+export type MusterUnitConfiguration = {
   unitId: UnitId
   musterConf: MusterConfiguration[]
 };
@@ -177,5 +200,9 @@ type MusterCompliance = {
   mustersReported: number
   musterPercent: number
 } & IntermediateMusterCompliance;
+
+export type MusterTimeView = {
+  [unitId: number]: {startTimestamp: number, endTimestamp: number}[]
+};
 
 export default new MusterPostgresCtr();
