@@ -143,7 +143,7 @@ class MusterPostgresCtr {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private static async calculateMusterCompliance(observations: any, unitsMusterConf: MusterUnitConfiguration[]) {
+  private static async calculateMusterCompliance(observations: FilteredObservation[], unitsMusterConf: MusterUnitConfiguration[]) {
 
   }
 
@@ -160,6 +160,7 @@ class MusterPostgresCtr {
 
 type FilteredObservation = {
   edipi: number
+  unitId: string
   timestamp: string
 };
 
