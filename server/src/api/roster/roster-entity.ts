@@ -61,7 +61,7 @@ export abstract class RosterEntity extends BaseEntity {
   @Column({
     length: 20, nullable: true,
   })
-  phoneNumber!: string;
+  phoneNumber?: string;
 
   // The get/set column functions abstract this json data structure away and treat
   // custom columns as if they were directly on the model.
@@ -84,7 +84,7 @@ export abstract class RosterEntity extends BaseEntity {
       unit: this.unit.id,
       firstName: this.firstName,
       lastName: this.lastName,
-      phoneNumber: this.phoneNumber,
+      phoneNumber: this.phoneNumber ? this.phoneNumber : null,
     };
 
     for (const columnName of Object.keys(this.customColumns ?? {})) {
@@ -210,7 +210,9 @@ export abstract class RosterEntity extends BaseEntity {
   @BeforeInsert()
   @BeforeUpdate()
   formatPhoneNumber() {
-    this.phoneNumber = formatPhoneNumber(this.phoneNumber);
+    if (this.phoneNumber) {
+      this.phoneNumber = formatPhoneNumber(this.phoneNumber);
+    }
   }
 
 }
