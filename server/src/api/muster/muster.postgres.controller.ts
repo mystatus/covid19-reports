@@ -15,7 +15,7 @@ class MusterPostgresCtr {
   /**
    * Provides Muster Compliance details for all service members
    */
-  async getMusterRoster(req: ApiRequest<OrgRoleParams, null, GetMusterRosterQuery>, res: Response<Paginated<Partial<MusterComplianceReport>>>) {
+  async getMusterRoster(req: ApiRequest<OrgRoleParams, null, GetMusterRosterQuery>, res: Response<Paginated<Partial<MusterCompliance>>>) {
     assertRequestQuery(req, [
       'fromDate',
       'toDate',
@@ -45,21 +45,19 @@ class MusterPostgresCtr {
 
     const edipis = MusterPostgresCtr.getEdipi(rosters);
 
-    const unitsMusterConf: MusterUnitConfiguration[] = await MusterPostgresCtr.setDefaultMusterConf(
+    const unitsMusterConf = await MusterPostgresCtr.setDefaultMusterConf(
       await MusterPostgresCtr.getMusterUnitConf(unitIds), orgId,
     );
 
     const observations = await MusterPostgresCtr.getObservations(edipis, fromDate, toDate);
 
-    const musterComplianceReport: MusterComplianceReport[] = rosters.map(roster => MusterPostgresCtr.toMusterComplianceReport(roster));
+    const musterIntermediateCompliance = rosters.map(roster => MusterPostgresCtr.toMusterIntermediateCompliance(roster));
 
-    const musterCompliance = await MusterPostgresCtr.calculateMusterCompliance(observations, unitsMusterConf);
-
-    MusterPostgresCtr.enrichMusterComplianceReport(musterComplianceReport, musterCompliance);
+    const musterCompliance = await MusterPostgresCtr.calculateMusterCompliance(observations, unitsMusterConf, musterIntermediateCompliance);
 
     return res.json({
-      rows: MusterPostgresCtr.toPageWithRowLimit(musterComplianceReport, pageNumber, rowLimit),
-      totalRowsCount: musterComplianceReport.length,
+      rows: MusterPostgresCtr.toPageWithRowLimit(musterCompliance, pageNumber, rowLimit),
+      totalRowsCount: musterIntermediateCompliance.length,
     });
   }
 
@@ -116,11 +114,8 @@ class MusterPostgresCtr {
     return confWithMissingMusterConf.length > 0;
   }
 
-  private static toMusterComplianceReport(roster: Roster): MusterComplianceReport {
+  private static toMusterIntermediateCompliance(roster: Roster): IntermediateMusterCompliance {
     return {
-      totalMusters: 1,
-      mustersReported: 0,
-      musterPercent: 0,
       edipi: roster.edipi,
       firstName: roster.firstName,
       lastName: roster.lastName,
@@ -143,42 +138,55 @@ class MusterPostgresCtr {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private static async calculateMusterCompliance(observations: FilteredObservation[], unitsMusterConf: MusterUnitConfiguration[]) {
+  private static calculateMusterCompliance(
+    observations: FilteredObservation[],
+    unitsMusterConf: MusterUnitConfiguration[],
+    musterComplianceReport: IntermediateMusterCompliance[],
+  ) : MusterCompliance[] {
 
+    console.log(observations);
+    console.log(unitsMusterConf);
+    console.log(musterComplianceReport);
+
+    return [];
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private static enrichMusterComplianceReport(musterComplianceReport: MusterComplianceReport[], musterCompliance: void) {
-
-  }
-
-  private static toPageWithRowLimit(musterInfo: MusterComplianceReport[], page: number, limit: number): MusterComplianceReport[] {
+  private static toPageWithRowLimit(musterInfo: MusterCompliance[], page: number, limit: number): MusterCompliance[] {
     const offset = page * limit;
     return musterInfo.slice(offset, offset + limit);
   }
 }
 
+type UnitId = number;
+type Edipi = string;
+
+type EdipiUnit = {
+  [edipi: string]: number
+};
+
 type FilteredObservation = {
-  edipi: number
-  unitId: string
+  edipi: Edipi
   timestamp: string
 };
 
 type MusterUnitConfiguration = {
-  unitId: number
+  unitId: UnitId
   musterConf: MusterConfiguration[]
 };
 
-type MusterComplianceReport = {
-  totalMusters: number
-  mustersReported: number
-  musterPercent: number
-  edipi: string
+type IntermediateMusterCompliance = {
+  edipi: Edipi
   firstName: string
   lastName: string
   myCustomColumn1: string,
   unitId: number
   phone: string
 };
+
+type MusterCompliance = {
+  totalMusters: number
+  mustersReported: number
+  musterPercent: number
+} & IntermediateMusterCompliance;
 
 export default new MusterPostgresCtr();
