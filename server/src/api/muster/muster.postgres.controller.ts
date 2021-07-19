@@ -128,7 +128,7 @@ class MusterPostgresCtr {
     };
   }
 
-  private static async getObservations(edipis: string[], fromDate: any | moment.Moment, toDate: any | moment.Moment) {
+  private static async getObservations(edipis: string[], fromDate: any | moment.Moment, toDate: any | moment.Moment) : Promise<FilteredObservation[]> {
     const observations = await Observation.createQueryBuilder('observation')
       .select('observation.edipi, observation.timestamp')
       .where('observation.timestamp <= to_timestamp(:tsTo)', {tsTo: toDate.unix()})
@@ -137,6 +137,7 @@ class MusterPostgresCtr {
       .getRawMany();
 
     console.log(JSON.stringify(observations));
+    return observations;
   }
 
   private static async calculateMusterCompliance(observations: any, unitsMusterConf: MusterUnitConfiguration[]) {
@@ -152,6 +153,11 @@ class MusterPostgresCtr {
     return musterInfo.slice(offset, offset + limit);
   }
 }
+
+type FilteredObservation = {
+  edipi: number
+  timestamp: string
+};
 
 type MusterUnitConfiguration = {
   unitId: number
