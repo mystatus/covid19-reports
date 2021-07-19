@@ -49,9 +49,9 @@ class MusterPostgresCtr {
       await MusterPostgresCtr.getMusterUnitConf(unitIds), orgId,
     );
 
-    const musterComplianceReport: MusterComplianceReport[] = rosters.map(roster => MusterPostgresCtr.toMusterComplianceReport(roster));
-
     const observations = await MusterPostgresCtr.getObservations(edipis, fromDate, toDate);
+
+    const musterComplianceReport: MusterComplianceReport[] = rosters.map(roster => MusterPostgresCtr.toMusterComplianceReport(roster));
 
     const musterCompliance = await MusterPostgresCtr.calculateMusterCompliance(observations, unitsMusterConf);
 
