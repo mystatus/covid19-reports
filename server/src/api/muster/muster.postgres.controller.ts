@@ -47,7 +47,7 @@ class MusterPostgresCtr {
     );
     const observations = await MusterPostgresCtr.getObservations(edipis, fromDate, toDate);
     const musterIntermediateCompliance = rosters.map(roster => MusterPostgresCtr.toMusterIntermediateCompliance(roster));
-    const musterCompliance = await MusterPostgresCtr.calculateMusterCompliance(observations, unitsMusterConf, musterIntermediateCompliance);
+    const musterCompliance = MusterPostgresCtr.calculateMusterCompliance(observations, unitsMusterConf, musterIntermediateCompliance);
 
     return res.json({
       rows: MusterPostgresCtr.toPageWithRowLimit(musterCompliance, pageNumber, rowLimit),
