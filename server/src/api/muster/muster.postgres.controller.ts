@@ -42,9 +42,8 @@ class MusterPostgresCtr {
     const rosters: Roster[] = await MusterPostgresCtr.getRosters(unitId, orgId);
     const unitIds = MusterPostgresCtr.getUnitIds(rosters);
     const edipis = MusterPostgresCtr.getEdipi(rosters);
-    const unitsMusterConf = await MusterPostgresCtr.setDefaultMusterConf(
-      await MusterPostgresCtr.getMusterUnitConf(unitIds), orgId,
-    );
+    const musterUnitConf = await MusterPostgresCtr.getMusterUnitConf(unitIds);
+    const unitsMusterConf = await MusterPostgresCtr.setDefaultMusterConf(musterUnitConf, orgId);
     const observations = await MusterPostgresCtr.getObservations(edipis, fromDate, toDate);
     const musterIntermediateCompliance = rosters.map(roster => MusterPostgresCtr.toMusterIntermediateCompliance(roster));
     const musterCompliance = MusterPostgresCtr.calculateMusterCompliance(observations, unitsMusterConf, musterIntermediateCompliance);
