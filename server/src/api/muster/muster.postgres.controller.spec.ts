@@ -1,14 +1,18 @@
 import { expect } from 'chai';
 import moment from 'moment-timezone';
 import later from 'later';
-import musterPostgresController, { MusterTimeView, MusterUnitConfiguration } from './muster.postgres.controller';
+import musterPostgresController, {
+  UnitMusterConf,
+  UnitMusterConfFromDb,
+} from './muster.postgres.controller';
 
 describe('Muster Postgres Controller', () => {
-  it('should work', () => {
 
-    const fromDate = moment('2021-07-01T00:00:00.000Z');
-    const toDate = moment('2021-08-01T00:00:00.000Z');
-    const musterUnitConf: MusterUnitConfiguration[] = [{
+  it('toUnitMusterConf() should convert "binary" date format to "array" date format', () => {
+
+    // const fromDate = moment('2021-07-01T00:00:00.000Z');
+    // const toDate = moment('2021-08-01T00:00:00.000Z');
+    const musterUnitConf: UnitMusterConfFromDb[] = [{
       unitId: 1,
       musterConf: [
         {
@@ -22,7 +26,7 @@ describe('Muster Postgres Controller', () => {
           days: 1,
           startTime: '14:00',
           timezone: 'America/Chicago',
-          durationMinutes: 60,
+          durationMinutes: 120,
           reportId: 'es6ddssymptomobs',
         },
       ],
@@ -30,18 +34,48 @@ describe('Muster Postgres Controller', () => {
       unitId: 2,
       musterConf: [
         {
-          days: 1,
+          days: 2,
+          startTime: '12:00',
+          timezone: 'America/Chicago',
+          durationMinutes: 180,
+          reportId: 'es6ddssymptomobs',
+        },
+      ],
+    }];
+    const expected: UnitMusterConf[] = [{
+      unitId: 1,
+      musterConf: [
+        {
+          days: [2, 3],
           startTime: '13:00',
           timezone: 'America/Chicago',
           durationMinutes: 60,
           reportId: 'es6ddssymptomobs',
         },
+        {
+          days: [1],
+          startTime: '14:00',
+          timezone: 'America/Chicago',
+          durationMinutes: 120,
+          reportId: 'es6ddssymptomobs',
+        },
+      ],
+    }, {
+      unitId: 2,
+      musterConf: [
+        {
+          days: [2],
+          startTime: '12:00',
+          timezone: 'America/Chicago',
+          durationMinutes: 180,
+          reportId: 'es6ddssymptomobs',
+        },
       ],
     }];
-    const mtv:MusterTimeView = musterPostgresController.toMusterTimeView(musterUnitConf, fromDate, toDate);
-    console.log(mtv);
-
+    const mtv:UnitMusterConf[] = musterPostgresController.toUnitMusterConf(musterUnitConf);
+    expect(mtv).to.eql(expected);
   });
+
   it('experiment with later lib', () => {
 
     const fromDate = moment.utc('2021-07-01T00:00:00.000Z');

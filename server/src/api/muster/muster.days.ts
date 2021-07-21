@@ -9,7 +9,10 @@ export enum DaysOfTheWeek {
   Saturday = 64,
 }
 
-export function daysToString(days: DaysOfTheWeek) {
+export function daysToString(days: number | undefined): number[] {
+  if (!days) {
+    return [];
+  }
   const setDays: number[] = [];
   /* eslint-disable no-bitwise */
   if (days & DaysOfTheWeek.Sunday) {
