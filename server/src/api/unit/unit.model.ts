@@ -49,8 +49,15 @@ export class Unit extends BaseEntity {
   }
 }
 
-export interface MusterConfiguration {
+export interface MusterConfiguration extends MusterConfBase{
   days?: number,
+}
+
+export interface MusterConfWithDateArray extends MusterConfBase{
+  days?: number[],
+}
+
+export interface MusterConfBase {
   startTime: string,
   timezone: string,
   durationMinutes: number,

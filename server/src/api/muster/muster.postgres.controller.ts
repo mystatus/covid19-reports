@@ -5,9 +5,10 @@ import { assertRequestQuery } from '../../util/api-utils';
 import { ApiRequest, OrgRoleParams, Paginated} from '../api.router';
 import { Roster } from '../roster/roster.model';
 import { GetMusterRosterQuery } from './muster.controller';
-import { Unit, MusterConfiguration } from '../unit/unit.model';
+import { Unit, MusterConfiguration, MusterConfWithDateArray } from '../unit/unit.model';
 import { Org } from '../org/org.model';
 import { Observation } from '../observation/observation.model';
+import {daysToString} from './muster.days';
 
 
 class MusterPostgresCtr {
@@ -76,7 +77,7 @@ class MusterPostgresCtr {
     return rosters.filter(roster => roster.unit.org!.id === orgId);
   }
 
-  private static async getMusterUnitConf(unitIds: number[]): Promise<MusterUnitConfiguration[]> {
+  private static async getMusterUnitConf(unitIds: number[]): Promise<UnitMusterConfFromDb[]> {
     return (await Unit.find({ where: { id: In(unitIds) } })).map(unitConf => {
       return {
         unitId: unitConf.id,
@@ -90,7 +91,7 @@ class MusterPostgresCtr {
    * Sets default muster configuration where muster configuration is missing.
    * This function has a side effect, it modifies musterUnitConf.
    */
-  private static async setDefaultMusterConf(musterUnitConf: MusterUnitConfiguration[], orgId: number): Promise<MusterUnitConfiguration[]> {
+  private static async setDefaultMusterConf(musterUnitConf: UnitMusterConfFromDb[], orgId: number): Promise<UnitMusterConfFromDb[]> {
     if (MusterPostgresCtr.isMusterConfMissing(musterUnitConf)) {
       const org = await Org.findOne({ where: { id: orgId } });
       if (org) {
@@ -105,7 +106,7 @@ class MusterPostgresCtr {
     return musterUnitConf;
   }
 
-  private static isMusterConfMissing(musterUnitConf: MusterUnitConfiguration[]): boolean {
+  private static isMusterConfMissing(musterUnitConf: UnitMusterConfFromDb[]): boolean {
     const confWithMissingMusterConf = musterUnitConf.filter(conf => !conf.musterConf || conf.musterConf.length === 0);
     return confWithMissingMusterConf.length > 0;
   }
@@ -144,7 +145,7 @@ class MusterPostgresCtr {
     }
    * </pre>
    */
-  toMusterTimeView(multipleUntisConfigurations: MusterUnitConfiguration[], fromDate: any | moment.Moment, toDate: any | moment.Moment): MusterTimeView {
+  toMusterTimeView(multipleUntisConfigurations: UnitMusterConfFromDb[], fromDate: any | moment.Moment, toDate: any | moment.Moment): MusterTimeView {
 
     console.log('============');
     console.log(fromDate);
@@ -183,7 +184,7 @@ class MusterPostgresCtr {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private static calculateMusterCompliance(
     observations: FilteredObservation[],
-    unitsMusterConf: MusterUnitConfiguration[],
+    unitsMusterConf: UnitMusterConfFromDb[],
     musterComplianceReport: IntermediateMusterCompliance[],
   ) : MusterCompliance[] {
 
@@ -199,6 +200,25 @@ class MusterPostgresCtr {
     return musterInfo.slice(offset, offset + limit);
   }
 
+  toUnitMusterConf(musterUnitConf: UnitMusterConfFromDb[]): UnitMusterConf[] {
+    return musterUnitConf.map(muConf => {
+      const unitId = muConf.unitId;
+      const musterConf = muConf.musterConf;
+      const newMusterConf = musterConf.map(conf => {
+        return {
+          days: daysToString(conf.days),
+          startTime: conf.startTime,
+          timezone: conf.timezone,
+          durationMinutes: conf.durationMinutes,
+          reportId: conf.reportId,
+        };
+      });
+      return {unitId, musterConf: newMusterConf};
+    });
+
+
+    return [];
+  }
 }
 
 type UnitId = number;
@@ -210,9 +230,14 @@ type FilteredObservation = {
   timestamp: string
 };
 
-export type MusterUnitConfiguration = {
+export type UnitMusterConfFromDb = {
   unitId: UnitId
   musterConf: MusterConfiguration[]
+};
+
+export type UnitMusterConf = {
+  unitId: UnitId
+  musterConf: MusterConfWithDateArray[]
 };
 
 type IntermediateMusterCompliance = {
