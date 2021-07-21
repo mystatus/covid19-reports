@@ -47,7 +47,7 @@ class MusterPostgresCtr {
     const unitsMusterConfFromDb = await this.setDefaultMusterConf(musterUnitConf, orgId);
     const observations = await this.getObservations(edipis, fromDate, toDate);
     const musterIntermediateCompliance = rosters.map(roster => this.toMusterIntermediateCompliance(roster));
-    const unitsMusterConf = this.toUnitMusterConf(musterUnitConf);
+    const unitsMusterConf = this.toUnitMusterConf(unitsMusterConfFromDb);
     const musterTimeView = this.toMusterTimeView(unitsMusterConf, fromDate, toDate);
     console.log(JSON.stringify(musterTimeView));
     const musterCompliance = this.calculateMusterCompliance(observations, unitsMusterConfFromDb, musterIntermediateCompliance);
@@ -146,13 +146,13 @@ class MusterPostgresCtr {
     }
    * </pre>
    */
-  toMusterTimeView(multipleUntisConfigurations: UnitMusterConf[], fromDate: any, toDate: any): MusterTimeView {
+  toMusterTimeView(multipleUnitsConfigurations: UnitMusterConf[], fromDate: any, toDate: any): MusterUnitTimeView {
 
     console.log('============');
     console.log(fromDate);
     console.log(toDate);
 
-    multipleUntisConfigurations.forEach(singleUntilConf => {
+    multipleUnitsConfigurations.forEach(singleUntilConf => {
       const tsConfig = singleUntilConf.musterConf.map(mc => {
 
         const days = mc.days;
@@ -168,7 +168,7 @@ class MusterPostgresCtr {
 
       console.log(tsConfig);
 
-      const config: MusterTimeView = {};
+      const config: MusterUnitTimeView = {};
       config[singleUntilConf.unitId] = [{startTimestamp: 1, endTimestamp: 2}];
       // console.log(config);
 
@@ -220,7 +220,31 @@ class MusterPostgresCtr {
 
     return [];
   }
+
+  /**
+    Converts single muster configuration to a time muster window view structure. Time muster windows are generated from
+    the provided start date until the end date. An example of a single muster configuration:
+    <pre>
+      {
+      days: [2, 3],
+      startTime: '13:00',
+      timezone: 'America/Chicago',
+      durationMinutes: 60,
+      reportId: 'es6ddssymptomobs',
+    };
+     </pre>
+
+    @param input single muster configuration
+    @param fromDate start date for the generation of time muster windows
+    @param toDate end date for the generation of time muster windows
+   */
+  toSingleMusterTimeView(input: MusterConfWithDateArray, fromDate: moment.Moment, toDate: moment.Moment): UnitTimeView[] {
+
+
+    return [];
+  }
 }
+
 
 type UnitId = number;
 
@@ -256,8 +280,12 @@ type MusterCompliance = {
   musterPercent: number
 } & IntermediateMusterCompliance;
 
-export type MusterTimeView = {
-  [unitId: number]: {startTimestamp: number, endTimestamp: number}[]
+export type MusterUnitTimeView = {
+  [unitId: number]: UnitTimeView[]
+};
+
+export type UnitTimeView = {
+  startTimestamp: number, endTimestamp: number
 };
 
 export default new MusterPostgresCtr();

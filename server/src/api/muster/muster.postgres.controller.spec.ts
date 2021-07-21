@@ -3,8 +3,9 @@ import moment from 'moment-timezone';
 import later from 'later';
 import musterPostgresController, {
   UnitMusterConf,
-  UnitMusterConfFromDb,
+  UnitMusterConfFromDb, UnitTimeView,
 } from './muster.postgres.controller';
+import { MusterConfWithDateArray } from '../unit/unit.model';
 
 describe('Muster Postgres Controller', () => {
 
@@ -76,7 +77,25 @@ describe('Muster Postgres Controller', () => {
     expect(mtv).to.eql(expected);
   });
 
-  it('toUnitMusterConf() should convert "binary" date format to "array" date format', () => {
+  it('toMusterTimeView() should convert single muster config to date range list of muster windows', () => {
+
+    const fromDate = moment('2021-07-01T00:00:00.000Z');
+    const toDate = moment('2021-08-01T00:00:00.000Z');
+
+    const input: MusterConfWithDateArray = {
+      days: [2, 3],
+      startTime: '13:00',
+      timezone: 'America/Chicago',
+      durationMinutes: 60,
+      reportId: 'es6ddssymptomobs',
+    };
+
+    const timeView: UnitTimeView[] = musterPostgresController.toSingleMusterTimeView(input, fromDate, toDate);
+    console.log(timeView);
+
+  });
+
+  it('toMusterTimeView() should convert all muster config to date range list of muster windows', () => {
 
     const fromDate = moment('2021-07-01T00:00:00.000Z');
     const toDate = moment('2021-08-01T00:00:00.000Z');
@@ -110,7 +129,9 @@ describe('Muster Postgres Controller', () => {
         },
       ],
     }];
-    musterPostgresController.toMusterTimeView(input, fromDate, toDate);
+    // TODO: to do later
+    const timeView = musterPostgresController.toMusterTimeView(input, fromDate, toDate);
+    console.log(timeView);
 
   });
 
