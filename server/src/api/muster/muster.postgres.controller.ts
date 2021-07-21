@@ -46,7 +46,7 @@ class MusterPostgresCtr {
     const unitsMusterConf = await MusterPostgresCtr.setDefaultMusterConf(musterUnitConf, orgId);
     const observations = await MusterPostgresCtr.getObservations(edipis, fromDate, toDate);
     const musterIntermediateCompliance = rosters.map(roster => MusterPostgresCtr.toMusterIntermediateCompliance(roster));
-    const musterTimeView = this.toMusterTimeView(musterUnitConf);
+    const musterTimeView = this.toMusterTimeView(musterUnitConf, fromDate, toDate);
     console.log(JSON.stringify(musterTimeView));
     const musterCompliance = MusterPostgresCtr.calculateMusterCompliance(observations, unitsMusterConf, musterIntermediateCompliance);
 
@@ -85,6 +85,7 @@ class MusterPostgresCtr {
     });
   }
 
+  // TODO: refactor, see: https://github.com/mystatus/covid19-reports/pull/171/files#r673474693
   /**
    * Sets default muster configuration where muster configuration is missing.
    * This function has a side effect, it modifies musterUnitConf.
@@ -143,12 +144,40 @@ class MusterPostgresCtr {
     }
    * </pre>
    */
-  toMusterTimeView(musterUnitConf: MusterUnitConfiguration[]): MusterTimeView {
+  toMusterTimeView(multipleUntisConfigurations: MusterUnitConfiguration[], fromDate: any | moment.Moment, toDate: any | moment.Moment): MusterTimeView {
 
-    return {
-      1: [{startTimestamp: 1, endTimestamp: 2}, {startTimestamp: 3, endTimestamp: 4}],
-      2: [{startTimestamp: 5, endTimestamp: 6}],
-    };
+    console.log('============');
+    console.log(fromDate);
+    console.log(toDate);
+
+    multipleUntisConfigurations.forEach(singleUntilConf => {
+      const tsConfig = singleUntilConf.musterConf.map(mc => {
+
+        const days = mc.days;
+        const startTime = mc.startTime;
+        const timezone = mc.timezone;
+        const durationMinutes = mc.durationMinutes;
+
+        console.log(days);
+
+        return {};
+
+      });
+
+      console.log(tsConfig);
+
+      const config: MusterTimeView = {};
+      config[singleUntilConf.unitId] = [{startTimestamp: 1, endTimestamp: 2}];
+      // console.log(config);
+
+    });
+
+    return {};
+
+    // return {
+    //   1: [{startTimestamp: 1, endTimestamp: 2}, {startTimestamp: 3, endTimestamp: 4}],
+    //   2: [{startTimestamp: 5, endTimestamp: 6}],
+    // };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
