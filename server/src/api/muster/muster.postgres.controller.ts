@@ -40,34 +40,35 @@ class MusterPostgresCtr {
     const unitId = req.query.unitId!;
     const orgId = req.appOrg!.id;
 
-    const rosters: Roster[] = await MusterPostgresCtr.getRosters(unitId, orgId);
-    const unitIds = MusterPostgresCtr.getUnitIds(rosters);
-    const edipis = MusterPostgresCtr.getEdipi(rosters);
-    const musterUnitConf = await MusterPostgresCtr.getMusterUnitConf(unitIds);
-    const unitsMusterConf = await MusterPostgresCtr.setDefaultMusterConf(musterUnitConf, orgId);
-    const observations = await MusterPostgresCtr.getObservations(edipis, fromDate, toDate);
-    const musterIntermediateCompliance = rosters.map(roster => MusterPostgresCtr.toMusterIntermediateCompliance(roster));
-    const musterTimeView = this.toMusterTimeView(musterUnitConf, fromDate, toDate);
+    const rosters: Roster[] = await this.getRosters(unitId, orgId);
+    const unitIds = this.getUnitIds(rosters);
+    const edipis = this.getEdipi(rosters);
+    const musterUnitConf = await this.getMusterUnitConf(unitIds);
+    const unitsMusterConfFromDb = await this.setDefaultMusterConf(musterUnitConf, orgId);
+    const observations = await this.getObservations(edipis, fromDate, toDate);
+    const musterIntermediateCompliance = rosters.map(roster => this.toMusterIntermediateCompliance(roster));
+    const unitsMusterConf = this.toUnitMusterConf(musterUnitConf);
+    const musterTimeView = this.toMusterTimeView(unitsMusterConf, fromDate, toDate);
     console.log(JSON.stringify(musterTimeView));
-    const musterCompliance = MusterPostgresCtr.calculateMusterCompliance(observations, unitsMusterConf, musterIntermediateCompliance);
+    const musterCompliance = this.calculateMusterCompliance(observations, unitsMusterConfFromDb, musterIntermediateCompliance);
 
     return res.json({
-      rows: MusterPostgresCtr.toPageWithRowLimit(musterCompliance, pageNumber, rowLimit),
+      rows: this.toPageWithRowLimit(musterCompliance, pageNumber, rowLimit),
       totalRowsCount: musterIntermediateCompliance.length,
     });
   }
 
   /** Get an array of unique Unit IDs */
-  private static getUnitIds(rosters: Roster[]): number[] {
+  private getUnitIds(rosters: Roster[]): number[] {
     return Array.from(new Set(rosters.map(r => r.unit.id)));
   }
 
   /** Get an array of unique edipis */
-  private static getEdipi(rosters: Roster[]): string[] {
+  private getEdipi(rosters: Roster[]): string[] {
     return Array.from(new Set(rosters.map(r => r.edipi)));
   }
 
-  private static async getRosters(unitId: number, orgId: number): Promise<Roster[]> {
+  private async getRosters(unitId: number, orgId: number): Promise<Roster[]> {
     let rosters;
     if (unitId) {
       rosters = await Roster.find({ relations: ['unit', 'unit.org'], where: { unit: unitId } });
@@ -77,7 +78,7 @@ class MusterPostgresCtr {
     return rosters.filter(roster => roster.unit.org!.id === orgId);
   }
 
-  private static async getMusterUnitConf(unitIds: number[]): Promise<UnitMusterConfFromDb[]> {
+  private async getMusterUnitConf(unitIds: number[]): Promise<UnitMusterConfFromDb[]> {
     return (await Unit.find({ where: { id: In(unitIds) } })).map(unitConf => {
       return {
         unitId: unitConf.id,
@@ -91,8 +92,8 @@ class MusterPostgresCtr {
    * Sets default muster configuration where muster configuration is missing.
    * This function has a side effect, it modifies musterUnitConf.
    */
-  private static async setDefaultMusterConf(musterUnitConf: UnitMusterConfFromDb[], orgId: number): Promise<UnitMusterConfFromDb[]> {
-    if (MusterPostgresCtr.isMusterConfMissing(musterUnitConf)) {
+  private async setDefaultMusterConf(musterUnitConf: UnitMusterConfFromDb[], orgId: number): Promise<UnitMusterConfFromDb[]> {
+    if (this.isMusterConfMissing(musterUnitConf)) {
       const org = await Org.findOne({ where: { id: orgId } });
       if (org) {
         const defaultOrgMusterConf = org.defaultMusterConfiguration;
@@ -106,12 +107,12 @@ class MusterPostgresCtr {
     return musterUnitConf;
   }
 
-  private static isMusterConfMissing(musterUnitConf: UnitMusterConfFromDb[]): boolean {
+  private isMusterConfMissing(musterUnitConf: UnitMusterConfFromDb[]): boolean {
     const confWithMissingMusterConf = musterUnitConf.filter(conf => !conf.musterConf || conf.musterConf.length === 0);
     return confWithMissingMusterConf.length > 0;
   }
 
-  private static toMusterIntermediateCompliance(roster: Roster): IntermediateMusterCompliance {
+  private toMusterIntermediateCompliance(roster: Roster): IntermediateMusterCompliance {
     return {
       edipi: roster.edipi,
       firstName: roster.firstName,
@@ -122,7 +123,7 @@ class MusterPostgresCtr {
     };
   }
 
-  private static async getObservations(edipis: Edipi[], fromDate: any | moment.Moment, toDate: any | moment.Moment) : Promise<FilteredObservation[]> {
+  private async getObservations(edipis: Edipi[], fromDate: any | moment.Moment, toDate: any | moment.Moment) : Promise<FilteredObservation[]> {
     const observations = await Observation.createQueryBuilder('observation')
       .select('observation.edipi, observation.timestamp')
       .where('observation.timestamp <= to_timestamp(:tsTo)', {tsTo: toDate.unix()})
@@ -145,7 +146,7 @@ class MusterPostgresCtr {
     }
    * </pre>
    */
-  toMusterTimeView(multipleUntisConfigurations: UnitMusterConfFromDb[], fromDate: any | moment.Moment, toDate: any | moment.Moment): MusterTimeView {
+  toMusterTimeView(multipleUntisConfigurations: UnitMusterConf[], fromDate: any, toDate: any): MusterTimeView {
 
     console.log('============');
     console.log(fromDate);
@@ -182,7 +183,7 @@ class MusterPostgresCtr {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private static calculateMusterCompliance(
+  private calculateMusterCompliance(
     observations: FilteredObservation[],
     unitsMusterConf: UnitMusterConfFromDb[],
     musterComplianceReport: IntermediateMusterCompliance[],
@@ -195,7 +196,7 @@ class MusterPostgresCtr {
     return [];
   }
 
-  private static toPageWithRowLimit(musterInfo: MusterCompliance[], page: number, limit: number): MusterCompliance[] {
+  private toPageWithRowLimit(musterInfo: MusterCompliance[], page: number, limit: number): MusterCompliance[] {
     const offset = page * limit;
     return musterInfo.slice(offset, offset + limit);
   }
