@@ -2,6 +2,7 @@ import bodyParser from 'body-parser';
 import express from 'express';
 import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth/auth-middleware';
 import controller from './muster.controller';
+
 const router = express.Router() as any;
 
 router.get(
@@ -32,9 +33,9 @@ router.get(
 );
 
 router.get(
-  '/:unitName/compliance',
+  '/:orgId/:unitName/compliance',
   bodyParser.json(),
   controller.getMusterComplianceByDate,
-)
+);
 
 export default router;

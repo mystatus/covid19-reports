@@ -62,11 +62,6 @@ router.get(
 );
 
 router.get(
-  '/info2/:edipi',
-  controller.getRosterInfosForIndividual,
-);
-
-router.get(
   '/:orgId/template',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),

@@ -1,7 +1,7 @@
 import csv from 'csvtojson';
 import { Response } from 'express';
 import fs from 'fs';
-import moment from 'moment-timezone';
+import moment from 'moment';
 import {
   getConnection,
   getManager,
@@ -270,8 +270,6 @@ class RosterController {
     const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
     res.json(columns);
   }
-
-  
 
   async getRosterInfosForIndividual(req: ApiRequest<EdipiParam, null, ReportDateQuery>, res: Response) {
     res.json({

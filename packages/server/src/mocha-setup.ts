@@ -5,6 +5,7 @@ import chaiArrays from 'chai-arrays';
 import { getManager } from 'typeorm';
 import { AccessRequest } from './api/access-request/access-request.model';
 import { UserNotificationSetting } from './api/notification/user-notification-setting.model';
+import { Observation } from './api/observation/observation.model';
 import { Org } from './api/org/org.model';
 import { Role } from './api/role/role.model';
 import { CustomRosterColumn } from './api/roster/custom-roster-column.model';
@@ -42,6 +43,7 @@ beforeEach(async () => {
     await CustomRosterColumn.delete({});
     await Roster.delete({});
     await RosterHistory.delete({});
+    await Observation.delete({});
     await ReportSchema.delete({});
     await Unit.delete({});
     await UserNotificationSetting.delete({});
