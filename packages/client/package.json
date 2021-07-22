@@ -96,7 +96,6 @@
     "redux-devtools-extension": "^2.13.8",
     "redux-persist": "^6.0.0",
     "redux-thunk": "^2.3.0",
-    "reflect-metadata": "^0.1.13",
     "sinon": "^9.2.4",
     "ts-md5": "^1.2.7",
     "ts-mocha": "^8.0.0",
