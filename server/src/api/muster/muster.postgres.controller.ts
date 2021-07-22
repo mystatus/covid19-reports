@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import moment from 'moment-timezone';
 import { In } from 'typeorm';
+import later from 'later';
 import { assertRequestQuery } from '../../util/api-utils';
 import { ApiRequest, OrgRoleParams, Paginated} from '../api.router';
 import { Roster } from '../roster/roster.model';
@@ -238,13 +239,56 @@ class MusterPostgresCtr {
     @param fromDate start date for the generation of time muster windows
     @param toDate end date for the generation of time muster windows
    */
-  toSingleMusterTimeView(input: MusterConfWithDateArray, fromDate: moment.Moment, toDate: moment.Moment): UnitTimeView[] {
+  // toSingleMusterTimeView(musterConf: MusterConfWithDateArray, fromDate: moment.Moment, toDate: moment.Moment): UnitTimeView[] {
+  toSingleMusterTimeView(musterConf: MusterConfWithDateArray, fromDate: moment.Moment, toDate: moment.Moment) {
 
+    // set later to use UTC time (the default)
+    later.date.UTC();
 
-    return [];
+    const {days, startTime, timezone, durationMinutes} = musterConf;
+    const musterViewWithStartTimes = this.getSingleMusterView(startTime, timezone, days, fromDate, toDate);
+    // TODO: this below
+    const endTime = startTime + durationMinutes;
+    const musterViewWithEndTimes = this.getSingleMusterView(endTime, timezone, days, fromDate, toDate);
+    // TODO: combine the 2 and return
+    return musterViewWithStartTimes;
+
+  }
+
+  private getSingleMusterView(startTime: string, timezone: string, days: number[], fromDate: moment.Moment, toDate: moment.Moment) {
+    const hoursMinutes = this.getHoursMinutes(startTime, timezone);
+    const startDaysSchedule = days.map(day => {
+      return later.parse.recur()
+        .on(day)
+        .dayOfWeek()
+        .on(parseInt(hoursMinutes.hours))
+        .hour()
+        .on(parseInt(hoursMinutes.minutes))
+        .minute();
+    });
+    return startDaysSchedule.map(sch => {
+      const next = later.schedule(sch)
+        .next(10000, fromDate.toDate(), toDate.toDate());
+      if (!Array.isArray(next)) {
+        return [next];
+      }
+      return next;
+    });
+  }
+
+  private getHoursMinutes(startTime: string, timezone: string): HoursAndMinutes {
+    const split = moment.tz(startTime, 'HH:mm', timezone)
+      .utc()
+      .format('HH:mm')
+      .split(':');
+    return {hours: split[0], minutes: split[1]};
   }
 }
 
+type HoursAndMinutes = {
+  hours: string
+  minutes: string
+};
 
 type UnitId = number;
 

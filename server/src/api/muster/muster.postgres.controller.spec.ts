@@ -90,9 +90,13 @@ describe('Muster Postgres Controller', () => {
       reportId: 'es6ddssymptomobs',
     };
 
-    const timeView: UnitTimeView[] = musterPostgresController.toSingleMusterTimeView(input, fromDate, toDate);
-    console.log(timeView);
-
+    const timeViews = musterPostgresController.toSingleMusterTimeView(input, fromDate, toDate);
+    timeViews.forEach(tw => {
+      tw.forEach((stw: moment.MomentInput) => {
+        // console.log(moment.utc(stw).unix());
+        console.log(moment.utc(stw));
+      });
+    });
   });
 
   it('toMusterTimeView() should convert all muster config to date range list of muster windows', () => {

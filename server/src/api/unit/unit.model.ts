@@ -54,7 +54,7 @@ export interface MusterConfiguration extends MusterConfBase{
 }
 
 export interface MusterConfWithDateArray extends MusterConfBase{
-  days?: number[],
+  days: number[],
 }
 
 export interface MusterConfBase {
