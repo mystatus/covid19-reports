@@ -2,22 +2,17 @@
 
 export NODE_OPTIONS="--max-old-space-size=4096"
 
-# Clean
-rm -rf ./build
-mkdir ./build
+./clean.sh
+mkdir build
 
 # Server
-cd server || exit
-./build.sh
-cd ..
+yarn run server build
 
-mv ./server/build/* ./build
-rmdir ./server/build
+mv ./packages/server/build/* ./build
+rmdir ./packages/server/build
 
 # Client
-cd client || exit
-./build.sh
-cd ..
+yarn run client build
 
-mv ./client/build/* ./build
-rmdir ./client/build
+mv ./packages/client/build/* ./build
+rmdir ./packages/client/build

@@ -1,0 +1,22 @@
+{
+  "name": "@covid19-reports/shared",
+  "private": true,
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=14",
+    "npm": ">=7",
+    "yarn": ">=1"
+  },
+  "main": "build/index",
+  "types": "build/index",
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "./build.sh",
+    "clean": "./clean.sh"
+  },
+  "dependencies": {
+    "libphonenumber-js": "^1.9.22"
+  }
+}
