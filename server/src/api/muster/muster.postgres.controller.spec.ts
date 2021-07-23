@@ -93,7 +93,7 @@ describe('Muster Postgres Controller', () => {
 
     const timeViews: MusterTimeView[] = musterPostgresController.toSingleMusterTimeView(input, fromDate, toDate);
     timeViews.forEach(tw => {
-      console.log(tw.startMusterTime);
+      console.log(tw.startMusterDate, tw.endMusterDate);
     });
   });
 

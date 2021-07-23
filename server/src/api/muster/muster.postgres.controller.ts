@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import moment from 'moment-timezone';
+import moment, { Moment } from 'moment-timezone';
 import { In } from 'typeorm';
 import later from 'later';
 import { assertRequestQuery } from '../../util/api-utils';
@@ -223,33 +223,46 @@ class MusterPostgresCtr {
   }
 
   /**
-    Converts single muster configuration to a time muster window view structure. Time muster windows are generated from
-    the provided start date until the end date. An example of a single muster configuration:
-    <pre>
-      {
-      days: [2, 3],
-      startTime: '13:00',
-      timezone: 'America/Chicago',
-      durationMinutes: 60,
-      reportId: 'es6ddssymptomobs',
-    };
-     </pre>
-
-    @param input single muster configuration
-    @param fromDate start date for the generation of time muster windows
-    @param toDate end date for the generation of time muster windows
+   * Converts single muster configuration to a time muster window view structure. Time muster windows are generated from
+   *  the provided start date until the end date. An example of a single muster configuration:
+   * <pre>
+   * {
+   *    days: [2, 3],
+   *     startTime: '13:00',
+   *     timezone: 'America/Chicago',
+   *     durationMinutes: 60,
+   *     reportId: 'es6ddssymptomobs',
+   *   };
+   *  </pre>
+   *
+   * An example of a generated output:
+   * <pre>
+   * Moment<2021-07-05T18:00:00Z> Moment<2021-07-05T19:00:00Z>
+   * Moment<2021-07-12T18:00:00Z> Moment<2021-07-12T19:00:00Z>
+   * Moment<2021-07-19T18:00:00Z> Moment<2021-07-19T19:00:00Z>
+   * Moment<2021-07-26T18:00:00Z> Moment<2021-07-26T19:00:00Z>
+   * Moment<2021-07-06T18:00:00Z> Moment<2021-07-06T19:00:00Z>
+   * Moment<2021-07-13T18:00:00Z> Moment<2021-07-13T19:00:00Z>
+   * Moment<2021-07-20T18:00:00Z> Moment<2021-07-20T19:00:00Z>
+   * Moment<2021-07-27T18:00:00Z> Moment<2021-07-27T19:00:00Z>
+   * </pre>
+   *
+   * @param musterConf muster configuration
+   * @param fromDate start date for the generation of time muster windows
+   * @param toDate end date for the generation of time muster windows
    */
-  // toSingleMusterTimeView(musterConf: MusterConfWithDateArray, fromDate: moment.Moment, toDate: moment.Moment): UnitTimeView[] {
-  toSingleMusterTimeView(musterConf: MusterConfWithDateArray, fromDate: moment.Moment, toDate: moment.Moment): MusterTimeView[] {
+  toSingleMusterTimeView(
+    musterConf: MusterConfWithDateArray,
+    fromDate: moment.Moment,
+    toDate: moment.Moment,
+  ): MusterTimeView[] {
 
     const {days, startTime, timezone, durationMinutes} = musterConf;
-    const musterTimeViewWithStartTimes = this.getSingleMusterView(startTime, timezone, days, fromDate, toDate);
-    const musterTimeViewWithEndTimes = this.getMusterTimeViewWithEndTimes(musterTimeViewWithStartTimes, durationMinutes);
-    return musterTimeViewWithEndTimes;
-
+    const startDatesMusterSchedules = this.getMusterStartDatesSchedules(startTime, timezone, days, fromDate, toDate);
+    return this.getMusterTimeViewWithEndTimes(startDatesMusterSchedules, durationMinutes);
   }
 
-  private getSingleMusterView(startTime: string, timezone: string, days: number[], fromDate: moment.Moment, toDate: moment.Moment) {
+  private getMusterStartDatesSchedules(startTime: string, timezone: string, days: number[], fromDate: moment.Moment, toDate: moment.Moment) {
     const hoursMinutes = this.getHoursMinutes(startTime, timezone);
     const startDaysSchedule = days.map(day => {
       return later.parse.recur()
@@ -262,15 +275,15 @@ class MusterPostgresCtr {
     });
     return startDaysSchedule.map(sch => {
       // 10000 is number of instances to return. It is large enough to return all instances we need
-      const next = later.schedule(sch).next(10000, fromDate.toDate(), toDate.toDate());
+      const allSchedules = later.schedule(sch).next(10000, fromDate.toDate(), toDate.toDate());
       // @ts-ignore next() does return zero value when no schedule is found for the given date range
-      if (next === 0) {
+      if (allSchedules === 0) {
         return [];
       }
-      if (!Array.isArray(next)) {
-        return [next];
+      if (!Array.isArray(allSchedules)) {
+        return [allSchedules];
       }
-      return next;
+      return allSchedules;
     });
   }
 
@@ -284,33 +297,24 @@ class MusterPostgresCtr {
 
   private getMusterTimeViewWithEndTimes(musterTimeViewWithEndTimes: Date[][], durationMinutes: number): MusterTimeView[] {
 
-    const rsp = musterTimeViewWithEndTimes.map(dateArray => {
-      return dateArray.map((dateElement: Date) => {
-        const musterStartDate = moment.utc(dateElement);
-        const musterEndDate = musterStartDate.add({minutes: durationMinutes});
-        return {
-          musterStartDate,
-          musterEndDate,
-        };
+    const musterTimeView: MusterTimeView[] = [];
+
+    musterTimeViewWithEndTimes.forEach(dateArray => {
+      dateArray.forEach((dateElement: Date) => {
+        musterTimeView.push({
+          startMusterDate: moment.utc(dateElement),
+          endMusterDate: moment.utc(dateElement).add({minutes: durationMinutes}),
+        });
       });
     });
 
-    console.log(rsp);
-
-    // return musterTimeViewWithEndTimes.map((mtw: Date[]) => {
-    //   const startMomentDate = moment.utc(mtw);
-    //   return {
-    //     startMusterTime: startMomentDate,
-    //     endMusterTime: new Date(),
-    //   };
-    // });
-
+    return musterTimeView;
   }
 }
 
 export type MusterTimeView = {
-  startMusterDate: Date
-  endMusterDate: Date
+  startMusterDate: Moment
+  endMusterDate: Moment
 };
 
 type HoursAndMinutes = {
