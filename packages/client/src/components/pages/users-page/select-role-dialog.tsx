@@ -1,0 +1,216 @@
+import React, {
+  useEffect,
+  useState,
+} from 'react';
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  Grid,
+  ListItemText,
+  MenuItem,
+  Select,
+  Typography,
+} from '@material-ui/core';
+import _ from 'lodash';
+import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
+import {
+  ApiRole,
+  ApiUnit,
+  ApiUser,
+} from '../../../models/api-response';
+import useStyles from './select-role-dialog.styles';
+import { Notification } from '../../../actions/notification.actions';
+import { Role } from '../../../actions/role.actions';
+import { RoleSelector } from '../../../selectors/role.selector';
+import { UserSelector } from '../../../selectors/user.selector';
+import { Roster } from '../../../actions/roster.actions';
+import RoleInfoPanel from '../../role-info-panel/role-info-panel';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../../hooks/use-app-selector';
+
+export type SelectRoleDialogProps = {
+  confirmButtonText: string
+  loading: boolean
+  units: ApiUnit[]
+  onCancel?: () => void
+  onChange: (selectedRole: ApiRole, units: number[] | null) => void
+  open?: boolean
+  user: ApiUser
+};
+
+const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props: SelectRoleDialogProps) => {
+  const classes = useStyles();
+  const dispatch = useAppDispatch();
+  const orgId = useAppSelector(UserSelector.orgId);
+  const availableRoles = useAppSelector(RoleSelector.all);
+  const [selectedUnits, setSelectedUnits] = useState<number[]>([]);
+  const [selectedRoleIndex, setSelectedRoleIndex] = useState(-1);
+  const {
+    confirmButtonText, loading, onCancel, onChange, open, user, units,
+  } = props;
+
+  const unitIndexMap: { [key: number]: number } = {};
+
+  for (let i = 0; i < units.length; i++) {
+    unitIndexMap[units[i].id] = i;
+  }
+
+  useEffect(() => {
+    if (availableRoles!.length > 0) {
+      const userRole = user?.userRoles?.[0];
+      const roleIndex = userRole ? availableRoles.findIndex(role => role.id === userRole.role.id) : 0;
+      setSelectedRoleIndex(roleIndex >= 0 ? roleIndex : 0);
+      if (userRole?.allUnits) {
+        setSelectedUnits([-1]);
+      } else {
+        setSelectedUnits(userRole?.units?.map(unit => unit.id) ?? []);
+      }
+    }
+  }, [user, availableRoles]);
+
+  const initializeTable = React.useCallback(async () => {
+    if (orgId) {
+      dispatch(Notification.fetch(orgId));
+      dispatch(Roster.fetchColumns(orgId));
+      dispatch(Role.fetch(orgId));
+    }
+  }, [dispatch, orgId]);
+
+  useEffect(() => { initializeTable().then(); }, [initializeTable]);
+
+  const selectedUnitChanged = (event: React.ChangeEvent<{ value: unknown }>) => {
+    const selectedValues = event.target.value as number[];
+    if (selectedValues.some(value => value === -1) || selectedValues.length === units.length) {
+      setSelectedUnits([-1]);
+    } else {
+      setSelectedUnits(selectedValues);
+    }
+  };
+
+  const allSelected = () => {
+    return selectedUnits.length === 1 && selectedUnits[0] === -1;
+  };
+
+  const renderUnitValue = (selected: unknown) => {
+    if (allSelected()) {
+      return 'All Units';
+    }
+    if ((selected as number[]).length === 0) {
+      return <em>- Select Unit(s) -</em>;
+    }
+    return (selected as number[]).map(unitId => units[unitIndexMap[unitId]].name).sort().join(', ');
+  };
+
+  const renderRole = (selected: unknown) => {
+    return availableRoles[selected as number].name;
+  };
+
+  function selectedRoleChanged(event: React.ChangeEvent<{ value: unknown }>) {
+    setSelectedRoleIndex(event.target.value as number);
+  }
+
+  if (availableRoles.length <= selectedRoleIndex || selectedRoleIndex < 0) {
+    return null;
+  }
+
+  function canSave() {
+    const originalRole = user?.userRoles?.[0];
+    if (selectedUnits.length === 0) {
+      return false;
+    }
+    if (!originalRole) {
+      return true;
+    }
+    const unitsChanged = (originalRole.allUnits && !allSelected())
+      || !_.isEqual(originalRole.units.map(unit => unit.id).sort(), selectedUnits.sort());
+    return unitsChanged || originalRole.role.id !== availableRoles[selectedRoleIndex].id;
+  }
+
+  const selectedRole = availableRoles[selectedRoleIndex];
+
+  return (
+    <Dialog onClose={onCancel} open={Boolean(open)} maxWidth="md" fullWidth>
+      <DialogTitle>
+        Role and Unit Assignment for <b>{`${user?.firstName} ${user?.lastName}`}</b>
+      </DialogTitle>
+      <DialogContent>
+        <Grid container spacing={3}>
+          <Grid item xs={6}>
+            <FormControl className={classes.roleSelect}>
+              <Typography className={classes.roleHeader}>Role:</Typography>
+              <Select
+                disabled={loading}
+                autoFocus
+                value={selectedRoleIndex}
+                onChange={selectedRoleChanged}
+                renderValue={renderRole}
+                inputProps={{
+                  name: 'role',
+                  id: 'role-select',
+                }}
+              >
+                {availableRoles.map((role, index) => (
+                  <MenuItem key={role.id} value={index}>
+                    <ListItemText primary={role.name} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={6}>
+            <FormControl className={classes.roleSelect}>
+              <Typography className={classes.roleHeader}>Units:</Typography>
+              <Select
+                multiple
+                displayEmpty
+                disabled={loading}
+                autoFocus
+                value={selectedUnits}
+                onChange={selectedUnitChanged}
+                renderValue={renderUnitValue}
+                inputProps={{
+                  name: 'unit',
+                  id: 'unit-select',
+                }}
+                MenuProps={{
+                  variant: 'menu',
+                }}
+              >
+                <MenuItem key="all" value={-1}>
+                  <Checkbox color="primary" checked={allSelected()} />
+                  <ListItemText primary="All Units" />
+                </MenuItem>
+                {units.map(unit => (
+                  <MenuItem key={unit.id} value={unit.id} disabled={allSelected()}>
+                    <Checkbox color="primary" checked={allSelected() || selectedUnits.indexOf(unit.id) > -1} />
+                    <ListItemText primary={unit.name} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+        <RoleInfoPanel role={selectedRole} scrollFix />
+      </DialogContent>
+      <DialogActions className={classes.roleDialogActions}>
+        <Button disabled={loading} variant="outlined" onClick={onCancel} color="primary">
+          Cancel
+        </Button>
+        <ButtonWithSpinner
+          onClick={() => onChange(selectedRole, allSelected() ? null : selectedUnits)}
+          disabled={!canSave()}
+          color="primary"
+          loading={loading}
+        >
+          {confirmButtonText}
+        </ButtonWithSpinner>
+      </DialogActions>
+    </Dialog>
+  );
+};
+export default SelectRoleDialog;

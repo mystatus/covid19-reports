@@ -1,0 +1,30 @@
+{
+  "root": true,
+  "extends": "../.eslintrc.json",
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  },
+  "plugins": [
+    "@typescript-eslint",
+    "jsx-a11y",
+    "react",
+    "react-hooks",
+    "import",
+    "chai-friendly",
+    "mocha-no-only"
+  ],
+  "ignorePatterns": [
+    "craco.config.js"
+  ],
+  "rules": {
+    "jsx-a11y/label-has-associated-control": "off",
+    "react/destructuring-assignment": "off",
+    "react/jsx-one-expression-per-line": "off",
+    "react/jsx-props-no-spreading": "off",
+    "react/no-array-index-key": "off",
+    "react/require-default-props": "off",
+    "react-hooks/exhaustive-deps": ["error", {
+      "additionalHooks": "useEffectDebounced"
+    }]
+  }
+}

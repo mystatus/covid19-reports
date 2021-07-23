@@ -7,21 +7,26 @@
     "yarn": ">=1"
   },
   "workspaces": [
-    "client",
-    "server"
+    "packages/*"
   ],
   "scripts": {
-    "start": "./run-prod.sh",
-    "dev": "./run-dev.sh",
-    "test": "./run-tests.sh",
+    "start": "./start.sh",
+    "test": "./test.sh",
     "build": "./build.sh",
+    "clean": "./clean.sh",
+    "dev": "./dev.sh",
+    "dev-client": "./dev-client.sh",
+    "dev-server": "./dev-server.sh",
     "start-db": "./start-db.sh",
     "stop-db": "./stop-db.sh",
-    "seed-dev": "cd server && ./seed-dev.sh",
-    "migration-create": "cd server && ./migration-create.sh",
-    "migration-generate": "cd server && ./migration-generate.sh",
-    "migration-revert": "cd server && ./migration-revert.sh",
-    "migration-run": "cd server && ./migration-run.sh"
+    "client": "yarn workspace @covid19-reports/client",
+    "server": "yarn workspace @covid19-reports/server",
+    "shared": "yarn workspace @covid19-reports/shared",
+    "seed-dev": "yarn run server seed-dev",
+    "migration-create": "yarn run server migration-create",
+    "migration-generate": "yarn run server migration-generate",
+    "migration-revert": "yarn run server migration-revert",
+    "migration-run": "yarn run server migration-run"
   },
   "dependencies": {
     "concurrently": "^6.2.0",
