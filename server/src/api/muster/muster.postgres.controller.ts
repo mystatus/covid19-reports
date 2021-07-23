@@ -282,20 +282,35 @@ class MusterPostgresCtr {
     return {hours: split[0], minutes: split[1]};
   }
 
-  private getMusterTimeViewWithEndTimes(musterTimeViewWithEndTimes: any, durationMinutes: number): MusterTimeView[] {
-    return musterTimeViewWithEndTimes.map((mtw: Date) => {
-      return {
-        startMusterTime: mtw,
-        endMusterTime: new Date(),
-      };
+  private getMusterTimeViewWithEndTimes(musterTimeViewWithEndTimes: Date[][], durationMinutes: number): MusterTimeView[] {
+
+    const rsp = musterTimeViewWithEndTimes.map(dateArray => {
+      return dateArray.map((dateElement: Date) => {
+        const musterStartDate = moment.utc(dateElement);
+        const musterEndDate = musterStartDate.add({minutes: durationMinutes});
+        return {
+          musterStartDate,
+          musterEndDate,
+        };
+      });
     });
+
+    console.log(rsp);
+
+    // return musterTimeViewWithEndTimes.map((mtw: Date[]) => {
+    //   const startMomentDate = moment.utc(mtw);
+    //   return {
+    //     startMusterTime: startMomentDate,
+    //     endMusterTime: new Date(),
+    //   };
+    // });
 
   }
 }
 
 export type MusterTimeView = {
-  startMusterTime: Date
-  endMusterTime: Date
+  startMusterDate: Date
+  endMusterDate: Date
 };
 
 type HoursAndMinutes = {
