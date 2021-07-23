@@ -49,10 +49,24 @@ export default makeStyles((theme: Theme) => createStyles({
     paddingTop: 1,
     minWidth: '130px',
     width: '100%',
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '1rem',
+    '&:hover $deleteFilterItem': {
+      opacity: 0.3,
+    },
+  },
+  deleteFilterItem: {
+    opacity: 0.0,
+    marginRight: '-4px',
+    transition: 'opacity 300ms ease-out',
+    '&:hover': {
+      opacity: '1 !important',
+    },
   },
   selectFilterItemNone: {
-    paddingBottom: 0,
-    paddingTop: 0,
+    paddingBottom: 1,
+    paddingTop: 2,
     marginBottom: '2px',
     opacity: 0.9,
     fontStyle: 'italic',

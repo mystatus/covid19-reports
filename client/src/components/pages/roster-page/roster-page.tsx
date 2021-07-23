@@ -244,9 +244,13 @@ export const RosterPage = () => {
     try {
       const filters = await SavedFilterClient.fetchAll(orgId, 'RosterEntry');
       setSavedFilters(filters);
+      if (selectedSavedFilter !== null && filters?.every(filter => filter.id !== selectedSavedFilter.id)) {
+        setSelectedSavedFilter(null);
+      }
     } catch (error) {
       dispatch(Modal.alert('Get Saved Filters', formatErrorMessage(error, 'Failed to get saved filters'))).then();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, orgId]);
 
   const fetchUnits = useCallback(async () => {
@@ -836,6 +840,7 @@ export const RosterPage = () => {
 
                       <IconButton
                         aria-label="delete"
+                        className={classes.deleteFilterItem}
                         size="small"
                         onClick={e => {
                           e.stopPropagation();

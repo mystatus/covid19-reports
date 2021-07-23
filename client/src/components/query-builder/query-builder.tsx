@@ -595,12 +595,17 @@ function toQuery(rows: QueryRow[]) {
           query[field!.name] = {
             op,
             value: arrayOfValues,
-            expression,
-            expressionEnabled,
+            expression: expression ?? '',
+            expressionEnabled: expressionEnabled ?? false,
           };
         }
       } else {
-        query[field!.name] = { op, value, expression, expressionEnabled };
+        query[field!.name] = {
+          op,
+          value,
+          expression: expression ?? '',
+          expressionEnabled: expressionEnabled ?? false,
+        };
       }
     }
   }
@@ -629,7 +634,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
   const [filterState, setFilterState] = useDeepEquality<QueryFilterState | undefined>();
   const [hasChanges, setHasChanges] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
-  const filterNameRef = useRef<HTMLInputElement>();
+  const [filterName, setFilterName] = useState<string>('');
   const org = useSelector(UserSelector.org)!;
 
   const addRow = () => {
@@ -655,8 +660,8 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
       setSaveOpen(true);
     } else {
       const query = toQuery(rows);
-      console.log({ filterNameRef });
-      if (query && filterNameRef.current) {
+
+      if (query && filterName) {
         if (selectedSavedFilter && !saveOpen) {
           const filter = await SavedFilterClient.update(org.id, {
             ...selectedSavedFilter,
@@ -671,7 +676,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
 
         } else {
           const filter = await SavedFilterClient.create(org.id, {
-            name: filterNameRef.current.value,
+            name: filterName,
             entityType: 'RosterEntry',
             filterConfiguration: query as unknown as ApiFilterConfiguration,
           });
@@ -749,60 +754,68 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
         </div>
         {rows.every(row => row.field) && (
           <Button
-            aria-label="Add filter"
+            aria-label="Add Criteria"
             className={classes.addRowButton}
             onClick={addRow}
             size="small"
             startIcon={<AddCircleIcon />}
             variant="outlined"
           >
-            Add Filter
+            Add Critera
           </Button>
         )}
         {hasChanges && (
-          <div>
+          <div style={{ marginTop: 24, maxWidth: 300 }}>
             <Collapse in={saveOpen}>
               <TextField
+                autoFocus
                 className={classes.textField}
-                inputRef={filterNameRef}
+                fullWidth
+                label="Filter Name"
+                placeholder="Enter a name for this filter"
+                value={filterName}
+                onChange={e => setFilterName(e.target.value)}
               />
             </Collapse>
-            <Button
-              aria-label="Save Filter"
-              className={classes.addRowButton}
-              onClick={saveFilter}
-              size="small"
-              startIcon={<SaveIcon />}
-              variant="outlined"
-            >
-              Save {saveOpen ? '' : 'Filter'}
-            </Button>
-            {selectedSavedFilter && (
-              <>
-                {saveOpen ? (
-                  <Button
-                    aria-label="Cancel"
-                    className={classes.addRowButton}
-                    onClick={() => setSaveOpen(false)}
-                    size="small"
-                    variant="outlined"
-                  >
-                    Cancel
-                  </Button>
-                ) : (
-                  <Button
-                    aria-label="Save a Copy"
-                    className={classes.addRowButton}
-                    onClick={() => setSaveOpen(true)}
-                    size="small"
-                    startIcon={<FileCopyIcon />}
-                    variant="outlined"
-                  >
-                    Save a Copy
-                  </Button>
-                )}
-              </>
-            )}
+
+            <div style={{ display: 'flex', justifyContent: saveOpen ? 'flex-end' : 'flex-start', gap: 16 }}>
+              {saveOpen && (
+                <Button
+                  aria-label="Cancel"
+                  className={classes.addRowButton}
+                  onClick={() => setSaveOpen(false)}
+                  size="small"
+                  variant="outlined"
+                >
+                  Cancel
+                </Button>
+              )}
+
+              <Button
+                aria-label="Save Filter"
+                className={classes.addRowButton}
+                onClick={saveFilter}
+                size="small"
+                disabled={saveOpen && !filterName}
+                startIcon={<SaveIcon />}
+                variant="outlined"
+              >
+                Save {saveOpen ? '' : 'Filter'}
+              </Button>
+
+              {selectedSavedFilter && !saveOpen && (
+                <Button
+                  aria-label="Save a Copy"
+                  className={classes.addRowButton}
+                  onClick={() => setSaveOpen(true)}
+                  size="small"
+                  startIcon={<FileCopyIcon />}
+                  variant="outlined"
+                >
+                  Save a Copy
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </Collapse>

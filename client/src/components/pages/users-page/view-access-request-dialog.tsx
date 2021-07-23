@@ -151,7 +151,6 @@ export const ViewAccessRequestDialog = (props: ViewAccessRequestDialogProps) => 
 
   const handleSelectedUnitsChange = (event: ChangeEvent<{ value: unknown }>) => {
     const selectedValues = event.target.value as number[];
-    console.log('selectedValues', selectedValues);
     if (selectedValues.some(value => value === -1) || selectedValues.length === units.length) {
       setSelectedUnitIds([-1]); // All Units
     } else {
