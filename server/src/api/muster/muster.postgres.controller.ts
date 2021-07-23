@@ -235,16 +235,43 @@ class MusterPostgresCtr {
    *   };
    *  </pre>
    *
-   * An example of a generated output:
+   * An example of an output:
    * <pre>
-   * Moment<2021-07-05T18:00:00Z> Moment<2021-07-05T19:00:00Z>
-   * Moment<2021-07-12T18:00:00Z> Moment<2021-07-12T19:00:00Z>
-   * Moment<2021-07-19T18:00:00Z> Moment<2021-07-19T19:00:00Z>
-   * Moment<2021-07-26T18:00:00Z> Moment<2021-07-26T19:00:00Z>
-   * Moment<2021-07-06T18:00:00Z> Moment<2021-07-06T19:00:00Z>
-   * Moment<2021-07-13T18:00:00Z> Moment<2021-07-13T19:00:00Z>
-   * Moment<2021-07-20T18:00:00Z> Moment<2021-07-20T19:00:00Z>
-   * Moment<2021-07-27T18:00:00Z> Moment<2021-07-27T19:00:00Z>
+   *  [
+   *  {
+   *   startMusterDate: Moment<2021-07-05T18:00:00Z>,
+   *   endMusterDate: Moment<2021-07-05T19:00:00Z>
+   * },
+   *  {
+   *   startMusterDate: Moment<2021-07-12T18:00:00Z>,
+   *   endMusterDate: Moment<2021-07-12T19:00:00Z>
+   * },
+   *  {
+   *   startMusterDate: Moment<2021-07-19T18:00:00Z>,
+   *   endMusterDate: Moment<2021-07-19T19:00:00Z>
+   * },
+   *  {
+   *   startMusterDate: Moment<2021-07-26T18:00:00Z>,
+   *   endMusterDate: Moment<2021-07-26T19:00:00Z>
+   * },
+   *  {
+   *   startMusterDate: Moment<2021-07-06T18:00:00Z>,
+   *   endMusterDate: Moment<2021-07-06T19:00:00Z>
+   * },
+   *  {
+   *   startMusterDate: Moment<2021-07-13T18:00:00Z>,
+   *   endMusterDate: Moment<2021-07-13T19:00:00Z>
+   * },
+   *  {
+   *   startMusterDate: Moment<2021-07-20T18:00:00Z>,
+   *   endMusterDate: Moment<2021-07-20T19:00:00Z>
+   * },
+   *  {
+   *   startMusterDate: Moment<2021-07-27T18:00:00Z>,
+   *   endMusterDate: Moment<2021-07-27T19:00:00Z>
+   * }
+   *  ]
+   *
    * </pre>
    *
    * @param musterConf muster configuration

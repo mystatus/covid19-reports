@@ -1,12 +1,18 @@
 import { expect } from 'chai';
 import moment from 'moment-timezone';
-import later from 'later';
 import musterPostgresController, {
   MusterTimeView,
   UnitMusterConf,
-  UnitMusterConfFromDb, UnitTimeView,
+  UnitMusterConfFromDb,
 } from './muster.postgres.controller';
 import { MusterConfWithDateArray } from '../unit/unit.model';
+
+function addDates(output: MusterTimeView[], startDate: string, endDate: string) {
+  output.push({
+    startMusterDate: moment.utc(startDate),
+    endMusterDate: moment.utc(endDate),
+  });
+}
 
 describe('Muster Postgres Controller', () => {
 
@@ -91,10 +97,22 @@ describe('Muster Postgres Controller', () => {
       reportId: 'es6ddssymptomobs',
     };
 
+    const expectedOutput: MusterTimeView[] = [];
+    addDates(expectedOutput, '2021-07-05T18:00:00Z', '2021-07-05T19:00:00Z');
+    addDates(expectedOutput, '2021-07-12T18:00:00Z', '2021-07-12T19:00:00Z');
+    addDates(expectedOutput, '2021-07-19T18:00:00Z', '2021-07-19T19:00:00Z');
+    addDates(expectedOutput, '2021-07-26T18:00:00Z', '2021-07-26T19:00:00Z');
+    addDates(expectedOutput, '2021-07-06T18:00:00Z', '2021-07-06T19:00:00Z');
+    addDates(expectedOutput, '2021-07-13T18:00:00Z', '2021-07-13T19:00:00Z');
+    addDates(expectedOutput, '2021-07-20T18:00:00Z', '2021-07-20T19:00:00Z');
+    addDates(expectedOutput, '2021-07-27T18:00:00Z', '2021-07-27T19:00:00Z');
+
     const timeViews: MusterTimeView[] = musterPostgresController.toSingleMusterTimeView(input, fromDate, toDate);
-    timeViews.forEach(tw => {
-      console.log(tw.startMusterDate, tw.endMusterDate);
-    });
+
+    for (let i = 0; i < timeViews.length; i++) {
+      expect(timeViews[i].startMusterDate.unix()).to.eql(expectedOutput[i].startMusterDate.unix());
+      expect(timeViews[i].endMusterDate.unix()).to.eql(expectedOutput[i].endMusterDate.unix());
+    }
   });
 
   it('toMusterTimeView() should convert all muster config to date range list of muster windows', () => {
