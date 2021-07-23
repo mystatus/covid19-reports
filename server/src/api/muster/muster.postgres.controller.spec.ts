@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import moment from 'moment-timezone';
 import later from 'later';
 import musterPostgresController, {
+  MusterTimeView,
   UnitMusterConf,
   UnitMusterConfFromDb, UnitTimeView,
 } from './muster.postgres.controller';
@@ -90,12 +91,9 @@ describe('Muster Postgres Controller', () => {
       reportId: 'es6ddssymptomobs',
     };
 
-    const timeViews = musterPostgresController.toSingleMusterTimeView(input, fromDate, toDate);
+    const timeViews: MusterTimeView[] = musterPostgresController.toSingleMusterTimeView(input, fromDate, toDate);
     timeViews.forEach(tw => {
-      tw.forEach((stw: moment.MomentInput) => {
-        // console.log(moment.utc(stw).unix());
-        console.log(moment.utc(stw));
-      });
+      console.log(moment.utc(tw.startMusterTime));
     });
   });
 
@@ -139,24 +137,5 @@ describe('Muster Postgres Controller', () => {
 
   });
 
-  it('experiment with later lib', () => {
-
-    const fromDate = moment.utc('2021-07-01T00:00:00.000Z');
-    const toDate = moment.utc('2021-08-01T00:00:00.000Z');
-
-    const dayOfWeek = 7;
-    const schedule = later.parse.recur()
-      .on(dayOfWeek).dayOfWeek()
-      .on(10)
-      .hour()
-      .on(30)
-      .minute();
-    const next = later.schedule(schedule).next(10000, fromDate.toDate(), toDate.toDate());
-
-    next.forEach((nextSchedule: any) => {
-      console.log(moment.utc(nextSchedule).unix());
-      console.log(moment.utc(nextSchedule));
-    });
-  });
 });
 

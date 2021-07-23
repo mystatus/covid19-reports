@@ -240,18 +240,12 @@ class MusterPostgresCtr {
     @param toDate end date for the generation of time muster windows
    */
   // toSingleMusterTimeView(musterConf: MusterConfWithDateArray, fromDate: moment.Moment, toDate: moment.Moment): UnitTimeView[] {
-  toSingleMusterTimeView(musterConf: MusterConfWithDateArray, fromDate: moment.Moment, toDate: moment.Moment) {
-
-    // set later to use UTC time (the default)
-    later.date.UTC();
+  toSingleMusterTimeView(musterConf: MusterConfWithDateArray, fromDate: moment.Moment, toDate: moment.Moment): MusterTimeView[] {
 
     const {days, startTime, timezone, durationMinutes} = musterConf;
-    const musterViewWithStartTimes = this.getSingleMusterView(startTime, timezone, days, fromDate, toDate);
-    // TODO: this below
-    const endTime = startTime + durationMinutes;
-    const musterViewWithEndTimes = this.getSingleMusterView(endTime, timezone, days, fromDate, toDate);
-    // TODO: combine the 2 and return
-    return musterViewWithStartTimes;
+    const musterTimeViewWithStartTimes = this.getSingleMusterView(startTime, timezone, days, fromDate, toDate);
+    const musterTimeViewWithEndTimes = this.getMusterTimeViewWithEndTimes(musterTimeViewWithStartTimes, durationMinutes);
+    return musterTimeViewWithEndTimes;
 
   }
 
@@ -267,8 +261,12 @@ class MusterPostgresCtr {
         .minute();
     });
     return startDaysSchedule.map(sch => {
-      const next = later.schedule(sch)
-        .next(10000, fromDate.toDate(), toDate.toDate());
+      // 10000 is number of instances to return. It is large enough to return all instances we need
+      const next = later.schedule(sch).next(10000, fromDate.toDate(), toDate.toDate());
+      // @ts-ignore next() does return zero value when no schedule is found for the given date range
+      if (next === 0) {
+        return [];
+      }
       if (!Array.isArray(next)) {
         return [next];
       }
@@ -283,7 +281,22 @@ class MusterPostgresCtr {
       .split(':');
     return {hours: split[0], minutes: split[1]};
   }
+
+  private getMusterTimeViewWithEndTimes(musterTimeViewWithEndTimes: any, durationMinutes: number): MusterTimeView[] {
+    return musterTimeViewWithEndTimes.map((mtw: Date) => {
+      return {
+        startMusterTime: mtw,
+        endMusterTime: new Date(),
+      };
+    });
+
+  }
 }
+
+export type MusterTimeView = {
+  startMusterTime: Date
+  endMusterTime: Date
+};
 
 type HoursAndMinutes = {
   hours: string
