@@ -18,41 +18,37 @@ class MusterPostgresCtr {
    * Provides Muster Compliance details for all service members
    */
   async getMusterRoster(req: ApiRequest<OrgRoleParams, null, GetMusterRosterQuery>, res: Response<Paginated<Partial<MusterCompliance>>>) {
-    assertRequestQuery(req, [
-      'fromDate',
-      'toDate',
-      'limit',
-      'page',
-    ]);
 
-    // TODO ??
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const userRole = req.appUserRole!;
+    assertRequestQuery(req, ['fromDate', 'toDate', 'limit', 'page']);
 
-    console.log(req.query.toDate);
     /* Dates come in UTC timezone.
       For example the date 2021-07-04 11:59 PM selected in a browser
                   comes as 2021-07-05T04:59:00.000Z */
-    console.log(`from: ${req.query.fromDate}`, `to: ${req.query.toDate}`);
     const fromDate = moment(req.query.fromDate);
     const toDate = moment(req.query.toDate);
     const rowLimit = parseInt(req.query.limit);
     const pageNumber = parseInt(req.query.page);
+    // When unit id is missing, then data for all units are requested
     const unitId = req.query.unitId!;
     const orgId = req.appOrg!.id;
 
-    const rosters = await this.getRosters(unitId, orgId);
-    const unitIds = this.getUnitIds(rosters);
-    const edipis = this.getEdipi(rosters);
-    const musterUnitConf = await this.getMusterUnitConf(unitIds);
-    const unitsMusterConfFromDb = await this.setDefaultMusterConf(musterUnitConf, orgId);
-    const observations = await this.getObservations(edipis, fromDate, toDate);
-    // TODO: move code into toMusterIntermediateCompliance
-    const musterIntermediateCompliance = rosters.map(roster => this.toMusterIntermediateCompliance(roster));
+    // TODO move these to Roster "package"
+    const rostersFromDb = await this.getRosters(unitId, orgId);
+    const unitIds = this.getUnitIds(rostersFromDb);
+    const edipis = this.getEdipi(rostersFromDb);
+
+    // TODO move these to Muster "package"
+    const musterConfFromDb = await this.getMusterUnitConf(unitIds);
+    const unitsMusterConfFromDb = await this.setDefaultMusterConf(musterConfFromDb, orgId);
     const unitsMusterConf = this.toUnitMusterConf(unitsMusterConfFromDb);
     const musterTimeView = this.toMusterTimeView(unitsMusterConf, fromDate, toDate);
-    console.log(JSON.stringify(musterTimeView));
-    const musterCompliance = this.calculateMusterCompliance(observations, unitsMusterConfFromDb, musterIntermediateCompliance);
+
+    // TODO move to Observation "package"
+    const observations = await this.getObservations(edipis, fromDate, toDate);
+
+    // TODO move to Muster Compliance
+    const musterIntermediateCompliance = this.toMusterIntermediateCompliance(rostersFromDb);
+    const musterCompliance = this.calculateMusterCompliance(observations, musterTimeView, musterIntermediateCompliance);
 
     return res.json({
       rows: this.toPageWithRowLimit(musterCompliance, pageNumber, rowLimit),
@@ -114,37 +110,36 @@ class MusterPostgresCtr {
     return confWithMissingMusterConf.length > 0;
   }
 
-  private toMusterIntermediateCompliance(roster: Roster): IntermediateMusterCompliance {
-    return {
-      edipi: roster.edipi,
-      firstName: roster.firstName,
-      lastName: roster.lastName,
-      myCustomColumn1: 'tbd',
-      unitId: roster.unit.id,
-      phone: roster.phoneNumber,
-    };
+  private toMusterIntermediateCompliance(rosters: Roster[]): IntermediateMusterCompliance[] {
+    return rosters.map(roster => {
+      return {
+        edipi: roster.edipi,
+        firstName: roster.firstName,
+        lastName: roster.lastName,
+        myCustomColumn1: 'tbd',
+        unitId: roster.unit.id,
+        phone: roster.phoneNumber,
+      };
+    });
   }
 
   private async getObservations(edipis: Edipi[], fromDate: any | moment.Moment, toDate: any | moment.Moment) : Promise<FilteredObservation[]> {
-    const observations = await Observation.createQueryBuilder('observation')
+    return Observation.createQueryBuilder('observation')
       .select('observation.edipi, observation.timestamp')
       .where('observation.timestamp <= to_timestamp(:tsTo)', {tsTo: toDate.unix()})
       .andWhere('observation.timestamp >= to_timestamp(:tsFrom)', {tsFrom: fromDate.unix()})
       .andWhere('observation.edipi IN (:...edipis)', {edipis})
       .getRawMany();
-
-    console.log(JSON.stringify(observations));
-    return observations;
   }
 
   /**
    * Represents muster configuration for a given time window and all units.
    * This structure then can be queried for muster compliance.
-   * Example of the structure:
+   * Example of the structure for two units, A and B:
    * <pre>
    {
-      1: [{startTimestamp: 1, endTimestamp: 2}, {startTimestamp: 3, endTimestamp: 4}],
-      2: [{startTimestamp: 5, endTimestamp: 6}],
+      unitIdA: [{startMusterDate: Moment, endMusterDate: Moment}, {startMusterDate: Moment, endMusterDate: Moment}],
+      unitIdB: [{startMusterDate: Moment, endMusterDate: Moment}],
     }
    * </pre>
    */
@@ -162,15 +157,14 @@ class MusterPostgresCtr {
   }
 
   private calculateMusterCompliance(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     observations: FilteredObservation[],
-    unitsMusterConf: UnitMusterConfFromDb[],
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    unitsMusterConf: MusterUnitTimeView,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     musterComplianceReport: IntermediateMusterCompliance[],
   ) : MusterCompliance[] {
-
-    console.log(observations);
-    console.log(JSON.stringify(unitsMusterConf));
-    console.log(musterComplianceReport);
-
+    // TODO continue...
     return [];
   }
 
@@ -194,9 +188,6 @@ class MusterPostgresCtr {
       });
       return {unitId, musterConf: newMusterConf};
     });
-
-
-    return [];
   }
 
   /**
@@ -284,6 +275,7 @@ class MusterPostgresCtr {
       if (allSchedules === 0) {
         return [];
       }
+      // next() is weird, it returns an non-array object when only one schedule is returned
       if (!Array.isArray(allSchedules)) {
         return [allSchedules];
       }
@@ -351,7 +343,7 @@ type IntermediateMusterCompliance = {
   lastName: string
   myCustomColumn1: string,
   unitId: number
-  phone: string
+  phone?: string
 };
 
 type MusterCompliance = {
@@ -362,10 +354,6 @@ type MusterCompliance = {
 
 export type MusterUnitTimeView = {
   [unitId: number]: MusterTimeView[]
-};
-
-export type UnitTimeView = {
-  startTimestamp: number, endTimestamp: number
 };
 
 export default new MusterPostgresCtr();
