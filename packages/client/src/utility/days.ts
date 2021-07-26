@@ -1,50 +1,50 @@
-export enum DaysOfTheWeek {
+export enum DayNamesOfTheWeek {
   None = 0,
   Sunday = 1,
   Monday = 2,
-  Tuesday = 4,
-  Wednesday = 8,
-  Thursday = 16,
-  Friday = 32,
-  Saturday = 64,
-}
-
-export function nextDay(day: DaysOfTheWeek) {
-  // eslint-disable-next-line no-bitwise
-  return day << 1;
+  Tuesday = 3,
+  Wednesday = 4,
+  Thursday = 5,
+  Friday = 6,
+  Saturday = 7,
 }
 
 // Determine if an input day is in the given set
-export function dayIsIn(day: DaysOfTheWeek, set: DaysOfTheWeek) {
-  // eslint-disable-next-line no-bitwise
-  return (set & day) === day;
+export function dayIsIn(day: number, set: number[]) {
+  return set.includes(day);
 }
 
-export function daysToString(days: DaysOfTheWeek) {
-  const setDays: string[] = [];
-  /* eslint-disable no-bitwise */
-  if (days & DaysOfTheWeek.Sunday) {
-    setDays.push('Sun');
-  }
-  if (days & DaysOfTheWeek.Monday) {
-    setDays.push('Mon');
-  }
-  if (days & DaysOfTheWeek.Tuesday) {
-    setDays.push('Tue');
-  }
-  if (days & DaysOfTheWeek.Wednesday) {
-    setDays.push('Wed');
-  }
-  if (days & DaysOfTheWeek.Thursday) {
-    setDays.push('Thu');
-  }
-  if (days & DaysOfTheWeek.Friday) {
-    setDays.push('Fri');
-  }
-  if (days & DaysOfTheWeek.Saturday) {
-    setDays.push('Sat');
-  }
-  /* eslint-enable no-bitwise */
+export function daysToString(days: number[]) {
+  const setDays = days.map((day: number) => {
+    let dayAbbr = '';
+    switch (day) {
+      case 1:
+        dayAbbr = 'Sun';
+        break;
+      case 2:
+        dayAbbr = 'Mon';
+        break;
+      case 3:
+        dayAbbr = 'Tue';
+        break;
+      case 4:
+        dayAbbr = 'Wed';
+        break;
+      case 5:
+        dayAbbr = 'Thu';
+        break;
+      case 6:
+        dayAbbr = 'Fri';
+        break;
+      case 7:
+        dayAbbr = 'Sat';
+        break;
+      default:
+        break;
+    }
+    return dayAbbr;
+  });
+
   let dayStr = setDays.join(', ');
   if (dayStr === 'Sun, Mon, Tue, Wed, Thu, Fri, Sat') {
     dayStr = 'Every day';

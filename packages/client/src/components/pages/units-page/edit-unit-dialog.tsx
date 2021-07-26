@@ -43,7 +43,7 @@ import {
   ApiUnit,
   MusterConfiguration,
 } from '../../../models/api-response';
-import { DaysOfTheWeek } from '../../../utility/days';
+import { DayNamesOfTheWeek } from '../../../utility/days';
 import { formatErrorMessage } from '../../../utility/errors';
 import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
 import {
@@ -140,7 +140,7 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
     } as MusterConfigurationRow;
 
     if (recurring) {
-      row.days = DaysOfTheWeek.None;
+      row.days = [];
     }
 
     setMusterConfiguration([...musterConfiguration, row]);
@@ -191,14 +191,23 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
     });
   };
 
-  const toggleMusterDay = (index: number, day: DaysOfTheWeek) => () => {
+  const toggleMusterDay = (index: number, day: number) => () => {
     if (formDisabled || isDefault(index)) {
       return;
     }
-    updateState(index, {
-      // eslint-disable-next-line no-bitwise
-      days: musterConfiguration[index - combinedToMusterAdjust].days! ^ day,
-    });
+    const tempMuster = { ...musterConfiguration[index - combinedToMusterAdjust] };
+
+    if (tempMuster.days?.includes(day)) {
+      tempMuster.days?.splice(tempMuster.days?.indexOf(day), 1);
+      updateState(index, {
+        days: tempMuster.days,
+      });
+    } else {
+      tempMuster.days?.push(day);
+      updateState(index, {
+        days: tempMuster.days?.sort(),
+      });
+    }
   };
 
   const removeMusterWindow = (index: number) => {
@@ -262,12 +271,12 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
 
   const isDefault = (index: number) => includeDefault && index < defaultMusterConfiguration.length;
 
-  const dayButtonClass = (muster: MusterConfigurationRow, index: number, day: DaysOfTheWeek) => {
-    if (errorMessage && muster.days === DaysOfTheWeek.None) {
+  const dayButtonClass = (muster: MusterConfigurationRow, index: number, day: number) => {
+    if (errorMessage && (muster.days && muster.days.length === 0)) {
       return classes.dayButtonError;
     }
-    // eslint-disable-next-line no-bitwise
-    const onOffClass = (muster.days ?? 0) & day ? classes.dayButtonOn : classes.dayButtonOff;
+
+    const onOffClass = muster.days?.includes(day) ? classes.dayButtonOn : classes.dayButtonOff;
 
     return clsx(onOffClass, {
       [classes.dayButtonDisabled]: isDefault(index),
@@ -354,44 +363,44 @@ export const EditUnitDialog = (props: EditUnitDialogProps) => {
                         {muster.days !== undefined ? (
                           <div className={classes.dayButtons}>
                             <Avatar
-                              className={dayButtonClass(muster, index, DaysOfTheWeek.Sunday)}
-                              onClick={toggleMusterDay(index, DaysOfTheWeek.Sunday)}
+                              className={dayButtonClass(muster, index, DayNamesOfTheWeek.Sunday)}
+                              onClick={toggleMusterDay(index, DayNamesOfTheWeek.Sunday)}
                             >
                               Su
                             </Avatar>
                             <Avatar
-                              className={dayButtonClass(muster, index, DaysOfTheWeek.Monday)}
-                              onClick={toggleMusterDay(index, DaysOfTheWeek.Monday)}
+                              className={dayButtonClass(muster, index, DayNamesOfTheWeek.Monday)}
+                              onClick={toggleMusterDay(index, DayNamesOfTheWeek.Monday)}
                             >
                               Mo
                             </Avatar>
                             <Avatar
-                              className={dayButtonClass(muster, index, DaysOfTheWeek.Tuesday)}
-                              onClick={toggleMusterDay(index, DaysOfTheWeek.Tuesday)}
+                              className={dayButtonClass(muster, index, DayNamesOfTheWeek.Tuesday)}
+                              onClick={toggleMusterDay(index, DayNamesOfTheWeek.Tuesday)}
                             >
                               Tu
                             </Avatar>
                             <Avatar
-                              className={dayButtonClass(muster, index, DaysOfTheWeek.Wednesday)}
-                              onClick={toggleMusterDay(index, DaysOfTheWeek.Wednesday)}
+                              className={dayButtonClass(muster, index, DayNamesOfTheWeek.Wednesday)}
+                              onClick={toggleMusterDay(index, DayNamesOfTheWeek.Wednesday)}
                             >
                               We
                             </Avatar>
                             <Avatar
-                              className={dayButtonClass(muster, index, DaysOfTheWeek.Thursday)}
-                              onClick={toggleMusterDay(index, DaysOfTheWeek.Thursday)}
+                              className={dayButtonClass(muster, index, DayNamesOfTheWeek.Thursday)}
+                              onClick={toggleMusterDay(index, DayNamesOfTheWeek.Thursday)}
                             >
                               Th
                             </Avatar>
                             <Avatar
-                              className={dayButtonClass(muster, index, DaysOfTheWeek.Friday)}
-                              onClick={toggleMusterDay(index, DaysOfTheWeek.Friday)}
+                              className={dayButtonClass(muster, index, DayNamesOfTheWeek.Friday)}
+                              onClick={toggleMusterDay(index, DayNamesOfTheWeek.Friday)}
                             >
                               Fr
                             </Avatar>
                             <Avatar
-                              className={dayButtonClass(muster, index, DaysOfTheWeek.Saturday)}
-                              onClick={toggleMusterDay(index, DaysOfTheWeek.Saturday)}
+                              className={dayButtonClass(muster, index, DayNamesOfTheWeek.Saturday)}
+                              onClick={toggleMusterDay(index, DayNamesOfTheWeek.Saturday)}
                             >
                               Sa
                             </Avatar>

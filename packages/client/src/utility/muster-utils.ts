@@ -1,6 +1,6 @@
 import moment, { Moment } from 'moment-timezone';
 import { ApiReportSchema, MusterConfiguration } from '../models/api-response';
-import { dayIsIn, DaysOfTheWeek, daysToString, nextDay, oneDaySeconds } from './days';
+import { dayIsIn, DayNamesOfTheWeek, daysToString, oneDaySeconds } from './days';
 
 
 export type MusterWindow = {
@@ -80,12 +80,12 @@ export const validateMusterConfiguration = (musterConfig: MusterConfiguration[])
     return '';
   }
 
-  if (musterConfig.some(muster => muster.days === DaysOfTheWeek.None)) {
+  if (musterConfig.some(muster => muster.days && !muster.days.length)) {
     return 'Please select one or more days.';
   }
 
-  const windows: {[key: string]: MusterWindowTyped[]} = {};
-  const oneTimeWindows: {[key: string]: MusterWindow[]} = {};
+  const windows: { [key: string]: MusterWindowTyped[] } = {};
+  const oneTimeWindows: { [key: string]: MusterWindow[] } = {};
 
   // Go through each configuration and add the time ranges for muster windows over a test week
   musterConfig.forEach(muster => {
@@ -94,15 +94,15 @@ export const validateMusterConfiguration = (musterConfig: MusterConfiguration[])
     }
 
     const oneTime = !muster.days;
-    let musterDays: DaysOfTheWeek;
+    let musterDays: number[];
 
     // We will parse the specified startTime according to the type of muster (one-time or repeating)
     let musterTime: Moment;
 
     if (oneTime) {
       musterTime = moment(muster.startTime);
-      // eslint-disable-next-line no-bitwise
-      musterDays = (1 << musterTime.day()) as DaysOfTheWeek;
+      musterDays = [musterTime.day() + 1];
+
       if (oneTimeWindows[muster.reportId] == null) {
         oneTimeWindows[muster.reportId] = [];
       }
@@ -126,7 +126,7 @@ export const validateMusterConfiguration = (musterConfig: MusterConfiguration[])
 
     const firstWindowIndex = windows[muster.reportId].length;
     // Loop through each day and add any that are set in this muster configuration
-    for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday; day = nextDay(day)) {
+    for (let day = DayNamesOfTheWeek.Sunday; day <= DayNamesOfTheWeek.Saturday; day++) {
       if (musterDays !== undefined && dayIsIn(day, musterDays)) {
         windows[muster.reportId].push({
           start: current,

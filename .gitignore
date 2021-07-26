@@ -22,7 +22,7 @@ build/
 
 # ide files
 .idea/
-.vscode/launch.json
+.vscode/
 
 # logs
 npm-debug.log*

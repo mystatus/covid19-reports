@@ -3,7 +3,6 @@ import {
   RosterColumnType,
   RosterColumnValue,
 } from '@covid19-reports/shared';
-import { DaysOfTheWeek } from '../utility/days';
 
 export interface ApiPaginated<TData> {
   rows: TData[],
@@ -232,7 +231,7 @@ export interface ApiMusterTrends {
 }
 
 export interface MusterConfiguration {
-  days?: DaysOfTheWeek,
+  days?: number[],
   startTime: string,
   timezone: string,
   durationMinutes: number,

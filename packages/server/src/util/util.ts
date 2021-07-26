@@ -95,22 +95,16 @@ export enum DaysOfTheWeek {
   None = 0,
   Sunday = 1,
   Monday = 2,
-  Tuesday = 4,
-  Wednesday = 8,
-  Thursday = 16,
-  Friday = 32,
-  Saturday = 64,
-}
-
-export function nextDay(day: DaysOfTheWeek) {
-  // eslint-disable-next-line no-bitwise
-  return day << 1;
+  Tuesday = 3,
+  Wednesday = 4,
+  Thursday = 5,
+  Friday = 6,
+  Saturday = 7,
 }
 
 // Determine if an input day is in the given set
-export function dayIsIn(day: DaysOfTheWeek, set: DaysOfTheWeek) {
-  // eslint-disable-next-line no-bitwise
-  return (set & day) === day;
+export function dayIsIn(day: number, set: number[]) {
+  return set.includes(day);
 }
 
 export const dateColumnTransformer: ValueTransformer = {

@@ -30,7 +30,7 @@ import clsx from 'clsx';
 import { UpdateOrgDefaultMusterBody } from '@covid19-reports/shared';
 import useStyles from './default-muster-dialog.styles';
 import { MusterConfiguration } from '../../../models/api-response';
-import { DaysOfTheWeek } from '../../../utility/days';
+import { DayNamesOfTheWeek } from '../../../utility/days';
 import { UserSelector } from '../../../selectors/user.selector';
 import MusterConfigReadable from './muster-config-readable';
 import { mustersConfigurationsAreEqual, validateMusterConfiguration } from '../../../utility/muster-utils';
@@ -129,7 +129,7 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
     } as MusterConfigurationRow;
 
     if (recurring) {
-      row.days = DaysOfTheWeek.None;
+      row.days = [];
     }
 
     setMusterConfiguration([...musterConfiguration, row]);
@@ -186,14 +186,22 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
     resetErrorMessage();
   };
 
-  const toggleMusterDay = (rowKey: string, day: DaysOfTheWeek) => () => {
+  const toggleMusterDay = (rowKey: string, day: number) => () => {
     const configuration = [...musterConfiguration];
     const index = configuration.findIndex(muster => muster.rowKey === rowKey);
     if (index >= 0) {
-      // eslint-disable-next-line no-bitwise
-      configuration[index].days! ^= day;
+      if (!configuration[index].days) {
+        configuration[index].days = [];
+      }
+      const dayArray = configuration[index].days ?? [];
+      if (dayArray.includes(day)) {
+        configuration[index].days?.splice(dayArray.indexOf(day), 1);
+      } else {
+        configuration[index].days?.push(day);
+        configuration[index].days?.sort();
+      }
     }
-    if (!configuration.some(muster => muster.days === DaysOfTheWeek.None)) {
+    if (!configuration.some(muster => !muster.days || !muster.days.length)) {
       resetErrorMessage();
     }
     setMusterConfiguration(configuration);
@@ -266,12 +274,11 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
     return !formDisabled && !errorMessage && !mustersConfigurationsAreEqual(musterConfiguration, defaultMusterConfiguration);
   };
 
-  const dayButtonClass = (muster: MusterConfigurationRow, day: DaysOfTheWeek) => {
-    if (errorMessage && muster.days === DaysOfTheWeek.None) {
+  const dayButtonClass = (muster: MusterConfigurationRow, day: number) => {
+    if (errorMessage && (!muster.days || !muster.days.length)) {
       return classes.dayButtonError;
     }
-    // eslint-disable-next-line no-bitwise
-    return muster.days! & day ? classes.dayButtonOn : classes.dayButtonOff;
+    return muster.days?.includes(day) ? classes.dayButtonOn : classes.dayButtonOff;
   };
 
   const unitsWithErrors = affectedUnits.filter(unit => unitValidation[unit.name]);
@@ -349,44 +356,44 @@ export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
                     {muster.days !== undefined ? (
                       <div className={classes.dayButtons}>
                         <Avatar
-                          className={dayButtonClass(muster, DaysOfTheWeek.Sunday)}
-                          onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Sunday)}
+                          className={dayButtonClass(muster, DayNamesOfTheWeek.Sunday)}
+                          onClick={toggleMusterDay(muster.rowKey, DayNamesOfTheWeek.Sunday)}
                         >
                           Su
                         </Avatar>
                         <Avatar
-                          className={dayButtonClass(muster, DaysOfTheWeek.Monday)}
-                          onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Monday)}
+                          className={dayButtonClass(muster, DayNamesOfTheWeek.Monday)}
+                          onClick={toggleMusterDay(muster.rowKey, DayNamesOfTheWeek.Monday)}
                         >
                           Mo
                         </Avatar>
                         <Avatar
-                          className={dayButtonClass(muster, DaysOfTheWeek.Tuesday)}
-                          onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Tuesday)}
+                          className={dayButtonClass(muster, DayNamesOfTheWeek.Tuesday)}
+                          onClick={toggleMusterDay(muster.rowKey, DayNamesOfTheWeek.Tuesday)}
                         >
                           Tu
                         </Avatar>
                         <Avatar
-                          className={dayButtonClass(muster, DaysOfTheWeek.Wednesday)}
-                          onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Wednesday)}
+                          className={dayButtonClass(muster, DayNamesOfTheWeek.Wednesday)}
+                          onClick={toggleMusterDay(muster.rowKey, DayNamesOfTheWeek.Wednesday)}
                         >
                           We
                         </Avatar>
                         <Avatar
-                          className={dayButtonClass(muster, DaysOfTheWeek.Thursday)}
-                          onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Thursday)}
+                          className={dayButtonClass(muster, DayNamesOfTheWeek.Thursday)}
+                          onClick={toggleMusterDay(muster.rowKey, DayNamesOfTheWeek.Thursday)}
                         >
                           Th
                         </Avatar>
                         <Avatar
-                          className={dayButtonClass(muster, DaysOfTheWeek.Friday)}
-                          onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Friday)}
+                          className={dayButtonClass(muster, DayNamesOfTheWeek.Friday)}
+                          onClick={toggleMusterDay(muster.rowKey, DayNamesOfTheWeek.Friday)}
                         >
                           Fr
                         </Avatar>
                         <Avatar
-                          className={dayButtonClass(muster, DaysOfTheWeek.Saturday)}
-                          onClick={toggleMusterDay(muster.rowKey, DaysOfTheWeek.Saturday)}
+                          className={dayButtonClass(muster, DayNamesOfTheWeek.Saturday)}
+                          onClick={toggleMusterDay(muster.rowKey, DayNamesOfTheWeek.Saturday)}
                         >
                           Sa
                         </Avatar>

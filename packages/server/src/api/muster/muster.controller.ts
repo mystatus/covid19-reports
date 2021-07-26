@@ -30,7 +30,6 @@ import { Unit } from '../unit/unit.model';
 import {
   dayIsIn,
   DaysOfTheWeek,
-  nextDay,
   oneDaySeconds,
 } from '../../util/util';
 
@@ -124,7 +123,7 @@ class MusterController {
           let current = getEarliestMusterWindowTime(muster, since - durationSeconds);
           while (current < until) {
             // Loop through each day of week to see if any of the windows ended in the query window
-            for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday && current < until; day = nextDay(day)) {
+            for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday && current < until; day++) {
               const end = current + durationSeconds;
               // If the window ended in the query window, add it to the list
               if (end > since && end <= until && dayIsIn(day, muster.days)) {
@@ -173,7 +172,7 @@ class MusterController {
         // Loop through each day of the week
         let firstWindowStart: number = 0;
         let lastWindowStart: number = 0;
-        for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday; day = nextDay(day)) {
+        for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday; day++) {
           const end = current + durationSeconds;
           if (dayIsIn(day, muster.days)) {
             if (firstWindowStart === 0) {

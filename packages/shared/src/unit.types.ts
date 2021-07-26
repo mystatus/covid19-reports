@@ -1,7 +1,7 @@
 import { OrgSerialized } from './org.types';
 
 export type MusterConfiguration = {
-  days?: number
+  days?: number[]
   startTime: string
   timezone: string
   durationMinutes: number
