@@ -41,12 +41,13 @@ class MusterPostgresCtr {
     const unitId = req.query.unitId!;
     const orgId = req.appOrg!.id;
 
-    const rosters: Roster[] = await this.getRosters(unitId, orgId);
+    const rosters = await this.getRosters(unitId, orgId);
     const unitIds = this.getUnitIds(rosters);
     const edipis = this.getEdipi(rosters);
     const musterUnitConf = await this.getMusterUnitConf(unitIds);
     const unitsMusterConfFromDb = await this.setDefaultMusterConf(musterUnitConf, orgId);
     const observations = await this.getObservations(edipis, fromDate, toDate);
+    // TODO: move code into toMusterIntermediateCompliance
     const musterIntermediateCompliance = rosters.map(roster => this.toMusterIntermediateCompliance(roster));
     const unitsMusterConf = this.toUnitMusterConf(unitsMusterConfFromDb);
     const musterTimeView = this.toMusterTimeView(unitsMusterConf, fromDate, toDate);
@@ -149,41 +150,17 @@ class MusterPostgresCtr {
    */
   toMusterTimeView(multipleUnitsConfigurations: UnitMusterConf[], fromDate: any, toDate: any): MusterUnitTimeView {
 
-    console.log('============');
-    console.log(fromDate);
-    console.log(toDate);
+    const rsp: MusterUnitTimeView = {};
 
-    multipleUnitsConfigurations.forEach(singleUntilConf => {
-      const tsConfig = singleUntilConf.musterConf.map(mc => {
-
-        const days = mc.days;
-        const startTime = mc.startTime;
-        const timezone = mc.timezone;
-        const durationMinutes = mc.durationMinutes;
-
-        console.log(days);
-
-        return {};
-
+    multipleUnitsConfigurations.forEach(singleUntilConfigurations => {
+      const musterTimeView = singleUntilConfigurations.musterConf.map(suc => {
+        return this.toSingleMusterTimeView(suc, fromDate, toDate);
       });
-
-      console.log(tsConfig);
-
-      const config: MusterUnitTimeView = {};
-      config[singleUntilConf.unitId] = [{startTimestamp: 1, endTimestamp: 2}];
-      // console.log(config);
-
+      rsp[singleUntilConfigurations.unitId] = musterTimeView.flat(1);
     });
-
-    return {};
-
-    // return {
-    //   1: [{startTimestamp: 1, endTimestamp: 2}, {startTimestamp: 3, endTimestamp: 4}],
-    //   2: [{startTimestamp: 5, endTimestamp: 6}],
-    // };
+    return rsp;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private calculateMusterCompliance(
     observations: FilteredObservation[],
     unitsMusterConf: UnitMusterConfFromDb[],
@@ -384,7 +361,7 @@ type MusterCompliance = {
 } & IntermediateMusterCompliance;
 
 export type MusterUnitTimeView = {
-  [unitId: number]: UnitTimeView[]
+  [unitId: number]: MusterTimeView[]
 };
 
 export type UnitTimeView = {
