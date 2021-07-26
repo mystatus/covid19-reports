@@ -1,9 +1,9 @@
 import { Workspace } from '../actions/workspace.actions';
-import { User } from '../actions/user.actions';
 import {
   ApiDashboard,
   ApiWorkspace,
 } from '../models/api-response';
+import { UserActions } from '../slices/user.slice';
 
 export interface WorkspaceState {
   workspaces: ApiWorkspace[]
@@ -25,7 +25,7 @@ export const workspaceInitialState: WorkspaceState = {
 
 export function workspaceReducer(state = workspaceInitialState, action: any) {
   switch (action.type) {
-    case User.Actions.ChangeOrg.type:
+    case UserActions.changeOrg.type:
       return workspaceInitialState;
     case Workspace.Actions.Fetch.type: {
       return {

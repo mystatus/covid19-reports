@@ -36,7 +36,6 @@ import {
 } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
-import { useSelector } from 'react-redux';
 import { AddUnitBody } from '@covid19-reports/shared';
 import useStyles from './edit-unit-dialog.styles';
 import {
@@ -51,6 +50,7 @@ import {
   validateMusterConfiguration,
 } from '../../../utility/muster-utils';
 import { UnitClient } from '../../../client/unit.client';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export interface EditUnitDialogProps {
   open: boolean;
@@ -71,7 +71,7 @@ interface MusterConfigurationRow extends MusterConfiguration {
 export const EditUnitDialog = (props: EditUnitDialogProps) => {
   const { defaultMusterConfiguration, open, orgId, unit, onClose, onError } = props;
   const classes = useStyles();
-  const reports = useSelector(ReportSchemaSelector.all);
+  const reports = useAppSelector(ReportSchemaSelector.all);
   const [formDisabled, setFormDisabled] = useState(false);
   const existingUnit: boolean = !!unit;
   const [name, setName] = useState(unit?.name || '');

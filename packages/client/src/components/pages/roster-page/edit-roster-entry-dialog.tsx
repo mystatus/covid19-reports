@@ -22,7 +22,6 @@ import {
 } from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import MomentUtils from '@date-io/moment';
-import { useSelector } from 'react-redux';
 import { RosterColumnType } from '@covid19-reports/shared';
 import useStyles from './edit-roster-entry-dialog.style';
 import {
@@ -37,6 +36,7 @@ import { EditableBooleanTable } from '../../tables/editable-boolean-table';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { formatErrorMessage } from '../../../utility/errors';
 import { RosterClient } from '../../../client/roster.client';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export interface EditRosterEntryDialogProps {
   open: boolean,
@@ -52,7 +52,7 @@ export interface EditRosterEntryDialogProps {
 
 export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   const classes = useStyles();
-  const units = useSelector(UnitSelector.all);
+  const units = useAppSelector(UnitSelector.all);
   const {
     open, orgId, prepopulated, orphanedRecord, rosterColumnInfos, onClose, onError,
   } = props;

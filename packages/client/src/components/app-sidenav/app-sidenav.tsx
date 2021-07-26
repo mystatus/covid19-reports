@@ -21,25 +21,20 @@ import ViewWeekOutlinedIcon from '@material-ui/icons/ViewWeekOutlined';
 import DashboardOutlinedIcon from '@material-ui/icons/DashboardOutlined';
 import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
 import clsx from 'clsx';
-import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
 import { useLocation } from 'react-router-dom';
-import { AppFrameState } from '../../reducers/app-frame.reducer';
-import { UserState } from '../../reducers/user.reducer';
 import { OrphanedRecordSelector } from '../../selectors/orphaned-record.selector';
 import { UserSelector } from '../../selectors/user.selector';
-import { AppState } from '../../store';
 import { PersonCheckIcon } from '../icons/person-check-icon';
 import {
   Link,
   LinkProps,
 } from '../link/link';
 import useStyles from './app-sidenav.styles';
-import { AppFrame } from '../../actions/app-frame.actions';
-import { OrphanedRecord } from '../../actions/orphaned-record.actions';
+import { OrphanedRecordActions } from '../../slices/orphaned-record.slice';
 import { DataExportIcon } from '../icons/data-export-icon';
+import { AppFrameActions } from '../../slices/app-frame.slice';
+import { useAppDispatch } from '../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../hooks/use-app-selector';
 
 type SidenavLinkProps = {
   name: string,
@@ -84,21 +79,21 @@ const SidenavLink = (props: SidenavLinkProps) => {
 
 export const AppSidenav = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
-  const user = useSelector<AppState, UserState>(state => state.user);
-  const orgId = useSelector(UserSelector.orgId);
-  const appFrame = useSelector<AppState, AppFrameState>(state => state.appFrame);
-  const orphanedRecords = useSelector(OrphanedRecordSelector.root);
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(state => state.user);
+  const orgId = useAppSelector(UserSelector.orgId);
+  const appFrame = useAppSelector(state => state.appFrame);
+  const orphanedRecords = useAppSelector(OrphanedRecordSelector.root);
 
   const toggleSidenav = () => {
-    dispatch(AppFrame.toggleSidenavExpanded());
+    dispatch(AppFrameActions.toggleSidenavExpanded());
   };
 
   useEffect(() => {
     if (user.activeRole?.role.canManageRoster) {
-      dispatch(OrphanedRecord.fetchCount(orgId!));
+      dispatch(OrphanedRecordActions.fetchCount({ orgId: orgId! }));
     } else {
-      dispatch(OrphanedRecord.clear());
+      dispatch(OrphanedRecordActions.clear());
     }
   }, [orgId, dispatch, user]);
 

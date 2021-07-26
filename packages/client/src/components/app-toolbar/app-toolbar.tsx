@@ -3,24 +3,23 @@ import {
 } from '@material-ui/core';
 import { ArrowDropDown, Settings } from '@material-ui/icons';
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { Md5 } from 'ts-md5/dist/md5';
 import { Link } from '../link/link';
-import { User } from '../../actions/user.actions';
-import { UserState } from '../../reducers/user.reducer';
-import { AppState } from '../../store';
+import { UserActions } from '../../slices/user.slice';
 import useStyles from './app-toolbar.styles';
 import logoImage from '../../media/images/logo.png';
+import { useAppDispatch } from '../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../hooks/use-app-selector';
 
 export const AppToolbar = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
-  const user = useSelector<AppState, UserState>(state => state.user);
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(state => state.user);
   const [userMenuAnchor, setUserMenuAnchor] = React.useState<HTMLElement | null>(null);
   const [orgMenuAnchor, setOrgMenuAnchor] = React.useState<HTMLElement | null>(null);
 
-  const handleOrgChanged = (id: number) => () => {
-    dispatch(User.changeOrg(id));
+  const handleOrgChanged = (orgId: number) => () => {
+    dispatch(UserActions.changeOrg({ orgId }));
     setOrgMenuAnchor(null);
   };
 

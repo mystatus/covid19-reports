@@ -4,7 +4,6 @@ import {
   Typography,
 } from '@material-ui/core';
 import CheckIcon from '@material-ui/icons/Check';
-import { useDispatch, useSelector } from 'react-redux';
 import { ApiRole, ApiRosterColumnInfo } from '../../models/api-response';
 import useStyles, { ScrollHeightParam } from './role-info-panel.styles';
 import { parsePermissions } from '../../utility/permission-set';
@@ -14,6 +13,8 @@ import { RosterSelector } from '../../selectors/roster.selector';
 import { NotificationSelector } from '../../selectors/notification.selector';
 import { UserSelector } from '../../selectors/user.selector';
 import { RoleDataTable } from './role-table';
+import { useAppDispatch } from '../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../hooks/use-app-selector';
 
 const Header = ({ text }: { text: string }) => <Typography className={useStyles().roleHeader}>{text}:</Typography>;
 
@@ -58,10 +59,10 @@ export type RoleInfoPanelProps = {
 
 const RoleInfoPanel = (props: RoleInfoPanelProps) => {
   const classes = useStyles();
-  const dispatch = useDispatch();
-  const orgId = useSelector(UserSelector.orgId);
-  const availableNotifications = useSelector(NotificationSelector.all);
-  const rosterColumns = useSelector(RosterSelector.columns);
+  const dispatch = useAppDispatch();
+  const orgId = useAppSelector(UserSelector.orgId);
+  const availableNotifications = useAppSelector(NotificationSelector.all);
+  const rosterColumns = useAppSelector(RosterSelector.columns);
   const { role } = props;
 
   const initializeTable = React.useCallback(async () => {

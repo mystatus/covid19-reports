@@ -16,7 +16,7 @@ export namespace Persist {
   }
 
   export const set = <T>(persistKey: string, value: T) => (dispatch: Dispatch<Actions.Set<T>>) => {
-    dispatch(new Actions.Set<T>({ persistKey, value }));
+    dispatch({ ...new Actions.Set<T>({ persistKey, value }) });
   };
 
 }

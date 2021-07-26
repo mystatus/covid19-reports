@@ -7,17 +7,11 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@material-ui/core';
-import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
 import { Modal as ModalActions } from '../../actions/modal.actions';
-import {
-  ModalButton,
-  ModalState,
-} from '../../reducers/modal.reducer';
-import { AppState } from '../../store';
+import { ModalButton } from '../../reducers/modal.reducer';
 import useStyles from './modal.styles';
+import { useAppDispatch } from '../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../hooks/use-app-selector';
 
 const defaultButtons: ModalButton[] = [
   { text: 'Ok' },
@@ -25,8 +19,8 @@ const defaultButtons: ModalButton[] = [
 
 export const ModalProvider = () => {
   const classes = useStyles();
-  const { buttons, message, open, title } = useSelector<AppState, ModalState>(state => state.modal);
-  const dispatch = useDispatch();
+  const { buttons, message, open, title } = useAppSelector(state => state.modal);
+  const dispatch = useAppDispatch();
 
   if (!open) {
     return null;

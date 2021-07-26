@@ -15,7 +15,6 @@ import React, {
   useState,
   useCallback,
 } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { Modal } from '../../../actions/modal.actions';
 import { ApiErrorResponseData } from '../../../models/api-response';
 import { UserSelector } from '../../../selectors/user.selector';
@@ -26,17 +25,19 @@ import { LinearProgressWithPercent } from '../../linear-progress-with-label/line
 import PageHeader from '../../page-header/page-header';
 import { DataExportPageHelp } from './data-export-page-help';
 import useStyles from './data-export-page.styles';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export const DataExportPage = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const [startDate, setStartDate] = useState<Moment | null>(null);
   const [endDate, setEndDate] = useState<Moment | null>(null);
   const [isExportLoading, setIsExportLoading] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
 
-  const orgId = useSelector(UserSelector.orgId);
+  const orgId = useAppSelector(UserSelector.orgId);
 
   const runExport = useCallback(async () => {
     setExportProgress(0);

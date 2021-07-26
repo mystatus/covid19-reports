@@ -6,14 +6,11 @@ import {
 } from '@material-ui/core';
 import clsx from 'clsx';
 import React, { ReactNode } from 'react';
-import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
 import { HelpCard as HelpCardActions } from '../../../actions/help-card.actions';
-import { AppState } from '../../../store';
 import { HelpContent } from '../help-content/help-content';
 import useStyles from './help-card.styles';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export interface HelpCardProps {
   helpCardId: string
@@ -24,8 +21,8 @@ export interface HelpCardProps {
 export const HelpCard = (props: HelpCardProps) => {
   const { helpCardId, children, variant = 'info' } = props;
   const classes = useStyles();
-  const dispatch = useDispatch();
-  const hide = useSelector<AppState, boolean>(state => state.localStorage.hideHelpCard?.[helpCardId] ?? false);
+  const dispatch = useAppDispatch();
+  const hide = useAppSelector(state => state.localStorage.hideHelpCard?.[helpCardId] ?? false);
 
   const handleGotItClick = () => {
     dispatch(HelpCardActions.hide(helpCardId));

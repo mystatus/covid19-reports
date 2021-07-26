@@ -1,6 +1,6 @@
 import { ApiUser } from '../models/api-response';
-import { LocalStorageState } from '../reducers/local-storage.reducer';
-import { UserState } from '../reducers/user.reducer';
+import { LocalStorageState } from '../slices/local-storage.slice';
+import { UserState } from '../slices/user.slice';
 
 export function getLoggedInState(user: ApiUser, localStorage: LocalStorageState): Partial<UserState> {
   const userRoles = user.userRoles ?? [];

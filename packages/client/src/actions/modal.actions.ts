@@ -1,5 +1,7 @@
 import { Dispatch } from 'redux';
+import { ThunkAction } from 'redux-thunk';
 import { ModalButton, ModalResponse } from '../reducers/modal.reducer';
+import { AppState } from '../store';
 
 export namespace Modal {
 
@@ -31,12 +33,12 @@ export namespace Modal {
     }
   }
 
-  export const alert = (title: string, message: string, buttons: ModalButton[] = [{ text: 'OK' }]): Promise<ModalResponse> => {
+  export const alert = (title: string, message: string, buttons: ModalButton[] = [{ text: 'OK' }]) => {
     return ((dispatch: Dispatch<Actions.Alert>) => {
       return new Promise(resolve => {
-        dispatch(new Actions.Alert({ buttons, open: true, message, title }, resolve));
+        dispatch({ ...new Actions.Alert({ buttons, open: true, message, title }, resolve) });
       });
-    }) as unknown as Promise<ModalResponse>;
+    }) as ThunkAction<Promise<ModalResponse>, AppState, any, any>;
   };
 
   export const confirm = (title: string, message: string, options?: {
@@ -63,7 +65,7 @@ export namespace Modal {
   };
 
   export const close = (title: string, response: ModalResponse) => (dispatch: Dispatch<Actions.Close>) => {
-    dispatch(new Actions.Close({ title, response }));
+    dispatch({ ...new Actions.Close({ title, response }) });
   };
 
 }

@@ -46,22 +46,22 @@ export namespace Roster {
   }
 
   export const fetchColumns = (orgId: number) => async (dispatch: Dispatch) => {
-    dispatch(new Actions.FetchColumns());
+    dispatch({ ...new Actions.FetchColumns() });
     try {
       const columns = await RosterClient.getRosterColumnsInfo(orgId);
-      dispatch(new Actions.FetchColumnsSuccess({ columns }));
+      dispatch({ ...new Actions.FetchColumnsSuccess({ columns }) });
     } catch (error) {
-      dispatch(new Actions.FetchColumnsFailure({ error }));
+      dispatch({ ...new Actions.FetchColumnsFailure({ error }) });
     }
   };
 
   export const deleteAll = (orgId: number) => async (dispatch: Dispatch) => {
-    dispatch(new Actions.DeleteAll());
+    dispatch({ ...new Actions.DeleteAll() });
     try {
       await RosterClient.deleteRosterEntries(orgId);
-      dispatch(new Actions.DeleteAllSuccess());
+      dispatch({ ...new Actions.DeleteAllSuccess() });
     } catch (error) {
-      dispatch(new Actions.DeleteAllFailure({ error }));
+      dispatch({ ...new Actions.DeleteAllFailure({ error }) });
     }
   };
 }

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   Button, Divider, IconButton, Paper, Switch, Table, TableCell, TableRow, Typography,
 } from '@material-ui/core';
@@ -12,6 +11,8 @@ import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
 import { NotificationClient } from '../../../client/notification.client';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 interface NotificationSettings {
   [key: string]: ApiUserNotificationSetting,
@@ -23,7 +24,7 @@ interface NotificationSaving {
 
 export const NotificationsTab = (props: TabPanelProps) => {
   const classes = useStyles();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const {
     value, index, ...other
   } = props;
@@ -33,7 +34,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [editAlertDialogProps, setEditAlertDialogProps] = useState<EditAlertDialogProps>({ open: false });
 
-  const orgId = useSelector(UserSelector.orgId)!;
+  const orgId = useAppSelector(UserSelector.orgId)!;
 
   const initializeTable = React.useCallback(async () => {
     const availableNotifications = await NotificationClient.getAvailableNotifications(orgId);

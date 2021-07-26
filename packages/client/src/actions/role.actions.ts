@@ -27,12 +27,12 @@ export namespace Role {
   }
 
   export const fetch = (orgId: number) => async (dispatch: Dispatch) => {
-    dispatch(new Actions.Fetch());
+    dispatch({ ...new Actions.Fetch() });
     try {
       const roles = await RoleClient.getOrgRoles(orgId);
-      dispatch(new Actions.FetchSuccess({ roles }));
+      dispatch({ ...new Actions.FetchSuccess({ roles }) });
     } catch (error) {
-      dispatch(new Actions.FetchFailure({ error }));
+      dispatch({ ...new Actions.FetchFailure({ error }) });
     }
   };
 }

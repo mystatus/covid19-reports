@@ -25,10 +25,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
 import _ from 'lodash';
 import moment from 'moment';
 import {
@@ -37,8 +33,6 @@ import {
   SearchRosterBody,
   SearchRosterQuery,
 } from '@covid19-reports/shared';
-import { AppFrame } from '../../../actions/app-frame.actions';
-import { OrphanedRecord } from '../../../actions/orphaned-record.actions';
 import { Roster } from '../../../actions/roster.actions';
 import { Unit } from '../../../actions/unit.actions';
 import useEffectDebounced from '../../../hooks/use-effect-debounced';
@@ -83,6 +77,10 @@ import usePersistedState from '../../../hooks/use-persisted-state';
 import { ExportClient } from '../../../client/export.client';
 import { OrphanedRecordClient } from '../../../client/orphaned-record.client';
 import { RosterClient } from '../../../client/roster.client';
+import { AppFrameActions } from '../../../slices/app-frame.slice';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { OrphanedRecordActions } from '../../../slices/orphaned-record.slice';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 const unitColumn: ApiRosterColumnInfo = {
   name: 'unit',
@@ -103,12 +101,12 @@ interface SortState {
 
 export const RosterPage = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
-  const units = useSelector(UnitSelector.all);
-  const orphanedRecords = useSelector(OrphanedRecordSelector.root);
-  const org = useSelector(UserSelector.org)!;
-  const canManageRoster = useSelector(UserSelector.canManageRoster);
+  const units = useAppSelector(UnitSelector.all);
+  const orphanedRecords = useAppSelector(OrphanedRecordSelector.root);
+  const org = useAppSelector(UserSelector.org)!;
+  const canManageRoster = useAppSelector(UserSelector.canManageRoster);
 
   const fileInputRef = createRef<HTMLInputElement>();
   const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
@@ -232,14 +230,21 @@ export const RosterPage = () => {
 
   const fetchOrphanedRecords = useCallback(async () => {
     if (!canManageRoster) {
-      dispatch(OrphanedRecord.clear());
+      dispatch(OrphanedRecordActions.clear());
       return;
     }
 
     const unitFilter = orphanedRecordsUnitFilter || undefined;
 
     try {
-      await dispatch(OrphanedRecord.fetchPage(orgId, orphanedRecordsPage, orphanedRecordsRowsPerPage, unitFilter));
+      await dispatch(OrphanedRecordActions.fetchPage({
+        orgId,
+        query: {
+          page: `${orphanedRecordsPage}`,
+          limit: `${orphanedRecordsRowsPerPage}`,
+          unit: unitFilter,
+        },
+      }));
     } catch (error) {
       dispatch(Modal.alert('Get Orphaned Records', formatErrorMessage(error, 'Failed to get orphaned records'))).then();
     }
@@ -247,7 +252,7 @@ export const RosterPage = () => {
 
   // Initial load.
   useEffect(() => {
-    dispatch(AppFrame.setPageLoading(!initialLoadComplete));
+    dispatch(AppFrameActions.setPageLoading({ isLoading: !initialLoadComplete }));
   }, [dispatch, initialLoadComplete]);
 
   useEffect(() => {
@@ -645,7 +650,7 @@ export const RosterPage = () => {
             rowsPerPage={orphanedRecordsRowsPerPage}
             rowsPerPageOptions={[10, 25, 50]}
             onPageChange={handleOrphanedRecordsChangePage}
-            onChangeRowsPerPage={handleOrphanedRecordsChangeRowsPerPage}
+            onRowsPerPageChange={handleOrphanedRecordsChangeRowsPerPage}
           />
         </TableContainer>
 
@@ -836,7 +841,7 @@ export const RosterPage = () => {
               rowsPerPage={rowsPerPage}
               rowsPerPageOptions={[10, 25, 50]}
               onPageChange={handleChangePage}
-              onChangeRowsPerPage={handleChangeRowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
             />
           </div>
         </TableContainer>

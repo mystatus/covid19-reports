@@ -26,10 +26,6 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
@@ -50,12 +46,14 @@ import {
   DefaultMusterDialog,
   DefaultMusterDialogProps,
 } from './default-muster-dialog';
-import { User } from '../../../actions/user.actions';
 import { UserSelector } from '../../../selectors/user.selector';
 import MusterConfigReadable from './muster-config-readable';
 import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
 import { ReportSchema } from '../../../actions/report-schema.actions';
 import { UnitClient } from '../../../client/unit.client';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { UserActions } from '../../../slices/user.slice';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 interface UnitMenuState {
   anchor: HTMLElement | null,
@@ -64,14 +62,14 @@ interface UnitMenuState {
 
 export const UnitsPage = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
-  const org = useSelector(UserSelector.org)!;
+  const org = useAppSelector(UserSelector.org)!;
   const orgId = org.id;
   const defaultMusterConfiguration = org.defaultMusterConfiguration;
 
-  const units = useSelector(UnitSelector.all);
-  const reports = useSelector(ReportSchemaSelector.all);
+  const units = useAppSelector(UnitSelector.all);
+  const reports = useAppSelector(ReportSchemaSelector.all);
   const initialEditUnitState = { open: false, defaultMusterConfiguration };
   const [unitToDelete, setUnitToDelete] = useState<null | ApiUnit>(null);
   const [editUnitDialogProps, setEditUnitDialogProps] = useState<EditUnitDialogProps>(initialEditUnitState);
@@ -92,7 +90,7 @@ export const UnitsPage = () => {
       onClose: async (success?: boolean) => {
         setDefaultMusterDialogProps({ open: false });
         if (success) {
-          await dispatch(User.refresh());
+          await dispatch(UserActions.refresh());
           await initializeTable();
           setDefaultMusterSaved(true);
         }

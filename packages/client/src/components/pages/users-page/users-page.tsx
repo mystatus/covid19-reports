@@ -17,7 +17,6 @@ import {
   IconButton,
 } from '@material-ui/core';
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import MailOutlineIcon from '@material-ui/icons/MailOutline';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ReportProblemOutlinedIcon from '@material-ui/icons/ReportProblemOutlined';
@@ -25,7 +24,6 @@ import PageHeader from '../../page-header/page-header';
 import { UsersPageHelp } from './users-page-help';
 import useStyles from './users-page.styles';
 import { ApiRole, ApiUser, ApiAccessRequest } from '../../../models/api-response';
-import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import SelectRoleDialog, { SelectRoleDialogProps } from './select-role-dialog';
 import { formatErrorMessage } from '../../../utility/errors';
@@ -36,6 +34,9 @@ import { Unit } from '../../../actions/unit.actions';
 import { ViewAccessRequestDialog } from './view-access-request-dialog';
 import { AccessRequestClient } from '../../../client/access-request.client';
 import { UserClient } from '../../../client/user.client';
+import { AppFrameActions } from '../../../slices/app-frame.slice';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 type UserMoreMenuState = {
   element: HTMLElement
@@ -47,8 +48,8 @@ type UserMoreMenuState = {
 
 export const UsersPage = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
-  const units = useSelector(UnitSelector.all);
+  const dispatch = useAppDispatch();
+  const units = useAppSelector(UnitSelector.all);
   const [userRows, setUserRows] = useState<ApiUser[]>([]);
   const [accessRequests, setAccessRequests] = useState<ApiAccessRequest[]>([]);
   const [userMoreMenu, setUserMenu] = React.useState<UserMoreMenuState | undefined>();
@@ -58,14 +59,14 @@ export const UsersPage = () => {
     accessRequest: undefined as ApiAccessRequest | undefined,
   });
 
-  const { edipi: currentUserEdipi } = useSelector(UserSelector.root);
+  const { edipi: currentUserEdipi } = useAppSelector(UserSelector.root);
 
-  const { id: orgId, name: orgName } = useSelector(UserSelector.org)!;
+  const { id: orgId, name: orgName } = useAppSelector(UserSelector.org)!;
 
   const initializeTable = React.useCallback(async () => {
     if (orgId) {
       try {
-        dispatch(AppFrame.setPageLoading(true));
+        dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
         dispatch(Unit.fetch(orgId));
         const [users, requests] = await Promise.all([
           UserClient.getOrgUsers(orgId),
@@ -77,7 +78,7 @@ export const UsersPage = () => {
       } catch (_) {
         // Error handling? This should probably just retry?
       }
-      dispatch(AppFrame.setPageLoading(false));
+      dispatch(AppFrameActions.setPageLoading({ isLoading: false }));
     }
   }, [orgId, dispatch]);
 
