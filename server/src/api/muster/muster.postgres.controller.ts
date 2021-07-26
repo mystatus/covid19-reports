@@ -38,9 +38,9 @@ class MusterPostgresCtr {
     const edipis = this.getEdipi(rostersFromDb);
 
     // TODO move these to Muster "package"
-    const musterConfFromDb = await this.getMusterUnitConf(unitIds);
-    const unitsMusterConfFromDb = await this.setDefaultMusterConf(musterConfFromDb, orgId);
-    const unitsMusterConf = this.toUnitMusterConf(unitsMusterConfFromDb);
+    const defaultMusterConf = await this.getDefaultMusterConf(orgId);
+    const musterConfFromDb = await this.getMusterUnitConf(unitIds, defaultMusterConf);
+    const unitsMusterConf = this.toUnitMusterConf(musterConfFromDb);
     const musterTimeView = this.toMusterTimeView(unitsMusterConf, fromDate, toDate);
 
     // TODO move to Observation "package"
@@ -76,38 +76,18 @@ class MusterPostgresCtr {
     return rosters.filter(roster => roster.unit.org!.id === orgId);
   }
 
-  private async getMusterUnitConf(unitIds: number[]): Promise<UnitMusterConfFromDb[]> {
+  private async getMusterUnitConf(unitIds: number[], defaultMusterConf: MusterConfiguration[]): Promise<UnitMusterConfFromDb[]> {
     return (await Unit.find({ where: { id: In(unitIds) } })).map(unitConf => {
       return {
         unitId: unitConf.id,
-        musterConf: unitConf.musterConfiguration,
+        musterConf: !unitConf.musterConfiguration || unitConf.musterConfiguration.length === 0 ? defaultMusterConf : unitConf.musterConfiguration,
       };
     });
   }
 
-  // TODO: refactor, see: https://github.com/mystatus/covid19-reports/pull/171/files#r673474693
-  /**
-   * Sets default muster configuration where muster configuration is missing.
-   * This function has a side effect, it modifies musterUnitConf.
-   */
-  private async setDefaultMusterConf(musterUnitConf: UnitMusterConfFromDb[], orgId: number): Promise<UnitMusterConfFromDb[]> {
-    if (this.isMusterConfMissing(musterUnitConf)) {
-      const org = await Org.findOne({ where: { id: orgId } });
-      if (org) {
-        const defaultOrgMusterConf = org.defaultMusterConfiguration;
-        musterUnitConf.forEach(muc => {
-          if (!muc.musterConf || muc.musterConf.length === 0) {
-            muc.musterConf = defaultOrgMusterConf;
-          }
-        });
-      }
-    }
-    return musterUnitConf;
-  }
-
-  private isMusterConfMissing(musterUnitConf: UnitMusterConfFromDb[]): boolean {
-    const confWithMissingMusterConf = musterUnitConf.filter(conf => !conf.musterConf || conf.musterConf.length === 0);
-    return confWithMissingMusterConf.length > 0;
+  private async getDefaultMusterConf(orgId: number): Promise<MusterConfiguration[]> {
+    const org = await Org.findOne({ where: { id: orgId } });
+    return org ? org.defaultMusterConfiguration : [];
   }
 
   private toMusterIntermediateCompliance(rosters: Roster[]): IntermediateMusterCompliance[] {
