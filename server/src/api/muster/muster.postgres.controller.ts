@@ -271,7 +271,7 @@ class MusterPostgresCtr {
     return {hours: split[0], minutes: split[1]};
   }
 
-  private getMusterTimeViewWithEndTimes(musterTimeViewWithEndTimes: Date[][], durationMinutes: number): MusterTimeView[] {
+  getMusterTimeViewWithEndTimes(musterTimeViewWithEndTimes: Date[][], durationMinutes: number): MusterTimeView[] {
 
     const musterTimeView: MusterTimeView[] = [];
 

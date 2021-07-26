@@ -139,6 +139,19 @@ describe('Muster Postgres Controller', () => {
     asertEqualTwoUnits(timeView, expected);
   });
 
+  it('getMusterTimeViewWithEndTimes() should calculate the end date', () => {
+
+    const startDate = '2021-07-07T06:00:00.000Z';
+    const expectedEndDate = '2021-07-07T07:00:00.000Z';
+    const durationMinutes = 60;
+    const dates: Date[][] = [[moment.utc(startDate).toDate()]];
+
+    const timeViews: MusterTimeView[] = musterPostgresController.getMusterTimeViewWithEndTimes(dates, durationMinutes);
+
+    expect([timeViews[0].startMusterDate.unix(), timeViews[0].endMusterDate.unix()])
+      .to.eql([moment.utc(startDate).unix(), moment.utc(expectedEndDate).unix()]);
+  });
+
 });
 
 function addDates(output: MusterTimeView[], startDate: string, endDate: string) {
@@ -181,12 +194,8 @@ function toExpectedUnitTwoPartOneDate() {
 
 function asertEqual(timeViews: MusterTimeView[], expectedOutput: MusterTimeView[]) {
   for (let i = 0; i < timeViews.length; i++) {
-    expect(timeViews[i].startMusterDate.unix())
-      .to
-      .eql(expectedOutput[i].startMusterDate.unix());
-    expect(timeViews[i].endMusterDate.unix())
-      .to
-      .eql(expectedOutput[i].endMusterDate.unix());
+    expect(timeViews[i].startMusterDate.unix()).to.eql(expectedOutput[i].startMusterDate.unix());
+    expect(timeViews[i].endMusterDate.unix()).to.eql(expectedOutput[i].endMusterDate.unix());
   }
 }
 
