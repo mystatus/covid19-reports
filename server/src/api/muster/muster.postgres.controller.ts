@@ -10,6 +10,7 @@ import { Unit, MusterConfiguration, MusterConfWithDateArray } from '../unit/unit
 import { Org } from '../org/org.model';
 import { Observation } from '../observation/observation.model';
 import {daysToString} from './muster.days';
+import { Log } from '../../util/log';
 
 
 class MusterPostgresCtr {
@@ -19,6 +20,7 @@ class MusterPostgresCtr {
    */
   async getMusterRoster(req: ApiRequest<OrgRoleParams, null, GetMusterRosterQuery>, res: Response<Paginated<Partial<MusterCompliance>>>) {
 
+    Log.info('Muster Postgres Ctr - getMusterRoster()');
     assertRequestQuery(req, ['fromDate', 'toDate', 'limit', 'page']);
 
     /* Dates come in UTC timezone.
