@@ -8,61 +8,6 @@ import musterPostgresController, {
 } from './muster.postgres.controller';
 import { MusterConfWithDateArray } from '../unit/unit.model';
 
-function addDates(output: MusterTimeView[], startDate: string, endDate: string) {
-  output.push({
-    startMusterDate: moment.utc(startDate),
-    endMusterDate: moment.utc(endDate),
-  });
-}
-
-function toExpectedUnitOnePartOneDate() {
-  const expectedOutput: MusterTimeView[] = [];
-  addDates(expectedOutput, '2021-07-05T18:00:00Z', '2021-07-05T19:00:00Z');
-  addDates(expectedOutput, '2021-07-12T18:00:00Z', '2021-07-12T19:00:00Z');
-  addDates(expectedOutput, '2021-07-19T18:00:00Z', '2021-07-19T19:00:00Z');
-  addDates(expectedOutput, '2021-07-26T18:00:00Z', '2021-07-26T19:00:00Z');
-  addDates(expectedOutput, '2021-07-06T18:00:00Z', '2021-07-06T19:00:00Z');
-  addDates(expectedOutput, '2021-07-13T18:00:00Z', '2021-07-13T19:00:00Z');
-  addDates(expectedOutput, '2021-07-20T18:00:00Z', '2021-07-20T19:00:00Z');
-  addDates(expectedOutput, '2021-07-27T18:00:00Z', '2021-07-27T19:00:00Z');
-  return expectedOutput;
-}
-function toExpectedUnitOnePartTwoDate() {
-  const expectedOutput: MusterTimeView[] = [];
-  addDates(expectedOutput, '2021-07-04T19:00:00Z', '2021-07-04T21:00:00Z');
-  addDates(expectedOutput, '2021-07-11T19:00:00Z', '2021-07-11T21:00:00Z');
-  addDates(expectedOutput, '2021-07-19T19:00:00Z', '2021-07-18T21:00:00Z');
-  addDates(expectedOutput, '2021-07-25T19:00:00Z', '2021-07-25T21:00:00Z');
-  return expectedOutput;
-}
-function toExpectedUnitTwoPartOneDate() {
-  const expectedOutput: MusterTimeView[] = [];
-  addDates(expectedOutput, '2021-07-07T17:00:00Z', '2021-07-07T17:30:00Z');
-  addDates(expectedOutput, '2021-07-14T17:00:00Z', '2021-07-14T17:30:00Z');
-  addDates(expectedOutput, '2021-07-21T17:00:00Z', '2021-07-21T17:30:00Z');
-  addDates(expectedOutput, '2021-07-28T17:00:00Z', '2021-07-28T17:30:00Z');
-  return expectedOutput;
-}
-
-function asertEqual(timeViews: MusterTimeView[], expectedOutput: MusterTimeView[]) {
-  for (let i = 0; i < timeViews.length; i++) {
-    expect(timeViews[i].startMusterDate.unix())
-      .to
-      .eql(expectedOutput[i].startMusterDate.unix());
-    expect(timeViews[i].endMusterDate.unix())
-      .to
-      .eql(expectedOutput[i].endMusterDate.unix());
-  }
-}
-
-function asertEqualTwoUntis(timeView: MusterUnitTimeView, expected: { '1': FlatArray<MusterTimeView[][], 1>[]; '2': MusterTimeView[] }) {
-  console.log(timeView[1]);
-  console.log(expected[1]);
-
-  // asertEqual(timeView[1], expected[1]);
-  // asertEqual(timeView[2], expected[2]);
-}
-
 describe('Muster Postgres Controller', () => {
 
   it('toUnitMusterConf() should convert "binary" date format to "array" date format', () => {
@@ -191,8 +136,61 @@ describe('Muster Postgres Controller', () => {
     const expectedUnitOneDates = [toExpectedUnitOnePartOneDate(), toExpectedUnitOnePartTwoDate()].flat(1);
     const expectedUnitTwoDates = toExpectedUnitTwoPartOneDate();
     const expected = {1: expectedUnitOneDates, 2: expectedUnitTwoDates};
-    asertEqualTwoUntis(timeView, expected);
+    asertEqualTwoUnits(timeView, expected);
   });
 
 });
 
+function addDates(output: MusterTimeView[], startDate: string, endDate: string) {
+  output.push({
+    startMusterDate: moment.utc(startDate),
+    endMusterDate: moment.utc(endDate),
+  });
+}
+
+function toExpectedUnitOnePartOneDate() {
+  const expectedOutput: MusterTimeView[] = [];
+  addDates(expectedOutput, '2021-07-05T18:00:00Z', '2021-07-05T19:00:00Z');
+  addDates(expectedOutput, '2021-07-12T18:00:00Z', '2021-07-12T19:00:00Z');
+  addDates(expectedOutput, '2021-07-19T18:00:00Z', '2021-07-19T19:00:00Z');
+  addDates(expectedOutput, '2021-07-26T18:00:00Z', '2021-07-26T19:00:00Z');
+  addDates(expectedOutput, '2021-07-06T18:00:00Z', '2021-07-06T19:00:00Z');
+  addDates(expectedOutput, '2021-07-13T18:00:00Z', '2021-07-13T19:00:00Z');
+  addDates(expectedOutput, '2021-07-20T18:00:00Z', '2021-07-20T19:00:00Z');
+  addDates(expectedOutput, '2021-07-27T18:00:00Z', '2021-07-27T19:00:00Z');
+  return expectedOutput;
+}
+
+function toExpectedUnitOnePartTwoDate() {
+  const expectedOutput: MusterTimeView[] = [];
+  addDates(expectedOutput, '2021-07-04T19:00:00Z', '2021-07-04T21:00:00Z');
+  addDates(expectedOutput, '2021-07-11T19:00:00Z', '2021-07-11T21:00:00Z');
+  addDates(expectedOutput, '2021-07-18T19:00:00Z', '2021-07-18T21:00:00Z');
+  addDates(expectedOutput, '2021-07-25T19:00:00Z', '2021-07-25T21:00:00Z');
+  return expectedOutput;
+}
+
+function toExpectedUnitTwoPartOneDate() {
+  const expectedOutput: MusterTimeView[] = [];
+  addDates(expectedOutput, '2021-07-07T17:00:00Z', '2021-07-07T17:30:00Z');
+  addDates(expectedOutput, '2021-07-14T17:00:00Z', '2021-07-14T17:30:00Z');
+  addDates(expectedOutput, '2021-07-21T17:00:00Z', '2021-07-21T17:30:00Z');
+  addDates(expectedOutput, '2021-07-28T17:00:00Z', '2021-07-28T17:30:00Z');
+  return expectedOutput;
+}
+
+function asertEqual(timeViews: MusterTimeView[], expectedOutput: MusterTimeView[]) {
+  for (let i = 0; i < timeViews.length; i++) {
+    expect(timeViews[i].startMusterDate.unix())
+      .to
+      .eql(expectedOutput[i].startMusterDate.unix());
+    expect(timeViews[i].endMusterDate.unix())
+      .to
+      .eql(expectedOutput[i].endMusterDate.unix());
+  }
+}
+
+function asertEqualTwoUnits(timeView: MusterUnitTimeView, expected: { '1': FlatArray<MusterTimeView[][], 1>[]; '2': MusterTimeView[] }) {
+  asertEqual(timeView[1], expected[1]);
+  asertEqual(timeView[2], expected[2]);
+}
