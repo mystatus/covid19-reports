@@ -2,22 +2,19 @@ import { Response } from 'express';
 import { Brackets } from 'typeorm';
 import moment from 'moment-timezone';
 import {
-  GetClosedMusterWindowsQuery,
-  GetMusterRosterQuery,
-  GetMusterUnitTrendsQuery,
-  GetNearestMusterWindowQuery,
   MusterConfiguration,
+  PaginatedQuery,
   Paginated,
 } from '@covid19-reports/shared';
 import { assertRequestQuery } from '../../util/api-utils';
-import { NotFoundError } from '../../util/error-types';
+import { BadRequestError, NotFoundError } from '../../util/error-types';
 import {
   buildMusterWindow,
   getDistanceToWindow,
   getEarliestMusterWindowTime,
+  getOneTimeMusterWindowTime,
   getMusterRosterStats,
   getMusterUnitTrends,
-  getOneTimeMusterWindowTime,
   MusterWindow,
 } from '../../util/muster-utils';
 import {
@@ -25,9 +22,15 @@ import {
   OrgRoleParams,
   OrgUnitParams,
 } from '../api.router';
+import { Observation } from '../observation/observation.model';
 import { Roster } from '../roster/roster.model';
+import {
+  ChangeType,
+  RosterHistory,
+} from '../roster/roster-history.model';
 import { Unit } from '../unit/unit.model';
 import {
+  dateFromString,
   dayIsIn,
   DaysOfTheWeek,
   nextDay,
@@ -46,14 +49,13 @@ class MusterController {
 
     const fromDate = moment(req.query.fromDate);
     const toDate = moment(req.query.toDate);
-    const unitId = (req.query.unitId != null) ? parseInt(req.query.unitId) : undefined;
     const limit = parseInt(req.query.limit);
     const page = parseInt(req.query.page);
 
     const rosterStats = await getMusterRosterStats({
       org: req.appOrg!,
       userRole: req.appUserRole!,
-      unitId,
+      unitId: req.query.unitId || undefined,
       fromDate,
       toDate,
     });
@@ -136,7 +138,6 @@ class MusterController {
         }
       }
     }
-
     res.json(musterWindows);
   }
 
@@ -218,6 +219,148 @@ class MusterController {
 
     res.json(closestMuster ? buildMusterWindow(unit, closestStart, closestEnd, closestMuster) : null);
   }
+
+  /**
+   * This method returns the normalized rate (0 - 1.0) of compliance on a given
+   * date for a given unit, against  of the unit's muster configs.
+   */
+  async getMusterComplianceByDate(req: ApiRequest<{orgId: number, unitName: string}, null, DateQuery>, res: Response<MusterComplianceResponse>) {
+    const outValue = { musterComplianceRate: 0 };
+    const reportDate = dateFromString(req.query.timestamp);
+    if (!reportDate) {
+      throw new BadRequestError('Missing reportDate.');
+    }
+    // eslint-disable-next-line no-bitwise
+    const dayBit = 1 << reportDate.getDay();
+
+    const usersOnRoster = await getUsersOnRosterByDate(req.params.orgId, req.params.unitName, req.query.timestamp);
+    const users = usersOnRoster.users;
+    const userCount = users.length;
+    let musterAvg: number = 0;
+
+    if (usersOnRoster.musterConfig.length === 0 || userCount === 0) {
+      res.json(outValue);
+      return;
+    }
+
+    for (let i = 0; i < usersOnRoster.musterConfig.length; i++) {
+      const musterConfig = usersOnRoster.musterConfig[i];
+      if (musterConfig.days) {
+        // handle recurring muster...
+        // early out if the reportDate in question is not on a muster day.
+        // eslint-disable-next-line no-bitwise
+        if ((dayBit & musterConfig.days) === dayBit) {
+          const musterTime = `${reportDate.toISOString().split('T')[0]} ${musterConfig.startTime}`;
+          const musterStart = moment.tz(musterTime, musterConfig.timezone);
+          const musterEnd = moment.tz(musterTime, musterConfig.timezone).add({ minutes: musterConfig.durationMinutes });
+          const observationCount: number = await getObservationComplianceCount(req.params.orgId, req.params.unitName, users, musterConfig.reportId, musterStart, musterEnd);
+          musterAvg += observationCount / userCount;
+        }
+      } else {
+        // handle one-time muster
+        const musterTime = musterConfig.startTime;
+        const musterStart = moment.tz(musterTime, musterConfig.timezone);
+        const musterEnd = moment.tz(musterTime, musterConfig.timezone).add({ minutes: musterConfig.durationMinutes });
+        const observationCount: number = await getObservationComplianceCount(req.params.orgId, req.params.unitName, users, musterConfig.reportId, musterStart, musterEnd);
+        musterAvg += observationCount / userCount;
+      }
+    }
+    outValue.musterComplianceRate = musterAvg / usersOnRoster.musterConfig.length;
+    res.json(outValue);
+  }
 }
+
+/**
+ * This "helper" method returns the number of observations found for a given muster config
+ * @param orgId - the organization id
+ * @param unitName - the roster the users belong to
+ * @param edipis - the users that are on roster
+ * @param reportId - the report schema to find observations for
+ * @param musterStart - the start of the muster window the observations must fall within
+ * @param musterEnd - the end of the muster window the observations must fall within
+ */
+async function getObservationComplianceCount(orgId: number, unitName: string, edipis: string[], reportId: string, musterStart: moment.Moment, musterEnd: moment.Moment) {
+  const observationCount = await Observation.createQueryBuilder('observation')
+    .select()
+    .where(`observation.edipi in (:...edipis)`, { edipis })
+    .andWhere(`observation.unit = :unit`, { unit: unitName })
+    .andWhere(`observation.report_schema_id = :reportId`, { reportId })
+    .andWhere(`observation.report_schema_org = :orgId`, { orgId })
+    .andWhere(`observation.timestamp between :musterStart and :musterEnd`, { musterStart, musterEnd })
+    .orderBy('observation.edipi', 'DESC')
+    .getCount();
+  return observationCount;
+}
+
+/**
+ * This "helper" method returns the list of unique users on roster on the specified date/time
+ * @param orgId - the organization id
+ * @param unitName - the roster the users belong to
+ * @param date - the date to get the list of users on roster
+ */
+async function getUsersOnRosterByDate(orgId: number, unitName: string, date: string) {
+  const reportDate = dateFromString(date);
+  if (!reportDate) {
+    throw new BadRequestError('Missing reportDate.');
+  }
+  const timestamp = reportDate.getTime() / 1000;
+  const rows = await RosterHistory.createQueryBuilder('roster')
+    .leftJoinAndSelect('roster.unit', 'unit')
+    .select('DISTINCT ON(roster.edipi) roster.edipi, roster.change_type, unit.muster_configuration')
+    .where(`roster.timestamp <= to_timestamp(:timestamp) AT TIME ZONE '+0'`, { timestamp })
+    .andWhere('unit.name = :unitName', { unitName })
+    .orderBy('roster.edipi', 'DESC')
+    .addOrderBy(`EXTRACT (EPOCH FROM (to_timestamp(${timestamp}) at Time Zone '+0' - roster.timestamp))`, 'ASC')
+    .getRawMany();
+  const onRoster: string[] = [];
+  if (rows.length > 0) {
+    rows.forEach(entry => {
+      if (entry.change_type !== ChangeType.Deleted.toString()) {
+        onRoster.push(entry.edipi);
+      }
+    });
+    const out = {
+      org: orgId,
+      users: onRoster,
+      musterConfig: rows[0].muster_configuration,
+    };
+    return out;
+  }
+  return {
+    org: null,
+    users: [],
+    musterConfig: null,
+  };
+}
+
+type GetMusterRosterQuery = {
+  fromDate: string
+  toDate: string
+  unitId: number | null
+} & PaginatedQuery;
+
+type GetMusterUnitTrendsQuery = {
+  currentDate: string
+  weeksCount?: string
+  monthsCount?: string
+};
+
+type GetClosedMusterWindowsQuery = {
+  since: string
+  until: string
+};
+
+type GetNearestMusterWindowQuery = {
+  timestamp: string
+  reportId: string
+};
+
+type DateQuery = {
+  timestamp: string
+};
+
+type MusterComplianceResponse = {
+  musterComplianceRate: number
+};
 
 export default new MusterController();

@@ -41,7 +41,7 @@ if ! [[ "$(database_exists)" ]]; then
   ./migration-run.sh
 fi
 
-npx --silent ts-mocha \
+npx ts-mocha \
   --project "tsconfig.json" \
   --config ".mocharc.yml" \
   --exit \

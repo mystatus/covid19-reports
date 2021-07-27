@@ -1,3 +1,4 @@
+import bodyParser from 'body-parser';
 import express from 'express';
 import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth/auth-middleware';
 import controller from './muster.controller';
@@ -29,6 +30,12 @@ router.get(
   requireOrgAccess,
   requireRolePermission(role => role.canViewMuster),
   controller.getMusterUnitTrends,
+);
+
+router.get(
+  '/:orgId/:unitName/compliance',
+  bodyParser.json(),
+  controller.getMusterComplianceByDate,
 );
 
 export default router;

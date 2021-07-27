@@ -15,6 +15,14 @@
     "mocha-no-only"
   ],
   "rules": {
+    "@typescript-eslint/type-annotation-spacing": ["error", {
+      "overrides" : {
+        "colon": {
+          "before": false,
+          "after": true
+        }		
+      }		
+    }],
     "@typescript-eslint/lines-between-class-members": "off",
     "@typescript-eslint/no-unused-expressions": "off",
     "@typescript-eslint/no-use-before-define": "off",
@@ -35,6 +43,10 @@
     "import/no-cycle": "off",
     "import/no-dynamic-require": "off",
     "import/prefer-default-export": "off",
+    "key-spacing": ["error", {
+      "beforeColon": false,
+      "afterColon": true
+    }],
     "max-classes-per-file": "off",
     "max-len": "off",
     "mocha-no-only/mocha-no-only": ["error"],
@@ -66,7 +78,7 @@
     "no-unused-expressions": "off",
     "no-use-before-define": "off",
     "object-curly-newline": ["error", { "consistent": true }],
-    "object-curly-spacing": "off",
+    "object-curly-spacing": ["error", "always"],
     "padded-blocks": "off",
     "prefer-destructuring": "off",
     "radix": "off",
