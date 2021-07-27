@@ -26,10 +26,6 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
 import { Role } from '../../../actions/role.actions';
 import { Unit } from '../../../actions/unit.actions';
 import {
@@ -43,6 +39,8 @@ import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import RoleInfoPanel from '../../role-info-panel/role-info-panel';
 import useStyles from './view-access-request-dialog.styles';
 import { AccessRequestClient } from '../../../client/access-request.client';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export type ViewAccessRequestDialogProps = DialogProps & {
   onClose: () => void
@@ -53,7 +51,7 @@ export type ViewAccessRequestDialogProps = DialogProps & {
 export const ViewAccessRequestDialog = (props: ViewAccessRequestDialogProps) => {
   const { open, onClose, onComplete, accessRequest } = props;
   const classes = useStyles();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const [approveLoading, setApproveLoading] = useState(false);
   const [denyLoading, setDenyLoading] = useState(false);
@@ -62,9 +60,9 @@ export const ViewAccessRequestDialog = (props: ViewAccessRequestDialogProps) => 
   const [errorMessage, setErrorMessage] = useState(undefined as string | undefined);
   const [showError, setShowError] = useState(false);
 
-  const orgId = useSelector(UserSelector.orgId)!;
-  const roles = useSelector(RoleSelector.all);
-  const units = useSelector(UnitSelector.all);
+  const orgId = useAppSelector(UserSelector.orgId)!;
+  const roles = useAppSelector(RoleSelector.all);
+  const units = useAppSelector(UnitSelector.all);
 
   const fullName = `${accessRequest.user.firstName} ${accessRequest.user.lastName}`;
   const actionLoading = approveLoading || denyLoading;

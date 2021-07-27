@@ -1,6 +1,6 @@
 import { Notification } from '../actions/notification.actions';
-import { User } from '../actions/user.actions';
 import { ApiNotification } from '../models/api-response';
+import { UserActions } from '../slices/user.slice';
 
 export interface NotificationState {
   notifications: ApiNotification[],
@@ -16,7 +16,7 @@ export const notificationInitialState: NotificationState = {
 
 export function notificationReducer(state = notificationInitialState, action: any) {
   switch (action.type) {
-    case User.Actions.ChangeOrg.type:
+    case UserActions.changeOrg.type:
       return notificationInitialState;
     case Notification.Actions.Fetch.type: {
       return {

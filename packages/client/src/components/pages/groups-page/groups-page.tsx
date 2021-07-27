@@ -28,12 +28,6 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
-import { UserState } from '../../../reducers/user.reducer';
-import { AppState } from '../../../store';
 import PageHeader from '../../page-header/page-header';
 import { StatusChip } from '../../status-chip/status-chip';
 import useStyles from './groups-page.styles';
@@ -41,17 +35,19 @@ import {
   ApiAccessRequest,
   ApiOrg,
 } from '../../../models/api-response';
-import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { RequestAccessDialog } from './request-access-dialog';
 import { AccessRequestClient } from '../../../client/access-request.client';
 import { OrgClient } from '../../../client/org.client';
 import { UserClient } from '../../../client/user.client';
+import { AppFrameActions } from '../../../slices/app-frame.slice';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export const GroupsPage = () => {
   const classes = useStyles();
-  const user = useSelector<AppState, UserState>(state => state.user);
-  const dispatch = useDispatch();
+  const user = useAppSelector(state => state.user);
+  const dispatch = useAppDispatch();
   const [isAlertVisible, setIsAlertVisible] = useState(!user.activeRole);
   const [isInfoCardVisible, setIsInfoCardVisible] = useState(true);
   const [accessRequests, setAccessRequests] = useState([] as ApiAccessRequest[]);
@@ -197,7 +193,7 @@ export const GroupsPage = () => {
     // Initial load.
     async function fetchData() {
 
-      dispatch(AppFrame.setPageLoading(true));
+      dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
 
       await Promise.all([
         fetchAllOrgs(),
@@ -205,7 +201,7 @@ export const GroupsPage = () => {
       ]);
 
       // Finish loading.
-      dispatch(AppFrame.setPageLoading(false));
+      dispatch(AppFrameActions.setPageLoading({ isLoading: false }));
     }
 
     fetchData().then();

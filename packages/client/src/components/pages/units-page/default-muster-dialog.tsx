@@ -25,7 +25,6 @@ import { Autocomplete } from '@material-ui/lab';
 import { DatePicker, MuiPickersUtilsProvider, TimePicker } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
-import { useSelector } from 'react-redux';
 import clsx from 'clsx';
 import { UpdateOrgDefaultMusterBody } from '@covid19-reports/shared';
 import useStyles from './default-muster-dialog.styles';
@@ -39,6 +38,7 @@ import { UnitSelector } from '../../../selectors/unit.selector';
 import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
 import { formatErrorMessage } from '../../../utility/errors';
 import { OrgClient } from '../../../client/org.client';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export interface DefaultMusterDialogProps {
   open: boolean,
@@ -60,10 +60,10 @@ type UnitValidationMap = {
 export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {
   const classes = useStyles();
   const [formDisabled, setFormDisabled] = useState(false);
-  const org = useSelector(UserSelector.org);
-  const affectedUnits = useSelector(UnitSelector.all)
+  const org = useAppSelector(UserSelector.org);
+  const affectedUnits = useAppSelector(UnitSelector.all)
     .filter(unit => unit.includeDefaultConfig);
-  const reports = useSelector(ReportSchemaSelector.all);
+  const reports = useAppSelector(ReportSchemaSelector.all);
   const orgId = org?.id;
   const defaultMusterConfiguration = org?.defaultMusterConfiguration;
   const {

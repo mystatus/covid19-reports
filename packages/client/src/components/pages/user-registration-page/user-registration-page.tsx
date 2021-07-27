@@ -15,15 +15,9 @@ import {
 } from '@material-ui/icons';
 import MuiPhoneNumber from 'material-ui-phone-number';
 import React, { useState } from 'react';
-import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
 import { RegisterUserBody } from '@covid19-reports/shared';
-import { User } from '../../../actions/user.actions';
 import services from '../../../data/services';
-import { UserState } from '../../../reducers/user.reducer';
-import { AppState } from '../../../store';
+import { UserActions } from '../../../slices/user.slice';
 import {
   validateEmail,
   validatePhone,
@@ -31,6 +25,8 @@ import {
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { Link } from '../../link/link';
 import useStyles from './user-registration-page.styles';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 type RegisterUserBodyWithValidation = {
   [key in keyof RegisterUserBody]: {
@@ -43,8 +39,8 @@ type RegisterUserBodyWithValidation = {
 
 export const UserRegistrationPage = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
-  const user = useSelector<AppState, UserState>(state => state.user);
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(state => state.user);
   const [registerUserLoading, setRegisterUserLoading] = useState(false);
   const [inputData, setInputData] = useState<RegisterUserBodyWithValidation>({
     firstName: { hasBlurred: false, hasChanged: false, helperText: '', value: '' },
@@ -97,7 +93,7 @@ export const UserRegistrationPage = () => {
 
   async function handleCreateAccountClick() {
     setRegisterUserLoading(true);
-    await dispatch(User.register({
+    await dispatch(UserActions.register({
       firstName: inputData.firstName.value,
       lastName: inputData.lastName.value,
       phone: inputData.phone.value,

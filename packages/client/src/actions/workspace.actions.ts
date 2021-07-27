@@ -55,22 +55,22 @@ export namespace Workspace {
   }
 
   export const fetch = (orgId: number) => async (dispatch: Dispatch) => {
-    dispatch(new Actions.Fetch());
+    dispatch({ ...new Actions.Fetch() });
     try {
       const workspaces = await WorkspaceClient.getOrgWorkspaces(orgId);
-      dispatch(new Actions.FetchSuccess({ workspaces }));
+      dispatch({ ...new Actions.FetchSuccess({ workspaces }) });
     } catch (error) {
-      dispatch(new Actions.FetchFailure({ error }));
+      dispatch({ ...new Actions.FetchFailure({ error }) });
     }
   };
 
   export const fetchDashboards = (orgId: number, workspaceId: number) => async (dispatch: Dispatch) => {
-    dispatch(new Actions.FetchDashboards({ workspaceId }));
+    dispatch({ ...new Actions.FetchDashboards({ workspaceId }) });
     try {
       const dashboards = await WorkspaceClient.getWorkspaceDashboards(orgId, workspaceId);
-      dispatch(new Actions.FetchDashboardsSuccess({ workspaceId, dashboards }));
+      dispatch({ ...new Actions.FetchDashboardsSuccess({ workspaceId, dashboards }) });
     } catch (error) {
-      dispatch(new Actions.FetchDashboardsFailure({ workspaceId, error }));
+      dispatch({ ...new Actions.FetchDashboardsFailure({ workspaceId, error }) });
     }
   };
 

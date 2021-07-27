@@ -15,7 +15,7 @@ export namespace HelpCard {
   }
 
   export const hide = (helpCardId: string) => (dispatch: Dispatch<Actions.Hide>) => {
-    dispatch(new Actions.Hide({ helpCardId }));
+    dispatch({ ...new Actions.Hide({ helpCardId }) });
   };
 
 }

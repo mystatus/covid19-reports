@@ -1,6 +1,6 @@
 import { Unit } from '../actions/unit.actions';
-import { User } from '../actions/user.actions';
 import { ApiUnit } from '../models/api-response';
+import { UserActions } from '../slices/user.slice';
 
 export interface UnitState {
   units: ApiUnit[],
@@ -16,7 +16,7 @@ export const unitInitialState: UnitState = {
 
 export function unitReducer(state = unitInitialState, action: any) {
   switch (action.type) {
-    case User.Actions.ChangeOrg.type:
+    case UserActions.changeOrg.type:
       return unitInitialState;
     case Unit.Actions.Fetch.type: {
       return {

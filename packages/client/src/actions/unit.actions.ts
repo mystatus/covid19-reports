@@ -27,12 +27,12 @@ export namespace Unit {
   }
 
   export const fetch = (orgId: number) => async (dispatch: Dispatch) => {
-    dispatch(new Actions.Fetch());
+    dispatch({ ...new Actions.Fetch() });
     try {
       const units = await UnitClient.getUnits(orgId);
-      dispatch(new Actions.FetchSuccess({ units }));
+      dispatch({ ...new Actions.FetchSuccess({ units }) });
     } catch (error) {
-      dispatch(new Actions.FetchFailure({ error }));
+      dispatch({ ...new Actions.FetchFailure({ error }) });
     }
   };
 }

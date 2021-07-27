@@ -1,21 +1,30 @@
 import {
+  Accordion,
+  AccordionActions,
+  AccordionDetails,
+  AccordionSummary,
   Button,
   Container,
-  DialogActions,
   Dialog,
-  DialogTitle,
+  DialogActions,
   DialogContent,
-  DialogContentText, Accordion, AccordionSummary, AccordionDetails, Typography, AccordionActions,
+  DialogContentText,
+  DialogTitle,
+  Typography,
 } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
 import PageHeader from '../../page-header/page-header';
 import { RoleManagementPageHelp } from './role-management-page-help';
 import useStyles from './role-management-page.styles';
-import { EditRoleDialog, EditRoleDialogProps } from './edit-role-dialog';
-import { AppFrame } from '../../../actions/app-frame.actions';
+import {
+  EditRoleDialog,
+  EditRoleDialogProps,
+} from './edit-role-dialog';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import RoleInfoPanel from '../../role-info-panel/role-info-panel';
 import { UserSelector } from '../../../selectors/user.selector';
@@ -26,24 +35,26 @@ import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { RoleClient } from '../../../client/role.client';
-
+import { AppFrameActions } from '../../../slices/app-frame.slice';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export const RoleManagementPage = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [selectedRoleIndex, setSelectedRoleIndex] = useState(-1);
   const [deleteRoleDialogOpen, setDeleteRoleDialogOpen] = useState(false);
   const [editRoleDialogProps, setEditRoleDialogProps] = useState<EditRoleDialogProps>({ open: false });
   const [deleteRoleLoading, setDeleteRoleLoading] = useState(false);
-  const roles = useSelector(RoleSelector.all);
-  const orgId = useSelector(UserSelector.orgId);
+  const roles = useAppSelector(RoleSelector.all);
+  const orgId = useAppSelector(UserSelector.orgId);
 
   const initializeTable = React.useCallback(async () => {
     if (orgId) {
-      dispatch(AppFrame.setPageLoading(true));
+      dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
       await dispatch(Role.fetch(orgId));
       await dispatch(Workspace.fetch(orgId));
-      dispatch(AppFrame.setPageLoading(false));
+      dispatch(AppFrameActions.setPageLoading({ isLoading: false }));
     }
   }, [orgId, dispatch]);
 

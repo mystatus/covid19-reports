@@ -1,5 +1,6 @@
 import {
   AddOrphanedRecordActionBody,
+  GetOrphanedRecordsQuery,
   ResolveOrphanedRecordWithAddBody,
   ResolveOrphanedRecordWithEditBody,
 } from '@covid19-reports/shared';
@@ -19,13 +20,9 @@ export class OrphanedRecordClient {
     return client.get(`${orgId}/count`);
   }
 
-  static getOrphanedRecords(orgId: number, page: number, limit: number, unit?: string): Promise<ApiOrphanedRecordsPaginated> {
+  static getOrphanedRecords(orgId: number, query: GetOrphanedRecordsQuery): Promise<ApiOrphanedRecordsPaginated> {
     return client.get(`${orgId}`, {
-      params: {
-        page,
-        limit,
-        unit,
-      },
+      params: query,
     });
   }
 

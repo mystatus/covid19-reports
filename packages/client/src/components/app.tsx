@@ -1,14 +1,12 @@
 import clsx from 'clsx';
 import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import {
-  Switch, Route, Redirect,
+  Redirect,
+  Route,
+  Switch,
 } from 'react-router-dom';
 import { CircularProgress } from '@material-ui/core';
-import { User } from '../actions/user.actions';
-import { AppFrameState } from '../reducers/app-frame.reducer';
-import { UserState } from '../reducers/user.reducer';
-import { AppState } from '../store';
+import { UserActions } from '../slices/user.slice';
 import { AppSidenav } from './app-sidenav/app-sidenav';
 import { AppToolbar } from './app-toolbar/app-toolbar';
 import { SpacesPage } from './pages/spaces-page/spaces-page';
@@ -25,15 +23,17 @@ import { EditSpacesPage } from './pages/edit-spaces-page/edit-spaces-page';
 import { RosterColumnsPage } from './pages/roster-columns-page/roster-columns-page';
 import { SettingsPage } from './pages/settings-page/settings-page';
 import { UnitsPage } from './pages/units-page/units-page';
+import { useAppDispatch } from '../hooks/use-app-dispatch';
+import { useAppSelector } from '../hooks/use-app-selector';
 
 export const App = () => {
-  const user = useSelector<AppState, UserState>(state => state.user);
-  const appFrame = useSelector<AppState, AppFrameState>(state => state.appFrame);
-  const dispatch = useDispatch();
+  const user = useAppSelector(state => state.user);
+  const appFrame = useAppSelector(state => state.appFrame);
+  const dispatch = useAppDispatch();
   const classes = useStyles();
 
   useEffect(() => {
-    dispatch(User.refresh());
+    dispatch(UserActions.refresh());
   }, [dispatch]);
 
   function routes() {
@@ -133,7 +133,7 @@ export const App = () => {
               [classes.fixedContentCenteredSidenavExpanded]: appFrame.sidenavExpanded,
             })}
           >
-            { appFrame.isPageLoading ? <CircularProgress /> : '' }
+            {appFrame.isPageLoading ? <CircularProgress /> : ''}
           </div>
 
         </div>

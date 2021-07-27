@@ -21,10 +21,6 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import CheckIcon from '@material-ui/icons/Check';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
@@ -44,6 +40,8 @@ import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
 import { EditSpacesPageHelp } from './edit-spaces-page-help';
 import { WorkspaceClient } from '../../../client/workspace.client';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 interface WorkspaceMenuState {
   anchor: HTMLElement | null,
@@ -52,14 +50,14 @@ interface WorkspaceMenuState {
 
 export const EditSpacesPage = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [workspaces, setWorkspaces] = useState<ApiWorkspace[]>([]);
   const [workspaceTemplates, setWorkspaceTemplates] = useState<ApiWorkspaceTemplate[]>([]);
   const [workspaceToDelete, setWorkspaceToDelete] = useState<null | ApiWorkspace>(null);
   const [editWorkspaceDialogProps, setEditWorkspaceDialogProps] = useState<EditWorkspaceDialogProps>({ open: false });
   const [workspaceMenu, setWorkspaceMenu] = React.useState<WorkspaceMenuState>({ anchor: null });
 
-  const orgId = useSelector(UserSelector.orgId)!;
+  const orgId = useAppSelector(UserSelector.orgId)!;
 
   const initializeTable = React.useCallback(async () => {
     const ws = await WorkspaceClient.getOrgWorkspaces(orgId);

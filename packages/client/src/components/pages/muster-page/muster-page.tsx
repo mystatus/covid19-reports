@@ -25,15 +25,10 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
 import Plot from 'react-plotly.js';
 import _ from 'lodash';
 import moment from 'moment';
 import { RosterColumnType } from '@covid19-reports/shared';
-import { AppFrame } from '../../../actions/app-frame.actions';
 import { downloadFile } from '../../../utility/download';
 import {
   getMaxPageIndex,
@@ -45,8 +40,6 @@ import { TableCustomColumnsContent } from '../../tables/table-custom-columns-con
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
 import { MusterPageHelp } from './muster-page-help';
 import useStyles from './muster-page.styles';
-import { UserState } from '../../../reducers/user.reducer';
-import { AppState } from '../../../store';
 import {
   ApiMusterRosterEntriesPaginated,
   ApiMusterTrends,
@@ -64,12 +57,15 @@ import usePersistedState from '../../../hooks/use-persisted-state';
 import { ExportClient } from '../../../client/export.client';
 import { MusterClient } from '../../../client/muster.client';
 import { RosterClient } from '../../../client/roster.client';
+import { AppFrameActions } from '../../../slices/app-frame.slice';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export const MusterPage = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
-  const units = useSelector(UnitSelector.all);
-  const user = useSelector<AppState, UserState>(state => state.user);
+  const dispatch = useAppDispatch();
+  const units = useAppSelector(UnitSelector.all);
+  const user = useAppSelector(state => state.user);
 
   const maxNumColumnsToShow = 6;
   const maxTopUnitsCount = 5;
@@ -129,10 +125,10 @@ export const MusterPage = () => {
     totalRowsCount: 0,
   });
 
-  const org = useSelector(UserSelector.org)!;
+  const org = useAppSelector(UserSelector.org)!;
   const orgId = org.id;
   const orgName = org.name;
-  const isPageLoading = useSelector<AppState, boolean>(state => state.appFrame.isPageLoading);
+  const isPageLoading = useAppSelector(state => state.appFrame.isPageLoading);
 
   const timeRanges: Readonly<Readonly<TimeRange>[]> = useMemo(() => ([
     {
@@ -251,7 +247,7 @@ export const MusterPage = () => {
   }, [orgId, showErrorDialog]);
 
   const initialize = useCallback(async () => {
-    dispatch(AppFrame.setPageLoading(true));
+    dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
 
     try {
       await Promise.all([
@@ -269,7 +265,7 @@ export const MusterPage = () => {
       setRosterFromDateIso(range.fromDateIso);
       setRosterToDateIso(range.toDateIso);
     } finally {
-      dispatch(AppFrame.setPageLoading(false));
+      dispatch(AppFrameActions.setPageLoading({ isLoading: false }));
     }
   }, [dispatch, initializeRosterColumnInfo, getUnits, reloadTable, reloadTrendData, timeRanges, rosterSelectedTimeRangeIndex, setRosterFromDateIso, setRosterToDateIso]);
 
@@ -596,7 +592,7 @@ export const MusterPage = () => {
                     rowsPerPage={rosterRowsPerPage}
                     rowsPerPageOptions={[10, 25, 50]}
                     onPageChange={handleRosterChangePage}
-                    onChangeRowsPerPage={handleRosterChangeRowsPerPage}
+                    onRowsPerPageChange={handleRosterChangeRowsPerPage}
                   />
                 </TableContainer>
               </Paper>

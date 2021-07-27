@@ -15,7 +15,6 @@ import {
   TextField,
   Typography,
 } from '@material-ui/core';
-import { useSelector } from 'react-redux';
 import { AddRoleBody } from '@covid19-reports/shared';
 import useStyles from './edit-role-dialog.styles';
 import {
@@ -34,6 +33,7 @@ import { NotificationSelector } from '../../../selectors/notification.selector';
 import { WorkspaceSelector } from '../../../selectors/workspace.selector';
 import { formatErrorMessage } from '../../../utility/errors';
 import { RoleClient } from '../../../client/role.client';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export interface EditRoleDialogProps {
   open: boolean,
@@ -45,9 +45,9 @@ export interface EditRoleDialogProps {
 
 export const EditRoleDialog = (props: EditRoleDialogProps) => {
   const classes = useStyles();
-  const notifications = useSelector(NotificationSelector.all);
-  const rosterColumns = useSelector(RosterSelector.columns);
-  const workspaces = useSelector(WorkspaceSelector.all);
+  const notifications = useAppSelector(NotificationSelector.all);
+  const rosterColumns = useAppSelector(RosterSelector.columns);
+  const workspaces = useAppSelector(WorkspaceSelector.all);
 
   const [formDisabled, setFormDisabled] = useState(false);
   const {

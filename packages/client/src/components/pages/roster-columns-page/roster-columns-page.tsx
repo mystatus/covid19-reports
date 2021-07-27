@@ -21,10 +21,6 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import {
-  useDispatch,
-  useSelector,
-} from 'react-redux';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PageHeader from '../../page-header/page-header';
@@ -32,12 +28,14 @@ import { RosterColumnsPageHelp } from './roster-columns-page-help';
 import useStyles from './roster-columns-page.styles';
 import { ApiRosterColumnInfo, rosterColumnTypeDisplayName } from '../../../models/api-response';
 import { EditColumnDialog, EditColumnDialogProps } from './edit-column-dialog';
-import { AppFrame } from '../../../actions/app-frame.actions';
 import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
 import { RosterClient } from '../../../client/roster.client';
+import { AppFrameActions } from '../../../slices/app-frame.slice';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 interface ColumnMenuState {
   anchor: HTMLElement | null,
@@ -46,21 +44,21 @@ interface ColumnMenuState {
 
 export const RosterColumnsPage = () => {
   const classes = useStyles();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const [columns, setColumns] = useState<ApiRosterColumnInfo[]>([]);
   const [columnToDelete, setColumnToDelete] = useState<null | ApiRosterColumnInfo>(null);
   const [editColumnDialogProps, setEditColumnDialogProps] = useState<EditColumnDialogProps>({ open: false });
   const [columnMenu, setColumnMenu] = React.useState<ColumnMenuState>({ anchor: null });
 
-  const orgId = useSelector(UserSelector.orgId)!;
+  const orgId = useAppSelector(UserSelector.orgId)!;
 
   const initializeTable = React.useCallback(async () => {
-    dispatch(AppFrame.setPageLoading(true));
+    dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
     const allColumns = await RosterClient.getRosterColumnsInfo(orgId);
     const customColumns = allColumns.filter(column => column.custom);
     setColumns(customColumns);
-    dispatch(AppFrame.setPageLoading(false));
+    dispatch(AppFrameActions.setPageLoading({ isLoading: false }));
   }, [orgId, dispatch]);
 
   const newColumn = async () => {

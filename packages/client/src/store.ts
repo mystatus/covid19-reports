@@ -1,34 +1,27 @@
+import { combineReducers } from 'redux';
+import { configureStore } from '@reduxjs/toolkit';
 import {
-  createStore,
-  combineReducers,
-  applyMiddleware,
-  compose,
-  Middleware,
-  AnyAction,
-} from 'redux';
-import thunk from 'redux-thunk';
-import {
-  persistStore,
   persistReducer,
+  persistStore,
 } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
+import {
+  FLUSH,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+  REHYDRATE,
+} from 'redux-persist/es/constants';
 import {
   modalInitialState,
   modalReducer,
   modalResolverHandler,
 } from './reducers/modal.reducer';
 import {
-  appFrameInitialState,
-  appFrameReducer,
-} from './reducers/app-frame.reducer';
-import {
   notificationInitialState,
   notificationReducer,
 } from './reducers/notification.reducer';
-import {
-  orphanedRecordInitialState,
-  orphanedRecordReducer,
-} from './reducers/orphaned-record.reducer';
 import {
   roleInitialState,
   roleReducer,
@@ -42,13 +35,9 @@ import {
   reportSchemaReducer,
 } from './reducers/report-schema.reducer';
 import {
-  localStorageInitialState,
-  localStorageReducer,
-} from './reducers/local-storage.reducer';
-import {
   userInitialState,
-  userReducer,
-} from './reducers/user.reducer';
+  userSlice,
+} from './slices/user.slice';
 import {
   workspaceInitialState,
   workspaceReducer,
@@ -57,8 +46,20 @@ import {
   unitInitialState,
   unitReducer,
 } from './reducers/unit.reducer';
+import {
+  appFrameInitialState,
+  appFrameSlice,
+} from './slices/app-frame.slice';
+import {
+  orphanedRecordSlice,
+  orphanedRecordInitialState,
+} from './slices/orphaned-record.slice';
+import {
+  localStorageInitialState,
+  localStorageSlice,
+} from './slices/local-storage.slice';
 
-export const initialState = {
+const initialState = {
   appFrame: appFrameInitialState,
   notification: notificationInitialState,
   modal: modalInitialState,
@@ -74,82 +75,45 @@ export const initialState = {
 
 export type AppState = typeof initialState;
 
-// React Devtools Extension
-const composeEnhancers = typeof window === 'object' && (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
-  ? (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({
-    // Specify extension’s options like name, actionsBlacklist, actionsCreators, serialize...
-  })
-  : compose;
+const reducers = combineReducers({
+  appFrame: appFrameSlice.reducer,
+  notification: notificationReducer,
+  modal: modalReducer,
+  role: roleReducer,
+  unit: unitReducer,
+  roster: rosterReducer,
+  reportSchema: reportSchemaReducer,
+  orphanedRecord: orphanedRecordSlice.reducer,
+  user: userSlice.reducer,
+  workspace: workspaceReducer,
+  localStorage: localStorageSlice.reducer,
+});
 
-
-/**
- * Implementation from node_modules/redux/dist/redux.js:65
- *
- * @param {any} obj The object to inspect.
- * @returns {boolean} True if the argument appears to be a plain object.
- */
-function isPlainObject(obj: any): boolean {
-  if (typeof obj !== 'object' || obj === null) {
-    return false;
-  }
-  let proto = obj;
-
-  while (Object.getPrototypeOf(proto) !== null) {
-    proto = Object.getPrototypeOf(proto);
-  }
-
-  return Object.getPrototypeOf(obj) === proto;
-}
-
-function createPlainObjectMiddleware(): Middleware<AnyAction, AppState> {
-  return () => {
-    return next => {
-      return action => {
-        if (!isPlainObject(action)) {
-          return next({ ...action });
-        }
-        return next(action);
-      };
-    };
-  };
-}
-
-const persistConfig = {
+const persistedReducer = persistReducer({
   key: 'root',
   storage,
   whitelist: ['localStorage'],
-};
+}, reducers);
 
-export const configureStore = () => {
-  const store = createStore(
-    persistReducer<any>(
-      persistConfig,
-      combineReducers({
-        appFrame: appFrameReducer,
-        notification: notificationReducer,
-        modal: modalReducer,
-        role: roleReducer,
-        unit: unitReducer,
-        roster: rosterReducer,
-        reportSchema: reportSchemaReducer,
-        orphanedRecord: orphanedRecordReducer,
-        user: userReducer,
-        workspace: workspaceReducer,
-        localStorage: localStorageReducer,
-      }),
-    ),
-    initialState,
-    composeEnhancers(
-      applyMiddleware(
-        modalResolverHandler,
-        thunk,
-        createPlainObjectMiddleware(),
-      ),
-    ),
-  );
+const persistActions = [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER, 'PERSIST_SET'];
 
-  return {
-    store,
-    persistor: persistStore(store),
-  };
-};
+const middleware = [
+  modalResolverHandler,
+];
+
+export const store = configureStore({
+  reducer: persistedReducer,
+  middleware: getDefaultMiddleware => {
+    return getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: persistActions,
+      },
+    }).concat(middleware);
+  },
+  devTools: process.env.NODE_ENV !== 'production',
+  preloadedState: initialState,
+});
+
+export const persistor = persistStore(store);
+
+export type AppDispatch = typeof store.dispatch;

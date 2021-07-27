@@ -13,7 +13,6 @@ import {
   Select,
   Typography,
 } from '@material-ui/core';
-import { useDispatch, useSelector } from 'react-redux';
 import _ from 'lodash';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import {
@@ -26,6 +25,8 @@ import { RoleSelector } from '../../../selectors/role.selector';
 import { UserSelector } from '../../../selectors/user.selector';
 import { Roster } from '../../../actions/roster.actions';
 import RoleInfoPanel from '../../role-info-panel/role-info-panel';
+import { useAppDispatch } from '../../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export type SelectRoleDialogProps = {
   confirmButtonText: string
@@ -39,9 +40,9 @@ export type SelectRoleDialogProps = {
 
 const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props: SelectRoleDialogProps) => {
   const classes = useStyles();
-  const dispatch = useDispatch();
-  const orgId = useSelector(UserSelector.orgId);
-  const availableRoles = useSelector(RoleSelector.all);
+  const dispatch = useAppDispatch();
+  const orgId = useAppSelector(UserSelector.orgId);
+  const availableRoles = useAppSelector(RoleSelector.all);
   const [selectedUnits, setSelectedUnits] = useState<number[]>([]);
   const [selectedRoleIndex, setSelectedRoleIndex] = useState(-1);
   const {

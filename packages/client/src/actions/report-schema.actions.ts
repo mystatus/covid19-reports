@@ -27,12 +27,12 @@ export namespace ReportSchema {
   }
 
   export const fetch = (orgId: number) => async (dispatch: Dispatch) => {
-    dispatch(new Actions.Fetch());
+    dispatch({ ...new Actions.Fetch() });
     try {
       const reports = await ReportSchemaClient.getOrgReports(orgId);
-      dispatch(new Actions.FetchSuccess({ reports }));
+      dispatch({ ...new Actions.FetchSuccess({ reports }) });
     } catch (error) {
-      dispatch(new Actions.FetchFailure({ error }));
+      dispatch({ ...new Actions.FetchFailure({ error }) });
     }
   };
 }

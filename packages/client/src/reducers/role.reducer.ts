@@ -1,6 +1,6 @@
 import { Role } from '../actions/role.actions';
-import { User } from '../actions/user.actions';
 import { ApiRole } from '../models/api-response';
+import { UserActions } from '../slices/user.slice';
 
 export interface RoleState {
   roles: ApiRole[],
@@ -16,7 +16,7 @@ export const roleInitialState: RoleState = {
 
 export function roleReducer(state = roleInitialState, action: any) {
   switch (action.type) {
-    case User.Actions.ChangeOrg.type:
+    case UserActions.changeOrg.type:
       return roleInitialState;
     case Role.Actions.Fetch.type: {
       return {

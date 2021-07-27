@@ -1,6 +1,6 @@
-import { User } from '../actions/user.actions';
 import { ApiReportSchema } from '../models/api-response';
 import { ReportSchema } from '../actions/report-schema.actions';
+import { UserActions } from '../slices/user.slice';
 
 export interface ReportSchemaState {
   reports: ApiReportSchema[],
@@ -16,7 +16,7 @@ export const reportSchemaInitialState: ReportSchemaState = {
 
 export function reportSchemaReducer(state = reportSchemaInitialState, action: any) {
   switch (action.type) {
-    case User.Actions.ChangeOrg.type:
+    case UserActions.changeOrg.type:
       return reportSchemaInitialState;
     case ReportSchema.Actions.Fetch.type: {
       return {
