@@ -85,12 +85,12 @@ export async function seedAll() {
   // Set the start date on each roster entry to some time in the past to help with repeatable testing
   await RosterHistory.createQueryBuilder()
     .update()
-    .set({ timestamp: '2020-01-01 00:00:00' })
+    .set({ timestamp: new Date('2020-01-01T08:00:00Z') })
     .execute();
 
   const rosterRemoved = RosterHistory.create({
     ...orgData1.rosterEntries[0],
-    timestamp: '2020-01-03 00:00:00',
+    timestamp: new Date('2020-01-03T08:00:00Z'),
     changeType: ChangeType.Deleted,
   });
   rosterRemoved.id = orgData1.rosterEntries.length * orgCount + 1;
@@ -98,7 +98,7 @@ export async function seedAll() {
 
   const added = RosterHistory.create({
     ...orgData1.rosterEntries[0],
-    timestamp: '2020-01-05 00:00:00',
+    timestamp: new Date('2020-01-05T08:00:00Z'),
     changeType: ChangeType.Added,
   });
   // this offsets unit assignment see original assignment in generateOrg() method below.
@@ -245,7 +245,7 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
     const observation1 = Observation.create();
     observation1.unit = 'Unit 1';
     observation1.reportSchema = reportSchemas[0];
-    observation1.timestamp = new Date('2020-01-02 00:00:00');
+    observation1.timestamp = new Date('2020-01-02T08:00:00Z');
     observation1.documentId = `DocumentId_${i}`;
     observation1.edipi = rosterEntries[i].edipi;
     observations.push(observation1);
@@ -253,7 +253,7 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
     const observation2 = Observation.create();
     observation2.unit = 'Unit 1';
     observation2.reportSchema = reportSchemas[1];
-    observation2.timestamp = new Date('2020-01-01 19:00:00');
+    observation2.timestamp = new Date('2020-01-02T03:00:00Z');
     observation2.documentId = `DocumentId_${i}`;
     observation2.edipi = rosterEntries[i].edipi;
     observations.push(observation2);
