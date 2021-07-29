@@ -14,7 +14,7 @@
     "test": "./test.sh",
     "build": "./build.sh",
     "clean": "./clean.sh",
-    "lint": "./run-all-workspaces.sh lint",
+    "lint": "yarn workspaces run lint",
     "dev": "./dev.sh",
     "dev-client": "./dev-client.sh",
     "dev-server": "./dev-server.sh",
