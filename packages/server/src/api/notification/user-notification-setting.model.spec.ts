@@ -9,9 +9,7 @@ import { UserNotificationSetting } from './user-notification-setting.model';
 import { seedUserNotificationSetting } from './user-notification-setting.model.mock';
 
 describe(`UserNotificationSetting Model`, () => {
-
   describe(`cascades on delete`, () => {
-
     let org: Org;
     let user: User;
     let notification: Notification;
@@ -53,7 +51,5 @@ describe(`UserNotificationSetting Model`, () => {
       const settingDeleted = await UserNotificationSetting.findOne(userNotificationSetting.id);
       expect(settingDeleted).not.to.exist;
     });
-
   });
-
 });

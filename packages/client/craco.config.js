@@ -2,7 +2,7 @@ const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 module.exports = {
   webpack: {
-    configure: (webpackConfig, { env }) => {
+    configure: webpackConfig => {
       // Remove the ModuleScopePlugin which throws when we try
       // to import something outside of src/.
       webpackConfig.resolve.plugins.pop();
@@ -17,6 +17,6 @@ module.exports = {
       tsRule.exclude = /node_modules/;
 
       return webpackConfig;
-    }
+    },
   },
 };

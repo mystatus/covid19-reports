@@ -38,8 +38,8 @@ import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 
 interface ColumnMenuState {
-  anchor: HTMLElement | null,
-  column?: ApiRosterColumnInfo,
+  anchor: HTMLElement | null;
+  column?: ApiRosterColumnInfo;
 }
 
 export const RosterColumnsPage = () => {
@@ -61,7 +61,7 @@ export const RosterColumnsPage = () => {
     dispatch(AppFrameActions.setPageLoading({ isLoading: false }));
   }, [orgId, dispatch]);
 
-  const newColumn = async () => {
+  const newColumn = () => {
     setEditColumnDialogProps({
       open: true,
       orgId,
@@ -70,7 +70,7 @@ export const RosterColumnsPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        dispatch(Modal.alert('Add Column', `Unable to add column: ${message}`));
+        void dispatch(Modal.alert('Add Column', `Unable to add column: ${message}`));
       },
     });
   };
@@ -88,7 +88,7 @@ export const RosterColumnsPage = () => {
           await initializeTable();
         },
         onError: (message: string) => {
-          dispatch(Modal.alert('Edit Column', `Unable to edit column: ${message}`)).then();
+          void dispatch(Modal.alert('Edit Column', `Unable to edit column: ${message}`));
         },
       });
     }
@@ -109,7 +109,7 @@ export const RosterColumnsPage = () => {
     try {
       await RosterClient.deleteCustomColumn(orgId, columnToDelete.name);
     } catch (error) {
-      dispatch(Modal.alert('Delete Column', formatErrorMessage(error, 'Unable to delete column'))).then();
+      void dispatch(Modal.alert('Delete Column', formatErrorMessage(error, 'Unable to delete column')));
     }
     setColumnToDelete(null);
     await initializeTable();
@@ -127,7 +127,7 @@ export const RosterColumnsPage = () => {
     setColumnMenu({ anchor: null });
   };
 
-  useEffect(() => { initializeTable().then(); }, [initializeTable]);
+  useEffect(() => { void initializeTable(); }, [initializeTable]);
 
   return (
     <main className={classes.root}>

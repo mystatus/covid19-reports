@@ -1,6 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class OneTimeMusterConfig1615586820902 implements MigrationInterface {
+
   name = 'OneTimeMusterConfig1615586820902';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

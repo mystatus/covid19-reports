@@ -8,7 +8,7 @@ import useStyles from './tooltip-child.styles';
 // so we need a custom child element to use in order to keep the styling consistent.
 
 export type TooltipItemProps = {
-  children: ReactNode
+  children: ReactNode;
 };
 
 // https://material-ui.com/components/tooltips/#custom-child-element

@@ -7,8 +7,8 @@ import React from 'react';
 import useStyles from './typography-truncated.styles';
 
 export type TypographyTruncatedProps = TypographyProps & {
-  lines: number,
-  lineHeight?: number,
+  lines: number;
+  lineHeight?: number;
 };
 
 export const TypographyTruncated = (props: TypographyTruncatedProps) => {

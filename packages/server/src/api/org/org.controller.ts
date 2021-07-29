@@ -43,7 +43,7 @@ class OrgController {
     res.json(orgs);
   }
 
-  async getOrg(req: ApiRequest, res: Response) {
+  getOrg(req: ApiRequest, res: Response) {
     if (!req.appOrg) {
       throw new NotFoundError('Organization was not found');
     }

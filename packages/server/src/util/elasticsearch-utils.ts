@@ -52,9 +52,9 @@ function buildEsIndexPatterns(userRole: UserRole, suffix: IndexPatternSuffix) {
 }
 
 function buildEsIndexPattern(args: {
-  org: Org
-  unitId: string | number
-  suffix: IndexPatternSuffix
+  org: Org;
+  unitId: string | number;
+  suffix: IndexPatternSuffix;
 }) {
   const { org, unitId, suffix } = args;
 

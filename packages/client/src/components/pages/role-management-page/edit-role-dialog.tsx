@@ -36,11 +36,11 @@ import { RoleClient } from '../../../client/role.client';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export interface EditRoleDialogProps {
-  open: boolean,
-  orgId?: number,
-  role?: ApiRole,
-  onClose?: () => void,
-  onError?: (error: string) => void,
+  open: boolean;
+  orgId?: number;
+  role?: ApiRole;
+  onClose?: () => void;
+  onError?: (error: string) => void;
 }
 
 export const EditRoleDialog = (props: EditRoleDialogProps) => {

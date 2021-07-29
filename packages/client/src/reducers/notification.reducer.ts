@@ -3,9 +3,9 @@ import { ApiNotification } from '../models/api-response';
 import { UserActions } from '../slices/user.slice';
 
 export interface NotificationState {
-  notifications: ApiNotification[],
-  isLoading: boolean
-  lastUpdated: number
+  notifications: ApiNotification[];
+  isLoading: boolean;
+  lastUpdated: number;
 }
 
 export const notificationInitialState: NotificationState = {

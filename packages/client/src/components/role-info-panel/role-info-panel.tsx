@@ -19,9 +19,9 @@ import { useAppSelector } from '../../hooks/use-app-selector';
 const Header = ({ text }: { text: string }) => <Typography className={useStyles().roleHeader}>{text}:</Typography>;
 
 type SectionProps = ScrollHeightParam & {
-  children?: React.ReactChild
-  title: string
-  visible?: boolean
+  children?: React.ReactChild;
+  title: string;
+  visible?: boolean;
 };
 
 const Section = ({
@@ -43,7 +43,7 @@ const Section = ({
 };
 
 type TextSectionProps = Exclude<SectionProps, 'children'> & {
-  text?: string
+  text?: string;
 };
 
 const TextSection = ({ text, ...rest }: TextSectionProps) => (
@@ -53,8 +53,8 @@ const TextSection = ({ text, ...rest }: TextSectionProps) => (
 );
 
 export type RoleInfoPanelProps = {
-  role?: ApiRole
-  scrollFix?: boolean
+  role?: ApiRole;
+  scrollFix?: boolean;
 };
 
 const RoleInfoPanel = (props: RoleInfoPanelProps) => {
@@ -65,14 +65,14 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
   const rosterColumns = useAppSelector(RosterSelector.columns);
   const { role } = props;
 
-  const initializeTable = React.useCallback(async () => {
+  const initializeTable = React.useCallback(() => {
     if (orgId) {
-      dispatch(Notification.fetch(orgId));
-      dispatch(Roster.fetchColumns(orgId));
+      void dispatch(Notification.fetch(orgId));
+      void dispatch(Roster.fetchColumns(orgId));
     }
   }, [dispatch, orgId]);
 
-  useEffect(() => { initializeTable().then(); }, [initializeTable]);
+  useEffect(() => { initializeTable(); }, [initializeTable]);
 
   if (!role) {
     return null;

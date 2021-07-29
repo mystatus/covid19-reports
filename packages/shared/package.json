@@ -14,9 +14,21 @@
   ],
   "scripts": {
     "build": "./build.sh",
-    "clean": "./clean.sh"
+    "clean": "./clean.sh",
+    "lint": "eslint ."
   },
   "dependencies": {
-    "libphonenumber-js": "^1.9.22"
+    "eslint": "^7.29.0",
+    "eslint-config-airbnb": "^18.2.1",
+    "eslint-config-airbnb-typescript": "^12.3.1",
+    "eslint-plugin-chai-friendly": "^0.7.1",
+    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-mocha-no-only": "^1.1.1",
+    "eslint-plugin-promise": "^5.1.0",
+    "eslint-plugin-react": "^7.24.0",
+    "eslint-plugin-react-hooks": "^4.2.0",
+    "libphonenumber-js": "^1.9.22",
+    "typescript": "^4.3.4"
   }
 }

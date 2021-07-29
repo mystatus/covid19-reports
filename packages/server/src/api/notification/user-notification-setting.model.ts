@@ -82,4 +82,5 @@ export class UserNotificationSetting extends BaseEntity {
     default: () => 'null',
   })
   lastNotifiedDate?: Date;
+
 }

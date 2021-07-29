@@ -1,6 +1,7 @@
-import {MigrationInterface, QueryRunner} from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class ModifyObservation1625857050805 implements MigrationInterface {
+
   name = 'ModifyObservation1625857050805';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -6,9 +6,9 @@ import { Theme } from '@material-ui/core/styles';
 import { makeStyles } from '@material-ui/styles';
 
 export default (args: {
-  lines: number,
-  lineHeight?: number,
-  variant?: TypographyProps['variant'],
+  lines: number;
+  lineHeight?: number;
+  variant?: TypographyProps['variant'];
 }) => {
   const styles = makeStyles((theme: Theme) => {
     // For some reason theme.typography doesn't support 'srOnly', so just treat it as unset.

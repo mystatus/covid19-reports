@@ -1,6 +1,7 @@
-import {MigrationInterface, QueryRunner} from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class RenameObservationTypeId1626266855343 implements MigrationInterface {
+
   name = 'RenameObservationTypeId1626266855343';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

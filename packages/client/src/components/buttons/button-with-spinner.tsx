@@ -4,7 +4,7 @@ import { Button, ButtonProps } from '@material-ui/core';
 import useStyles from './button-with-spinner.styles';
 
 interface ButtonWithSpinnerProps extends ButtonProps {
-  loading?: boolean
+  loading?: boolean;
 }
 
 export const ButtonWithSpinner = ({

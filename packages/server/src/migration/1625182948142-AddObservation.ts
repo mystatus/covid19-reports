@@ -1,6 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddObservation1625182948142 implements MigrationInterface {
+
   name = 'AddObservation1625182948142';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

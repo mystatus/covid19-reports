@@ -2,21 +2,21 @@ import { ButtonProps } from '@material-ui/core';
 import { Modal } from '../actions/modal.actions';
 
 export interface ModalButton extends ButtonProps {
-  text: string,
-  destructive?: boolean,
-  value?: any,
+  text: string;
+  destructive?: boolean;
+  value?: any;
 }
 
 export type ModalResponse = {
-  button: ModalButton,
-  index: number,
+  button: ModalButton;
+  index: number;
 } | null;
 
 export interface ModalState {
-  buttons: ModalButton[],
-  message: string,
-  open: boolean,
-  title: string,
+  buttons: ModalButton[];
+  message: string;
+  open: boolean;
+  title: string;
 }
 
 export const modalInitialState: ModalState = {
@@ -27,7 +27,7 @@ export const modalInitialState: ModalState = {
 };
 
 export type ResolverStore = {
-  [key: string]: (response: ModalResponse) => void
+  [key: string]: (response: ModalResponse) => void;
 };
 
 export const modalResolverStore: ResolverStore = {};

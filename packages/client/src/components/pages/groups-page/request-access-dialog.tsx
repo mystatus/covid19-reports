@@ -33,9 +33,9 @@ import useStyles from './request-access-dialog.styles';
 import { AccessRequestClient } from '../../../client/access-request.client';
 
 export type RequestAccessDialogProps = DialogProps & {
-  onClose: () => void
-  onComplete: (accessRequest: ApiAccessRequest) => void
-  org?: ApiOrg
+  onClose: () => void;
+  onComplete: (accessRequest: ApiAccessRequest) => void;
+  org?: ApiOrg;
 };
 
 export const RequestAccessDialog = (props: RequestAccessDialogProps) => {

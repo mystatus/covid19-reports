@@ -56,8 +56,8 @@ import { UserActions } from '../../../slices/user.slice';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 
 interface UnitMenuState {
-  anchor: HTMLElement | null,
-  unit?: ApiUnit,
+  anchor: HTMLElement | null;
+  unit?: ApiUnit;
 }
 
 export const UnitsPage = () => {
@@ -84,7 +84,7 @@ export const UnitsPage = () => {
     }
   }, [orgId, dispatch]);
 
-  const showDefaultMusterConfig = async () => {
+  const showDefaultMusterConfig = () => {
     setDefaultMusterDialogProps({
       open: true,
       onClose: async (success?: boolean) => {
@@ -96,12 +96,12 @@ export const UnitsPage = () => {
         }
       },
       onError: (message: string) => {
-        dispatch(Modal.alert('Default Muster Configuration', `Unable edit the default muster configuration: ${message}`));
+        void dispatch(Modal.alert('Default Muster Configuration', `Unable edit the default muster configuration: ${message}`));
       },
     });
   };
 
-  const newUnit = async () => {
+  const newUnit = () => {
     setEditUnitDialogProps({
       open: true,
       orgId,
@@ -111,7 +111,7 @@ export const UnitsPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        dispatch(Modal.alert('Add Unit', `Unable to add unit: ${message}`));
+        void dispatch(Modal.alert('Add Unit', `Unable to add unit: ${message}`));
       },
     });
   };
@@ -129,7 +129,7 @@ export const UnitsPage = () => {
           await initializeTable();
         },
         onError: (message: string) => {
-          dispatch(Modal.alert('Edit Unit', `Unable to edit unit: ${message}`)).then();
+          void dispatch(Modal.alert('Edit Unit', `Unable to edit unit: ${message}`));
         },
       });
     }
@@ -149,7 +149,7 @@ export const UnitsPage = () => {
     try {
       await UnitClient.deleteUnit(orgId, unitToDelete.id);
     } catch (error) {
-      dispatch(Modal.alert('Delete Unit', formatErrorMessage(error, 'Unable to delete unit'))).then();
+      void dispatch(Modal.alert('Delete Unit', formatErrorMessage(error, 'Unable to delete unit')));
     }
     setUnitToDelete(null);
     await initializeTable();
@@ -167,7 +167,7 @@ export const UnitsPage = () => {
     setUnitMenu({ anchor: null });
   };
 
-  useEffect(() => { initializeTable().then(); }, [initializeTable]);
+  useEffect(() => { void initializeTable(); }, [initializeTable]);
 
   return (
     <main className={classes.root}>

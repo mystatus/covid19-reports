@@ -4,7 +4,7 @@ import useStyles, { NegativeMarginScrollFixParam } from './negative-margin-scrol
 // https://material-ui.com/components/grid/#negative-margin
 
 export type NegativeMarginScrollFixProps = NegativeMarginScrollFixParam & {
-  children: React.ReactChild
+  children: React.ReactChild;
 };
 
 export default function NegativeMarginScrollFix({ children, spacing }: NegativeMarginScrollFixProps) {

@@ -61,7 +61,7 @@ export function buildJWT(user: User, userRole: UserRole, workspace: Workspace) {
 }
 
 type LoginQuery = {
-  dashboardUuid?: string
+  dashboardUuid?: string;
 };
 
 export default new ReadOnlyRestController();

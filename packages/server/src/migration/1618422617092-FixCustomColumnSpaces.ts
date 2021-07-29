@@ -5,6 +5,7 @@ import {
 import _ from 'lodash';
 
 export class FixCustomColumnSpaces1618422617092 implements MigrationInterface {
+
   name = 'FixCustomColumnSpaces1618422617092';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -19,8 +20,8 @@ export class FixCustomColumnSpaces1618422617092 implements MigrationInterface {
     const customRosterColumns = await queryRunner.query(`SELECT "name", "display", "org_id" FROM "custom_roster_column"`);
     const newNamesLookup: {
       [orgId: string]: {
-        [oldName: string]: string
-      }
+        [oldName: string]: string;
+      };
     } = {};
     for (const customColumn of customRosterColumns) {
       const oldName = customColumn.name;

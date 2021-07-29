@@ -14,12 +14,12 @@ import { formatErrorMessage } from '../../../utility/errors';
 import { WorkspaceClient } from '../../../client/workspace.client';
 
 export interface EditWorkspaceDialogProps {
-  open: boolean,
-  orgId?: number,
-  workspace?: ApiWorkspace,
-  templates?: ApiWorkspaceTemplate[],
-  onClose?: () => void,
-  onError?: (error: string) => void,
+  open: boolean;
+  orgId?: number;
+  workspace?: ApiWorkspace;
+  templates?: ApiWorkspaceTemplate[];
+  onClose?: () => void;
+  onError?: (error: string) => void;
 }
 
 export const EditSpaceDialog = (props: EditWorkspaceDialogProps) => {

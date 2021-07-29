@@ -4,9 +4,7 @@ import { Role } from './role.model';
 import { seedRoleAdmin } from './role.model.mock';
 
 describe(`Role Model`, () => {
-
   describe(`cascades on delete`, () => {
-
     it(`org`, async () => {
       const { org } = await seedOrgContact();
       const role = await seedRoleAdmin(org);
@@ -19,7 +17,5 @@ describe(`Role Model`, () => {
       const roleDeleted = await Role.findOne(role.id);
       expect(roleDeleted).not.to.exist;
     });
-
   });
-
 });

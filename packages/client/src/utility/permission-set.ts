@@ -4,7 +4,7 @@ export interface RolePermissions {
 }
 
 export interface NamedPermission {
-  name: string,
+  name: string;
 }
 
 export function permissionsToArray(permissionObject: RolePermissions) {

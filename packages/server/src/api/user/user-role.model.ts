@@ -59,8 +59,8 @@ export class UserRole extends BaseEntity {
   })
   favoriteDashboards!: {
     [workspaceId: string]: {
-      [dashboardUuid: string]: boolean
-    }
+      [dashboardUuid: string]: boolean;
+    };
   };
 
   addFavoriteDashboard(workspaceId: string, dashboardUuid: string, manager: EntityManager) {
@@ -95,7 +95,7 @@ export class UserRole extends BaseEntity {
     return false;
   }
 
-  async getUnits() {
+  getUnits() {
     if (this.allUnits) {
       return Unit.find({
         relations: ['org'],
@@ -107,7 +107,7 @@ export class UserRole extends BaseEntity {
     return this.units;
   }
 
-  async getUnit(unitId: number) {
+  getUnit(unitId: number) {
     if (this.allUnits) {
       return Unit.findOne({
         relations: ['org'],

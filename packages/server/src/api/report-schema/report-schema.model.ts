@@ -34,14 +34,15 @@ export class ReportSchema extends BaseEntity {
     default: '[]',
   })
   columns: SchemaColumn[] = [];
+
 }
 
 export interface SchemaColumn {
-  keyPath: string[]
-  type: string
-  otherField?: boolean
-  pii: boolean
-  phi: boolean
+  keyPath: string[];
+  type: string;
+  otherField?: boolean;
+  pii: boolean;
+  phi: boolean;
 }
 
 export const defaultReportSchemas: Partial<ReportSchema>[] = [{

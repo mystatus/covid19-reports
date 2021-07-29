@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
 import {
   Button,
   Checkbox,
@@ -16,7 +19,9 @@ import {
 import _ from 'lodash';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import {
-  ApiRole, ApiUnit, ApiUser,
+  ApiRole,
+  ApiUnit,
+  ApiUser,
 } from '../../../models/api-response';
 import useStyles from './select-role-dialog.styles';
 import { Notification } from '../../../actions/notification.actions';
@@ -29,13 +34,13 @@ import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export type SelectRoleDialogProps = {
-  confirmButtonText: string
-  loading: boolean
-  units: ApiUnit[]
-  onCancel?: () => void
-  onChange: (selectedRole: ApiRole, units: number[] | null) => void
-  open?: boolean
-  user: ApiUser
+  confirmButtonText: string;
+  loading: boolean;
+  units: ApiUnit[];
+  onCancel?: () => void;
+  onChange: (selectedRole: ApiRole, units: number[] | null) => void;
+  open?: boolean;
+  user: ApiUser;
 };
 
 const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props: SelectRoleDialogProps) => {
@@ -68,15 +73,15 @@ const SelectRoleDialog: React.FunctionComponent<SelectRoleDialogProps> = (props:
     }
   }, [user, availableRoles]);
 
-  const initializeTable = React.useCallback(async () => {
+  const initializeTable = React.useCallback(() => {
     if (orgId) {
-      dispatch(Notification.fetch(orgId));
-      dispatch(Roster.fetchColumns(orgId));
-      dispatch(Role.fetch(orgId));
+      void dispatch(Notification.fetch(orgId));
+      void dispatch(Roster.fetchColumns(orgId));
+      void dispatch(Role.fetch(orgId));
     }
   }, [dispatch, orgId]);
 
-  useEffect(() => { initializeTable().then(); }, [initializeTable]);
+  useEffect(() => { initializeTable(); }, [initializeTable]);
 
   const selectedUnitChanged = (event: React.ChangeEvent<{ value: unknown }>) => {
     const selectedValues = event.target.value as number[];

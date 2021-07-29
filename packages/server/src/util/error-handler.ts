@@ -62,7 +62,7 @@ function errorToData(error: any): ErrorData {
 }
 
 type ErrorData = {
-  message: string
-  type: string
-  sourceError?: any
+  message: string;
+  type: string;
+  sourceError?: any;
 };

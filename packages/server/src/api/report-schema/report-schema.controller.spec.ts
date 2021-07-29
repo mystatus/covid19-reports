@@ -14,7 +14,6 @@ import { defaultReportSchemas, ReportSchema } from './report-schema.model';
 import { AddReportBody, UpdateReportBody } from './report-schema.controller';
 
 describe(`Report Schema Controller`, () => {
-
   const basePath = '/api/report';
   let req: TestRequest;
   let org: Org;
@@ -27,7 +26,6 @@ describe(`Report Schema Controller`, () => {
   });
 
   describe(`${basePath}/:orgId : get`, () => {
-
     it(`gets the org's report schemas`, async () => {
       const reports = await seedReports(org, { count: 2 });
 
@@ -43,11 +41,9 @@ describe(`Report Schema Controller`, () => {
       expect(dataIds).to.include(reports[0].id);
       expect(dataIds).to.include(reports[1].id);
     });
-
   });
 
   describe(`${basePath}/:orgId : post`, () => {
-
     it(`adds a report schema to the org`, async () => {
       const reportCountBefore = await ReportSchema.count();
       const orgReportCountBefore = await ReportSchema.count({
@@ -95,11 +91,9 @@ describe(`Report Schema Controller`, () => {
       });
       expect(orgReportCountAfter).to.eql(orgReportCountBefore + 1);
     });
-
   });
 
   describe(`${basePath}/:orgId/:reportId : put`, () => {
-
     it(`updates a report in an org`, async () => {
       const report = await seedReport(org);
 
@@ -134,11 +128,9 @@ describe(`Report Schema Controller`, () => {
       expect(reportAfter.name).to.eql(body.name);
       expect(reportAfter.columns).to.eql(body.columns);
     });
-
   });
 
   describe(`${basePath}/:orgId/:reportId : delete`, () => {
-
     it(`deletes the org's report`, async () => {
       const reports = await seedReports(org, { count: 2 });
 
@@ -172,7 +164,5 @@ describe(`Report Schema Controller`, () => {
       });
       expect(reportAfter).not.to.exist;
     });
-
   });
-
 });

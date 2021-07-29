@@ -41,20 +41,20 @@ import { OrgClient } from '../../../client/org.client';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export interface DefaultMusterDialogProps {
-  open: boolean,
-  onClose?: (success?: boolean) => void,
-  onError?: (error: string) => void,
+  open: boolean;
+  onClose?: (success?: boolean) => void;
+  onError?: (error: string) => void;
 }
 
 interface MusterConfigurationRow extends MusterConfiguration {
-  rowKey: string,
-  durationHours: number,
-  startTimeDate: Date,
-  isOneTime: boolean,
+  rowKey: string;
+  durationHours: number;
+  startTimeDate: Date;
+  isOneTime: boolean;
 }
 
 type UnitValidationMap = {
-  [unitName: string]: string,
+  [unitName: string]: string;
 };
 
 export const DefaultMusterDialog = (props: DefaultMusterDialogProps) => {

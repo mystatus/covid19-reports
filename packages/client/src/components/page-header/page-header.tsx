@@ -8,12 +8,12 @@ import { HelpCard } from '../help/help-card/help-card';
 import useStyles from './page-header.styles';
 
 export interface PageHeaderProps {
-  title: string
+  title: string;
   help?: {
-    contentComponent: ElementType
-    cardId: string
-    variant?: 'plain' | 'info'
-  }
+    contentComponent: ElementType;
+    cardId: string;
+    variant?: 'plain' | 'info';
+  };
 }
 
 const PageHeader = (props: PageHeaderProps) => {

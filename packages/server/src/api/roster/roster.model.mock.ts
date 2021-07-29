@@ -22,8 +22,8 @@ export function seedRosterEntry(unit: Unit) {
   return mockRosterEntry(unit).save();
 }
 
-export async function seedRosterEntries(unit: Unit, options: {
-  count: number
+export function seedRosterEntries(unit: Unit, options: {
+  count: number;
 }) {
   const { count } = options;
 
@@ -36,8 +36,8 @@ export async function seedRosterEntries(unit: Unit, options: {
 }
 
 export function mockRosterUploadCsv(args: {
-  unit: Unit
-  rosterCount: number
+  unit: Unit;
+  rosterCount: number;
 }) {
   const { unit, rosterCount } = args;
 

@@ -4,14 +4,14 @@ import { dayIsIn, DaysOfTheWeek, daysToString, nextDay, oneDaySeconds } from './
 
 
 export type MusterWindow = {
-  start: number,
-  end: number,
+  start: number;
+  end: number;
 };
 
 export type MusterWindowTyped = MusterWindow & {
-  start: number,
-  end: number,
-  oneTime: boolean,
+  start: number;
+  end: number;
+  oneTime: boolean;
 };
 
 export const mustersConfigurationsAreEqual = (left?: MusterConfiguration[], right?: MusterConfiguration[]) => {

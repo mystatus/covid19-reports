@@ -4,7 +4,7 @@ import { Workspace } from '../workspace/workspace.model';
 import { Role } from './role.model';
 
 export function mockRole(org: Org, options?: {
-  customData?: Partial<Role>
+  customData?: Partial<Role>;
 }) {
   const { customData } = options ?? {};
 
@@ -17,7 +17,7 @@ export function mockRole(org: Org, options?: {
 }
 
 export function seedRole(org: Org, options?: {
-  customData?: Partial<Role>
+  customData?: Partial<Role>;
 }) {
   return mockRole(org, options).save();
 }

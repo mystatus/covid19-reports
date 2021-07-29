@@ -5,8 +5,8 @@ import { formatErrorMessage } from '../../utility/errors';
 
 
 export interface ErrorBoundaryState {
-  error?: Error | null,
-  message?: string,
+  error?: Error | null;
+  message?: string;
 }
 
 const initialState: ErrorBoundaryState = {
@@ -55,4 +55,5 @@ export class ErrorBoundary extends React.Component<{}, ErrorBoundaryState> {
       </>
     );
   }
+
 }

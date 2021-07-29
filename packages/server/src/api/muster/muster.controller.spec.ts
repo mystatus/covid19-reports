@@ -25,6 +25,5 @@ describe(`Muster Controller`, () => {
       expectNoErrors(res);
       expect(res.data.musterComplianceRate).equal(1);
     });
-
   });
 });

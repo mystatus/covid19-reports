@@ -39,11 +39,11 @@ import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 
 type UserMoreMenuState = {
-  element: HTMLElement
-  loading: boolean
-  showChangeUserRole: Boolean
-  showRemoveUserFromGroup: Boolean
-  user: ApiUser
+  element: HTMLElement;
+  loading: boolean;
+  showChangeUserRole: Boolean;
+  showRemoveUserFromGroup: Boolean;
+  user: ApiUser;
 };
 
 export const UsersPage = () => {
@@ -67,7 +67,7 @@ export const UsersPage = () => {
     if (orgId) {
       try {
         dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
-        dispatch(Unit.fetch(orgId));
+        void dispatch(Unit.fetch(orgId));
         const [users, requests] = await Promise.all([
           UserClient.getOrgUsers(orgId),
           AccessRequestClient.getAccessRequests(orgId),
@@ -83,7 +83,7 @@ export const UsersPage = () => {
   }, [orgId, dispatch]);
 
   const showAlertDialog = (error: Error, title: string, message: string) => {
-    dispatch(Modal.alert(title, formatErrorMessage(error, message))).then();
+    void dispatch(Modal.alert(title, formatErrorMessage(error, message)));
   };
 
   const makeHandleUserMoreClick = (user: ApiUser) => (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -175,7 +175,7 @@ export const UsersPage = () => {
     });
   }
 
-  useEffect(() => { initializeTable().then(); }, [initializeTable]);
+  useEffect(() => { void initializeTable(); }, [initializeTable]);
 
   return (
     <main className={classes.root}>

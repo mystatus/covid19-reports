@@ -63,12 +63,12 @@ export async function getKibanaWorkspaceDashboards(kibanaApi: KibanaApi) {
 
   const data = response.data as {
     saved_objects: Array<{
-      id: string
+      id: string;
       attributes: {
-        title: string
-        description: string
-      }
-    }>
+        title: string;
+        description: string;
+      };
+    }>;
   };
 
   return data.saved_objects.map(so => ({
@@ -79,7 +79,7 @@ export async function getKibanaWorkspaceDashboards(kibanaApi: KibanaApi) {
 }
 
 interface KibanaSavedObject {
-  id: string
-  type: string
-  attributes: any
+  id: string;
+  type: string;
+  attributes: any;
 }

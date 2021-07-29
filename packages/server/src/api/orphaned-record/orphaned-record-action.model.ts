@@ -13,6 +13,7 @@ import { User } from '../user/user.model';
 
 @Entity()
 export class OrphanedRecordAction extends BaseEntity {
+
   @PrimaryColumn()
   id!: string;
 
@@ -44,4 +45,5 @@ export class OrphanedRecordAction extends BaseEntity {
     default: OrphanedRecordActionType.Ignore,
   })
   type!: OrphanedRecordActionType;
+
 }

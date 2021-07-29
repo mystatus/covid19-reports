@@ -4,12 +4,12 @@ import { ApiReportSchema, MusterConfiguration } from '../../../models/api-respon
 import { musterConfigurationParts, musterConfigurationPartsToString } from '../../../utility/muster-utils';
 
 export type MusterConfigProps = {
-  className?: string,
-  empty?: React.ReactNode,
-  reports: ApiReportSchema[],
-  defaultMusterConfiguration?: MusterConfiguration[],
-  musterConfiguration: MusterConfiguration[],
-  typographyProps?: TypographyProps,
+  className?: string;
+  empty?: React.ReactNode;
+  reports: ApiReportSchema[];
+  defaultMusterConfiguration?: MusterConfiguration[];
+  musterConfiguration: MusterConfiguration[];
+  typographyProps?: TypographyProps;
 };
 
 export default function MusterConfigReadable({ className, empty = null, reports, musterConfiguration, typographyProps }: MusterConfigProps) {

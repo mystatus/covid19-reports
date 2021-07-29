@@ -3,25 +3,25 @@ import { RosterEntryData } from '../roster.types';
 import { PaginatedQuery } from './api.types';
 
 export type AddOrphanedRecordBody = {
-  documentId: string,
-  timestamp: number,
-  edipi: string,
-  phone: string,
-  reportingGroup: string,
-  unit: string,
+  documentId: string;
+  timestamp: number;
+  edipi: string;
+  phone: string;
+  reportingGroup: string;
+  unit: string;
 };
 
 export type AddOrphanedRecordActionBody = {
-  action: OrphanedRecordActionType,
-  timeToLiveMs?: number
+  action: OrphanedRecordActionType;
+  timeToLiveMs?: number;
 };
 
 export type ResolveOrphanedRecordWithEditBody = RosterEntryData & {
-  id: number
+  id: number;
 };
 
 export type GetOrphanedRecordsQuery = PaginatedQuery & {
-  unit?: string
+  unit?: string;
 };
 
 export type ResolveOrphanedRecordWithAddBody = RosterEntryData;

@@ -1,16 +1,16 @@
 export interface NotificationDefinition {
-  id: string,
-  uiSort: number,
-  uiName: string,
-  uiDescription: string,
-  uiSettingsTemplate: string,
-  smsTemplate: string,
-  emailHtmlTemplate: string,
-  emailTextTemplate: string,
-  dashboardUuid: string,
-  defaultMaxDailyCount: number,
-  defaultThreshold: number,
-  defaultMinMinutesBetweenAlerts: number,
+  id: string;
+  uiSort: number;
+  uiName: string;
+  uiDescription: string;
+  uiSettingsTemplate: string;
+  smsTemplate: string;
+  emailHtmlTemplate: string;
+  emailTextTemplate: string;
+  dashboardUuid: string;
+  defaultMaxDailyCount: number;
+  defaultThreshold: number;
+  defaultMinMinutesBetweenAlerts: number;
 }
 
 export const defaultNotifications: NotificationDefinition[] = [{

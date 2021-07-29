@@ -112,8 +112,9 @@ export class CustomRosterColumn extends BaseEntity {
   static displayToName(display: string) {
     return _.camelCase(display);
   }
+
 }
 
 export type CustomColumnData = Partial<Pick<CustomRosterColumn, 'type' | 'pii' | 'phi' | 'required' | 'config'>> & {
-  displayName?: string
+  displayName?: string;
 };

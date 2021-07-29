@@ -9,4 +9,5 @@ export class ContractorAffiliationUpdate1607616094276 implements MigrationInterf
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`UPDATE "user" SET "service"='Contractor' WHERE "service" = 'Other'`);
   }
+
 }

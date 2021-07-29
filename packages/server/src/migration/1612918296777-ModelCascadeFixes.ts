@@ -4,6 +4,7 @@ import {
 } from 'typeorm';
 
 export class ModelCascadeFixes1612918296777 implements MigrationInterface {
+
   name = 'ModelCascadeFixes1612918296777';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -5,8 +5,8 @@ import {
 import { exportSlice } from '../utility/redux-utils';
 
 export interface AppFrameState {
-  sidenavExpanded: boolean
-  isPageLoading: boolean
+  sidenavExpanded: boolean;
+  isPageLoading: boolean;
 }
 
 export const appFrameInitialState: AppFrameState = {

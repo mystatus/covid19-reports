@@ -1,10 +1,10 @@
 export type ExportOrgQuery = {
-  startDate?: string
-  endDate?: string
+  startDate?: string;
+  endDate?: string;
 };
 
 export type ExportMusterIndividualsQuery = {
-  fromDate: string
-  toDate: string
-  unitId?: string
+  fromDate: string;
+  toDate: string;
+  unitId?: string;
 };

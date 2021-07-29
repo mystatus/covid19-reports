@@ -8,34 +8,34 @@ import {
 } from '../roster.types';
 
 export type CustomColumnData = {
-  type?: RosterColumnType
-  pii?: boolean
-  phi?: boolean
-  required?: boolean
-  config?: CustomColumnConfig
-  displayName?: string
+  type?: RosterColumnType;
+  pii?: boolean;
+  phi?: boolean;
+  required?: boolean;
+  config?: CustomColumnConfig;
+  displayName?: string;
 };
 
 export type GetRosterQuery = {
-  orderBy?: string
-  sortDirection?: 'ASC' | 'DESC'
+  orderBy?: string;
+  sortDirection?: 'ASC' | 'DESC';
 } & PaginatedQuery;
 
 export type SearchRosterQuery = GetRosterQuery;
 
 export type SearchRosterBodyEntry = {
-  op: QueryOp
-  value: RosterColumnValue | RosterColumnValue[]
-  expression?: string
-  expressionEnabled?: boolean
+  op: QueryOp;
+  value: RosterColumnValue | RosterColumnValue[];
+  expression?: string;
+  expressionEnabled?: boolean;
 };
 
 export type SearchRosterBody = {
-  [column: string]: SearchRosterBodyEntry
+  [column: string]: SearchRosterBodyEntry;
 };
 
 export type ReportDateQuery = {
-  reportDate: string
+  reportDate: string;
 };
 
 export type AddCustomColumnBody = CustomColumnData & Required<Pick<CustomColumnData, 'displayName' | 'type'>>;

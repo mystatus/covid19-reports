@@ -4,7 +4,7 @@ import { makeStyles } from '@material-ui/styles';
 import { MaxHeightProperty } from 'csstype';
 
 export type ScrollHeightParam = {
-  scrollHeight?: MaxHeightProperty<string | 0>
+  scrollHeight?: MaxHeightProperty<string | 0>;
 };
 
 export default makeStyles((theme: Theme) => createStyles({

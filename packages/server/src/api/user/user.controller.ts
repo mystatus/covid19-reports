@@ -23,7 +23,7 @@ import { Unit } from '../unit/unit.model';
 
 class UserController {
 
-  async current(req: ApiRequest, res: Response) {
+  current(req: ApiRequest, res: Response) {
     res.json(req.appUser);
   }
 

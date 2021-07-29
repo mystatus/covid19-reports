@@ -137,7 +137,7 @@ class OrphanedRecordController {
 
     // We have to modify the roster outside of the transaction, since the orphaned record resolve process
     // depends on having the latest roster history from this addition.
-    const entry = await getManager().transaction(async manager => {
+    const entry = await getManager().transaction(manager => {
       return addRosterEntry(req.appOrg!, req.appUserRole!.role, entryData, manager);
     });
 
@@ -186,7 +186,7 @@ class OrphanedRecordController {
 
     // We have to modify the roster outside of the transaction, since the orphaned record resolve process
     // depends on having the latest roster history from this addition.
-    const entry = await getManager().transaction(async manager => {
+    const entry = await getManager().transaction(manager => {
       return editRosterEntry(req.appOrg!, req.appUserRole!, entryId, entryData, manager);
     });
 

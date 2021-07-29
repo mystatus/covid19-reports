@@ -27,11 +27,11 @@ import { diffEpsilon } from './math-utils';
  * data will include each individual's muster stats merged with their roster data.
  */
 export async function getMusterRosterStats(args: {
-  org: Org
-  userRole: UserRole
-  unitId?: number
-  fromDate: Moment
-  toDate: Moment
+  org: Org;
+  userRole: UserRole;
+  unitId?: number;
+  fromDate: Moment;
+  toDate: Moment;
 }) {
   const { org, userRole, unitId, fromDate, toDate } = args;
 
@@ -61,14 +61,14 @@ export async function getMusterRosterStats(args: {
     hits: {
       hits: Array<{
         _source: {
-          EDIPI: string
-          Timestamp: number
+          EDIPI: string;
+          Timestamp: number;
           Details: {
-            PhoneNumber: string
-          }
-        }
-      }>
-    }
+            PhoneNumber: string;
+          };
+        };
+      }>;
+    };
   };
 
   const edipiToPhone: { [edipi: string]: string } = {};
@@ -195,10 +195,10 @@ export async function getMusterRosterStats(args: {
  * Get aggregated unit muster stats over the given weeks/months.
  */
 export async function getMusterUnitTrends(args: {
-  userRole: UserRole
-  currentDate: Moment
-  weeksCount: number
-  monthsCount: number
+  userRole: UserRole;
+  currentDate: Moment;
+  weeksCount: number;
+  monthsCount: number;
 }) {
   const { userRole, currentDate, weeksCount, monthsCount } = args;
 
@@ -346,8 +346,8 @@ function buildRosterPhoneNumberBody() {
 }
 
 function buildMusterRosterBody(args: {
-  fromDate: Moment,
-  toDate: Moment,
+  fromDate: Moment;
+  toDate: Moment;
 }) {
   const { fromDate, toDate } = args;
 
@@ -427,9 +427,9 @@ function buildMusterRosterBody(args: {
 }
 
 function buildMusterUnitsEsBody(args: {
-  fromDate: Moment,
-  toDate: Moment,
-  interval: TimeInterval,
+  fromDate: Moment;
+  toDate: Moment;
+  interval: TimeInterval;
 }) {
   const { fromDate, toDate, interval } = args;
 
@@ -523,11 +523,11 @@ function buildMusterUnitsEsBody(args: {
 }
 
 function buildUnitStats(args: {
-  aggregations: MusterUnitAggregation | undefined,
-  unitNames: string[]
-  interval: TimeInterval
-  intervalCount: number
-  fromDate: Moment
+  aggregations: MusterUnitAggregation | undefined;
+  unitNames: string[];
+  interval: TimeInterval;
+  intervalCount: number;
+  fromDate: Moment;
 }) {
   const { aggregations, unitNames, interval, intervalCount, fromDate } = args;
 
@@ -581,56 +581,56 @@ type MusterRosterAggregations = {
   muster: {
     buckets: Array<{
       key: {
-        edipi: string
-        reported: boolean
-      }
-      doc_count: number
-    }>
-  }
+        edipi: string;
+        reported: boolean;
+      };
+      doc_count: number;
+    }>;
+  };
 };
 
 type MusterRosterStats = {
   [edipi: string]: {
-    totalMusters: number
-    mustersReported: number
-    musterPercent: number
-    unitId?: number
-  }
+    totalMusters: number;
+    mustersReported: number;
+    musterPercent: number;
+    unitId?: number;
+  };
 };
 
 type MusterUnitStatsByDate = {
   [date: string]: {
     [unitName: string]: {
-      totalMusters: number
-      mustersReported: number
-      musterPercent: number
-    }
-  }
+      totalMusters: number;
+      mustersReported: number;
+      musterPercent: number;
+    };
+  };
 };
 
 type MusterUnitAggregation = {
   muster: {
     buckets: Array<{
       key: {
-        date: string
-        unit: string
-        reported: boolean
-      }
-      doc_count: number
-    }>
-  }
+        date: string;
+        unit: string;
+        reported: boolean;
+      };
+      doc_count: number;
+    }>;
+  };
 };
 
 export interface MusterWindow {
-  id: string,
-  unitId: number,
-  unitName: string,
-  reportingGroup?: string,
-  orgId: number,
-  startTimestamp: number,
-  endTimestamp: number,
-  startTime: string,
-  timezone: string,
-  durationMinutes: number,
-  reportId: string,
+  id: string;
+  unitId: number;
+  unitName: string;
+  reportingGroup?: string;
+  orgId: number;
+  startTimestamp: number;
+  endTimestamp: number;
+  startTime: string;
+  timezone: string;
+  durationMinutes: number;
+  reportId: string;
 }

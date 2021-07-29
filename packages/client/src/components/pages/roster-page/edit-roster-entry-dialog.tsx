@@ -39,15 +39,15 @@ import { RosterClient } from '../../../client/roster.client';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export interface EditRosterEntryDialogProps {
-  open: boolean,
-  orgId?: number,
-  rosterColumnInfos?: ApiRosterColumnInfo[],
-  rosterEntry?: ApiRosterEntry,
-  prepopulated?: Partial<ApiRosterEntry>,
-  orphanedRecord?: Partial<ApiOrphanedRecord>,
-  onSave?: (rosterEntry: ApiRosterEntry) => void,
-  onClose?: () => void,
-  onError?: (error: string) => void,
+  open: boolean;
+  orgId?: number;
+  rosterColumnInfos?: ApiRosterColumnInfo[];
+  rosterEntry?: ApiRosterEntry;
+  prepopulated?: Partial<ApiRosterEntry>;
+  orphanedRecord?: Partial<ApiOrphanedRecord>;
+  onSave?: (rosterEntry: ApiRosterEntry) => void;
+  onClose?: () => void;
+  onError?: (error: string) => void;
 }
 
 export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
@@ -177,7 +177,6 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
           default:
             break;
         }
-
       }
     }
 

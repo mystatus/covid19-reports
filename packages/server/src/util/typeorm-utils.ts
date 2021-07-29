@@ -32,7 +32,7 @@ export function getColumnMaxLength(entityType: EntityTarget<any>, columnName: st
 }
 
 interface DatabaseError extends Error {
-  code: string
+  code: string;
 }
 
 enum DatabaseErrorCode {

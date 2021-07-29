@@ -1,6 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class UnitIDSequence1614813401758 implements MigrationInterface {
+
   name = 'UnitIDSequence1614813401758';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

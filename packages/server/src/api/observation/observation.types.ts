@@ -5,5 +5,5 @@ export interface ObservationApiModel {
   unit: string;
   reportSchemaId: string;
   reportingGroup?: string;
-  phoneNumber: string
+  phoneNumber: string;
 }

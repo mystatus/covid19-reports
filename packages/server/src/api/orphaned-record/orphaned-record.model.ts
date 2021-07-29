@@ -20,6 +20,7 @@ import { OrphanedRecordAction } from './orphaned-record-action.model';
 
 @Entity()
 export class OrphanedRecord extends BaseEntity {
+
   @PrimaryColumn()
   documentId!: string;
 
@@ -89,7 +90,7 @@ export class OrphanedRecord extends BaseEntity {
 
     // Request a reingestion of a single document. Don't await on this since it may take a while
     // and can safely run in the background.
-    reingestByDocumentId(this.documentId).then();
+    void reingestByDocumentId(this.documentId);
   }
 
   private deleteActions(manager: EntityManager) {

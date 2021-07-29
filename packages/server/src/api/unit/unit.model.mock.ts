@@ -15,7 +15,7 @@ export function seedUnit(org: Org) {
 }
 
 export function seedUnits(org: Org, options: {
-  count: number
+  count: number;
 }) {
   const { count } = options;
   const units = [] as Unit[];

@@ -124,12 +124,12 @@ export const HomePage = () => {
 
   useEffect(() => {
     dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
-    dispatch(UserActions.refresh());
-    dispatch(Workspace.fetch(orgId));
+    void dispatch(UserActions.refresh());
+    void dispatch(Workspace.fetch(orgId));
   }, [dispatch, orgId]);
 
   useEffect(() => {
-    (async () => {
+    void (async () => {
       for (const workspace of workspaces) {
         await dispatch(Workspace.fetchDashboards(orgId, workspace.id));
       }
@@ -177,7 +177,7 @@ export const HomePage = () => {
   }, [orgId]);
 
   useEffect(() => {
-    initializeTable().then();
+    void initializeTable();
   }, [initializeTable]);
 
   const complianceDelta = musterComplianceLastTwoWeeks[1] - musterComplianceLastTwoWeeks[0];

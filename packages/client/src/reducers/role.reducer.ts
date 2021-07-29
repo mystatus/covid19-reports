@@ -3,9 +3,9 @@ import { ApiRole } from '../models/api-response';
 import { UserActions } from '../slices/user.slice';
 
 export interface RoleState {
-  roles: ApiRole[],
-  isLoading: boolean
-  lastUpdated: number
+  roles: ApiRole[];
+  isLoading: boolean;
+  lastUpdated: number;
 }
 
 export const roleInitialState: RoleState = {

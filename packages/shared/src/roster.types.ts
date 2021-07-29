@@ -1,7 +1,7 @@
 import { UnitSerialized } from './unit.types';
 
 export type CustomColumns = {
-  [columnName: string]: RosterColumnValue,
+  [columnName: string]: RosterColumnValue;
 };
 
 export enum RosterColumnType {
@@ -16,19 +16,19 @@ export enum RosterColumnType {
 export type RosterColumnValue = string | boolean | number | null;
 
 export type RosterColumnInfo = {
-  name: string,
-  displayName: string,
-  type: RosterColumnType,
-  pii: boolean,
-  phi: boolean,
-  custom: boolean,
-  required: boolean,
-  updatable: boolean,
-  config?: CustomColumnConfig,
+  name: string;
+  displayName: string;
+  type: RosterColumnType;
+  pii: boolean;
+  phi: boolean;
+  custom: boolean;
+  required: boolean;
+  updatable: boolean;
+  config?: CustomColumnConfig;
 };
 
 export type BaseRosterColumnInfo = RosterColumnInfo & {
-  name: 'edipi' | 'firstName' | 'lastName',
+  name: 'edipi' | 'firstName' | 'lastName';
 };
 
 export const baseRosterColumnLookup: Readonly<{
@@ -72,15 +72,15 @@ export const edipiColumnDisplayName = baseRosterColumnLookup.edipi.displayName;
 export const unitColumnDisplayName = 'Unit';
 
 export type RosterEntryData = {
-  edipi: string
-  unit: number
-  firstName?: string
-  lastName?: string
+  edipi: string;
+  unit: number;
+  firstName?: string;
+  lastName?: string;
 } & CustomColumns;
 
 export type RosterFileRow<TColumnValue = string> = {
-  Unit: TColumnValue
-  [columnDisplayName: string]: TColumnValue
+  Unit: TColumnValue;
+  [columnDisplayName: string]: TColumnValue;
 };
 
 export type QueryOp =
@@ -95,12 +95,12 @@ export type QueryOp =
   | 'between';
 
 export type RosterColumnInfoWithValue = RosterColumnInfo & {
-  value: RosterColumnValue
+  value: RosterColumnValue;
 };
 
 export type RosterInfo = {
-  unit: UnitSerialized
-  columns: RosterColumnInfo[]
+  unit: UnitSerialized;
+  columns: RosterColumnInfo[];
 };
 
 export type CustomColumnConfig = {};

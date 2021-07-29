@@ -11,12 +11,12 @@ import {
 } from '../utility/redux-utils';
 
 export interface OrphanedRecordState {
-  rows: ApiOrphanedRecord[],
-  totalRowsCount: number
-  count: number
-  countLoading: boolean
-  pageLoading: boolean
-  lastUpdated: number
+  rows: ApiOrphanedRecord[];
+  totalRowsCount: number;
+  count: number;
+  countLoading: boolean;
+  pageLoading: boolean;
+  lastUpdated: number;
 }
 
 export const orphanedRecordInitialState: OrphanedRecordState = {
@@ -33,16 +33,16 @@ const name = 'orphanedRecord';
 const thunks = {
   fetchCount: createAsyncThunk(
     `${name}/fetchCount`,
-    async (args: { orgId: number }) => {
+    (args: { orgId: number }) => {
       return OrphanedRecordClient.getOrphanedRecordsCount(args.orgId);
     },
   ),
 
   fetchPage: createAsyncThunk(
     `${name}/fetchPage`,
-    async (args: {
-      orgId: number
-      query: GetOrphanedRecordsQuery
+    (args: {
+      orgId: number;
+      query: GetOrphanedRecordsQuery;
     }) => {
       return OrphanedRecordClient.getOrphanedRecords(args.orgId, args.query);
     },

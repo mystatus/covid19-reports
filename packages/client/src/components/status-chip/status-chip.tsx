@@ -6,8 +6,8 @@ import useStyles from './status-chip.styles';
 
 type ChipPropsTrimmed = Omit<ChipProps, 'variant'>;
 export type StatusChipProps = OverrideType<ChipPropsTrimmed, {
-  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error'
-  size?: 'small' | 'medium'
+  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error';
+  size?: 'small' | 'medium';
 }>;
 
 export const StatusChip = (props: StatusChipProps) => {

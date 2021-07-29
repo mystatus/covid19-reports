@@ -195,7 +195,7 @@ export const MusterPage = () => {
   }, [orgId, dispatch]);
 
   const showErrorDialog = useCallback((title: string, error: Error) => {
-    dispatch(Modal.alert(`Error: ${title}`, formatErrorMessage(error))).then();
+    void dispatch(Modal.alert(`Error: ${title}`, formatErrorMessage(error)));
   }, [dispatch]);
 
   const reloadTable = useCallback(async () => {
@@ -312,7 +312,7 @@ export const MusterPage = () => {
   }, []);
 
   useEffect(() => {
-    initialize().then();
+    void initialize();
   }, [initialize]);
 
   useEffect(() => {
@@ -357,7 +357,7 @@ export const MusterPage = () => {
       const filename = `${_.kebabCase(orgName)}_${unitId}_muster-compliance_${fromDateStr}_to_${toDateStr}`;
       downloadFile(data, filename, 'csv');
     } catch (error) {
-      dispatch(Modal.alert('Export to CSV', formatErrorMessage(error, 'Unable to export'))).then();
+      void dispatch(Modal.alert('Export to CSV', formatErrorMessage(error, 'Unable to export')));
     } finally {
       setExportLoading(false);
     }
@@ -416,7 +416,7 @@ export const MusterPage = () => {
     ]).slice(0, maxNumColumnsToShow);
   };
 
-  const handleRosterUnitChange = (event: ChangeEvent<{ name?: string, value: unknown }>) => {
+  const handleRosterUnitChange = (event: ChangeEvent<{ name?: string; value: unknown }>) => {
     const unitId = event.target.value as number;
     setRosterUnitId(unitId);
   };
@@ -669,9 +669,9 @@ export const MusterPage = () => {
 };
 
 type TimeRange = {
-  label: string
+  label: string;
   getRange: () => {
-    fromDateIso: string
-    toDateIso: string
-  }
+    fromDateIso: string;
+    toDateIso: string;
+  };
 };

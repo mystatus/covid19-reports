@@ -19,7 +19,6 @@ import { User } from './user.model';
 import { seedUser } from './user.model.mock';
 
 describe(`User Controller`, () => {
-
   const basePath = '/api/user';
   let req: TestRequest;
 
@@ -28,7 +27,6 @@ describe(`User Controller`, () => {
   });
 
   describe(`${basePath}/current : get`, () => {
-
     it(`gets the user whose edipi was in request`, async () => {
       const user = await seedUser();
 
@@ -38,11 +36,9 @@ describe(`User Controller`, () => {
       expectNoErrors(res);
       expect(res.data).to.containSubset(user);
     });
-
   });
 
   describe(`${basePath} : post`, () => {
-
     it(`creates new user with supplied data`, async () => {
       const usersCountBefore = await User.count();
 
@@ -70,11 +66,9 @@ describe(`User Controller`, () => {
 
       expect(await User.count()).to.equal(usersCountBefore + 1);
     });
-
   });
 
   describe(`${basePath}/access-requests : get`, () => {
-
     it(`gets access requests that the user has issued`, async () => {
       const { org } = await seedOrgContact();
       const user = await seedUser();
@@ -100,11 +94,9 @@ describe(`User Controller`, () => {
         status: accessRequest.status,
       });
     });
-
   });
 
   describe(`${basePath}/:orgId : post`, () => {
-
     it(`updates user role and name`, async () => {
       const { org, contact, roleUser, roleAdmin } = await seedOrgContactRoles();
       const unit1 = await seedUnit(org);
@@ -161,11 +153,9 @@ describe(`User Controller`, () => {
 
       expect(await User.count()).to.equal(userCountBefore);
     });
-
   });
 
   describe(`${basePath}/:orgId : get`, () => {
-
     it(`gets the users in the org`, async () => {
       const { contact, org, roleUser } = await seedOrgContactRoles();
       const user = await seedUser();
@@ -180,11 +170,9 @@ describe(`User Controller`, () => {
       const dataEdipis = res.data.map((x: User) => x.edipi);
       expect(dataEdipis).to.include.members([contact.edipi, user.edipi]);
     });
-
   });
 
   describe(`${basePath}/:orgId/:edipi : delete`, () => {
-
     it(`removed the user from the org`, async () => {
       const { contact, org, roleUser } = await seedOrgContactRoles();
       const user = await seedUser();
@@ -205,7 +193,5 @@ describe(`User Controller`, () => {
       orgUsersEdipis = orgUsers.map((x: User) => x.edipi);
       expect(orgUsersEdipis).not.to.include(user.edipi);
     });
-
   });
-
 });

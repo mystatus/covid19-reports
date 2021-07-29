@@ -224,7 +224,7 @@ class MusterController {
    * This method returns the normalized rate (0 - 1.0) of compliance on a given
    * date for a given unit, against  of the unit's muster configs.
    */
-  async getMusterComplianceByDate(req: ApiRequest<{orgId: number, unitName: string}, null, DateQuery>, res: Response<MusterComplianceResponse>) {
+  async getMusterComplianceByDate(req: ApiRequest<{orgId: number; unitName: string}, null, DateQuery>, res: Response<MusterComplianceResponse>) {
     const outValue = { musterComplianceRate: 0 };
     const reportDate = dateFromString(req.query.timestamp);
     if (!reportDate) {
@@ -268,6 +268,7 @@ class MusterController {
     outValue.musterComplianceRate = musterAvg / usersOnRoster.musterConfig.length;
     res.json(outValue);
   }
+
 }
 
 /**
@@ -334,33 +335,33 @@ async function getUsersOnRosterByDate(orgId: number, unitName: string, date: str
 }
 
 type GetMusterRosterQuery = {
-  fromDate: string
-  toDate: string
-  unitId: number | null
+  fromDate: string;
+  toDate: string;
+  unitId: number | null;
 } & PaginatedQuery;
 
 type GetMusterUnitTrendsQuery = {
-  currentDate: string
-  weeksCount?: string
-  monthsCount?: string
+  currentDate: string;
+  weeksCount?: string;
+  monthsCount?: string;
 };
 
 type GetClosedMusterWindowsQuery = {
-  since: string
-  until: string
+  since: string;
+  until: string;
 };
 
 type GetNearestMusterWindowQuery = {
-  timestamp: string
-  reportId: string
+  timestamp: string;
+  reportId: string;
 };
 
 type DateQuery = {
-  timestamp: string
+  timestamp: string;
 };
 
 type MusterComplianceResponse = {
-  musterComplianceRate: number
+  musterComplianceRate: number;
 };
 
 export default new MusterController();
