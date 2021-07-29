@@ -5,12 +5,14 @@ export namespace Persist {
   export namespace Actions {
 
     export class Set<T = any> {
+
       static type = 'PERSIST_SET';
       type = Set.type;
       constructor(public payload: {
-        persistKey: string,
-        value: T
+        persistKey: string;
+        value: T;
       }) {}
+
     }
 
   }

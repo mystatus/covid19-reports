@@ -2,6 +2,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 import moment from 'moment';
 
 export class RosterHistory1611337083465 implements MigrationInterface {
+
   name = 'RosterHistory1611337083465';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -131,18 +132,18 @@ export class RosterHistory1611337083465 implements MigrationInterface {
 }
 
 interface CustomColumns {
-  [key: string]: CustomColumnValue
+  [key: string]: CustomColumnValue;
 }
 
 export type CustomColumnValue = string | boolean | number | null;
 
 type OldRoster = {
-  edipi: string,
-  first_name: string,
-  last_name: string,
-  start_date: string | null,
-  end_date: string | null,
-  custom_columns: CustomColumns,
+  edipi: string;
+  first_name: string;
+  last_name: string;
+  start_date: string | null;
+  end_date: string | null;
+  custom_columns: CustomColumns;
 };
 
 enum HistoryChangeType {
@@ -152,12 +153,12 @@ enum HistoryChangeType {
 }
 
 type RosterHistoryRow = {
-  unit_id: string,
-  unit_org: number,
-  edipi: string,
-  first_name: string,
-  last_name: string,
-  custom_columns: CustomColumns,
-  timestamp: Date,
-  change_type: HistoryChangeType
+  unit_id: string;
+  unit_org: number;
+  edipi: string;
+  first_name: string;
+  last_name: string;
+  custom_columns: CustomColumns;
+  timestamp: Date;
+  change_type: HistoryChangeType;
 };

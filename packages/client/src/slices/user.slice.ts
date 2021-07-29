@@ -17,8 +17,8 @@ import {
 } from '../utility/redux-utils';
 
 export interface UserState extends ApiUser {
-  activeRole?: ApiUserRole
-  isLoggedIn: boolean
+  activeRole?: ApiUserRole;
+  isLoggedIn: boolean;
 }
 
 export const userInitialState: UserState = {
@@ -35,17 +35,17 @@ export const userInitialState: UserState = {
 };
 
 export interface UserRegisterData {
-  firstName: string
-  lastName: string
-  phone: string
-  service: string
-  email: string
+  firstName: string;
+  lastName: string;
+  phone: string;
+  service: string;
+  email: string;
 }
 
 export interface DashboardPayload {
-  orgId: number
-  workspaceId: number
-  dashboardUuid: string
+  orgId: number;
+  workspaceId: number;
+  dashboardUuid: string;
 }
 
 const name = 'user';

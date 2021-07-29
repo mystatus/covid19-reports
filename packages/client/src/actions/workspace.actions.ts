@@ -10,46 +10,58 @@ export namespace Workspace {
   export namespace Actions {
 
     export class Fetch {
+
       static type = 'FETCH_WORKSPACES';
       type = Fetch.type;
+
     }
     export class FetchSuccess {
+
       static type = `${Fetch.type}_SUCCESS`;
       type = FetchSuccess.type;
       constructor(public payload: {
-        workspaces: ApiWorkspace[]
+        workspaces: ApiWorkspace[];
       }) {}
+
     }
     export class FetchFailure {
+
       static type = `${Fetch.type}_FAILURE`;
       type = FetchFailure.type;
       constructor(public payload: {
-        error: any
+        error: any;
       }) { }
+
     }
 
     export class FetchDashboards {
+
       static type = 'FETCH_DASHBOARDS';
       type = FetchDashboards.type;
       constructor(public payload: {
-        workspaceId: number
+        workspaceId: number;
       }) {}
+
     }
     export class FetchDashboardsSuccess {
+
       static type = `${FetchDashboards.type}_SUCCESS`;
       type = FetchDashboardsSuccess.type;
       constructor(public payload: {
-        workspaceId: number
-        dashboards: ApiDashboard[]
+        workspaceId: number;
+        dashboards: ApiDashboard[];
       }) {}
+
     }
     export class FetchDashboardsFailure {
+
       static type = `${FetchDashboards.type}_FAILURE`;
       type = FetchDashboardsFailure.type;
       constructor(public payload: {
-        workspaceId: number
-        error: any
+        workspaceId: number;
+        error: any;
       }) {}
+
     }
 
   }

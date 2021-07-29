@@ -16,6 +16,7 @@ import { Unit } from '../unit/unit.model';
 
 @Entity()
 export class User extends BaseEntity {
+
   static internalUserEdipi = 'internal';
 
   @PrimaryColumn({
@@ -149,4 +150,5 @@ export class User extends BaseEntity {
 
     return internalUser;
   }
+
 }

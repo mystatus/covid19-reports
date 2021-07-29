@@ -22,7 +22,7 @@ export function seedWorkspaceTemplate() {
 }
 
 export function seedWorkspaceTemplates(options: {
-  count: number
+  count: number;
 }) {
   const { count } = options;
   const workspaceTemplates = [] as WorkspaceTemplate[];

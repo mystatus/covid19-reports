@@ -5,11 +5,13 @@ export namespace HelpCard {
   export namespace Actions {
 
     export class Hide {
+
       static type = 'HELP_TEXT_HIDE';
       type = Hide.type;
       constructor(public payload: {
-        helpCardId: string
+        helpCardId: string;
       }) {}
+
     }
 
   }

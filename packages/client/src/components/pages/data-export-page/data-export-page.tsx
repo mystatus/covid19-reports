@@ -100,7 +100,7 @@ export const DataExportPage = () => {
     try {
       await runExport();
     } catch (err) {
-      dispatch(Modal.alert('Export Failed', err.message)).then();
+      void dispatch(Modal.alert('Export Failed', err.message));
     } finally {
       setIsExportLoading(false);
     }

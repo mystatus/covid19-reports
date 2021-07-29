@@ -106,12 +106,12 @@ export const GroupsPage = () => {
 
   function handleCancelRequestClick(org: MyOrg) {
     closeMyOrgMenu();
-    cancelRequest(org).then();
+    void cancelRequest(org);
   }
 
   function handleResubmitRequestClick(org: MyOrg) {
     closeMyOrgMenu();
-    requestAccess(org).then();
+    void requestAccess(org);
   }
 
   function getStatusLabel(org: MyOrg) {
@@ -192,7 +192,6 @@ export const GroupsPage = () => {
   useEffect(() => {
     // Initial load.
     async function fetchData() {
-
       dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
 
       await Promise.all([
@@ -204,7 +203,7 @@ export const GroupsPage = () => {
       dispatch(AppFrameActions.setPageLoading({ isLoading: false }));
     }
 
-    fetchData().then();
+    void fetchData();
   }, [dispatch]);
 
   useEffect(() => {
@@ -438,5 +437,5 @@ export const GroupsPage = () => {
 };
 
 interface MyOrg extends ApiOrg {
-  accessRequest?: ApiAccessRequest
+  accessRequest?: ApiAccessRequest;
 }

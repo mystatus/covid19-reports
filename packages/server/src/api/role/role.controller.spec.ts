@@ -13,7 +13,6 @@ import { Role } from './role.model';
 import { seedRoleBasicUser } from './role.model.mock';
 
 describe(`Role Controller`, () => {
-
   const basePath = '/api/role';
   let req: TestRequest;
 
@@ -22,7 +21,6 @@ describe(`Role Controller`, () => {
   });
 
   describe(`${basePath}/:orgId : get`, () => {
-
     it(`gets the org's roles`, async () => {
       const { org, contact, roleAdmin, roleUser } = await seedOrgContactRoles();
 
@@ -35,11 +33,9 @@ describe(`Role Controller`, () => {
       const dataRoleIds = res.data.map((x: Role) => x.id);
       expect(dataRoleIds).to.include.members([roleAdmin.id, roleUser.id]);
     });
-
   });
 
   describe(`${basePath}/:orgId : post`, () => {
-
     it(`adds a role to the org`, async () => {
       const { org, contact } = await seedOrgContactRoles();
       const workspaceTemplate = await seedWorkspaceTemplate();
@@ -81,11 +77,9 @@ describe(`Role Controller`, () => {
 
       expect(await Role.count()).to.equal(rolesCountBefore + 1);
     });
-
   });
 
   describe(`${basePath}/:orgId/:roleId : get`, () => {
-
     it(`gets the role`, async () => {
       const { org, contact, roleAdmin } = await seedOrgContactRoles();
 
@@ -99,11 +93,9 @@ describe(`Role Controller`, () => {
         description: roleAdmin.description,
       });
     });
-
   });
 
   describe(`${basePath}/:orgId/:roleId : delete`, () => {
-
     it(`deletes the role`, async () => {
       const { org, contact, roleUser } = await seedOrgContactRoles();
 
@@ -122,11 +114,9 @@ describe(`Role Controller`, () => {
 
       expect(await Role.count()).to.equal(rolesCountBefore - 1);
     });
-
   });
 
   describe(`${basePath}/:orgId/:roleId : put`, () => {
-
     it(`updates the role`, async () => {
       const { org, contact } = await seedOrgContactRoles();
       const role = await seedRoleBasicUser(org);
@@ -167,7 +157,5 @@ describe(`Role Controller`, () => {
       const roleAfterWorkspaceIds = roleAfter.workspaces!.map(x => x.id).sort();
       expect(roleAfterWorkspaceIds).to.eql(workspaceIds);
     });
-
   });
-
 });

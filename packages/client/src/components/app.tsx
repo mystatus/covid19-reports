@@ -33,7 +33,7 @@ export const App = () => {
   const classes = useStyles();
 
   useEffect(() => {
-    dispatch(UserActions.refresh());
+    void dispatch(UserActions.refresh());
   }, [dispatch]);
 
   function routes() {

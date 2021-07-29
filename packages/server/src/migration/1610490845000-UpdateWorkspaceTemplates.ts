@@ -27,10 +27,9 @@ export class UpdateWorkspaceTemplates1610490845000 implements MigrationInterface
       phi: true,
       kibanaSavedObjects: kibanaSavedObjectsMock.phi,
     }]);
-
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
-  }
+  // eslint-disable-next-line
+  public async down(queryRunner: QueryRunner): Promise<void> {}
 
 }

@@ -2,6 +2,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 import { RosterHistory1611337083465 } from './1611337083465-RosterHistory';
 
 export class MultipleUnitSupport1613436966607 implements MigrationInterface {
+
   name = 'MultipleUnitSupport1613436966607';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -20,8 +21,8 @@ export class MultipleUnitSupport1613436966607 implements MigrationInterface {
 
     const orgs = await queryRunner.query(`SELECT id FROM "org"`);
     for (const org of orgs) {
-      const orgUnits = await queryRunner.query(`SELECT id, new_id FROM unit WHERE org_id=${org.id}`) as { id: string, new_id: number }[];
-      const orgRoles = await queryRunner.query(`SELECT user_role.id, index_prefix FROM user_role LEFT JOIN "role" ON role_id = "role"."id" WHERE "role".org_id = ${org.id}`) as { id: number, index_prefix: string }[];
+      const orgUnits = await queryRunner.query(`SELECT id, new_id FROM unit WHERE org_id=${org.id}`) as { id: string; new_id: number }[];
+      const orgRoles = await queryRunner.query(`SELECT user_role.id, index_prefix FROM user_role LEFT JOIN "role" ON role_id = "role"."id" WHERE "role".org_id = ${org.id}`) as { id: number; index_prefix: string }[];
       for (const role of orgRoles) {
         if (role.index_prefix === '*') {
           await queryRunner.query(`UPDATE user_role SET all_units=true WHERE id=${role.id}`);
@@ -92,7 +93,7 @@ export class MultipleUnitSupport1613436966607 implements MigrationInterface {
     const orgs = await queryRunner.query(`SELECT id FROM "org"`);
     for (const org of orgs) {
       const orgUnits = await queryRunner.query(`SELECT id FROM unit WHERE org_id=${org.id}`) as { id: string }[];
-      const orgRoles = await queryRunner.query(`SELECT user_role.id, user_role.all_units FROM user_role LEFT JOIN "role" ON role_id = "role"."id" WHERE "role".org_id = ${org.id}`) as { id: number, all_units: boolean }[];
+      const orgRoles = await queryRunner.query(`SELECT user_role.id, user_role.all_units FROM user_role LEFT JOIN "role" ON role_id = "role"."id" WHERE "role".org_id = ${org.id}`) as { id: number; all_units: boolean }[];
       for (const role of orgRoles) {
         if (role.all_units) {
           await queryRunner.query(`UPDATE user_role SET index_prefix='*' WHERE id=${role.id}`);

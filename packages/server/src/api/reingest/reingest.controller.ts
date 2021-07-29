@@ -23,11 +23,12 @@ class ReingestController {
       throw new InternalServerError(`Error during reingest request: ${err.message}`);
     }
   }
+
 }
 
 interface TimestampData {
-  startTime?: string | number | Date,
-  endTime?: string | number | Date,
+  startTime?: string | number | Date;
+  endTime?: string | number | Date;
 }
 
 export default new ReingestController();

@@ -1,10 +1,10 @@
 export type AddWorkspaceBody = {
-  name: string
-  description: string
-  templateId: number
+  name: string;
+  description: string;
+  templateId: number;
 };
 
 export type UpdateWorkspaceBody = {
-  name?: string
-  description?: string
+  name?: string;
+  description?: string;
 };

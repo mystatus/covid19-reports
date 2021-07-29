@@ -18,12 +18,12 @@ import { formatErrorMessage } from '../../../utility/errors';
 import { NotificationClient } from '../../../client/notification.client';
 
 export interface EditAlertDialogProps {
-  open: boolean,
-  orgId?: number,
-  setting?: ApiUserNotificationSetting,
-  notification?: ApiNotification
-  onClose?: (setting?: ApiUserNotificationSetting) => void,
-  onError?: (error: string) => void,
+  open: boolean;
+  orgId?: number;
+  setting?: ApiUserNotificationSetting;
+  notification?: ApiNotification;
+  onClose?: (setting?: ApiUserNotificationSetting) => void;
+  onError?: (error: string) => void;
 }
 
 export const EditAlertDialog = (props: EditAlertDialogProps) => {

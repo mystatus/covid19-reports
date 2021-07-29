@@ -4,9 +4,7 @@ import { Unit } from './unit.model';
 import { seedUnit } from './unit.model.mock';
 
 describe(`Unit Model`, () => {
-
   describe(`cascades on delete`, () => {
-
     it(`org`, async () => {
       const { org } = await seedOrgContact();
       const unit = await seedUnit(org);
@@ -25,7 +23,5 @@ describe(`Unit Model`, () => {
       });
       expect(unitDeleted).not.to.exist;
     });
-
   });
-
 });

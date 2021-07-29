@@ -38,55 +38,55 @@ router.use('/orphaned-record', orphanedRecordRoutes);
 router.use('/observation', observationRoutes);
 
 export interface ApiRequest<ReqParams = object, ReqBody = object, ReqQuery = object, ResBody = object> extends Request<ReqParams, ResBody, ReqBody, ReqQuery> {
-  appUser: User,
-  appOrg?: Org,
-  appUserRole?: UserRole,
-  appWorkspace?: Workspace,
-  kibanaApi?: KibanaApi,
+  appUser: User;
+  appOrg?: Org;
+  appUserRole?: UserRole;
+  appWorkspace?: Workspace;
+  kibanaApi?: KibanaApi;
 }
 
 export type OrgParam = {
-  orgId: string
+  orgId: string;
 };
 
 export type OrgPrefixParam = {
-  orgPrefix: string
+  orgPrefix: string;
 };
 
 export type RoleParam = {
-  roleId: string
+  roleId: string;
 };
 
 export type ReportParam = {
-  reportId: string
+  reportId: string;
 };
 
 export type EdipiParam = {
-  edipi: string
+  edipi: string;
 };
 
 export type RosterParam = {
-  rosterId: string
+  rosterId: string;
 };
 
 export type WorkspaceParam = {
-  workspaceId: string
+  workspaceId: string;
 };
 
 export type UnitParam = {
-  unitId: string
+  unitId: string;
 };
 
 export type SettingParam = {
-  settingId: string
+  settingId: string;
 };
 
 export type ColumnParam = {
-  columnName: string
+  columnName: string;
 };
 
 export type DashboardParam = {
-  dashboardUuid: string
+  dashboardUuid: string;
 };
 
 export type OrphanedRecordActionParam = OrgParam & {
@@ -98,7 +98,7 @@ export type OrphanedRecordResolveParam = OrphanedRecordActionParam & {
 };
 
 export type OrphanedRecordDeleteActionParams = OrphanedRecordActionParam & {
-  action: OrphanedRecordActionType,
+  action: OrphanedRecordActionType;
 };
 
 export type OrgRoleParams = OrgParam & RoleParam;

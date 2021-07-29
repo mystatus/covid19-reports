@@ -4,6 +4,7 @@ import {
 } from 'typeorm';
 
 export class TypeormUpdate1625689852506 implements MigrationInterface {
+
   name = 'TypeormUpdate1625689852506';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

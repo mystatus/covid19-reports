@@ -7,22 +7,28 @@ export namespace ReportSchema {
   export namespace Actions {
 
     export class Fetch {
+
       static type = 'FETCH_REPORT_SCHEMAS';
       type = Fetch.type;
+
     }
     export class FetchSuccess {
+
       static type = `${Fetch.type}_SUCCESS`;
       type = FetchSuccess.type;
       constructor(public payload: {
-        reports: ApiReportSchema[]
+        reports: ApiReportSchema[];
       }) {}
+
     }
     export class FetchFailure {
+
       static type = `${Fetch.type}_FAILURE`;
       type = FetchFailure.type;
       constructor(public payload: {
-        error: any
+        error: any;
       }) { }
+
     }
   }
 

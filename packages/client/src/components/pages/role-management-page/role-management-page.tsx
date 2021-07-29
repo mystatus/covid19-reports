@@ -62,7 +62,7 @@ export const RoleManagementPage = () => {
     setDeleteRoleDialogOpen(false);
   };
 
-  const newRole = async () => {
+  const newRole = () => {
     setEditRoleDialogProps({
       open: true,
       orgId,
@@ -71,12 +71,12 @@ export const RoleManagementPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        dispatch(Modal.alert('Add Role', `Unable to add role: ${message}`));
+        void dispatch(Modal.alert('Add Role', `Unable to add role: ${message}`));
       },
     });
   };
 
-  const editRole = async () => {
+  const editRole = () => {
     const selectedRole = roles[selectedRoleIndex];
     setEditRoleDialogProps({
       open: true,
@@ -87,7 +87,7 @@ export const RoleManagementPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        dispatch(Modal.alert('Edit Role', `Unable to edit role: ${message}`));
+        void dispatch(Modal.alert('Edit Role', `Unable to edit role: ${message}`));
       },
     });
   };
@@ -97,7 +97,7 @@ export const RoleManagementPage = () => {
     try {
       await RoleClient.deleteRole(orgId!, roles[selectedRoleIndex].id);
     } catch (error) {
-      dispatch(Modal.alert('Delete Role', formatErrorMessage(error, 'Unable to delete role'))).then();
+      void dispatch(Modal.alert('Delete Role', formatErrorMessage(error, 'Unable to delete role')));
     }
     setDeleteRoleLoading(false);
     setDeleteRoleDialogOpen(false);
@@ -108,7 +108,7 @@ export const RoleManagementPage = () => {
     setSelectedRoleIndex(isExpanded ? index : -1);
   };
 
-  useEffect(() => { initializeTable().then(); }, [initializeTable]);
+  useEffect(() => { void initializeTable(); }, [initializeTable]);
 
   return (
     <main className={classes.root}>

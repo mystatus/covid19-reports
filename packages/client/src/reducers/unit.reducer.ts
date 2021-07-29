@@ -3,9 +3,9 @@ import { ApiUnit } from '../models/api-response';
 import { UserActions } from '../slices/user.slice';
 
 export interface UnitState {
-  units: ApiUnit[],
-  isLoading: boolean
-  lastUpdated: number
+  units: ApiUnit[];
+  isLoading: boolean;
+  lastUpdated: number;
 }
 
 export const unitInitialState: UnitState = {

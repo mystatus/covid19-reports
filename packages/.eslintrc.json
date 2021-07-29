@@ -1,5 +1,8 @@
 {
-  "extends": "airbnb-typescript",
+  "extends": [
+    "airbnb-typescript",
+    "plugin:promise/recommended"
+  ],
   "env": {
     "es6": true,
     "jquery": true,
@@ -20,14 +23,17 @@
         "colon": {
           "before": false,
           "after": true
-        }		
-      }		
+        }
+      }
     }],
     "@typescript-eslint/lines-between-class-members": "off",
+    "@typescript-eslint/member-delimiter-style": "error",
+    "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/no-unused-expressions": "off",
     "@typescript-eslint/no-use-before-define": "off",
     "@typescript-eslint/object-curly-spacing": "off",
     "@typescript-eslint/quotes": ["error", "single", { "allowTemplateLiterals": true }],
+    "@typescript-eslint/return-await": "off",
     "@typescript-eslint/space-before-function-paren": ["error", {
       "anonymous": "never",
       "named": "never",
@@ -49,7 +55,7 @@
     }],
     "max-classes-per-file": "off",
     "max-len": "off",
-    "mocha-no-only/mocha-no-only": ["error"],
+    "mocha-no-only/mocha-no-only": "error",
     "no-await-in-loop": "off",
     "no-console": "off",
     "no-continue": "off",
@@ -74,14 +80,23 @@
         "message": "`with` is disallowed in strict mode because it makes code impossible to predict and optimize."
       }
     ],
+    "no-return-await": "off",
     "no-underscore-dangle": "off",
     "no-unused-expressions": "off",
     "no-use-before-define": "off",
+    "no-void": "off",
     "object-curly-newline": ["error", { "consistent": true }],
     "object-curly-spacing": ["error", "always"],
-    "padded-blocks": "off",
+    "padded-blocks": ["error", {
+      "blocks": "never",
+      "classes": "always",
+      "switches": "never"
+    }],
     "prefer-destructuring": "off",
+    "promise/prefer-await-to-then": ["error", "always"],
+    "promise/prefer-await-to-callbacks": ["error", "always"],
     "radix": "off",
+    "require-await": "error",
     "space-before-function-paren": ["error", {
       "anonymous": "never",
       "named": "never",

@@ -127,7 +127,7 @@ class UnitController {
       .distinctOn(['roster.edipi'])
       .orderBy('roster.edipi')
       .addOrderBy('roster.timestamp', 'DESC')
-      .getRawMany() as { edipi: string, changeType: ChangeType }[];
+      .getRawMany() as { edipi: string; changeType: ChangeType }[];
 
     res.json(roster.filter(entry => entry.changeType !== ChangeType.Deleted).map(entry => entry.edipi));
   }

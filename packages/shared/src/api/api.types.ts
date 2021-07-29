@@ -1,9 +1,9 @@
 export type PaginatedQuery = {
-  limit: string
-  page: string
+  limit: string;
+  page: string;
 };
 
 export type Paginated<TData> = {
-  rows: TData[]
-  totalRowsCount: number
+  rows: TData[];
+  totalRowsCount: number;
 };

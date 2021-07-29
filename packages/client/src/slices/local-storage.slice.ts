@@ -10,8 +10,8 @@ import { ApiUser } from '../models/api-response';
 // We need to be careful about what goes into local storage due to security concerns. So make sure not to add anything
 // that is clearly identifying of groups, units, or individuals, such as PII/PHI data, group name, etc.
 export interface LocalStorageState extends Record<string, any> {
-  orgId?: number
-  hideHelpCard: Dict<boolean>
+  orgId?: number;
+  hideHelpCard: Dict<boolean>;
 }
 
 export const localStorageInitialState: LocalStorageState = {
@@ -46,8 +46,8 @@ export const localStorageSlice = createSlice({
 function userRefreshed(
   state: WritableDraft<LocalStorageState>,
   payload: {
-    userData: ApiUser
-    localStorage: LocalStorageState
+    userData: ApiUser;
+    localStorage: LocalStorageState;
   },
 ) {
   const { userData, localStorage } = payload;

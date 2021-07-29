@@ -22,7 +22,7 @@ export function mockUser(userData?: Partial<User>) {
 }
 
 export function seedUsers(options: {
-  count: number,
+  count: number;
 }) {
   const { count } = options;
   const users = [] as User[];
@@ -34,10 +34,10 @@ export function seedUsers(options: {
   return User.save(users);
 }
 
-export async function seedUser(customData?: Partial<User>) {
+export function seedUser(customData?: Partial<User>) {
   return mockUser(customData).save();
 }
 
-export async function seedUserInternal() {
+export function seedUserInternal() {
   return User.internal().save();
 }

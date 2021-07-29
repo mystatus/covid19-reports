@@ -123,4 +123,5 @@ export class Role extends BaseEntity {
 
     return adminRole;
   }
+
 }

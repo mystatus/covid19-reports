@@ -34,7 +34,7 @@ export class AlertsAndForceHealth1605909623886 implements MigrationInterface {
     await notificationRepo.save(defaultNotifications);
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
-  }
+  // eslint-disable-next-line
+  public async down(queryRunner: QueryRunner): Promise<void> {}
 
 }

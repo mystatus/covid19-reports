@@ -43,9 +43,9 @@ import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export type ViewAccessRequestDialogProps = DialogProps & {
-  onClose: () => void
-  onComplete: () => void
-  accessRequest: ApiAccessRequest
+  onClose: () => void;
+  onComplete: () => void;
+  accessRequest: ApiAccessRequest;
 };
 
 export const ViewAccessRequestDialog = (props: ViewAccessRequestDialogProps) => {
@@ -68,12 +68,12 @@ export const ViewAccessRequestDialog = (props: ViewAccessRequestDialogProps) => 
   const actionLoading = approveLoading || denyLoading;
   const approveDisabled = actionLoading || selectedRoleIndex === -1 || selectedUnitIds.length === 0;
 
-  const initializeTable = useCallback(async () => {
-    dispatch(Role.fetch(orgId));
-    dispatch(Unit.fetch(orgId));
+  const initializeTable = useCallback(() => {
+    void dispatch(Role.fetch(orgId));
+    void dispatch(Unit.fetch(orgId));
   }, [dispatch, orgId]);
 
-  useEffect(() => { initializeTable().then(); }, [initializeTable]);
+  useEffect(() => { initializeTable(); }, [initializeTable]);
 
   const reset = () => {
     setApproveLoading(false);

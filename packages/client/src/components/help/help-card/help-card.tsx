@@ -13,9 +13,9 @@ import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 
 export interface HelpCardProps {
-  helpCardId: string
-  variant?: 'plain' | 'info'
-  children?: ReactNode
+  helpCardId: string;
+  variant?: 'plain' | 'info';
+  children?: ReactNode;
 }
 
 export const HelpCard = (props: HelpCardProps) => {

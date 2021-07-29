@@ -2,9 +2,9 @@ import { Roster } from '../actions/roster.actions';
 import { ApiRosterColumnInfo } from '../models/api-response';
 
 export interface RosterState {
-  columns: ApiRosterColumnInfo[]
-  columnsLoading: boolean
-  lastUpdated: number
+  columns: ApiRosterColumnInfo[];
+  columnsLoading: boolean;
+  lastUpdated: number;
 }
 
 export const rosterInitialState: RosterState = {

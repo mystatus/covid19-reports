@@ -105,12 +105,13 @@ class ReportSchemaController {
 
     res.json(updatedReport);
   }
+
 }
 
 export type AddReportBody = {
-  id: string
-  name: string
-  columns: SchemaColumn[]
+  id: string;
+  name: string;
+  columns: SchemaColumn[];
 };
 
 export type UpdateReportBody = Partial<AddReportBody>;

@@ -251,6 +251,7 @@ class AccessRequestController {
 
     res.json(deniedRequest);
   }
+
 }
 
 export default new AccessRequestController();

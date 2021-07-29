@@ -44,8 +44,8 @@ import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 
 interface WorkspaceMenuState {
-  anchor: HTMLElement | null,
-  workspace?: ApiWorkspace,
+  anchor: HTMLElement | null;
+  workspace?: ApiWorkspace;
 }
 
 export const EditSpacesPage = () => {
@@ -66,7 +66,7 @@ export const EditSpacesPage = () => {
     setWorkspaceTemplates(templates);
   }, [orgId]);
 
-  const newWorkspace = async () => {
+  const newWorkspace = () => {
     setEditWorkspaceDialogProps({
       open: true,
       orgId,
@@ -75,7 +75,7 @@ export const EditSpacesPage = () => {
         await initializeTable();
       },
       onError: (message: string) => {
-        dispatch(Modal.alert('Add Space', `Unable to add space: ${message}`));
+        void dispatch(Modal.alert('Add Space', `Unable to add space: ${message}`));
       },
     });
   };
@@ -93,7 +93,7 @@ export const EditSpacesPage = () => {
           await initializeTable();
         },
         onError: (message: string) => {
-          dispatch(Modal.alert('Edit Space', `Unable to edit space: ${message}`)).then();
+          void dispatch(Modal.alert('Edit Space', `Unable to edit space: ${message}`));
         },
       });
     }
@@ -114,7 +114,7 @@ export const EditSpacesPage = () => {
     try {
       await WorkspaceClient.deleteWorkspace(orgId, workspaceToDelete.id);
     } catch (error) {
-      dispatch(Modal.alert('Delete Space', formatErrorMessage(error, 'Unable to delete space'))).then();
+      void dispatch(Modal.alert('Delete Space', formatErrorMessage(error, 'Unable to delete space')));
     }
     setWorkspaceToDelete(null);
     await initializeTable();
@@ -132,7 +132,7 @@ export const EditSpacesPage = () => {
     setWorkspaceMenu({ anchor: null });
   };
 
-  useEffect(() => { initializeTable().then(); }, [initializeTable]);
+  useEffect(() => { void initializeTable(); }, [initializeTable]);
 
   return (
     <main className={classes.root}>

@@ -6,12 +6,12 @@ import {
 import { UserActions } from '../slices/user.slice';
 
 export interface WorkspaceState {
-  workspaces: ApiWorkspace[]
-  dashboards: { [workspaceId: number]: ApiDashboard[] }
-  dashboardsLoading: { [workspaceId: number]: boolean }
-  dashboardsError: { [workspaceId: number]: any }
-  isLoading: boolean
-  lastUpdated: number
+  workspaces: ApiWorkspace[];
+  dashboards: { [workspaceId: number]: ApiDashboard[] };
+  dashboardsLoading: { [workspaceId: number]: boolean };
+  dashboardsError: { [workspaceId: number]: any };
+  isLoading: boolean;
+  lastUpdated: number;
 }
 
 export const workspaceInitialState: WorkspaceState = {

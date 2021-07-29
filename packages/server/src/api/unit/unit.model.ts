@@ -13,6 +13,7 @@ import { Org } from '../org/org.model';
 @Entity()
 @Index(['org', 'name'], { unique: true })
 export class Unit extends BaseEntity {
+
   @PrimaryGeneratedColumn()
   id!: number;
 
@@ -48,5 +49,6 @@ export class Unit extends BaseEntity {
     }
     return this.musterConfiguration;
   }
+
 }
 

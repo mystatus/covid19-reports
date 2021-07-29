@@ -16,6 +16,7 @@ export function createApiClient(basePath: string) {
     (response: AxiosResponse) => {
       return response.data;
     },
+    // eslint-disable-next-line promise/prefer-await-to-callbacks
     (error: AxiosError) => {
       if (error.response) {
         // eslint-disable-next-line @typescript-eslint/no-throw-literal

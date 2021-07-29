@@ -15,10 +15,10 @@ import React, {
 import { HelpContent } from '../help-content/help-content';
 
 export interface HelpButtonProps {
-  title: string
-  contentComponent: ElementType
-  children?: ReactNode
-  variant?: 'plain' | 'info'
+  title: string;
+  contentComponent: ElementType;
+  children?: ReactNode;
+  variant?: 'plain' | 'info';
 }
 
 export const HelpButton = (props: HelpButtonProps) => {

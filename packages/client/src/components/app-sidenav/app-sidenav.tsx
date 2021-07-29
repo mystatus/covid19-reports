@@ -37,10 +37,10 @@ import { useAppDispatch } from '../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../hooks/use-app-selector';
 
 type SidenavLinkProps = {
-  name: string,
-  icon: any,
-  badgeColor?: BadgeProps['color'],
-  badgeContent?: React.ReactNode,
+  name: string;
+  icon: any;
+  badgeColor?: BadgeProps['color'];
+  badgeContent?: React.ReactNode;
 } & LinkProps;
 
 const SidenavLink = (props: SidenavLinkProps) => {
@@ -91,7 +91,7 @@ export const AppSidenav = () => {
 
   useEffect(() => {
     if (user.activeRole?.role.canManageRoster) {
-      dispatch(OrphanedRecordActions.fetchCount({ orgId: orgId! }));
+      void dispatch(OrphanedRecordActions.fetchCount({ orgId: orgId! }));
     } else {
       dispatch(OrphanedRecordActions.clear());
     }

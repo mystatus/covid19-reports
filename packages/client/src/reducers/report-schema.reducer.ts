@@ -3,9 +3,9 @@ import { ReportSchema } from '../actions/report-schema.actions';
 import { UserActions } from '../slices/user.slice';
 
 export interface ReportSchemaState {
-  reports: ApiReportSchema[],
-  isLoading: boolean
-  lastUpdated: number
+  reports: ApiReportSchema[];
+  isLoading: boolean;
+  lastUpdated: number;
 }
 
 export const reportSchemaInitialState: ReportSchemaState = {

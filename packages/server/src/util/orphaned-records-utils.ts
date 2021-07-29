@@ -36,17 +36,17 @@ export function deleteOrphanedRecordActionsForUser(
 }
 
 export async function getVisibleOrphanedRecordResultsCount(args: {
-  userEdipi: string
-  orgId: number
+  userEdipi: string;
+  orgId: number;
 }) {
   const orphanedRecords = await getVisibleOrphanedRecordResults(args);
   return orphanedRecords.length;
 }
 
-export async function getVisibleOrphanedRecordResults(args: {
-  userEdipi: string
-  orgId: number
-  unit?: string
+export function getVisibleOrphanedRecordResults(args: {
+  userEdipi: string;
+  orgId: number;
+  unit?: string;
 }) {
   const { userEdipi, orgId, unit } = args;
 

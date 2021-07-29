@@ -1,6 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddReportSchemas1614813673069 implements MigrationInterface {
+
   name = 'AddReportSchemas1614813673069';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -11,7 +12,7 @@ export class AddReportSchemas1614813673069 implements MigrationInterface {
         `INSERT INTO "report_schema"("id", "name", "columns", "org_id") VALUES ($1, $2, $3, $4)`,
         [defaultReportSchema.id, defaultReportSchema.name, JSON.stringify(defaultReportSchema.columns), org.id],
       );
-      const orgUnits = await queryRunner.query(`SELECT id, muster_configuration FROM unit WHERE org_id=${org.id}`) as { id: number, muster_configuration: MusterConfiguration[] }[];
+      const orgUnits = await queryRunner.query(`SELECT id, muster_configuration FROM unit WHERE org_id=${org.id}`) as { id: number; muster_configuration: MusterConfiguration[] }[];
       for (const unit of orgUnits) {
         if (unit.muster_configuration == null) {
           continue;
@@ -38,11 +39,11 @@ export class AddReportSchemas1614813673069 implements MigrationInterface {
 }
 
 export interface MusterConfiguration {
-  days: number,
-  startTime: string,
-  timezone: string,
-  durationMinutes: number,
-  reportId?: string,
+  days: number;
+  startTime: string;
+  timezone: string;
+  durationMinutes: number;
+  reportId?: string;
 }
 
 

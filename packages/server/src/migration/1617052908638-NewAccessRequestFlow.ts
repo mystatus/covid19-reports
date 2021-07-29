@@ -4,6 +4,7 @@ import {
 } from 'typeorm';
 
 export class NewAccessRequestFlow1617052908638 implements MigrationInterface {
+
   name = 'NewAccessRequestFlow1617052908638';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -5,9 +5,7 @@ import { Workspace } from './workspace.model';
 import { seedWorkspace } from './workspace.model.mock';
 
 describe(`Workspace Model`, () => {
-
   describe(`cascades on delete`, () => {
-
     it(`org`, async () => {
       const { org } = await seedOrgContact();
       const workspaceTemplate = await seedWorkspaceTemplate();
@@ -21,11 +19,9 @@ describe(`Workspace Model`, () => {
       const workspaceDeleted = await Workspace.findOne(workspace.id);
       expect(workspaceDeleted).not.to.exist;
     });
-
   });
 
   describe(`sets null on delete`, () => {
-
     it(`workspaceTemplate`, async () => {
       const { org } = await seedOrgContact();
       const workspaceTemplate = await seedWorkspaceTemplate();
@@ -43,7 +39,5 @@ describe(`Workspace Model`, () => {
       }))!;
       expect(workspace.workspaceTemplate).to.be.null;
     });
-
   });
-
 });

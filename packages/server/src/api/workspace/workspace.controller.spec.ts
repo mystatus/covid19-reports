@@ -25,7 +25,6 @@ import { Workspace } from './workspace.model';
 import { seedWorkspaces } from './workspace.model.mock';
 
 describe(`Workspace Controller`, () => {
-
   const basePath = `/api/workspace`;
   let req: TestRequest;
   let org: Org;
@@ -47,7 +46,6 @@ describe(`Workspace Controller`, () => {
   });
 
   describe(`${basePath}/:orgId : get`, () => {
-
     it(`gets the org's workspaces`, async () => {
       const workspaceTemplate = await seedWorkspaceTemplate();
       const { org: otherOrg } = await seedOrgContact();
@@ -71,11 +69,9 @@ describe(`Workspace Controller`, () => {
       expect(workspaceIds).to.include(workspaces[0].id);
       expect(workspaceIds).to.include(workspaces[1].id);
     });
-
   });
 
   describe(`${basePath}/:orgId/templates : get`, () => {
-
     it(`gets workspace templates`, async () => {
       const workspaceTemplates = await seedWorkspaceTemplates({ count: 2 });
 
@@ -95,11 +91,9 @@ describe(`Workspace Controller`, () => {
       expect(dataIds).to.include(workspaceTemplates[0].id);
       expect(dataIds).to.include(workspaceTemplates[1].id);
     });
-
   });
 
   describe(`${basePath}/:orgId : post`, () => {
-
     it(`adds a workspace to the org`, async () => {
       const workspaceTemplate = await seedWorkspaceTemplate();
 
@@ -138,11 +132,9 @@ describe(`Workspace Controller`, () => {
 
       expect(setupKibanaWorkspaceStub.callCount).to.eql(1);
     });
-
   });
 
   describe(`${basePath}/:orgId/:workspaceId : get`, () => {
-
     it(`gets the specified workspace`, async () => {
       const template = await seedWorkspaceTemplate();
       const workspaces = await seedWorkspaces(org, template, { count: 2 });
@@ -159,11 +151,9 @@ describe(`Workspace Controller`, () => {
       ]);
       expect(res.data.id).to.eql(workspaces[0].id);
     });
-
   });
 
   describe(`${basePath}/:orgId/:workspaceId : delete`, () => {
-
     it(`deletes the specified workspace`, async () => {
       const template = await seedWorkspaceTemplate();
       const workspaces = await seedWorkspaces(org, template, { count: 2 });
@@ -182,11 +172,9 @@ describe(`Workspace Controller`, () => {
       const workspaceAfter = await Workspace.findOne(workspaces[0].id);
       expect(workspaceAfter).not.to.exist;
     });
-
   });
 
   describe(`${basePath}/:orgId/:workspaceId : put`, () => {
-
     it(`updates the specified workspace`, async () => {
       const template = await seedWorkspaceTemplate();
       const workspaces = await seedWorkspaces(org, template, { count: 2 });
@@ -204,7 +192,5 @@ describe(`Workspace Controller`, () => {
       expect(workspaceAfter.name).to.eql(body.name);
       expect(workspaceAfter.description).to.eql(body.description);
     });
-
   });
-
 });

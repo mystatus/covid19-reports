@@ -3,7 +3,7 @@ import { UserRole } from './user-role.model';
 import { User } from './user.model';
 
 export function mockUserRole(user: User, role: Role, options?: {
-  customData?: Partial<UserRole>
+  customData?: Partial<UserRole>;
 }) {
   const { customData } = options ?? {};
 
@@ -16,7 +16,7 @@ export function mockUserRole(user: User, role: Role, options?: {
 }
 
 export function seedUserRole(user: User, role: Role, options?: {
-  customData?: Partial<UserRole>
+  customData?: Partial<UserRole>;
 }) {
   return mockUserRole(user, role, options).save();
 }

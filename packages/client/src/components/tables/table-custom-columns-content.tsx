@@ -11,43 +11,43 @@ import { OverrideType } from '../../utility/typescript-utils';
 import useStyles from './table-custom-columns-content.styles';
 
 interface TableCustomColumnsMenuItem {
-  name: string,
-  disabled?: boolean,
-  hidden?: boolean,
-  props?: MenuItemProps,
-  callback: (row: any) => void,
+  name: string;
+  disabled?: boolean;
+  hidden?: boolean;
+  props?: MenuItemProps;
+  callback: (row: any) => void;
 }
 
 interface TableCustomColumnsRow {
-  [column: string]: any
+  [column: string]: any;
 }
 
 export type SortDirection = 'ASC' | 'DESC';
 
 export interface TableColumn {
-  name: string,
-  displayName: string,
+  name: string;
+  displayName: string;
 }
 
 type TableCustomColumnsContentProps = OverrideType<TableProps, {
-  rows: TableCustomColumnsRow[]
-  columns: TableColumn[]
+  rows: TableCustomColumnsRow[];
+  columns: TableColumn[];
   rowOptions?: {
-    menuItems?: TableCustomColumnsMenuItem[] | ((row: any) => TableCustomColumnsMenuItem[])
-    renderCell?: (row: any, column: any) => void
-    rowProps?: Partial<TableRowProps> | ((row: any) => Partial<TableRowProps> | void | null | undefined)
-  }
-  idColumn: string | ((row: any) => string)
-  sortable?: boolean
-  defaultSort?: { column: string, direction: SortDirection }
-  onSortChange?: (column: TableColumn, direction: SortDirection) => void
-  noDataText?: string
-  title?: React.ReactNode
+    menuItems?: TableCustomColumnsMenuItem[] | ((row: any) => TableCustomColumnsMenuItem[]);
+    renderCell?: (row: any, column: any) => void;
+    rowProps?: Partial<TableRowProps> | ((row: any) => Partial<TableRowProps> | void | null | undefined);
+  };
+  idColumn: string | ((row: any) => string);
+  sortable?: boolean;
+  defaultSort?: { column: string; direction: SortDirection };
+  onSortChange?: (column: TableColumn, direction: SortDirection) => void;
+  noDataText?: string;
+  title?: React.ReactNode;
 }>;
 
 interface RowMenuState {
-  anchor: HTMLElement | null,
-  row?: TableCustomColumnsRow,
+  anchor: HTMLElement | null;
+  row?: TableCustomColumnsRow;
 }
 
 export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps) => {
@@ -105,9 +105,11 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
     setRowMenu({ anchor: null });
   };
 
+  // eslint-disable-next-line promise/prefer-await-to-callbacks
   const handleMenuItemClick = (callback: (row: any) => void) => () => {
     const row = rowMenu.row;
     handleRowMenuClose();
+    // eslint-disable-next-line promise/prefer-await-to-callbacks
     callback(row);
   };
 

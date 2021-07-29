@@ -11,7 +11,6 @@ import { seedUser } from '../user/user.model.mock';
 import { Org } from './org.model';
 
 describe(`Org Controller`, () => {
-
   const basePath = '/api/org';
   let req: TestRequest;
 
@@ -20,7 +19,6 @@ describe(`Org Controller`, () => {
   });
 
   describe(`${basePath} : get`, () => {
-
     it(`gets list of all orgs`, async () => {
       const { org: org1 } = await seedOrgContact();
       const { org: org2 } = await seedOrgContact();
@@ -35,11 +33,9 @@ describe(`Org Controller`, () => {
       const orgIds = res.data.map((x: Org) => x.id);
       expect(orgIds).to.include.members([org1.id, org2.id]);
     });
-
   });
 
   describe(`${basePath}/:orgId : get`, () => {
-
     it(`gets the org`, async () => {
       const { org } = await seedOrgContact();
       const user = await seedUser({ rootAdmin: true });
@@ -56,11 +52,9 @@ describe(`Org Controller`, () => {
         defaultMusterConfiguration: org.defaultMusterConfiguration,
       });
     });
-
   });
 
   describe(`${basePath}/:orgId : delete`, () => {
-
     it(`deletes the org`, async () => {
       const { org } = await seedOrgContact();
       await seedOrgContact();
@@ -81,11 +75,9 @@ describe(`Org Controller`, () => {
 
       expect(await Org.count()).to.equal(orgsCountBefore - 1);
     });
-
   });
 
   describe(`${basePath}/:orgId : put`, () => {
-
     it(`updates the org`, async () => {
       const { org } = await seedOrgContact();
       const user = await seedUser({ rootAdmin: true });
@@ -107,11 +99,9 @@ describe(`Org Controller`, () => {
       expect(orgAfter.name).to.equal(body.name);
       expect(orgAfter.description).to.equal(body.description);
     });
-
   });
 
   describe(`${basePath} : post`, () => {
-
     it(`adds an org`, async () => {
       const user = await seedUser({ rootAdmin: true });
       const contact = await seedUser();
@@ -144,11 +134,9 @@ describe(`Org Controller`, () => {
 
       expect(await Org.count()).to.equal(orgsCountBefore + 1);
     });
-
   });
 
   describe(`${basePath}/:orgId/default-muster : put`, () => {
-
     it(`updates the org's default muster configuration`, async () => {
       const { org, roleAdmin } = await seedOrgContactRoles();
       const user = await seedUser();
@@ -168,7 +156,5 @@ describe(`Org Controller`, () => {
       const orgAfter = (await Org.findOne(org.id))!;
       expect(orgAfter.defaultMusterConfiguration).to.eql(body.defaultMusterConfiguration);
     });
-
   });
-
 });

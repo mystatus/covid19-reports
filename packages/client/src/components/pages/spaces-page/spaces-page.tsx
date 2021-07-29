@@ -43,12 +43,12 @@ export const SpacesPage = () => {
 
   useEffect(() => {
     dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
-    dispatch(UserActions.refresh());
-    dispatch(Workspace.fetch(orgId));
+    void dispatch(UserActions.refresh());
+    void dispatch(Workspace.fetch(orgId));
   }, [dispatch, orgId]);
 
   useEffect(() => {
-    (async () => {
+    void (async () => {
       for (const workspace of workspaces) {
         await dispatch(Workspace.fetchDashboards(orgId, workspace.id));
       }
@@ -59,13 +59,13 @@ export const SpacesPage = () => {
 
   const handleFavoriteButtonClick = (workspace: ApiWorkspace, dashboard: ApiDashboard) => {
     if (isDashboardFavorited(workspace, dashboard)) {
-      dispatch(UserActions.removeFavoriteDashboard({
+      void dispatch(UserActions.removeFavoriteDashboard({
         orgId,
         workspaceId: workspace.id,
         dashboardUuid: dashboard.uuid,
       }));
     } else {
-      dispatch(UserActions.addFavoriteDashboard({
+      void dispatch(UserActions.addFavoriteDashboard({
         orgId,
         workspaceId: workspace.id,
         dashboardUuid: dashboard.uuid,

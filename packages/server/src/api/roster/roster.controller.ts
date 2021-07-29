@@ -278,7 +278,7 @@ class RosterController {
   }
 
   async addRosterEntry(req: ApiRequest<OrgParam, RosterEntryData>, res: Response) {
-    const newRosterEntry = await getManager().transaction(async manager => {
+    const newRosterEntry = await getManager().transaction(manager => {
       return addRosterEntry(req.appOrg!, req.appUserRole!.role, req.body, manager);
     });
     res.status(201).json(newRosterEntry);
@@ -322,12 +322,13 @@ class RosterController {
     assertRequestParams(req, ['rosterId']);
     const entryId = +req.params.rosterId;
 
-    const entry = await getManager().transaction(async manager => {
+    const entry = await getManager().transaction(manager => {
       return editRosterEntry(req.appOrg!, req.appUserRole!, entryId, req.body, manager);
     });
 
     res.json(entry);
   }
+
 }
 
 export async function getRosterInfosForIndividualOnDate(edipi: string, dateStr: string) {

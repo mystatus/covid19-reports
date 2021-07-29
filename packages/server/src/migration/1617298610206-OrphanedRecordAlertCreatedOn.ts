@@ -1,6 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class OrphanedRecordAlertCreatedOn1617298610206 implements MigrationInterface {
+
   name = 'OrphanedRecordAlertCreatedOn1617298610206';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

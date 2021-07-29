@@ -43,16 +43,16 @@ export type QueryValueScalarType = string | number | boolean;
 export type QueryValueType = QueryValueScalarType | QueryValueScalarType[];
 
 export type QueryFieldPickListItem = {
-  label: string
-  value: string | number
+  label: string;
+  value: string | number;
 };
 
 export type QueryField = {
-  editor?: React.ReactElement<ValueEditorProps>
-  displayName?: string
-  name: string
-  type: QueryFieldType
-  items?: QueryFieldPickListItem[],
+  editor?: React.ReactElement<ValueEditorProps>;
+  displayName?: string;
+  name: string;
+  type: QueryFieldType;
+  items?: QueryFieldPickListItem[];
 };
 
 /**
@@ -60,11 +60,11 @@ export type QueryField = {
  in the query builder UI.
  */
 export type QueryRow = {
-  field: QueryField
-  op: QueryOp
-  value: QueryValueType
-  expression: string
-  expressionEnabled: boolean
+  field: QueryField;
+  op: QueryOp;
+  value: QueryValueType;
+  expression: string;
+  expressionEnabled: boolean;
 };
 
 /**
@@ -73,16 +73,16 @@ export type QueryRow = {
  */
 export type QueryFilterState = {
   [key: string]: {
-    op: QueryOp
-    value: QueryValueType
-    expression: string
-    expressionEnabled: boolean
-  }
+    op: QueryOp;
+    value: QueryValueType;
+    expression: string;
+    expressionEnabled: boolean;
+  };
 };
 
 interface ValueEditorProps {
-  onChange: (row: QueryRow) => void
-  row: QueryRow
+  onChange: (row: QueryRow) => void;
+  row: QueryRow;
 }
 
 const StringValue = ({ onChange, row }: ValueEditorProps) => {
@@ -180,7 +180,7 @@ const BooleanValue = ({ onChange, row }: ValueEditorProps) => {
 };
 
 interface DateTimeValueEditorProps extends ValueEditorProps {
-  hasTime: boolean
+  hasTime: boolean;
 }
 
 
@@ -278,7 +278,7 @@ const DateTimeValue = ({ hasTime, onChange, row }: DateTimeValueEditorProps) => 
 
 
 interface RangeValueEditorProps extends ValueEditorProps {
-  component: React.ReactElement<ValueEditorProps>
+  component: React.ReactElement<ValueEditorProps>;
 }
 
 const RangeValue = ({ component, onChange, row }: RangeValueEditorProps) => {
@@ -315,7 +315,6 @@ const RangeValue = ({ component, onChange, row }: RangeValueEditorProps) => {
       ))}
     </Grid>
   );
-
 };
 
 const PickListValue = (props: ValueEditorProps) => {
@@ -374,8 +373,8 @@ const Editor = (props: ValueEditorProps) => {
 };
 
 type FieldSelectorProps = {
-  fields: QueryField[]
-  onChange: (field: QueryField) => void
+  fields: QueryField[];
+  onChange: (field: QueryField) => void;
 };
 
 const FieldSelector = (props: FieldSelectorProps) => {
@@ -399,13 +398,13 @@ const FieldSelector = (props: FieldSelectorProps) => {
 };
 
 type OpsDesc = {
-  [key: string]: string
+  [key: string]: string;
 };
 
 type QueryOpSelectorProps = {
-  onChange: (op: QueryOp) => void
-  value: QueryOp
-  ops: OpsDesc
+  onChange: (op: QueryOp) => void;
+  value: QueryOp;
+  ops: OpsDesc;
 };
 
 const getOpDesc = (field: QueryField): OpsDesc => {
@@ -519,9 +518,9 @@ const QueryOpSelector = (props: QueryOpSelectorProps) => {
 };
 
 type QueryBuilderRowProps = {
-  availableFields: QueryField[]
-  onChange: (row: QueryRow) => void
-  row: QueryRow
+  availableFields: QueryField[];
+  onChange: (row: QueryRow) => void;
+  row: QueryRow;
 };
 
 const QueryBuilderRow = (props: QueryBuilderRowProps) => {
@@ -570,10 +569,10 @@ const QueryBuilderRow = (props: QueryBuilderRowProps) => {
 };
 
 export interface QueryBuilderProps {
-  fields: QueryField[]
-  onChange: (query: QueryFilterState | undefined) => void
-  open: boolean
-  persistKey?: string
+  fields: QueryField[];
+  onChange: (query: QueryFilterState | undefined) => void;
+  open: boolean;
+  persistKey?: string;
 }
 
 function toQuery(rows: QueryRow[]) {

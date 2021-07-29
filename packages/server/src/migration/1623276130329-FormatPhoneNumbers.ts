@@ -26,8 +26,8 @@ async function updatePhoneNumbers(queryRunner: QueryRunner, formatter: (phone: s
   // Orphaned records.
   //
   const orphanedRecords = await queryRunner.query(`SELECT "document_id", "phone" FROM "orphaned_record"`) as Array<{
-    document_id: string
-    phone: string
+    document_id: string;
+    phone: string;
   }>;
 
   for (const row of orphanedRecords) {
@@ -39,8 +39,8 @@ async function updatePhoneNumbers(queryRunner: QueryRunner, formatter: (phone: s
   // Access requests.
   //
   const accessRequests = await queryRunner.query(`SELECT "id", "sponsor_phone" FROM "access_request"`) as Array<{
-    id: number
-    sponsor_phone: string
+    id: number;
+    sponsor_phone: string;
   }>;
 
   for (const row of accessRequests) {
@@ -52,8 +52,8 @@ async function updatePhoneNumbers(queryRunner: QueryRunner, formatter: (phone: s
   // Users.
   //
   const users = await queryRunner.query(`SELECT "edipi", "phone" FROM "user"`) as Array<{
-    edipi: string
-    phone: string
+    edipi: string;
+    phone: string;
   }>;
 
   for (const row of users) {
@@ -65,10 +65,10 @@ async function updatePhoneNumbers(queryRunner: QueryRunner, formatter: (phone: s
   // Roster.
   //
   const rosterEntries = await queryRunner.query(`SELECT "id", "custom_columns" FROM "roster"`) as Array<{
-    id: number
+    id: number;
     custom_columns: {
-      [columnName: string]: string | boolean | number | null
-    }
+      [columnName: string]: string | boolean | number | null;
+    };
   }>;
 
   // Disable triggers temporarily on roster to avoid roster history updates.
@@ -91,10 +91,10 @@ async function updatePhoneNumbers(queryRunner: QueryRunner, formatter: (phone: s
   // Roster history.
   //
   const rosterHistoryEntries = await queryRunner.query(`SELECT "id", "custom_columns" FROM "roster_history"`) as Array<{
-    id: number
+    id: number;
     custom_columns: {
-      [columnName: string]: string | boolean | number | null
-    }
+      [columnName: string]: string | boolean | number | null;
+    };
   }>;
 
   for (const row of rosterHistoryEntries) {

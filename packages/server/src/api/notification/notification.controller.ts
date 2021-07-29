@@ -188,7 +188,7 @@ function sanitizeUserNotificationSetting(setting: UserNotificationSetting) {
   };
 }
 
-async function setNotificationSettingFromBody(setting: UserNotificationSetting, body: UserNotificationSettingBody) {
+function setNotificationSettingFromBody(setting: UserNotificationSetting, body: UserNotificationSettingBody) {
   if (body.threshold != null) {
     setting.threshold = body.threshold;
   }

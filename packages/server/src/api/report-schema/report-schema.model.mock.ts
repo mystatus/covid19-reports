@@ -20,7 +20,7 @@ export function seedReport(org: Org) {
 }
 
 export function seedReports(org: Org, options: {
-  count: number
+  count: number;
 }) {
   const { count } = options;
   const reports = [] as ReportSchema[];

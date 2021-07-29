@@ -1,12 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
 import {
-  Button, Divider, IconButton, Paper, Switch, Table, TableCell, TableRow, Typography,
+  Button,
+  Divider,
+  IconButton,
+  Paper,
+  Switch,
+  Table,
+  TableCell,
+  TableRow,
+  Typography,
 } from '@material-ui/core';
 import { HelpOutline } from '@material-ui/icons';
-import { ApiNotification, ApiUserNotificationSetting } from '../../../models/api-response';
+import {
+  ApiNotification,
+  ApiUserNotificationSetting,
+} from '../../../models/api-response';
 import useStyles from './notifications-tab.style';
 import { TabPanelProps } from './settings-page';
-import { EditAlertDialog, EditAlertDialogProps } from './edit-alert-dialog';
+import {
+  EditAlertDialog,
+  EditAlertDialogProps,
+} from './edit-alert-dialog';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { UserSelector } from '../../../selectors/user.selector';
@@ -15,11 +32,11 @@ import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 
 interface NotificationSettings {
-  [key: string]: ApiUserNotificationSetting,
+  [key: string]: ApiUserNotificationSetting;
 }
 
 interface NotificationSaving {
-  [key: string]: boolean,
+  [key: string]: boolean;
 }
 
 export const NotificationsTab = (props: TabPanelProps) => {
@@ -52,13 +69,13 @@ export const NotificationsTab = (props: TabPanelProps) => {
     setNotificationSaving(saving);
   }, [orgId]);
 
-  const editAlertClicked = async (setting: ApiUserNotificationSetting) => {
+  const editAlertClicked = (setting: ApiUserNotificationSetting) => {
     setEditAlertDialogProps({
       open: true,
       orgId,
       setting,
       notification: notifications.find(notification => notification.id === setting.notificationId),
-      onClose: async (newSetting?: ApiUserNotificationSetting) => {
+      onClose: (newSetting?: ApiUserNotificationSetting) => {
         if (newSetting) {
           setNotificationSettings(previous => {
             const newState = { ...previous };
@@ -69,7 +86,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
         setEditAlertDialogProps({ open: false });
       },
       onError: (message: string) => {
-        dispatch(Modal.alert('Edit Alert', `Unable to edit alert settings: ${message}`));
+        void dispatch(Modal.alert('Edit Alert', `Unable to edit alert settings: ${message}`));
       },
     });
   };
@@ -113,7 +130,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
         return newState;
       });
     } catch (error) {
-      dispatch(Modal.alert('Error', formatErrorMessage(error, 'An error occurred while saving the alert setting'))).then();
+      void dispatch(Modal.alert('Error', formatErrorMessage(error, 'An error occurred while saving the alert setting')));
       await initializeTable();
     }
   };
@@ -131,7 +148,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
           size="small"
           variant="text"
           className={classes.changeAlertButton}
-          onClick={async () => editAlertClicked(setting)}
+          onClick={() => editAlertClicked(setting)}
         >
           Change
         </Button>
@@ -140,14 +157,14 @@ export const NotificationsTab = (props: TabPanelProps) => {
   };
 
   const displayInfo = () => {
-    dispatch(Modal.alert('Alerts',
+    void dispatch(Modal.alert('Alerts',
       `Alerts within the StatusEngine application have been designed to give you the most up-to-date
       information on your group and users without overburdening your inbox or mobile device. Each alert topic
       has customizable parameters that allow you to tweak the alert type, threshold, frequency, and minimum
-      time between individual alerts.`)).then();
+      time between individual alerts.`));
   };
 
-  useEffect(() => { initializeTable().then(); }, [initializeTable]);
+  useEffect(() => { void initializeTable(); }, [initializeTable]);
 
   return (
     <div

@@ -5,9 +5,7 @@ import { seedUserRole } from './user-role.model.mock';
 import { seedUser } from './user.model.mock';
 
 describe(`UserRole Model`, () => {
-
   describe(`cascades on delete`, () => {
-
     it(`user`, async () => {
       const { roleUser } = await seedOrgContactRoles();
       const user = await seedUser();
@@ -21,11 +19,9 @@ describe(`UserRole Model`, () => {
       const userRoleDeleted = await UserRole.findOne(userRole.id);
       expect(userRoleDeleted).not.to.exist;
     });
-
   });
 
   describe(`restricts on delete`, () => {
-
     it(`role`, async () => {
       const { roleUser } = await seedOrgContactRoles();
       const user = await seedUser();
@@ -40,7 +36,5 @@ describe(`UserRole Model`, () => {
 
       await expect(roleUser.remove()).to.be.fulfilled;
     });
-
   });
-
 });

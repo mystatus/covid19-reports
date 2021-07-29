@@ -7,10 +7,14 @@ import { requireInternalUser, requireOrgAccess, requireRolePermission } from '..
 
 const rosterUpload = multer({
   storage: multer.diskStorage({
+    // eslint-disable-next-line promise/prefer-await-to-callbacks
     destination: (req: any, file: any, cb: any) => {
+      // eslint-disable-next-line promise/prefer-await-to-callbacks
       cb(null, path.join(__dirname, 'uploads'));
     },
+    // eslint-disable-next-line promise/prefer-await-to-callbacks
     filename: (req: any, file: any, cb: any) => {
+      // eslint-disable-next-line promise/prefer-await-to-callbacks
       cb(null, `${file.fieldname}-${Date.now()}-${file.originalname}`);
     },
   }),

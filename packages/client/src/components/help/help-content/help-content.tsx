@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 import useStyles from './help-content.styles';
 
 export interface HelpContentProps {
-  children?: ReactNode
+  children?: ReactNode;
 }
 
 export const HelpContent = (props: HelpContentProps) => {

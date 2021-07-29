@@ -31,7 +31,6 @@ import {
 } from './access-request.model';
 
 describe(`AccessRequest Controller`, () => {
-
   const basePath = '/api/access-request';
   let req: TestRequest;
   let org: Org;
@@ -44,7 +43,6 @@ describe(`AccessRequest Controller`, () => {
   });
 
   describe(`${basePath}/:orgId : get`, () => {
-
     it(`returns the org's access requests`, async () => {
       const users = await seedUsers({ count: 2 });
       const accessRequests = await seedAccessRequests(users, org);
@@ -61,11 +59,9 @@ describe(`AccessRequest Controller`, () => {
         accessRequests[1].id,
       ]);
     });
-
   });
 
   describe(`${basePath}/:orgId : post`, () => {
-
     it(`issues an access request`, async () => {
       const user = await seedUser();
 
@@ -97,11 +93,9 @@ describe(`AccessRequest Controller`, () => {
       expect(request.sponsorEmail).to.equal(body.sponsorEmail);
       expect(request.sponsorPhone).to.equal(formatPhoneNumber(body.sponsorPhone));
     });
-
   });
 
   describe(`${basePath}/:orgId/cancel : post`, () => {
-
     it(`deletes the user's access request`, async () => {
       const users = await seedUsers({ count: 2 });
       await seedAccessRequests(users, org);
@@ -126,11 +120,9 @@ describe(`AccessRequest Controller`, () => {
       const accessRequestsAfterEdipis = accessRequestsAfter.map(x => x.user!.edipi);
       expect(accessRequestsAfterEdipis).not.to.include(users[0].edipi);
     });
-
   });
 
   describe(`${basePath}/:orgId/approve : post`, () => {
-
     it(`adds user to the org and deletes access request`, async () => {
       const users = await seedUsers({ count: 2 });
       const accessRequest = await seedAccessRequest(users[0], org);
@@ -237,11 +229,9 @@ describe(`AccessRequest Controller`, () => {
       const orgUsersAfterEdipis = orgUsersAfter.map(x => x.edipi);
       expect(orgUsersAfterEdipis).to.include(users[0].edipi);
     });
-
   });
 
   describe(`${basePath}/:orgId/deny : post`, () => {
-
     it(`sets the access request status as denied`, async () => {
       const users = await seedUsers({ count: 2 });
       let accessRequest = await seedAccessRequest(users[0], org);
@@ -263,7 +253,5 @@ describe(`AccessRequest Controller`, () => {
 
       expect((await org.getUsers()).length).to.equal(orgUsersCountBefore);
     });
-
   });
-
 });

@@ -28,7 +28,6 @@ import {
 } from './unit.model.mock';
 
 describe(`Unit Controller`, () => {
-
   const basePath = '/api/unit';
   let req: TestRequest;
   let org: Org;
@@ -41,7 +40,6 @@ describe(`Unit Controller`, () => {
   });
 
   describe(`${basePath}/:orgId : get`, () => {
-
     it(`gets the org's units`, async () => {
       const units = await seedUnits(org, { count: 2 });
 
@@ -54,11 +52,9 @@ describe(`Unit Controller`, () => {
       expect(dataIds).to.include(units[0].id);
       expect(dataIds).to.include(units[1].id);
     });
-
   });
 
   describe(`${basePath}/:orgId : post`, () => {
-
     it(`adds a unit to the org`, async () => {
       const unitCountBefore = await Unit.count();
       const orgUnitCountBefore = await Unit.count({
@@ -108,11 +104,9 @@ describe(`Unit Controller`, () => {
       });
       expect(orgUnitCountAfter).to.eql(orgUnitCountBefore + 1);
     });
-
   });
 
   describe(`${basePath}/:orgId/:unitId : put`, () => {
-
     let elasticsearchUpdateByQueryStub: Stub<typeof elasticsearch['updateByQuery']>;
 
     beforeEach(() => {
@@ -184,11 +178,9 @@ describe(`Unit Controller`, () => {
 
       expectError(res, 'Unrecognized report type');
     });
-
   });
 
   describe(`${basePath}/:orgId/:unitId : delete`, () => {
-
     it(`deletes the org's unit`, async () => {
       const units = await seedUnits(org, { count: 2 });
 
@@ -211,11 +203,9 @@ describe(`Unit Controller`, () => {
       const unitAfter = await Unit.findOne(units[0].id);
       expect(unitAfter).not.to.exist;
     });
-
   });
 
   describe(`${basePath}/:orgId/:unitId/roster : get`, () => {
-
     it(`gets the roster for the org's unit as it existed at the specified timestamp`, async () => {
       const userInternal = await seedUserInternal();
       const { org: otherOrg } = await seedOrgContact();
@@ -266,7 +256,5 @@ describe(`Unit Controller`, () => {
       expect(res.data).to.be.array();
       expect(res.data).to.have.lengthOf(2);
     });
-
   });
-
 });

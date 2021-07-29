@@ -76,21 +76,21 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
   next();
 }
 
-export async function requireInternalUser(req: ApiRequest, res: Response, next: NextFunction) {
+export function requireInternalUser(req: ApiRequest, res: Response, next: NextFunction) {
   if (req.appUser.isInternal()) {
     return next();
   }
   throw new ForbiddenError('User does not have sufficient privileges to perform this action.');
 }
 
-export async function requireRegisteredUser(req: ApiRequest, res: Response, next: NextFunction) {
+export function requireRegisteredUser(req: ApiRequest, res: Response, next: NextFunction) {
   if (req.appUser.isRegistered) {
     return next();
   }
   throw new ForbiddenError('User is not registered.');
 }
 
-export async function requireRootAdmin(req: ApiRequest, res: Response, next: NextFunction) {
+export function requireRootAdmin(req: ApiRequest, res: Response, next: NextFunction) {
   if (req.appUser.rootAdmin) {
     return next();
   }
@@ -180,7 +180,7 @@ export function requireWorkspaceAccess(reqAny: any, res: Response, next: NextFun
 }
 
 export function requireRolePermission(action: (role: Role) => boolean) {
-  return async (req: ApiRequest, res: Response, next: NextFunction) => {
+  return (req: ApiRequest, res: Response, next: NextFunction) => {
     if (req.appUserRole && action(req.appUserRole.role)) {
       return next();
     }
@@ -189,5 +189,5 @@ export function requireRolePermission(action: (role: Role) => boolean) {
 }
 
 type AuthRequest = {
-  appUser?: User
+  appUser?: User;
 } & Request;

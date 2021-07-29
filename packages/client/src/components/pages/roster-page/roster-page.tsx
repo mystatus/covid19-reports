@@ -95,8 +95,8 @@ const unitColumn: ApiRosterColumnInfo = {
 };
 
 interface SortState {
-  column: string,
-  sortDirection: SortDirection,
+  column: string;
+  sortDirection: SortDirection;
 }
 
 export const RosterPage = () => {
@@ -185,7 +185,7 @@ export const RosterPage = () => {
         }
       }
     } catch (e) {
-      dispatch(Modal.alert('Error', formatErrorMessage(e, 'Error Applying Filters'))).then();
+      void dispatch(Modal.alert('Error', formatErrorMessage(e, 'Error Applying Filters')));
     }
   }, [dispatch, page, rowsPerPage, orgId, queryFilterState, sortState]);
 
@@ -203,9 +203,8 @@ export const RosterPage = () => {
       }
       const data = await RosterClient.searchRoster(orgId, body, query);
       return data.rows.length ? data.rows[0] : null;
-
     } catch (e) {
-      dispatch(Modal.alert('Error', formatErrorMessage(e, 'Error Getting Roster Entry for Orphan'))).then();
+      void dispatch(Modal.alert('Error', formatErrorMessage(e, 'Error Getting Roster Entry for Orphan')));
     }
     return null;
   }, [dispatch, orgId]);
@@ -220,12 +219,12 @@ export const RosterPage = () => {
         setVisibleColumns(unitColumnWithInfos.slice(0, maxNumColumnsToShow));
       }
     } catch (error) {
-      dispatch(Modal.alert('Get Roster Column Info', formatErrorMessage(error, 'Failed to get roster column info'))).then();
+      void dispatch(Modal.alert('Get Roster Column Info', formatErrorMessage(error, 'Failed to get roster column info')));
     }
   }, [dispatch, initialLoadComplete, orgId, setVisibleColumns, visibleColumns.length]);
 
-  const fetchUnits = useCallback(async () => {
-    dispatch(Unit.fetch(orgId));
+  const fetchUnits = useCallback(() => {
+    void dispatch(Unit.fetch(orgId));
   }, [dispatch, orgId]);
 
   const fetchOrphanedRecords = useCallback(async () => {
@@ -246,7 +245,7 @@ export const RosterPage = () => {
         },
       }));
     } catch (error) {
-      dispatch(Modal.alert('Get Orphaned Records', formatErrorMessage(error, 'Failed to get orphaned records'))).then();
+      void dispatch(Modal.alert('Get Orphaned Records', formatErrorMessage(error, 'Failed to get orphaned records')));
     }
   }, [canManageRoster, dispatch, orgId, orphanedRecordsPage, orphanedRecordsRowsPerPage, orphanedRecordsUnitFilter]);
 
@@ -257,32 +256,38 @@ export const RosterPage = () => {
 
   useEffect(() => {
     if (initialLoadStep === 0) {
-      Promise.all([
-        fetchRosterColumnInfo(),
-        fetchUnits(),
-      ]).then(incrementInitialLoadStep);
+      void (async () => {
+        await Promise.all([
+          fetchRosterColumnInfo(),
+          fetchUnits(),
+        ]);
+        incrementInitialLoadStep();
+      })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLoadStep]);
 
   useEffect(() => {
     if (initialLoadStep === 1) {
-      Promise.all([
-        fetchOrphanedRecords(),
-        fetchRoster(),
-      ]).then(() => incrementInitialLoadStep(true));
+      void (async () => {
+        await Promise.all([
+          fetchOrphanedRecords(),
+          fetchRoster(),
+        ]);
+        incrementInitialLoadStep(true);
+      })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLoadStep]);
 
   // Orphaned records reload.
   useEffectDebounced(() => {
-    fetchOrphanedRecords().then();
+    void fetchOrphanedRecords();
   }, [fetchOrphanedRecords]);
 
   // Roster reload.
   useEffectDebounced(() => {
-    fetchRoster().then();
+    void fetchRoster();
   }, [fetchRoster]);
 
   // Units dropdown refresh.
@@ -300,8 +305,8 @@ export const RosterPage = () => {
 
   const sortRosterColumns = (columns: ApiRosterColumnInfo[]) => {
     const columnPriority: {
-      [key: string]: number | undefined,
-      default: number,
+      [key: string]: number | undefined;
+      default: number;
     } = {
       edipi: 1,
       firstName: 2,
@@ -350,15 +355,15 @@ export const RosterPage = () => {
       uploadCount = data.count;
     } catch (err) {
       const message = formatErrorMessage(err);
-      dispatch(Modal.alert('Upload Error', message)).then();
+      void dispatch(Modal.alert('Upload Error', message));
       return;
     } finally {
       // Clear the file input value.
       fileInputRef.current!.value = '';
     }
 
-    dispatch(Modal.alert('Upload Successful', `Successfully uploaded ${uploadCount} roster entries.`)).then();
-    handleRosterOrOrphanedRecordsModified().then();
+    void dispatch(Modal.alert('Upload Successful', `Successfully uploaded ${uploadCount} roster entries.`));
+    void handleRosterOrOrphanedRecordsModified();
   };
 
   const getCellDisplayValue = (rosterEntry: ApiRosterEntry, column: ApiRosterColumnInfo) => {
@@ -381,33 +386,33 @@ export const RosterPage = () => {
     }
   };
 
-  const editEntryClicked = async (rosterEntry: ApiRosterEntry) => {
+  const editEntryClicked = (rosterEntry: ApiRosterEntry) => {
     setEditRosterEntryDialogProps({
       open: true,
       orgId,
       rosterColumnInfos,
       rosterEntry,
-      onClose: async () => {
+      onClose: () => {
         setEditRosterEntryDialogProps({ open: false });
-        handleRosterOrOrphanedRecordsModified().then();
+        void handleRosterOrOrphanedRecordsModified();
       },
       onError: (message: string) => {
-        dispatch(Modal.alert('Edit Roster Entry', `Unable to edit roster entry: ${message}`));
+        void dispatch(Modal.alert('Edit Roster Entry', `Unable to edit roster entry: ${message}`));
       },
     });
   };
 
-  const addEntryClicked = async () => {
+  const addEntryClicked = () => {
     setEditRosterEntryDialogProps({
       open: true,
       orgId,
       rosterColumnInfos,
-      onClose: async () => {
+      onClose: () => {
         setEditRosterEntryDialogProps({ open: false });
-        handleRosterOrOrphanedRecordsModified().then();
+        void handleRosterOrOrphanedRecordsModified();
       },
       onError: (message: string) => {
-        dispatch(Modal.alert('Add Roster Entry', `Unable to add roster entry: ${message}`));
+        void dispatch(Modal.alert('Add Roster Entry', `Unable to add roster entry: ${message}`));
       },
     });
   };
@@ -427,10 +432,10 @@ export const RosterPage = () => {
     try {
       await dispatch(Roster.deleteAll(orgId));
     } catch (err) {
-      dispatch(Modal.alert('Delete All Entries', formatErrorMessage(err, 'Unable to delete all entries'))).then();
+      void dispatch(Modal.alert('Delete All Entries', formatErrorMessage(err, 'Unable to delete all entries')));
     }
 
-    handleRosterOrOrphanedRecordsModified().then();
+    void handleRosterOrOrphanedRecordsModified();
   };
 
   const deleteEntryClicked = async (rosterEntry: ApiRosterEntry) => {
@@ -448,10 +453,10 @@ export const RosterPage = () => {
     try {
       await RosterClient.deleteRosterEntry(orgId, rosterEntry.id);
     } catch (err) {
-      dispatch(Modal.alert('Remove Roster Entry', formatErrorMessage(err, 'Unable to remove roster entry'))).then();
+      void dispatch(Modal.alert('Remove Roster Entry', formatErrorMessage(err, 'Unable to remove roster entry')));
     }
 
-    handleRosterOrOrphanedRecordsModified().then();
+    void handleRosterOrOrphanedRecordsModified();
   };
 
   const downloadCSVExport = async () => {
@@ -463,7 +468,7 @@ export const RosterPage = () => {
       const filename = `${_.kebabCase(orgName)}_roster_export_${date}`;
       downloadFile(data, filename, 'csv');
     } catch (error) {
-      dispatch(Modal.alert('Roster CSV Export', formatErrorMessage(error, 'Unable to export roster to CSV'))).then();
+      void dispatch(Modal.alert('Roster CSV Export', formatErrorMessage(error, 'Unable to export roster to CSV')));
     } finally {
       setExportRosterLoading(false);
     }
@@ -475,13 +480,13 @@ export const RosterPage = () => {
       const data = await RosterClient.getRosterTemplate(orgId);
       downloadFile(data, 'roster-template', 'csv');
     } catch (error) {
-      dispatch(Modal.alert('CSV Template Download', formatErrorMessage(error, 'Unable to download CSV template'))).then();
+      void dispatch(Modal.alert('CSV Template Download', formatErrorMessage(error, 'Unable to download CSV template')));
     } finally {
       setDownloadTemplateLoading(false);
     }
   };
 
-  const addOrphanToRosterClicked = async (row: ApiOrphanedRecord) => {
+  const addOrphanToRosterClicked = (row: ApiOrphanedRecord) => {
     setEditRosterEntryDialogProps({
       open: true,
       orgId,
@@ -490,15 +495,15 @@ export const RosterPage = () => {
         edipi: row.edipi,
         unit: units.find(unit => unit.name === row.unit)?.id,
       },
-      onSave: async (body: ApiRosterEntryData) => {
+      onSave: (body: ApiRosterEntryData) => {
         return OrphanedRecordClient.resolveOrphanedRecordWithAdd(orgId, row.id, body);
       },
-      onClose: async () => {
+      onClose: () => {
         setEditRosterEntryDialogProps({ open: false });
-        handleRosterOrOrphanedRecordsModified().then();
+        void handleRosterOrOrphanedRecordsModified();
       },
       onError: (message: string) => {
-        dispatch(Modal.alert('Add Orphan to Roster', `Unable to add orphan to roster: ${message}`));
+        void dispatch(Modal.alert('Add Orphan to Roster', `Unable to add orphan to roster: ${message}`));
       },
     });
   };
@@ -506,7 +511,7 @@ export const RosterPage = () => {
   const editOrphanOnRosterClicked = async (row: ApiOrphanedRecord) => {
     const rosterEntry = await fetchRosterEntry(row);
     if (!rosterEntry) {
-      dispatch(Modal.alert('Edit Roster Entry for Orphan', `Unable to find the roster entry`)).then();
+      void dispatch(Modal.alert('Edit Roster Entry for Orphan', `Unable to find the roster entry`));
       return;
     }
     setEditRosterEntryDialogProps({
@@ -515,15 +520,15 @@ export const RosterPage = () => {
       rosterColumnInfos,
       rosterEntry,
       orphanedRecord: row,
-      onSave: async (body: ApiRosterEntry) => {
+      onSave: (body: ApiRosterEntry) => {
         return OrphanedRecordClient.resolveOrphanedRecordWithEdit(orgId, row.id, body);
       },
-      onClose: async () => {
+      onClose: () => {
         setEditRosterEntryDialogProps({ open: false });
-        handleRosterOrOrphanedRecordsModified().then();
+        void handleRosterOrOrphanedRecordsModified();
       },
       onError: (message: string) => {
-        dispatch(Modal.alert('Edit Roster Entry for Orphan', `Unable to edit the roster entry: ${message}`));
+        void dispatch(Modal.alert('Edit Roster Entry for Orphan', `Unable to edit the roster entry: ${message}`));
       },
     });
   };
@@ -548,7 +553,7 @@ export const RosterPage = () => {
       });
       await handleRosterOrOrphanedRecordsModified();
     } catch (error) {
-      dispatch(Modal.alert('Ignore Orphan', formatErrorMessage(error, 'Unable to ignore the record'))).then();
+      void dispatch(Modal.alert('Ignore Orphan', formatErrorMessage(error, 'Unable to ignore the record')));
     } finally {
       setOrphanedRecordsWaiting(false);
     }
@@ -577,7 +582,7 @@ export const RosterPage = () => {
     setOrphanedRecordsPage(pageNew);
   };
 
-  const handleOrphanedRecordsUnitFilterChange = (event: ChangeEvent<{ name?: string, value: unknown }>) => {
+  const handleOrphanedRecordsUnitFilterChange = (event: ChangeEvent<{ name?: string; value: unknown }>) => {
     setOrphanedRecordsUnitFilter(event.target.value as string);
   };
 

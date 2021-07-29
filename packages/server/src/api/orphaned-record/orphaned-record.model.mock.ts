@@ -21,8 +21,8 @@ export function mockOrphanedRecord(org: Org, customData?: Partial<OrphanedRecord
 }
 
 export function seedOrphanedRecords(org: Org, options: {
-  count: number,
-  customData?: Partial<OrphanedRecord>,
+  count: number;
+  customData?: Partial<OrphanedRecord>;
 }) {
   const { count, customData } = options;
   const orphanedRecords: OrphanedRecord[] = [];

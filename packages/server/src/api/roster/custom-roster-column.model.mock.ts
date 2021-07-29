@@ -4,7 +4,7 @@ import { Org } from '../org/org.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 
 export function mockCustomRosterColumn(org: Org, options?: {
-  customData?: Partial<CustomRosterColumn>
+  customData?: Partial<CustomRosterColumn>;
 }) {
   const { customData } = options ?? {};
 
@@ -26,7 +26,7 @@ export function mockCustomRosterColumn(org: Org, options?: {
 }
 
 export function seedCustomRosterColumn(org: Org, options?: {
-  customData?: Partial<CustomRosterColumn>
+  customData?: Partial<CustomRosterColumn>;
 }) {
   return mockCustomRosterColumn(org, options).save();
 }

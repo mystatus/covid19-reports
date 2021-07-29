@@ -45,7 +45,7 @@ export const RoleTable = (props: TableProps) => {
 
 export interface RoleDataTableProps<T> extends TableProps {
   data: T[];
-  extractLabel: ((row: T) => string) | keyof Record<keyof T, string>
+  extractLabel: ((row: T) => string) | keyof Record<keyof T, string>;
   extractValue: ((row: T) => React.ReactNode);
 }
 

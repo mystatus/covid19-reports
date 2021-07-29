@@ -8,28 +8,32 @@ export namespace Modal {
   export namespace Actions {
 
     export class Alert {
+
       static type = 'MODAL_ALERT';
       type = Alert.type;
       constructor(
         public payload: {
-          buttons?: ModalButton[],
-          message: string,
-          open: boolean,
-          title: string,
+          buttons?: ModalButton[];
+          message: string;
+          open: boolean;
+          title: string;
         },
         public resolve: (response: ModalResponse) => void,
       ) {}
+
     }
 
     export class Close {
+
       static type = 'MODAL_CLOSE';
       type = Close.type;
       constructor(
         public payload: {
-          title: string,
-          response: ModalResponse,
+          title: string;
+          response: ModalResponse;
         },
       ) {}
+
     }
   }
 
@@ -42,9 +46,9 @@ export namespace Modal {
   };
 
   export const confirm = (title: string, message: string, options?: {
-    destructive?: boolean,
-    confirmText?: string,
-    cancelText?: string,
+    destructive?: boolean;
+    confirmText?: string;
+    cancelText?: string;
   }) => {
     const {
       destructive = false,

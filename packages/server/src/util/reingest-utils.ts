@@ -6,15 +6,15 @@ import { BadRequestError } from './error-types';
 const maxPayloadSize = 100;
 
 interface LambdaRecord {
-  eventName: string,
-  dynamodb: object
+  eventName: string;
+  dynamodb: object;
 }
 
 function buildPayloadsFromData(data: AWS.DynamoDB.QueryOutput) {
   let payload = {
     Records: new Array<LambdaRecord>(),
   };
-  const payloads: { Records: LambdaRecord[]; }[] = [];
+  const payloads: { Records: LambdaRecord[] }[] = [];
   let recordsIngested = 0;
   if (!data.Items) {
     return {

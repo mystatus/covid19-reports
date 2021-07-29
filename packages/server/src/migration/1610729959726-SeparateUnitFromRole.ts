@@ -1,6 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class SeparateUnitFromRole1610729959726 implements MigrationInterface {
+
   name = 'SeparateUnitFromRole1610729959726';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

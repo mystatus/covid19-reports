@@ -36,16 +36,16 @@ import { formatErrorMessage } from '../../../utility/errors';
 import { RosterClient } from '../../../client/roster.client';
 
 export interface EditColumnDialogProps {
-  open: boolean,
-  orgId?: number,
-  column?: ApiRosterColumnInfo,
-  onClose?: () => void,
-  onError?: (error: string) => void,
+  open: boolean;
+  orgId?: number;
+  column?: ApiRosterColumnInfo;
+  onClose?: () => void;
+  onError?: (error: string) => void;
 }
 
 type CustomFlag = {
-  label: string
-  key: keyof Pick<ApiRosterStringColumnConfig, 'multiline'>
+  label: string;
+  key: keyof Pick<ApiRosterStringColumnConfig, 'multiline'>;
 };
 
 const customFlagsForType = (type: RosterColumnType): CustomFlag[] => {

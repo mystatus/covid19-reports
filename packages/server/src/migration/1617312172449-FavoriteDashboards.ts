@@ -4,6 +4,7 @@ import {
 } from 'typeorm';
 
 export class FavoriteDashboards1617312172449 implements MigrationInterface {
+
   name = 'FavoriteDashboards1617312172449';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

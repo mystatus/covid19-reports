@@ -1,6 +1,7 @@
-import {MigrationInterface, QueryRunner} from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddPhNumberToRoster1626272858319 implements MigrationInterface {
+
   name = 'AddPhNumberToRoster1626272858319';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

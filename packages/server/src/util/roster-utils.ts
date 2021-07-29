@@ -97,7 +97,7 @@ export async function editRosterEntry(org: Org, userRole: UserRole, entryId: num
   return manager.save(entry);
 }
 
-export async function getRosterHistoryForIndividual(edipi: string, unitId: number) {
+export function getRosterHistoryForIndividual(edipi: string, unitId: number) {
   return RosterHistory.createQueryBuilder('rh')
     .where('rh.unit_id = :unitId', { unitId })
     .andWhere('rh.edipi = :edipi', { edipi })
@@ -117,7 +117,7 @@ export function getCsvValueForRosterColumn(entry: RosterEntryData, column: Roste
 export async function saveRosterPhoneNumber(edipi: string, phoneNumber: string, entityManager: EntityManager) {
   // The same edipi can potentially be in the roster table multiple times
   // since an individual can be on multiple units.
-  const rosters: Roster[] = await Roster.find({ where: { edipi }});
+  const rosters: Roster[] = await Roster.find({ where: { edipi } });
   if (!rosters || rosters.length === 0) {
     throw new BadRequestError(`Unable to find ${edipi} in Roster`);
   }

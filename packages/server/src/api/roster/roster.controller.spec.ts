@@ -38,7 +38,6 @@ import {
 } from './roster.model.mock';
 
 describe(`Roster Controller`, () => {
-
   const basePath = '/api/roster';
   let req: TestRequest;
   let org: Org;
@@ -51,7 +50,6 @@ describe(`Roster Controller`, () => {
   });
 
   describe(`${basePath}/:orgId/column : get`, () => {
-
     it(`gets the org's roster column info`, async () => {
       const columnA = await seedCustomRosterColumn(org);
       const columnB = await seedCustomRosterColumn(org);
@@ -64,11 +62,9 @@ describe(`Roster Controller`, () => {
       const dataColumnNames = res.data.map((x: CustomRosterColumn) => x.name);
       expect(dataColumnNames).to.include.members([columnA.name, columnB.name]);
     });
-
   });
 
   describe(`${basePath}/:orgId/column : post`, () => {
-
     it(`adds a custom roster column to the org`, async () => {
       const customColumnsCountBefore = await CustomRosterColumn.count({
         where: { org },
@@ -113,11 +109,9 @@ describe(`Roster Controller`, () => {
       });
       expect(customColumnsCountAfter).to.equal(customColumnsCountBefore + 1);
     });
-
   });
 
   describe(`${basePath}/:orgId/column/:columnName : put`, () => {
-
     it(`updates the custom column`, async () => {
       const column = await seedCustomRosterColumn(org);
 
@@ -145,11 +139,9 @@ describe(`Roster Controller`, () => {
         config: body.config,
       });
     });
-
   });
 
   describe(`${basePath}/:orgId/column/:columnName : delete`, () => {
-
     it(`deletes the column`, async () => {
       const column = await seedCustomRosterColumn(org);
 
@@ -173,11 +165,9 @@ describe(`Roster Controller`, () => {
 
       expect(await CustomRosterColumn.count()).to.equal(columnCountBefore - 1);
     });
-
   });
 
   describe(`${basePath}/info/:edipi : get`, () => {
-
     it(`gets an individual's roster infos`, async () => {
       const userInternal = await seedUserInternal();
       const unit = await seedUnit(org);
@@ -222,11 +212,9 @@ describe(`Roster Controller`, () => {
         'value',
       ]);
     });
-
   });
 
   describe(`${basePath}/:orgId/template : get`, () => {
-
     it(`gets the org's roster template`, async () => {
       const customColumn = await seedCustomRosterColumn(org);
 
@@ -238,11 +226,9 @@ describe(`Roster Controller`, () => {
       expect(csvHeaderParts).to.include.members(['Unit', 'DoD ID', 'First Name', 'Last Name', customColumn.display]);
       expect(csvHeaderParts).to.include(customColumn.name);
     });
-
   });
 
   describe(`${basePath}/:orgId/allowed-column : get`, () => {
-
     it(`gets the org's roster column info`, async () => {
       const customColumn = await seedCustomRosterColumn(org);
 
@@ -254,11 +240,9 @@ describe(`Roster Controller`, () => {
       expect(dataNames).to.include.members(baseRosterColumns.map(x => x.name));
       expect(dataNames).to.include(customColumn.name);
     });
-
   });
 
   describe(`${basePath}/:orgId : get`, () => {
-
     it(`gets the org's roster`, async () => {
       const units = [
         await seedUnit(org),
@@ -279,11 +263,9 @@ describe(`Roster Controller`, () => {
       const dataIds = res.data.rows.map((x: Roster) => x.id);
       expect(dataIds).to.include.members(rosterEntries.map(x => x.id));
     });
-
   });
 
   describe(`${basePath}/:orgId/search : post`, () => {
-
     it(`returns the matching roster entries`, async () => {
       const units = [
         await seedUnit(org),
@@ -308,11 +290,9 @@ describe(`Roster Controller`, () => {
       expect(res.data.totalRowsCount).to.equal(1);
       expect(res.data.rows[0].edipi).to.equal(rosterEntries[1].edipi);
     });
-
   });
 
   describe(`${basePath}/:orgId : post`, () => {
-
     it(`adds a roster entry to the org`, async () => {
       const unit = await seedUnit(org);
 
@@ -372,11 +352,9 @@ describe(`Roster Controller`, () => {
       });
       expect(rosterHistoryCountAfter).to.equal(rosterHistoryCountBefore + 1);
     });
-
   });
 
   describe(`${basePath}/:orgId/bulk : post`, () => {
-
     it(`adds multiple roster entries with an uploaded csv`, async () => {
       const unit = await seedUnit(org);
 
@@ -420,11 +398,9 @@ describe(`Roster Controller`, () => {
       });
       expect(rosterHistoryCountAfter).to.equal(rosterHistoryCountBefore + entriesToAdd);
     });
-
   });
 
   describe(`${basePath}/:orgId/bulk : delete`, () => {
-
     it(`deletes all roster entries visible to the user in the org`, async () => {
       // Unit that should have its roster deleted.
       const unitToBeCleared = await seedUnit(org);
@@ -486,11 +462,9 @@ describe(`Roster Controller`, () => {
       });
       expect(otherOrgUnitRosterCountAfter).to.equal(otherOrgUnitRosterCountBefore);
     });
-
   });
 
   describe(`${basePath}/:orgId/:rosterId : get`, () => {
-
     it(`gets a roster entry in the org`, async () => {
       const unit = await seedUnit(org);
       const rosterEntries = [
@@ -507,13 +481,10 @@ describe(`Roster Controller`, () => {
         firstName: rosterEntries[0].firstName,
         lastName: rosterEntries[0].lastName,
       });
-
     });
-
   });
 
   describe(`${basePath}/:orgId/:rosterId : delete`, () => {
-
     it(`deletes a roster entry in the org`, async () => {
       const unit = await seedUnit(org);
       const rosterEntries = [
@@ -541,11 +512,9 @@ describe(`Roster Controller`, () => {
       const rosterEntry1After = await Roster.findOne(rosterEntries[1].id);
       expect(rosterEntry1After).to.exist;
     });
-
   });
 
   describe(`${basePath}/:orgId/:rosterId : put`, () => {
-
     it(`updates a roster entry in the org`, async () => {
       const unit = await seedUnit(org);
       const rosterEntries = [
@@ -565,7 +534,5 @@ describe(`Roster Controller`, () => {
       expect(rosterEntry0After.firstName).to.equal(body.firstName);
       expect(rosterEntry0After.lastName).to.equal(body.lastName);
     });
-
   });
-
 });

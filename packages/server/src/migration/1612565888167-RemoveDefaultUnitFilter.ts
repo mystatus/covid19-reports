@@ -1,6 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class RemoveDefaultUnitFilter1612565888167 implements MigrationInterface {
+
   name = 'RemoveDefaultUnitFilter1612565888167';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

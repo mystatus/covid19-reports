@@ -1,6 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class StartAndEndDateColumnsType1606327183104 implements MigrationInterface {
+
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "roster" ADD "start_date_value" DATE DEFAULT null`);
     await queryRunner.query(`UPDATE "roster" SET "start_date_value" = DATE(start_date)`);
@@ -24,4 +25,5 @@ export class StartAndEndDateColumnsType1606327183104 implements MigrationInterfa
     await queryRunner.query(`ALTER TABLE "roster" ALTER COLUMN end_date TYPE timestamp without time zone USING end_date_value`);
     await queryRunner.query(`ALTER TABLE "roster" DROP COLUMN "end_date_value"`);
   }
+
 }

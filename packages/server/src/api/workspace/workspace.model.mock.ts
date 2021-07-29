@@ -19,7 +19,7 @@ export function seedWorkspace(org: Org, workspaceTemplate: WorkspaceTemplate) {
 }
 
 export function seedWorkspaces(org: Org, workspaceTemplate: WorkspaceTemplate, options: {
-  count: number
+  count: number;
 }) {
   const { count } = options;
   const workspaces = [] as Workspace[];

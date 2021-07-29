@@ -4,6 +4,7 @@ import {
 } from 'typeorm';
 
 export class MultipleWorkspaceSupport1615235153483 implements MigrationInterface {
+
   name = 'MultipleWorkspaceSupport1615235153483';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -12,9 +12,7 @@ import {
 import { AccessRequest } from './access-request.model';
 
 describe(`AccessRequest Model`, () => {
-
   describe(`cascades on delete`, () => {
-
     it(`user`, async () => {
       const { org } = await seedOrgContactRoles();
       const user = await seedUser();
@@ -42,7 +40,5 @@ describe(`AccessRequest Model`, () => {
       const accessRequestDeleted = await AccessRequest.findOne(accessRequest.id);
       expect(accessRequestDeleted).not.to.exist;
     });
-
   });
-
 });

@@ -4,9 +4,7 @@ import { CustomRosterColumn } from './custom-roster-column.model';
 import { seedCustomRosterColumn } from './custom-roster-column.model.mock';
 
 describe(`CustomRosterColumn Model`, () => {
-
   describe(`cascades on delete`, () => {
-
     it(`org`, async () => {
       const { org } = await seedOrgContact();
       const column = await seedCustomRosterColumn(org);
@@ -25,7 +23,5 @@ describe(`CustomRosterColumn Model`, () => {
       });
       expect(columnAfter).not.to.exist;
     });
-
   });
-
 });

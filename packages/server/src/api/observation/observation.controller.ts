@@ -6,13 +6,14 @@ import { Observation } from './observation.model';
 import { ApiRequest, EdipiParam } from '../api.router';
 import { Log } from '../../util/log';
 import { ReportSchema } from '../report-schema/report-schema.model';
-import { getRosterInfosForIndividualOnDate} from '../roster/roster.controller';
+import { getRosterInfosForIndividualOnDate } from '../roster/roster.controller';
 import { timestampColumnTransformer } from '../../util/util';
 import { BadRequestError } from '../../util/error-types';
 import { assertRequestBody } from '../../util/api-utils';
 import { saveRosterPhoneNumber } from '../../util/roster-utils';
 
 class ObservationController {
+
   async getAllObservations(req: Request, res: Response) {
     return res.json(await Observation.find());
   }
@@ -50,13 +51,14 @@ class ObservationController {
 
     res.json(observation);
   }
+
 }
 
 function hasReportingGroup(rosterInfo: RosterInfo, reportingGroup: string | undefined) {
   return reportingGroup && rosterInfo.unit.org?.reportingGroup === reportingGroup;
 }
 
-async function findReportSchema(reportSchemaId: string, orgId: number | undefined) {
+function findReportSchema(reportSchemaId: string, orgId: number | undefined) {
   return ReportSchema.findOne({
     relations: ['org'],
     where: {
@@ -66,7 +68,7 @@ async function findReportSchema(reportSchemaId: string, orgId: number | undefine
   });
 }
 
-async function saveObservationWithReportSchema(req: ApiRequest<EdipiParam, ObservationApiModel>, reportSchema: ReportSchema, manager: EntityManager) {
+function saveObservationWithReportSchema(req: ApiRequest<EdipiParam, ObservationApiModel>, reportSchema: ReportSchema, manager: EntityManager) {
   const observation = new Observation();
   observation.documentId = req.body.documentId;
   observation.edipi = req.body.edipi;

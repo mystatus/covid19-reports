@@ -2,8 +2,8 @@ import { Box } from '@material-ui/core';
 import React, { ReactNode } from 'react';
 
 export type PageHelpProps = {
-  description: string | ReactNode
-  bullets?: Array<string | ReactNode>
+  description: string | ReactNode;
+  bullets?: Array<string | ReactNode>;
 };
 
 export const PageHelp = (props: PageHelpProps) => {
