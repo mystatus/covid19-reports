@@ -170,6 +170,27 @@ yarn test
 
 `--clean` - Drops, recreates, and migrates the test database before running tests.
 
+
+## Linting
+
+You can run the linter for the entire project by running `yarn run lint`. Or, if you would prefer to lint a single
+subproject, you can run it for that particularly workspace, such as `yarn run server lint`.
+
+
+## Workspaces
+
+We're using [yarn workspaces](https://classic.yarnpkg.com/en/docs/workspaces/) to simplify sharing functionality/types
+across subprojects. Any functions or types that may be useful on both the server and client should be added to the `shared`
+subproject and exported in its `index.ts` file.
+
+There are also utility scripts defined in the root `package.json` that will allow you to succinctly run package scripts
+in subprojects. So you can execute any of the following from the project root...
+
+- `yarn run client {script-name}`
+- `yarn run server {script-name}`
+- `yarn run shared {script-name}`
+
+
 ## Notes
 
 The client portion of this project was bootstrapped with [create-react-app](https://github.com/facebook/create-react-app), and uses
