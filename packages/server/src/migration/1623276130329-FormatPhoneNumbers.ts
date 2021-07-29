@@ -72,7 +72,8 @@ async function updatePhoneNumbers(queryRunner: QueryRunner, formatter: (phone: s
   }>;
 
   // Disable triggers temporarily on roster to avoid roster history updates.
-  await queryRunner.query(`ALTER TABLE "roster" DISABLE TRIGGER ALL`);
+  await queryRunner.query(`ALTER TABLE "roster" DISABLE TRIGGER "roster_audit"`);
+  await queryRunner.query(`ALTER TABLE "roster" DISABLE TRIGGER "roster_truncate"`);
 
   for (const row of rosterEntries) {
     for (const [columnName, columnValue] of Object.entries(row.custom_columns)) {
@@ -85,7 +86,8 @@ async function updatePhoneNumbers(queryRunner: QueryRunner, formatter: (phone: s
   }
 
   // Re-enable triggers on roster.
-  await queryRunner.query(`ALTER TABLE "roster" ENABLE TRIGGER ALL`);
+  await queryRunner.query(`ALTER TABLE "roster" ENABLE TRIGGER "roster_audit"`);
+  await queryRunner.query(`ALTER TABLE "roster" ENABLE TRIGGER "roster_truncate"`);
 
   //
   // Roster history.
