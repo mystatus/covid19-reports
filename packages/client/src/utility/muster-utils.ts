@@ -1,5 +1,11 @@
 import moment, { Moment } from 'moment-timezone';
-import { dayIsIn, DaysOfTheWeek, daysToString, nextDay, oneDaySeconds } from '@covid19-reports/shared/src/utils/days';
+import {
+  dayIsIn,
+  DaysOfTheWeek,
+  daysToString,
+  nextDay,
+  oneDaySeconds,
+} from '@covid19-reports/shared';
 import { ApiReportSchema, MusterConfiguration } from '../models/api-response';
 
 

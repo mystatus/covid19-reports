@@ -36,8 +36,10 @@ import {
 } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
-import { AddUnitBody } from '@covid19-reports/shared';
-import { DaysOfTheWeek } from '@covid19-reports/shared/src/utils/days';
+import {
+  AddUnitBody,
+  DaysOfTheWeek,
+} from '@covid19-reports/shared';
 import useStyles from './edit-unit-dialog.styles';
 import {
   ApiUnit,

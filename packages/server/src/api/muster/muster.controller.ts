@@ -2,19 +2,27 @@ import { Response } from 'express';
 import { Brackets } from 'typeorm';
 import moment from 'moment-timezone';
 import {
+  GetMusterComplianceByDateQuery,
+  GetClosedMusterWindowsQuery,
+  GetMusterRosterQuery,
+  GetMusterUnitTrendsQuery,
+  GetNearestMusterWindowQuery,
+  GetMusterComplianceByDateResponse,
   MusterConfiguration,
-  PaginatedQuery,
   Paginated,
 } from '@covid19-reports/shared';
 import { assertRequestQuery } from '../../util/api-utils';
-import { BadRequestError, NotFoundError } from '../../util/error-types';
+import {
+  BadRequestError,
+  NotFoundError,
+} from '../../util/error-types';
 import {
   buildMusterWindow,
   getDistanceToWindow,
   getEarliestMusterWindowTime,
-  getOneTimeMusterWindowTime,
   getMusterRosterStats,
   getMusterUnitTrends,
+  getOneTimeMusterWindowTime,
   MusterWindow,
 } from '../../util/muster-utils';
 import {
@@ -51,11 +59,12 @@ class MusterController {
     const toDate = moment(req.query.toDate);
     const limit = parseInt(req.query.limit);
     const page = parseInt(req.query.page);
+    const unitId = (req.query.unitId != null) ? parseInt(req.query.unitId) : undefined;
 
     const rosterStats = await getMusterRosterStats({
       org: req.appOrg!,
       userRole: req.appUserRole!,
-      unitId: req.query.unitId || undefined,
+      unitId,
       fromDate,
       toDate,
     });
@@ -224,7 +233,10 @@ class MusterController {
    * This method returns the normalized rate (0 - 1.0) of compliance on a given
    * date for a given unit, against  of the unit's muster configs.
    */
-  async getMusterComplianceByDate(req: ApiRequest<{orgId: number; unitName: string}, null, DateQuery>, res: Response<MusterComplianceResponse>) {
+  async getMusterComplianceByDate(
+    req: ApiRequest<{ orgId: number; unitName: string }, null, GetMusterComplianceByDateQuery>,
+    res: Response<GetMusterComplianceByDateResponse>,
+  ) {
     const outValue = { musterComplianceRate: 0 };
     const reportDate = dateFromString(req.query.timestamp);
     if (!reportDate) {
@@ -333,35 +345,5 @@ async function getUsersOnRosterByDate(orgId: number, unitName: string, date: str
     musterConfig: null,
   };
 }
-
-type GetMusterRosterQuery = {
-  fromDate: string;
-  toDate: string;
-  unitId: number | null;
-} & PaginatedQuery;
-
-type GetMusterUnitTrendsQuery = {
-  currentDate: string;
-  weeksCount?: string;
-  monthsCount?: string;
-};
-
-type GetClosedMusterWindowsQuery = {
-  since: string;
-  until: string;
-};
-
-type GetNearestMusterWindowQuery = {
-  timestamp: string;
-  reportId: string;
-};
-
-type DateQuery = {
-  timestamp: string;
-};
-
-type MusterComplianceResponse = {
-  musterComplianceRate: number;
-};
 
 export default new MusterController();

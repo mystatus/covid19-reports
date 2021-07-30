@@ -26,8 +26,10 @@ import { DatePicker, MuiPickersUtilsProvider, TimePicker } from '@material-ui/pi
 import MomentUtils from '@date-io/moment';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import clsx from 'clsx';
-import { UpdateOrgDefaultMusterBody } from '@covid19-reports/shared';
-import { DaysOfTheWeek } from '@covid19-reports/shared/src/utils/days';
+import {
+  DaysOfTheWeek,
+  UpdateOrgDefaultMusterBody,
+} from '@covid19-reports/shared';
 import useStyles from './default-muster-dialog.styles';
 import { MusterConfiguration } from '../../../models/api-response';
 import { UserSelector } from '../../../selectors/user.selector';

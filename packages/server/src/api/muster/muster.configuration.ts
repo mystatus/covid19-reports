@@ -1,6 +1,9 @@
-import { MusterConfiguration, MusterConfWithDateArray } from '@covid19-reports/shared';
+import {
+  MusterConfiguration,
+  MusterConfWithDateArray,
+  binaryDaysToDateArray,
+} from '@covid19-reports/shared';
 import { In } from 'typeorm';
-import { binaryDaysToDateArray } from '@covid19-reports/shared/src/utils/days';
 import { Unit } from '../unit/unit.model';
 import { Org } from '../org/org.model';
 
