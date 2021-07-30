@@ -5,7 +5,7 @@ export type MusterConfiguration = {
 } & MusterConfBase;
 
 export type MusterConfWithDateArray = {
-  days: number[]
+  days: number[];
 } & MusterConfBase;
 
 export type MusterConfBase = {
