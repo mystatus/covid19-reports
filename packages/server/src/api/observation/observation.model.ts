@@ -38,4 +38,3 @@ export class Observation extends BaseEntity {
   @Column({ length: 100, nullable: true})
   reportingGroup?: string;
 }
-
