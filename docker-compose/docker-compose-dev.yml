@@ -1,7 +1,7 @@
 services:
-  postgis-dds:
-    image: kartoza/postgis:11.5-2.5
-    container_name: postgis-dds
+  postgres-dds:
+    image: postgres:11.12
+    container_name: postgres-dds
     env_file:
       - system.env
     ports:
