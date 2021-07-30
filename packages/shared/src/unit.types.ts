@@ -1,12 +1,19 @@
 import { OrgSerialized } from './org.types';
 
-export type MusterConfiguration = {
-  days?: number
-  startTime: string
-  timezone: string
-  durationMinutes: number
-  reportId: string
-};
+export interface MusterConfiguration extends MusterConfBase{
+  days?: number,
+}
+
+export interface MusterConfWithDateArray extends MusterConfBase{
+  days: number[],
+}
+
+export interface MusterConfBase {
+  startTime: string,
+  timezone: string,
+  durationMinutes: number,
+  reportId: string,
+}
 
 export type UnitSerialized = {
   id: number

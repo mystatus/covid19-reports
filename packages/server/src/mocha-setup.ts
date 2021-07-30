@@ -19,15 +19,24 @@ import { Workspace } from './api/workspace/workspace.model';
 import server from './index';
 import { ReportSchema } from './api/report-schema/report-schema.model';
 
+// Set NO_MOCHA_INTEGRATION to true when running test not requiring database or server
+const skipMochaIntegrationSetup = process.env.NO_MOCHA_INTEGRATION === 'true';
+
 chai.use(chaiAsPromised);
 chai.use(chaiSubset);
 chai.use(chaiArrays);
 
 before(async () => {
+  if (skipMochaIntegrationSetup) {
+    return;
+  }
   await server;
 });
 
 beforeEach(async () => {
+  if (skipMochaIntegrationSetup) {
+    return;
+  }
   try {
     // Clear relations that will cause constraint errors.
     await getManager().query(`DELETE FROM role_workspaces_workspace`);

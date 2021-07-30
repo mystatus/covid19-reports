@@ -17,6 +17,7 @@
     "clean": "./clean.sh"
   },
   "dependencies": {
+    "chai": "^4.3.4",
     "libphonenumber-js": "^1.9.22"
   }
 }

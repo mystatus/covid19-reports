@@ -38,12 +38,12 @@ import MomentUtils from '@date-io/moment';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import { useSelector } from 'react-redux';
 import { AddUnitBody } from '@covid19-reports/shared';
+import { DaysOfTheWeek } from '@covid19-reports/shared/src/utils/days';
 import useStyles from './edit-unit-dialog.styles';
 import {
   ApiUnit,
   MusterConfiguration,
 } from '../../../models/api-response';
-import { DaysOfTheWeek } from '../../../utility/days';
 import { formatErrorMessage } from '../../../utility/errors';
 import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
 import {
