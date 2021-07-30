@@ -67,11 +67,11 @@ export function toUnitMusterConf(musterUnitConf: UnitMusterConfFromDb[]): UnitMu
 }
 
 export type UnitMusterConfFromDb = {
-  unitId: number
-  musterConf: MusterConfiguration[]
+  unitId: number;
+  musterConf: MusterConfiguration[];
 };
 
 export type UnitMusterConf = {
-  unitId: number
-  musterConf: MusterConfWithDateArray[]
+  unitId: number;
+  musterConf: MusterConfWithDateArray[];
 };

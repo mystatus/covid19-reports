@@ -10,9 +10,7 @@ import {
 import { toUnitMusterConf, UnitMusterConf, UnitMusterConfFromDb } from './muster.configuration';
 
 describe('Mustering Opportunities', () => {
-
   it('toUnitMusterConf() should convert "binary" date format to "array" date format', () => {
-
     const rawMusterUnitConf: UnitMusterConfFromDb[] = [
       {
         unitId: 1,
@@ -75,12 +73,11 @@ describe('Mustering Opportunities', () => {
         },
       ],
     }];
-    const mtv:UnitMusterConf[] = toUnitMusterConf(rawMusterUnitConf);
+    const mtv: UnitMusterConf[] = toUnitMusterConf(rawMusterUnitConf);
     expect(mtv).to.eql(expected);
   });
 
   it('toSingleMusterTimeView() should convert single muster config to date range list of muster windows', () => {
-
     const fromDate = moment('2021-07-01T00:00:00.000Z');
     const toDate = moment('2021-08-01T00:00:00.000Z');
 
@@ -96,7 +93,6 @@ describe('Mustering Opportunities', () => {
   });
 
   it('toMusterTimeView() should convert all muster config to date range list of muster windows', () => {
-
     const fromDate = moment('2021-07-01T00:00:00.000Z');
     const toDate = moment('2021-08-01T00:00:00.000Z');
     const input: UnitMusterConf[] = [
@@ -136,12 +132,11 @@ describe('Mustering Opportunities', () => {
 
     const expectedUnitOneDates = [toExpectedUnitOnePartOneDate(), toExpectedUnitOnePartTwoDate()].flat(1);
     const expectedUnitTwoDates = toExpectedUnitTwoPartOneDate();
-    const expected = {1: expectedUnitOneDates, 2: expectedUnitTwoDates};
+    const expected = { 1: expectedUnitOneDates, 2: expectedUnitTwoDates };
     asertEqualTwoUnits(timeView, expected);
   });
 
   it('getMusterTimeViewWithEndTimes() should calculate the end date', () => {
-
     const startDate = '2021-07-07T06:00:00.000Z';
     const expectedEndDate = '2021-07-07T07:00:00.000Z';
     const durationMinutes = 60;

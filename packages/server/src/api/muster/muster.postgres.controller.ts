@@ -2,9 +2,9 @@ import { Response } from 'express';
 import moment from 'moment-timezone';
 import { GetMusterRosterQuery, Paginated } from '@covid19-reports/shared';
 import { assertRequestQuery } from '../../util/api-utils';
-import { ApiRequest, OrgRoleParams} from '../api.router';
+import { ApiRequest, OrgRoleParams } from '../api.router';
 import { Log } from '../../util/log';
-import { toMusterCompliance, MusterCompliance} from './muster.compliance';
+import { toMusterCompliance, MusterCompliance } from './muster.compliance';
 import { getRosterWithUnitsAndEdipis } from '../../util/roster-utils';
 import { getMusteringOpportunities } from './mustering.opportunities';
 import { getObservations } from '../observation/observation.utils';
@@ -16,7 +16,6 @@ class MusterPostgresCtr {
    * Provides Muster Compliance details for all service members for the given unit id(s)
    */
   async getUserMusterCompliance(req: ApiRequest<OrgRoleParams, null, GetMusterRosterQuery>, res: Response<Paginated<Partial<MusterCompliance>>>) {
-
     Log.info('Muster Postgres Ctr - getMusterRoster()');
     assertRequestQuery(req, ['fromDate', 'toDate', 'limit', 'page']);
 
@@ -41,6 +40,7 @@ class MusterPostgresCtr {
       totalRowsCount: musterCompliance.length,
     });
   }
+
 }
 
 function toPageWithRowLimit(musterInfo: MusterCompliance[], page: number, limit: number): MusterCompliance[] {

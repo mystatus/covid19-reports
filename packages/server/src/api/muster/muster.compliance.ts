@@ -54,7 +54,7 @@ export function calculateMusterCompliance(
   musterTimeView: MusteringOpportunities,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   musterComplianceReport: IntermediateMusterCompliance[],
-) : MusterCompliance[] {
+): MusterCompliance[] {
   // this is to be implemented as part of a different task
   return [];
 }
@@ -63,19 +63,19 @@ export function calculateMusterCompliance(
  * Represents muster compliance for an individual
  */
 export type MusterCompliance = {
-  totalMusters: number
-  mustersReported: number
-  musterPercent: number
+  totalMusters: number;
+  mustersReported: number;
+  musterPercent: number;
 } & IntermediateMusterCompliance;
 
 /**
  * Represents muster compliance without any compliance calculations
  */
 type IntermediateMusterCompliance = {
-  edipi: string
-  firstName: string
-  lastName: string
-  myCustomColumn1: string,
-  unitId: number
-  phone?: string
+  edipi: string;
+  firstName: string;
+  lastName: string;
+  myCustomColumn1: string;
+  unitId: number;
+  phone?: string;
 };
