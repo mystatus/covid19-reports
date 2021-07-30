@@ -5,15 +5,15 @@ export type MusterConfiguration = {
 } & MusterConfBase;
 
 export type MusterConfWithDateArray = {
-  days: number[];
+  days: number[]
 } & MusterConfBase;
 
-export interface MusterConfBase {
+export type MusterConfBase = {
   startTime: string;
   timezone: string;
   durationMinutes: number;
   reportId: string;
-}
+};
 
 export type UnitSerialized = {
   id: number;
