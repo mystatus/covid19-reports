@@ -1,6 +1,12 @@
 import moment, { Moment } from 'moment-timezone';
+import {
+  dayIsIn,
+  DaysOfTheWeek,
+  daysToString,
+  nextDay,
+  oneDaySeconds,
+} from '@covid19-reports/shared';
 import { ApiReportSchema, MusterConfiguration } from '../models/api-response';
-import { dayIsIn, DaysOfTheWeek, daysToString, nextDay, oneDaySeconds } from './days';
 
 
 export type MusterWindow = {

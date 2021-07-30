@@ -54,4 +54,43 @@ export function daysToString(days: DaysOfTheWeek) {
   return dayStr;
 }
 
+/**
+ * The <strong><code>daysToDateList</code></strong> function <strong>converts dates in the binary form
+ * to an array of dates</strong>.
+ * The first day of the week, Sunday is represented by <code>[1]</code>.
+ * For example the number <code>3</code> binary date is return as <code>[1,2]</code>.
+ *
+ * @param days The binary form of days
+ */
+export function binaryDaysToDateArray(days: number | undefined): number[] {
+  if (!days) {
+    return [];
+  }
+  const setDays: number[] = [];
+  /* eslint-disable no-bitwise */
+  if (days & DaysOfTheWeek.Sunday) {
+    setDays.push(1);
+  }
+  if (days & DaysOfTheWeek.Monday) {
+    setDays.push(2);
+  }
+  if (days & DaysOfTheWeek.Tuesday) {
+    setDays.push(3);
+  }
+  if (days & DaysOfTheWeek.Wednesday) {
+    setDays.push(4);
+  }
+  if (days & DaysOfTheWeek.Thursday) {
+    setDays.push(5);
+  }
+  if (days & DaysOfTheWeek.Friday) {
+    setDays.push(6);
+  }
+  if (days & DaysOfTheWeek.Saturday) {
+    setDays.push(7);
+  }
+  /* eslint-enable no-bitwise */
+  return setDays;
+}
+
 export const oneDaySeconds = 24 * 60 * 60;

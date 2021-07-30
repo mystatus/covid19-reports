@@ -25,6 +25,7 @@
     "migration-run": "./migration-run.sh"
   },
   "dependencies": {
+    "@breejs/later": "^4.0.2",
     "@covid19-reports/shared": "*",
     "@types/chai": "^4.2.14",
     "@types/chai-arrays": "^2.0.0",

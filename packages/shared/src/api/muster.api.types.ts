@@ -21,3 +21,11 @@ export type GetNearestMusterWindowQuery = {
   timestamp: string;
   reportId: string;
 };
+
+export type GetMusterComplianceByDateQuery = {
+  timestamp: string;
+};
+
+export type GetMusterComplianceByDateResponse = {
+  musterComplianceRate: number;
+};
