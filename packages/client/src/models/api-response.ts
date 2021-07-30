@@ -3,7 +3,7 @@ import {
   RosterColumnType,
   RosterColumnValue,
 } from '@covid19-reports/shared';
-import { DaysOfTheWeek } from '../utility/days';
+import { DaysOfTheWeek } from '@covid19-reports/shared/src/utils/days';
 
 export interface ApiPaginated<TData> {
   rows: TData[];

@@ -117,6 +117,7 @@ export function getCsvValueForRosterColumn(entry: RosterEntryData, column: Roste
 export async function saveRosterPhoneNumber(edipi: string, phoneNumber: string, entityManager: EntityManager) {
   // The same edipi can potentially be in the roster table multiple times
   // since an individual can be on multiple units.
+  // This is not however intentional but we will handle this case.
   const rosters: Roster[] = await Roster.find({ where: { edipi } });
   if (!rosters || rosters.length === 0) {
     throw new BadRequestError(`Unable to find ${edipi} in Roster`);
@@ -127,3 +128,46 @@ export async function saveRosterPhoneNumber(edipi: string, phoneNumber: string, 
     await entityManager.save(roster);
   }
 }
+
+/**
+ * The <strong><code>getRosterWithUnitsAndEdipis()</code></strong> function <strong> returns roster information
+ * for the given unit and organization</strong>.
+ *
+ * @param unitId The unit ID. If missing then roster information is returned for all units.
+ * @param orgId The organization ID
+ */
+export async function getRosterWithUnitsAndEdipis(unitId: string, orgId: number): Promise<RosterWithUnitsAndEdipis> {
+
+  const rostersFromDb = await getRosters(unitId, orgId);
+  return {
+    roster: rostersFromDb,
+    unitIds: getUnitIds(rostersFromDb),
+    edipis: getEdipi(rostersFromDb),
+  };
+}
+
+async function getRosters(unitId: string, orgId: number): Promise<Roster[]> {
+  let rosters;
+  if (unitId) {
+    rosters = await Roster.find({ relations: ['unit', 'unit.org'], where: { unit: unitId } });
+  } else {
+    rosters = await Roster.find({ relations: ['unit', 'unit.org'] });
+  }
+  return rosters.filter(roster => roster.unit.org!.id === orgId);
+}
+
+/** Get an array of unique Unit IDs */
+function getUnitIds(rosters: Roster[]): number[] {
+  return Array.from(new Set(rosters.map(r => r.unit.id)));
+}
+
+/** Get an array of unique edipis */
+function getEdipi(rosters: Roster[]): string[] {
+  return Array.from(new Set(rosters.map(r => r.edipi)));
+}
+
+type RosterWithUnitsAndEdipis = {
+  roster: Roster[],
+  unitIds: number[],
+  edipis: string[]
+};
