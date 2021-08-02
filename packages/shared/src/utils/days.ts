@@ -20,6 +20,12 @@ export function dayIsIn(day: DaysOfTheWeek, set: DaysOfTheWeek) {
   return (set & day) === day;
 }
 
+// Convert a moment day (i.e. moment.getDay()) to a day bit
+export function getDayBitFromMomentDay(momentDay: number) {
+  // eslint-disable-next-line no-bitwise
+  return 1 << momentDay;
+}
+
 export function daysToString(days: DaysOfTheWeek) {
   const setDays: string[] = [];
   /* eslint-disable no-bitwise */

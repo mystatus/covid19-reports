@@ -39,12 +39,11 @@ class MusterPostgresCtr {
       const musterTimeView = await getMusteringOpportunities(orgId, rosters.unitIds, fromDate, toDate);
       const observations = await getObservations(rosters.edipis, fromDate, toDate);
       // console.log(observations);
-      // musterCompliance = toMusterCompliance(rosters.roster, observations, musterTimeView);
+      musterCompliance = toMusterCompliance(rosters.roster, observations, musterTimeView);
     } catch (e) {
       console.error(e);
       throw e;
     }
-
 
     return res.json({
       rows: toPageWithRowLimit(musterCompliance, pageNumber, rowLimit),
