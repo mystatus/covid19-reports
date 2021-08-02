@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { ApiRequest, OrgParam, OrgReportParams } from '../api.router';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
 import { ReportSchema, SchemaColumn } from './report-schema.model';
+import { Log } from '../../util/log';
 
 class ReportSchemaController {
 
@@ -48,50 +49,17 @@ class ReportSchemaController {
   }
 
   async getReport(req: ApiRequest<OrgReportParams>, res: Response) {
-    const report = await ReportSchema.findOne({
-      relations: ['org'],
-      where: {
-        id: req.params.reportId,
-        org: req.appOrg!.id,
-      },
-    });
-
-    if (!report) {
-      throw new NotFoundError('Report could not be found.');
-    }
-
-    res.json(report);
+    res.json(await ReportSchemaController.findReport(req));
   }
 
   async deleteReport(req: ApiRequest<OrgReportParams>, res: Response) {
-    const report = await ReportSchema.findOne({
-      relations: ['org'],
-      where: {
-        id: req.params.reportId,
-        org: req.appOrg!.id,
-      },
-    });
-
-    if (!report) {
-      throw new NotFoundError('Report could not be found.');
-    }
-
+    const report = await ReportSchemaController.findReport(req);
     const removedReport = await report.remove();
     res.json(removedReport);
   }
 
   async updateReport(req: ApiRequest<OrgReportParams, UpdateReportBody>, res: Response) {
-    const report = await ReportSchema.findOne({
-      relations: ['org'],
-      where: {
-        id: req.params.reportId,
-        org: req.appOrg!.id,
-      },
-    });
-
-    if (!report) {
-      throw new NotFoundError('Report could not be found.');
-    }
+    const report = await ReportSchemaController.findReport(req);
 
     if (req.body.name != null) {
       report.name = req.body.name;
@@ -104,6 +72,18 @@ class ReportSchemaController {
     const updatedReport = await report.save();
 
     res.json(updatedReport);
+  }
+
+  private static async findReport(req: ApiRequest<OrgReportParams>) {
+    const id = req.params.reportId;
+    const org = req.appOrg!.id;
+    const report = await ReportSchema.findOne({ relations: ['org'], where: { id, org } });
+
+    if (!report) {
+      Log.error(`report_schema table is missing a record for ID ${id} and org ID ${org} `);
+      throw new NotFoundError('Report could not be found.');
+    }
+    return report;
   }
 
 }
