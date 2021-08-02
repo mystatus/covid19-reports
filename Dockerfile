@@ -12,11 +12,9 @@ RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > /usr/src/covid19-report
 
 COPY . /usr/src/covid19-reports
 
-RUN yarn install
-
-RUN find /usr/src/covid19-reports -name "*.sh" -exec chmod +x {} \;
-
-RUN yarn build
+RUN yarn install \
+  && find /usr/src/covid19-reports -name "*.sh" -exec chmod +x {} \; \
+  && yarn build
 
 FROM node:14 as runtime
 
@@ -35,6 +33,8 @@ ENV BUILD_DATE="${BUILD_DATE}" \
 WORKDIR /covid19-reports
 
 COPY --from=buildtime /usr/src/covid19-reports /covid19-reports
+
+RUN mkdir -p /covid19-reports/build/api/roster/uploads
 
 EXPOSE 4000
 
