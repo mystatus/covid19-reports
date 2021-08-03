@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { ApiRequest, OrgParam, OrgReportParams } from '../api.router';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
 import { ReportSchema, SchemaColumn } from './report-schema.model';
+import { Log } from '../../util/log';
 
 class ReportSchemaController {
 
@@ -48,50 +49,17 @@ class ReportSchemaController {
   }
 
   async getReport(req: ApiRequest<OrgReportParams>, res: Response) {
-    const report = await ReportSchema.findOne({
-      relations: ['org'],
-      where: {
-        id: req.params.reportId,
-        org: req.appOrg!.id,
-      },
-    });
-
-    if (!report) {
-      throw new NotFoundError('Report could not be found.');
-    }
-
-    res.json(report);
+    res.json(await findReport(req.appOrg!.id, req.params.reportId));
   }
 
   async deleteReport(req: ApiRequest<OrgReportParams>, res: Response) {
-    const report = await ReportSchema.findOne({
-      relations: ['org'],
-      where: {
-        id: req.params.reportId,
-        org: req.appOrg!.id,
-      },
-    });
-
-    if (!report) {
-      throw new NotFoundError('Report could not be found.');
-    }
-
+    const report = await findReport(req.appOrg!.id, req.params.reportId);
     const removedReport = await report.remove();
     res.json(removedReport);
   }
 
   async updateReport(req: ApiRequest<OrgReportParams, UpdateReportBody>, res: Response) {
-    const report = await ReportSchema.findOne({
-      relations: ['org'],
-      where: {
-        id: req.params.reportId,
-        org: req.appOrg!.id,
-      },
-    });
-
-    if (!report) {
-      throw new NotFoundError('Report could not be found.');
-    }
+    const report = await findReport(req.appOrg!.id, req.params.reportId);
 
     if (req.body.name != null) {
       report.name = req.body.name;
@@ -106,6 +74,16 @@ class ReportSchemaController {
     res.json(updatedReport);
   }
 
+}
+
+async function findReport(orgId: number, reportId: string) {
+  const report = await ReportSchema.findOne({ relations: ['org'], where: { id: reportId, org: orgId } });
+
+  if (!report) {
+    Log.error(`report_schema table is missing a record for ID ${orgId} and org ID ${reportId} `);
+    throw new NotFoundError('Report could not be found.');
+  }
+  return report;
 }
 
 export type AddReportBody = {

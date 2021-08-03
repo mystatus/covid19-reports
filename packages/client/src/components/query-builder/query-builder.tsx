@@ -116,8 +116,10 @@ const StringValue = ({ onChange, row }: ValueEditorProps) => {
       <TextField
         className={classes.textField}
         onChange={event => {
-          row.value = event.target.value;
-          onChange({ ...row });
+          onChange({
+            ...row,
+            value: event.target.value,
+          });
         }}
         placeholder={isExpression === true ? '{{ expression... }}' : row.field.displayName}
         type={row.field.type === QueryFieldType.Number ? 'number' : 'text'}
