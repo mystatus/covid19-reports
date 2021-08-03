@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import { binaryDaysToDateArray, DaysOfTheWeek } from './days';
+import { binaryDaysToDateArray, DaysOfTheWeek, nextDay, dayIsIn } from './days';
 
 describe('days', () => {
   describe('binaryDaysToDateArray()', () => {
@@ -33,6 +33,8 @@ describe('days', () => {
       expect(binaryDaysToDateArray(DaysOfTheWeek.Sunday | DaysOfTheWeek.Monday | DaysOfTheWeek.Tuesday | DaysOfTheWeek.Wednesday
       | DaysOfTheWeek.Thursday | DaysOfTheWeek.Friday | DaysOfTheWeek.Saturday)).to.eql([1, 2, 3, 4, 5, 6, 7]);
     });
+    it('expect to return next day Sunday to Monday', () => {
+      expect(binaryDaysToDateArray(nextDay(DaysOfTheWeek.Sunday))).to.eql([2]);
+    });
   });
 });
-

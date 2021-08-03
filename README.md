@@ -153,23 +153,31 @@ into a usable state.
 
 ## Testing
 
-- To run backend tests, you'll need to have an instance of Postgres running.
-- When initially running tests, a `dds_test` database will automatically be created in Postgres and migrations will be
-  run on it.
-- After the initial run, tests will not run migrations by default, for the sake of speed. If you have migrations you
-  want to run, you can pass the `--clean` flag.
-- The test database is cleared **_before_** each test, meaning you can potentially run a single test and look at the
-  database afterward to help debug issues.
+- To run backend IT tests, you\'ll need to have an instance of Postgres running.
+- When initially running IT tests, a `dds_test` database will automatically be created in Postgres and migrations will be run on it.
+- After the initial run, tests will not run migrations by default, for the sake of speed. If you have migrations you want to run, you can pass the `--clean` flag.
+- The test database is cleared **_before_** each test, meaning you can potentially run a single test and look at the database afterward to help debug issues.
+- Optionally specify the workspace for the test (`shared`, `server`).  Default is `server`.
+
+### Options
+
+- `--debug` - Prints all logs rather than only 'test' level logs.
+
+- `--clean` - Server IT only.  Drops, recreates, and migrates the test database before running tests.
+
+- `--it | --spec` - Optional.  Limits the test to only run for IT or unit test.
+
+#### Examples
 
 ```bash
 yarn test
-````
-
-### Options
-`--debug` - Prints all logs rather than only 'test' level logs.
-
-`--clean` - Drops, recreates, and migrates the test database before running tests.
-
+```
+```bash
+yarn shared test
+```
+```bash
+yarn test --it
+```
 
 ## Linting
 
@@ -179,7 +187,7 @@ subproject, you can run it for that particularly workspace, such as `yarn run se
 
 ## Workspaces
 
-We're using [yarn workspaces](https://classic.yarnpkg.com/en/docs/workspaces/) to simplify sharing functionality/types
+We\'re using [yarn workspaces](https://classic.yarnpkg.com/en/docs/workspaces/) to simplify sharing functionality/types
 across subprojects. Any functions or types that may be useful on both the server and client should be added to the `shared`
 subproject and exported in its `index.ts` file.
 
