@@ -49,17 +49,17 @@ class ReportSchemaController {
   }
 
   async getReport(req: ApiRequest<OrgReportParams>, res: Response) {
-    res.json(await ReportSchemaController.findReport(req));
+    res.json(await findReport(req.appOrg!.id, req.params.reportId));
   }
 
   async deleteReport(req: ApiRequest<OrgReportParams>, res: Response) {
-    const report = await ReportSchemaController.findReport(req);
+    const report = await findReport(req.appOrg!.id, req.params.reportId);
     const removedReport = await report.remove();
     res.json(removedReport);
   }
 
   async updateReport(req: ApiRequest<OrgReportParams, UpdateReportBody>, res: Response) {
-    const report = await ReportSchemaController.findReport(req);
+    const report = await findReport(req.appOrg!.id, req.params.reportId);
 
     if (req.body.name != null) {
       report.name = req.body.name;
@@ -74,18 +74,16 @@ class ReportSchemaController {
     res.json(updatedReport);
   }
 
-  private static async findReport(req: ApiRequest<OrgReportParams>) {
-    const id = req.params.reportId;
-    const org = req.appOrg!.id;
-    const report = await ReportSchema.findOne({ relations: ['org'], where: { id, org } });
+}
 
-    if (!report) {
-      Log.error(`report_schema table is missing a record for ID ${id} and org ID ${org} `);
-      throw new NotFoundError('Report could not be found.');
-    }
-    return report;
+async function findReport(orgId: number, reportId: string) {
+  const report = await ReportSchema.findOne({ relations: ['org'], where: { id: reportId, org: orgId } });
+
+  if (!report) {
+    Log.error(`report_schema table is missing a record for ID ${orgId} and org ID ${reportId} `);
+    throw new NotFoundError('Report could not be found.');
   }
-
+  return report;
 }
 
 export type AddReportBody = {
