@@ -116,10 +116,10 @@ const StringValue = ({ onChange, row }: ValueEditorProps) => {
       <TextField
         className={classes.textField}
         onChange={event => {
-          // Make a shallow copy to prevent: TypeError: Cannot assign to read only property 'value' of object '#<Object>'
-          const rowShallowCopy = { ...row };
-          rowShallowCopy.value = event.target.value;
-          onChange({ ...rowShallowCopy });
+          onChange({
+            ...row,
+            value: event.target.value,
+          });
         }}
         placeholder={isExpression === true ? '{{ expression... }}' : row.field.displayName}
         type={row.field.type === QueryFieldType.Number ? 'number' : 'text'}
