@@ -187,7 +187,7 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
       name: `Unit ${unitCount}`,
       musterConfiguration: [
         { days: 62, startTime: '00:00', timezone: 'America/Los_Angeles', durationMinutes: 120, reportId: reportSchemas[0].id },
-        { startTime: '2020-01-02T02:00:00.000Z', timezone: 'America/Los_Angeles', durationMinutes: 120, reportId: reportSchemas[1].id },
+        { startTime: '2020-01-02T02:00:00.000', timezone: 'America/Los_Angeles', durationMinutes: 120, reportId: reportSchemas[1].id },
       ],
       includeDefaultConfig: true,
     });
@@ -253,7 +253,7 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
     const observation2 = Observation.create();
     observation2.unit = 'Unit 1';
     observation2.reportSchema = reportSchemas[1];
-    observation2.timestamp = new Date('2020-01-02T03:00:00Z');
+    observation2.timestamp = new Date('2020-01-02T10:00:00Z');
     observation2.documentId = `DocumentId_${i}`;
     observation2.edipi = rosterEntries[i].edipi;
     observations.push(observation2);
