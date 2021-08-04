@@ -1,0 +1,15 @@
+import { RosterColumnType } from '@covid19-reports/shared';
+import { Org } from '../../api/org/org.model';
+import { CustomRosterColumn } from '../../api/roster/custom-roster-column.model';
+
+export function getCustomRosterColumnTestData(org: Org, customColumnOrgCount: number) {
+  const customColumn = CustomRosterColumn.create({
+    org,
+    display: `My Custom Column ${customColumnOrgCount}`,
+    type: RosterColumnType.String,
+    phi: false,
+    pii: false,
+    required: false,
+  });
+  return customColumn;
+}

@@ -44,18 +44,14 @@ export function toMusterIntermediateCompliance(rosters: Roster[]): IntermediateM
 /**
  * TBD later....
  * @param observations
- * @param musterTimeView
+ * @param musteringOpportunities
  * @param musterComplianceReport
  */
 export function calculateMusterCompliance(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   observations: RecordedObservations[],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  musterTimeView: MusteringOpportunities,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  musteringOpportunities: MusteringOpportunities,
   musterComplianceReport: IntermediateMusterCompliance[],
 ): MusterCompliance[] {
-  // this is to be implemented as part of a different task
   return [];
 }
 

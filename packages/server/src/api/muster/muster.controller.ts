@@ -322,6 +322,7 @@ async function getUsersOnRosterByDate(orgId: number, unitName: string, date: str
     .select('DISTINCT ON(roster.edipi) roster.edipi, roster.change_type, unit.muster_configuration')
     .where(`roster.timestamp <= to_timestamp(:timestamp) AT TIME ZONE '+0'`, { timestamp })
     .andWhere('unit.name = :unitName', { unitName })
+    .andWhere('unit.org.id = :orgId', { orgId })
     .orderBy('roster.edipi', 'DESC')
     .addOrderBy(`EXTRACT (EPOCH FROM (to_timestamp(${timestamp}) at Time Zone '+0' - roster.timestamp))`, 'ASC')
     .getRawMany();
