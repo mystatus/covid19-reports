@@ -1,7 +1,38 @@
 import {expect} from 'chai';
-import { binaryDaysToDateArray, DaysOfTheWeek, nextDay, dayIsIn } from './days';
+import { binaryDaysToDateArray, DaysOfTheWeek, nextDay, daysToString, dayIsIn } from './days';
 
 describe('days', () => {
+  describe('daysToString()', () => {
+    it('expect to return Sun', () => {
+      expect(daysToString(DaysOfTheWeek.Sunday)).to.eql('Sun');
+    });
+    it('expect to return Mon', () => {
+      expect(daysToString(DaysOfTheWeek.Monday)).to.eql('Mon');
+    });
+    it('expect to return Tue', () => {
+      expect(daysToString(DaysOfTheWeek.Tuesday)).to.eql('Tue');
+    });
+    it('expect to return Wed', () => {
+      expect(daysToString(DaysOfTheWeek.Wednesday)).to.eql('Wed');
+    });
+    it('expect to return Thu', () => {
+      expect(daysToString(DaysOfTheWeek.Thursday)).to.eql('Thu');
+    });
+    it('expect to return Fri', () => {
+      expect(daysToString(DaysOfTheWeek.Friday)).to.eql('Fri');
+    });
+    it('expect to return Sat', () => {
+      expect(daysToString(DaysOfTheWeek.Saturday)).to.eql('Sat');
+    });
+    it('expect to return Every day', () => {
+      expect(daysToString(DaysOfTheWeek.Monday | DaysOfTheWeek.Sunday | DaysOfTheWeek.Tuesday | DaysOfTheWeek.Wednesday 
+      | DaysOfTheWeek.Thursday | DaysOfTheWeek.Friday | DaysOfTheWeek.Saturday)).to.eql('Every day');
+    });
+    it('expect to return Every weekday', () => {
+      expect(daysToString(DaysOfTheWeek.Monday | DaysOfTheWeek.Tuesday | DaysOfTheWeek.Wednesday 
+      | DaysOfTheWeek.Thursday | DaysOfTheWeek.Friday)).to.eql('Every weekday');
+    });
+  });
   describe('binaryDaysToDateArray()', () => {
     it('expect to return 1st day of the week', () => {
       expect(binaryDaysToDateArray(DaysOfTheWeek.Sunday)).to.eql([1]);
@@ -33,6 +64,13 @@ describe('days', () => {
       expect(binaryDaysToDateArray(DaysOfTheWeek.Sunday | DaysOfTheWeek.Monday | DaysOfTheWeek.Tuesday | DaysOfTheWeek.Wednesday
       | DaysOfTheWeek.Thursday | DaysOfTheWeek.Friday | DaysOfTheWeek.Saturday)).to.eql([1, 2, 3, 4, 5, 6, 7]);
     });
+  });
+  describe('dayIsIn()', () => {
+    it('expect to return true', () => {
+      expect(dayIsIn(DaysOfTheWeek.Friday, DaysOfTheWeek.Sunday | DaysOfTheWeek.Monday | DaysOfTheWeek.Friday)).to.eql(true)
+    });
+  });
+  describe('nextDay()', () => {
     it('expect to return next day Sunday to Monday', () => {
       expect(binaryDaysToDateArray(nextDay(DaysOfTheWeek.Sunday))).to.eql([DaysOfTheWeek.Monday]);
     });
