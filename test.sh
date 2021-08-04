@@ -1,3 +1,8 @@
 #!/bin/bash
 
-yarn run server test "$@"
+PACKAGES=('shared' 'server')
+
+for PACKAGE in "${PACKAGES[@]}"
+do
+  yarn "$PACKAGE" test "$@"
+done
