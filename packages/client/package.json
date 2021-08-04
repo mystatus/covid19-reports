@@ -16,7 +16,8 @@
     "dev": "./dev.sh",
     "build": "./build.sh",
     "clean": "./clean.sh",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "./test.sh"
   },
   "dependencies": {
     "@covid19-reports/shared": "*",

@@ -157,7 +157,7 @@ into a usable state.
 - When initially running IT tests, a `dds_test` database will automatically be created in Postgres and migrations will be run on it.
 - After the initial run, tests will not run migrations by default, for the sake of speed. If you have migrations you want to run, you can pass the `--clean` flag.
 - The test database is cleared **_before_** each test, meaning you can potentially run a single test and look at the database afterward to help debug issues.
-- Optionally specify the workspace for the test (`shared`, `server`).  Default is `server`.
+- Optionally specify the workspace for the test (`shared`, `server`, `client`).
 
 ### Options
 
