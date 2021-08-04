@@ -1,4 +1,8 @@
 #!/bin/bash
 
-#yarn run server test "$@"
-yarn workspaces run test "$@"
+PACKAGES=('shared' 'server')
+
+for PACKAGE in "${PACKAGES[@]}"
+do
+  yarn "$PACKAGE" test "$@"
+done

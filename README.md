@@ -157,7 +157,9 @@ into a usable state.
 - When initially running IT tests, a `dds_test` database will automatically be created in Postgres and migrations will be run on it.
 - After the initial run, tests will not run migrations by default, for the sake of speed. If you have migrations you want to run, you can pass the `--clean` flag.
 - The test database is cleared **_before_** each test, meaning you can potentially run a single test and look at the database afterward to help debug issues.
-- Optionally specify the workspace for the test (`shared`, `server`, `client`).
+- Optionally specify the workspace for the test (`shared`, `server`).
+- If no tests of a specific type are found, a warning will be displayed.
+  - Ex: `Warning: Cannot find any files matching pattern "**/*.it.ts"`
 
 ### Options
 
@@ -165,7 +167,7 @@ into a usable state.
 
 - `--clean` - Server IT only.  Drops, recreates, and migrates the test database before running tests.
 
-- `--it | --spec` - Optional.  Limits the test to only run for IT or unit test.
+- `--it | --spec` - Optional.  Limits the test to only run integration or unit test.
 
 #### Examples
 
@@ -173,11 +175,15 @@ into a usable state.
 yarn test
 ```
 ```bash
+yarn test --it
+```
+```bash
 yarn shared test
 ```
 ```bash
-yarn test --it
+yarn shared test --spec
 ```
+
 
 ## Linting
 
