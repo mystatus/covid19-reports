@@ -1,7 +1,7 @@
-import { User } from '../../api/user/user.model';
-import { uniqueEdipi, uniquePhone } from './unique';
+import { User } from '../../../api/user/user.model';
+import { uniqueEdipi, uniquePhone } from '../unique';
 
-export function getAdminUserTestData() {
+export function adminUserTestData() {
   return User.create({
     edipi: uniqueEdipi(),
     firstName: 'Group',

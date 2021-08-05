@@ -16,12 +16,12 @@ import { seedRoleAdmin, seedRoleBasicUser } from '../../api/role/role.model.mock
 import { seedUserRole } from '../../api/user/user-role.model.mock';
 import { seedUser } from '../../api/user/user.model.mock';
 import { uniqueEdipi, uniquePhone } from './unique';
-import { getRosterTestData } from './roster.test-generator';
-import { getCustomRosterColumnTestData } from './custom-roster-column.test-generator';
-import { getUnitsTestData } from './unit.test-generator';
-import { getOrgTestData } from './org-test-generator';
-import { getAdminUserTestData } from './user.test-generator';
-import { getReportSchemaTestData } from './report-schema.test-generator';
+import { rosterTestData } from './data/roster-generator';
+import { customRosterColumnTestData } from './data/custom-roster-column-generator';
+import { unitsTestData } from './data/unit-generator';
+import { orgTestData } from './data/org-generator';
+import { adminUserTestData } from './data/user-generator';
+import { reportSchemaTestData } from './data/report-schema-generator';
 
 require('dotenv').config();
 
@@ -59,7 +59,7 @@ export async function seedAll() {
   Log.info('Seeding database...');
 
   // Create Group Admin
-  const adminUser = getAdminUserTestData();
+  const adminUser = adminUserTestData();
   await adminUser.save();
 
   const totalAppUsers = 5;
@@ -134,15 +134,15 @@ export async function seedAll() {
 
 async function generateOrg(admin: User, numUsers: number, numRosterEntries: number, numUnits: number) {
   orgCount += 1;
-  const org = getOrgTestData(admin, orgCount);
+  const org = orgTestData(admin, orgCount);
   await org.save();
-  const reportSchemas = getReportSchemaTestData(org);
+  const reportSchemas = reportSchemaTestData(org);
   await ReportSchema.save(reportSchemas);
-  const customColumn = getCustomRosterColumnTestData(org, orgCount);
+  const customColumn = customRosterColumnTestData(org, orgCount);
   await customColumn.save();
 
   // Add Units
-  const units = getUnitsTestData(numUnits, org, reportSchemas);
+  const units = unitsTestData(numUnits, org, reportSchemas);
   await Unit.save(units);
 
   const groupAdminRole = createGroupAdminRole(org);
@@ -172,7 +172,7 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
   }
 
   // Add roster entries
-  const rosterEntries = getRosterTestData(numRosterEntries, customColumn, units, numUnits);
+  const rosterEntries = rosterTestData(numRosterEntries, customColumn, units, numUnits);
   await Roster.save(rosterEntries);
 
   // Insert observations per roster entry

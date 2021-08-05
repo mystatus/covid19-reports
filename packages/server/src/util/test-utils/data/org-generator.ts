@@ -1,7 +1,7 @@
-import { User } from '../../api/user/user.model';
-import { Org } from '../../api/org/org.model';
+import { User } from '../../../api/user/user.model';
+import { Org } from '../../../api/org/org.model';
 
-export function getOrgTestData(admin: User, orgCount: number) {
+export function orgTestData(admin: User, orgCount: number) {
   const org = Org.create({
     name: `Group ${orgCount}`,
     description: `Group ${orgCount} for testing.`,

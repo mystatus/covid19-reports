@@ -1,8 +1,8 @@
-import { Org } from '../../api/org/org.model';
-import { ReportSchema } from '../../api/report-schema/report-schema.model';
-import { Unit } from '../../api/unit/unit.model';
+import { Org } from '../../../api/org/org.model';
+import { ReportSchema } from '../../../api/report-schema/report-schema.model';
+import { Unit } from '../../../api/unit/unit.model';
 
-export function getUnitsTestData(numUnits: number, org: Org, reportSchemas: ReportSchema[]) {
+export function unitsTestData(numUnits: number, org: Org, reportSchemas: ReportSchema[]) {
   const units: Unit[] = [];
   let unitCount = 0;
 
