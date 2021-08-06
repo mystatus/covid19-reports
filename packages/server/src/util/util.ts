@@ -140,6 +140,15 @@ export const timestampColumnTransformer: ValueTransformer = {
   },
 };
 
+export const fromTimestampColumnTransformer: ValueTransformer = {
+  from: value => {
+    return value ? moment.utc(value).toDate() : value;
+  },
+  to: value => {
+    return value;
+  },
+};
+
 export const oneDaySeconds = 24 * 60 * 60;
 
 export type TimeInterval =
