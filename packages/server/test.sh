@@ -21,6 +21,13 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
+docker rm -f unittestpg || true
+docker run -itd --name unittestpg -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres
+
+while ! pg_isready -h localhost -p 5432; do
+  sleep 1
+done
+
 export NODE_ENV="test"
 export SYNC_DATABASE="false"
 export SQL_DATABASE="dds_test"
@@ -50,3 +57,5 @@ npx ts-mocha \
   --config ".mocharc.yml" \
   --exit \
   $TYPE
+
+docker rm -f unittestpg || true
