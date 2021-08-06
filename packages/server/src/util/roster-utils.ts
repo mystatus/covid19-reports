@@ -137,7 +137,6 @@ export async function saveRosterPhoneNumber(edipi: string, phoneNumber: string, 
  * @param orgId The organization ID
  */
 export async function getRosterWithUnitsAndEdipis(unitId: string, orgId: number): Promise<RosterWithUnitsAndEdipis> {
-
   const rostersFromDb = await getRosters(unitId, orgId);
   return {
     roster: rostersFromDb,
@@ -167,7 +166,7 @@ function getEdipi(rosters: Roster[]): string[] {
 }
 
 type RosterWithUnitsAndEdipis = {
-  roster: Roster[],
-  unitIds: number[],
-  edipis: string[]
+  roster: Roster[];
+  unitIds: number[];
+  edipis: string[];
 };

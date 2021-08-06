@@ -1,6 +1,6 @@
 import { BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { ReportSchema } from '../report-schema/report-schema.model';
-import { timestampColumnTransformer } from '../../util/util';
+import { fromTimestampColumnTransformer } from '../../util/util';
 
 /**
  * Observation are created when users self-report COVID-19 symptoms via https://mystatus.mil/
@@ -24,7 +24,7 @@ export class Observation extends BaseEntity {
   edipi!: string;
 
   // timestamp when the observation was reported
-  @Column({ type: 'timestamp', transformer: timestampColumnTransformer })
+  @Column({ type: 'timestamp', transformer: fromTimestampColumnTransformer })
   timestamp!: Date;
 
   // type of the observation symptoms

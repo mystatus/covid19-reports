@@ -29,11 +29,12 @@ export function rosterTestData(numRosterEntries: number, customColumn: CustomRos
 
 export function rosterTestDataSimple(numOfRosterEntries: number, numOfUnits: number, customColumnOrgCount: number) {
   const orgCount = 1;
+  const unitsNameStartIndex = 1;
   const org = orgTestData(adminUserTestData(), orgCount);
   return rosterTestData(
     numOfRosterEntries,
     customRosterColumnTestData(org, customColumnOrgCount),
-    unitsTestData(numOfUnits, org, reportSchemaTestData(org)),
+    unitsTestData(numOfUnits, unitsNameStartIndex, org, reportSchemaTestData(org)),
     numOfUnits,
   );
 }
