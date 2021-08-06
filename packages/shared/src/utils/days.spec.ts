@@ -66,12 +66,12 @@ describe('days', () => {
     });
   });
   describe('dayIsIn()', () => {
-    it('expect to return true', () => {
-      expect(dayIsIn(DaysOfTheWeek.Friday, DaysOfTheWeek.Sunday | DaysOfTheWeek.Monday | DaysOfTheWeek.Friday)).to.eql(true)
+    it('expect true if Saturday is in the weekend', () => {
+      expect(dayIsIn(DaysOfTheWeek.Saturday, DaysOfTheWeek.Saturday | DaysOfTheWeek.Sunday)).to.eql(true)
     });
   });
   describe('nextDay()', () => {
-    it('expect to return next day Sunday to Monday', () => {
+    it('expect to return next day, Sunday to Monday', () => {
       expect(binaryDaysToDateArray(nextDay(DaysOfTheWeek.Sunday))).to.eql([DaysOfTheWeek.Monday]);
     });
   });

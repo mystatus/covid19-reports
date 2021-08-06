@@ -21,12 +21,7 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-if ! ph_isready -h localhost -p 5432; then
-  docker run -itd --name unittestpg -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres
-  while ! pg_isready -h localhost -p 5432; do
-    sleep 1
-  done
-fi
+database_docker "start"
 
 export NODE_ENV="test"
 export SYNC_DATABASE="false"
@@ -58,4 +53,4 @@ npx ts-mocha \
   --exit \
   $TYPE
 
-docker rm -f unittestpg || true
+database_docker "stop"
