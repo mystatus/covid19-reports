@@ -15,7 +15,7 @@ import { seedOrg } from '../../api/org/org.model.mock';
 import { seedRoleAdmin, seedRoleBasicUser } from '../../api/role/role.model.mock';
 import { seedUserRole } from '../../api/user/user-role.model.mock';
 import { seedUser } from '../../api/user/user.model.mock';
-import { uniqueEdipi, uniquePhone } from './unique';
+import { resetUniqueEdipiGenerator, uniqueEdipi, uniquePhone } from './unique';
 import { rosterTestData } from './data/roster-generator';
 import { customRosterColumnTestData } from './data/custom-roster-column-generator';
 import { unitsTestData } from './data/unit-generator';
@@ -58,6 +58,8 @@ export async function seedAll() {
 
   Log.info('Seeding database...');
 
+  resetUniqueEdipiGenerator();
+
   // Create Group Admin
   const adminUser = adminUserTestData();
   await adminUser.save();
@@ -67,8 +69,10 @@ export async function seedAll() {
   const totalRosterEntries = 20;
 
   // Create Org 1 & 2 and their Users
-  const orgData1 = await generateOrg(adminUser, totalAppUsers, totalRosterEntries, totalUnits);
-  const orgData2 = await generateOrg(adminUser, totalAppUsers, totalRosterEntries, totalUnits);
+  const orgData1 = await generateOrg(adminUser, totalAppUsers, totalRosterEntries, totalUnits, 1);
+  const orgData2 = await generateOrg(adminUser, totalAppUsers, totalRosterEntries, totalUnits, 100);
+  // Create another Org with the same unit names as orgData1 for testing this edge case
+  await generateOrg(adminUser, totalAppUsers, totalRosterEntries, totalUnits, 1);
 
   // Set the start date on each roster entry to some time in the past to help with repeatable testing
   await RosterHistory.createQueryBuilder()
@@ -132,7 +136,7 @@ export async function seedAll() {
   return [orgData1, orgData2];
 }
 
-async function generateOrg(admin: User, numUsers: number, numRosterEntries: number, numUnits: number) {
+async function generateOrg(admin: User, numUsers: number, numRosterEntries: number, numUnits: number, unitsNameStartIndex: number) {
   orgCount += 1;
   const org = orgTestData(admin, orgCount);
   await org.save();
@@ -142,7 +146,7 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
   await customColumn.save();
 
   // Add Units
-  const units = unitsTestData(numUnits, org, reportSchemas);
+  const units = unitsTestData(numUnits, unitsNameStartIndex, org, reportSchemas);
   await Unit.save(units);
 
   const groupAdminRole = createGroupAdminRole(org);

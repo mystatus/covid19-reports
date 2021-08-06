@@ -22,6 +22,10 @@ export function uniqueEdipi() {
   return `${edipiCount}`.padStart(10, '0');
 }
 
+export function resetUniqueEdipiGenerator() {
+  edipiCount = 0;
+}
+
 let emailCount = 0;
 export function uniqueEmail() {
   emailCount += 1;
