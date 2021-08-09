@@ -2,12 +2,15 @@ import { Response } from 'express';
 import { Brackets } from 'typeorm';
 import moment from 'moment-timezone';
 import {
+  getDayBitFromMomentDay,
   GetMusterComplianceByDateQuery,
+  GetMusterComplianceByDateRangeQuery,
   GetClosedMusterWindowsQuery,
   GetMusterRosterQuery,
   GetMusterUnitTrendsQuery,
   GetNearestMusterWindowQuery,
   GetMusterComplianceByDateResponse,
+  GetMusterComplianceByDateRangeResponse,
   MusterConfiguration,
   Paginated,
 } from '@covid19-reports/shared';
@@ -231,30 +234,72 @@ class MusterController {
 
   /**
    * This method returns the normalized rate (0 - 1.0) of compliance on a given
-   * date for a given unit, against  of the unit's muster configs.
+   * date for a given unit, against all of the unit's muster configs.
    */
   async getMusterComplianceByDate(
     req: ApiRequest<{ orgId: number; unitName: string }, null, GetMusterComplianceByDateQuery>,
     res: Response<GetMusterComplianceByDateResponse>,
   ) {
-    const outValue = { musterComplianceRate: 0 };
-    const reportDate = dateFromString(req.query.timestamp);
-    if (!reportDate) {
-      throw new BadRequestError('Missing reportDate.');
-    }
-    // eslint-disable-next-line no-bitwise
-    const dayBit = 1 << reportDate.getDay();
+    const musterComplianceRate = await getMusterComplianceByDate(req.params.orgId, req.params.unitName, req.query.isoDate);
+    res.json({ musterComplianceRate, isoDate: req.query.isoDate });
+  }
 
-    const usersOnRoster = await getUsersOnRosterByDate(req.params.orgId, req.params.unitName, req.query.timestamp);
+  /**
+   * This method returns the normalized rate (0 - 1.0) of compliance on a given
+   * date range for a given unit, against all of the unit's muster configs.
+   */
+  async getMusterComplianceByDateRange(
+    req: ApiRequest<{ orgId: number; unitName: string }, null, GetMusterComplianceByDateRangeQuery>,
+    res: Response<GetMusterComplianceByDateRangeResponse>,
+  ) {
+    const out: GetMusterComplianceByDateRangeResponse = { musterComplianceRates: [] };
+    let fromDate: moment.Moment = moment(req.query.isoStartDate);
+    const toDate: moment.Moment = moment(req.query.isoEndDate);
+
+    if (!fromDate.isValid() || !toDate.isValid() || fromDate > toDate) {
+      throw new BadRequestError('Invalid ISO date range.');
+    } else {
+      while (fromDate <= toDate) {
+        const compliance = await getMusterComplianceByDate(req.params.orgId, req.params.unitName, fromDate.toISOString());
+        out.musterComplianceRates.push({ musterComplianceRate: compliance, isoDate: fromDate.toISOString() });
+        fromDate = fromDate.add(1, 'day');
+      }
+    }
+    res.json(out);
+  }
+
+}
+
+/**
+ * This helper method returns the normalized rate (0 - 1.0) of compliance on a given
+ * date for a given unit, against all of the unit's muster configs.
+ * @param orgId - the organization id
+ * @param unitName - the roster the users belong to
+ * @param isoDate - the date in format YYYY-MM-DD
+ */
+async function getMusterComplianceByDate(orgId: number, unitName: string, isoDate: string) {
+  let outValue: number = 0;
+  let reportDate: Date | undefined;
+  try {
+    reportDate = dateFromString(isoDate);
+  } catch (DateParseError) {
+    throw new BadRequestError('Invalid ISO date.');
+  }
+
+  if (reportDate) {
+    // eslint-disable-next-line no-bitwise
+    const dayBit = getDayBitFromMomentDay(reportDate.getDay());
+
+    const usersOnRoster = await getUsersOnRosterByDate(orgId, unitName, isoDate);
     const users = usersOnRoster.users;
     const userCount = users.length;
     let musterAvg: number = 0;
 
     if (usersOnRoster.musterConfig.length === 0 || userCount === 0) {
-      res.json(outValue);
-      return;
+      return outValue;
     }
 
+    let numActiveConfigs: number = 0;
     for (let i = 0; i < usersOnRoster.musterConfig.length; i++) {
       const musterConfig = usersOnRoster.musterConfig[i];
       if (musterConfig.days) {
@@ -265,22 +310,26 @@ class MusterController {
           const musterTime = `${reportDate.toISOString().split('T')[0]} ${musterConfig.startTime}`;
           const musterStart = moment.tz(musterTime, musterConfig.timezone);
           const musterEnd = moment.tz(musterTime, musterConfig.timezone).add({ minutes: musterConfig.durationMinutes });
-          const observationCount: number = await getObservationComplianceCount(req.params.orgId, req.params.unitName, users, musterConfig.reportId, musterStart, musterEnd);
+          const observationCount: number = await getObservationComplianceCount(orgId, unitName, users, musterConfig.reportId, musterStart, musterEnd);
           musterAvg += observationCount / userCount;
+          numActiveConfigs += 1;
         }
       } else {
         // handle one-time muster
         const musterTime = musterConfig.startTime;
         const musterStart = moment.tz(musterTime, musterConfig.timezone);
         const musterEnd = moment.tz(musterTime, musterConfig.timezone).add({ minutes: musterConfig.durationMinutes });
-        const observationCount: number = await getObservationComplianceCount(req.params.orgId, req.params.unitName, users, musterConfig.reportId, musterStart, musterEnd);
-        musterAvg += observationCount / userCount;
+        // early out if the query date is not on the same day as the one-time muster
+        if (moment(isoDate).format('YYYY-MM-DD') === musterStart.format('YYYY-MM-DD')) {
+          const observationCount: number = await getObservationComplianceCount(orgId, unitName, users, musterConfig.reportId, musterStart, musterEnd);
+          musterAvg += observationCount / userCount;
+          numActiveConfigs += 1;
+        }
       }
     }
-    outValue.musterComplianceRate = musterAvg / usersOnRoster.musterConfig.length;
-    res.json(outValue);
+    outValue = musterAvg / numActiveConfigs;
   }
-
+  return outValue;
 }
 
 /**
@@ -322,6 +371,7 @@ async function getUsersOnRosterByDate(orgId: number, unitName: string, date: str
     .select('DISTINCT ON(roster.edipi) roster.edipi, roster.change_type, unit.muster_configuration')
     .where(`roster.timestamp <= to_timestamp(:timestamp) AT TIME ZONE '+0'`, { timestamp })
     .andWhere('unit.name = :unitName', { unitName })
+    .andWhere('unit.org_id = :orgId', { orgId })
     .orderBy('roster.edipi', 'DESC')
     .addOrderBy(`EXTRACT (EPOCH FROM (to_timestamp(${timestamp}) at Time Zone '+0' - roster.timestamp))`, 'ASC')
     .getRawMany();
@@ -342,8 +392,7 @@ async function getUsersOnRosterByDate(orgId: number, unitName: string, date: str
   return {
     org: null,
     users: [],
-    musterConfig: null,
+    musterConfig: [],
   };
 }
-
 export default new MusterController();

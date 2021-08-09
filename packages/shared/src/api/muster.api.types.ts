@@ -23,9 +23,19 @@ export type GetNearestMusterWindowQuery = {
 };
 
 export type GetMusterComplianceByDateQuery = {
-  timestamp: string;
+  isoDate: string;
+};
+
+export type GetMusterComplianceByDateRangeQuery = {
+  isoStartDate: string;
+  isoEndDate: string;
 };
 
 export type GetMusterComplianceByDateResponse = {
   musterComplianceRate: number;
+  isoDate: string;
+};
+
+export type GetMusterComplianceByDateRangeResponse = {
+  musterComplianceRates: GetMusterComplianceByDateResponse[];
 };

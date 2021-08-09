@@ -1,3 +1,4 @@
+import moment from 'moment-timezone';
 import { getManager } from 'typeorm';
 import { Observation } from '../../api/observation/observation.model';
 import { Org } from '../../api/org/org.model';
@@ -19,6 +20,7 @@ import { resetUniqueEdipiGenerator, uniqueEdipi, uniquePhone } from './unique';
 import { rosterTestData } from './data/roster-generator';
 import { customRosterColumnTestData } from './data/custom-roster-column-generator';
 import { unitsTestData } from './data/unit-generator';
+import { observationTestData } from './data/observation-generator';
 import { orgTestData } from './data/org-generator';
 import { adminUserTestData } from './data/user-generator';
 import { reportSchemaTestData } from './data/report-schema-generator';
@@ -180,23 +182,25 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
   await Roster.save(rosterEntries);
 
   // Insert observations per roster entry
-  const observations: Observation[] = [];
+  let observations: Observation[] = [];
   for (let i = 0; i < numRosterEntries; i++) {
-    const observation1 = Observation.create();
-    observation1.unit = 'Unit 1';
-    observation1.reportSchema = reportSchemas[0];
-    observation1.timestamp = new Date('2020-01-02T08:00:00Z');
-    observation1.documentId = `DocumentId_${i}`;
-    observation1.edipi = rosterEntries[i].edipi;
-    observations.push(observation1);
+    observations = observations.concat(
+      observationTestData(rosterEntries[i].edipi,
+        rosterEntries[i].unit.name,
+        reportSchemas[0],
+        moment('2020-01-01T08:00:00Z'),
+        moment('2020-01-07T08:00:00Z')),
+    );
 
-    const observation2 = Observation.create();
-    observation2.unit = 'Unit 1';
-    observation2.reportSchema = reportSchemas[1];
-    observation2.timestamp = new Date('2020-01-02T10:00:00Z');
-    observation2.documentId = `DocumentId_${i}`;
-    observation2.edipi = rosterEntries[i].edipi;
-    observations.push(observation2);
+    // these observations are for the single-muster config
+    // hence the same timestamp for start and end
+    observations = observations.concat(
+      observationTestData(rosterEntries[i].edipi,
+        rosterEntries[i].unit.name,
+        reportSchemas[1],
+        moment('2020-01-02T10:00:00Z'),
+        moment('2020-01-02T10:00:00Z')),
+    );
   }
   await Observation.save(observations);
 

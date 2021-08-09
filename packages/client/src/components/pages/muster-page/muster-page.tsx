@@ -1,15 +1,17 @@
 import MomentUtils from '@date-io/moment';
 import {
   Box,
-  Card,
-  CardContent,
   Container,
   Grid,
   MenuItem,
   Paper,
   Select,
+  Table,
+  TableBody,
   TableContainer,
-  Typography,
+  TableCell,
+  TableHead,
+  TableRow,
 } from '@material-ui/core';
 import {
   DateTimePicker,
@@ -42,9 +44,7 @@ import { MusterPageHelp } from './muster-page-help';
 import useStyles from './muster-page.styles';
 import {
   ApiMusterRosterEntriesPaginated,
-  ApiMusterTrends,
   ApiRosterColumnInfo,
-  ApiUnitStatsByDate,
 } from '../../../models/api-response';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { UnitSelector } from '../../../selectors/unit.selector';
@@ -68,14 +68,12 @@ export const MusterPage = () => {
   const user = useAppSelector(state => state.user);
 
   const maxNumColumnsToShow = 6;
-  const maxTopUnitsCount = 5;
   const trendChart = {
     layout: {
-      height: 320,
+      height: 128,
       autosize: true,
-      barmode: 'stack',
+      barmode: 'group',
       yaxis: {
-        title: 'Non-Muster Rate %',
         color: '#A9AEB1',
         hoverformat: '.0f%',
         showticklabels: false,
@@ -99,13 +97,10 @@ export const MusterPage = () => {
     } as Partial<Plotly.Config>,
   };
 
-  const weeklyTrendChart = {
+  const complianceBarChart = {
     ...trendChart,
   };
 
-  const monthlyTrendChart = {
-    ...trendChart,
-  };
 
   const [rosterSelectedTimeRangeIndex, setRosterSelectedTimeRangeIndex] = usePersistedState('musterRosterSelectedTimeRangeIndex', 0);
   const [rosterFromDateIso, setRosterFromDateIso] = usePersistedState('musterRosterFromDateIso', moment().startOf('day').toISOString());
@@ -115,11 +110,9 @@ export const MusterPage = () => {
   const [rosterRowsPerPage, setRosterRowsPerPage] = usePersistedState('musterRosterRowsPerPage', 10);
   const [exportLoading, setExportLoading] = useState(false);
   const [rosterColumnInfos, setRosterColumnInfos] = useState<ApiRosterColumnInfo[]>([]);
-  const [rawTrendData, setRawTrendData] = useState<ApiMusterTrends>({ weekly: {}, monthly: {} });
-  const [weeklyTrendTopUnitCount, setWeeklyTrendTopUnitCount] = usePersistedState('musterWeeklyTrendTopUnitCount', 5);
-  const [monthlyTrendTopUnitCount, setMonthlyTrendTopUnitCount] = usePersistedState('musterMonthlyTrendTopUnitCount', 5);
-  const [weeklyTrendData, setWeeklyTrendData] = useState<Plotly.Data[]>([]);
-  const [monthlyTrendData, setMonthlyTrendData] = useState<Plotly.Data[]>([]);
+  const [unitComplianceData, setUnitComplianceData] = useState<Map<string, Plotly.Data[]>>(new Map());
+  const [todaysUnitCompliance, setTodaysUnitCompliance] = useState<Map<string, number>>(new Map());
+  const [overallUnitCompliance, setOverallUnitCompliance] = useState<Map<string, number>>(new Map());
   const [rosterData, setRosterData] = useState<ApiMusterRosterEntriesPaginated>({
     rows: [],
     totalRowsCount: 0,
@@ -224,25 +217,53 @@ export const MusterPage = () => {
     }
   }, [rosterFromDateIso, rosterToDateIso, rosterRowsPerPage, rosterPage, orgId, rosterUnitId, showErrorDialog]);
 
-  const reloadTrendData = useCallback(async () => {
+  const reloadMusterComplianceData = useCallback(async () => {
     try {
-      const data = await MusterClient.getMusterUnitTrends(orgId, {
-        currentDate: moment().toISOString(),
-        weeksCount: '6',
-        monthsCount: '6',
-      });
-      setRawTrendData(data);
+      // determine if we are displaying for all units or just a single unit
+      const unitsToDisplay = rosterUnitId === -1 ? units : [units.find(unit => unit.id === rosterUnitId)];
+      const plotData = new Map();
+      const overallComplianceData = new Map();
+      const todaysComplianceData = new Map();
+      for (let i = 0; i < unitsToDisplay.length; i++) {
+        const unit = unitsToDisplay[i];
+        const xRange: string[] = [];
+        const yRange: number[] = [];
+        let dayCount: number = 0;
+        let totalCompliance: number = 0;
+        if (unit) {
+          const res = await MusterClient.getMusterComplianceByDateRange(orgId, unit.name, { isoStartDate: `${rosterFromDateIso}`, isoEndDate: `${rosterToDateIso}` });
+          if (res.musterComplianceRates.length > 0) {
+            res.musterComplianceRates.forEach(rate => {
+              yRange.push(rate.musterComplianceRate);
+              xRange.push(rate.isoDate);
+              totalCompliance += rate.musterComplianceRate;
+              dayCount += 1;
+            });
+            todaysComplianceData.set(unit.name, yRange[yRange.length - 1]);
+            overallComplianceData.set(unit.name, totalCompliance / dayCount);
+            plotData.set(unit.name, [{
+              x: xRange,
+              y: yRange,
+              type: 'bar',
+            },
+            ]);
+          }
+        }
+      }
+      setTodaysUnitCompliance(todaysComplianceData);
+      setOverallUnitCompliance(overallComplianceData);
+      setUnitComplianceData(plotData);
     } catch (error) {
-      showErrorDialog('Get Trends', error);
+      showErrorDialog('Muster Trends', error);
     }
-  }, [orgId, showErrorDialog]);
+  }, [orgId, showErrorDialog, rosterUnitId, units, rosterFromDateIso, rosterToDateIso]);
 
   const initializeRosterColumnInfo = useCallback(async () => {
     try {
       const infos = await RosterClient.getAllowedRosterColumnsInfo(orgId);
       setRosterColumnInfos(infos);
     } catch (error) {
-      showErrorDialog('Get Roster Info', error);
+      showErrorDialog('Get Roster Info', error.message);
     }
   }, [orgId, showErrorDialog]);
 
@@ -257,7 +278,6 @@ export const MusterPage = () => {
 
       await Promise.all([
         reloadTable(),
-        reloadTrendData(),
       ]);
 
       // Make sure non-custom time ranges like Today/Yesterday/etc override persisted dates.
@@ -267,65 +287,16 @@ export const MusterPage = () => {
     } finally {
       dispatch(AppFrameActions.setPageLoading({ isLoading: false }));
     }
-  }, [dispatch, initializeRosterColumnInfo, getUnits, reloadTable, reloadTrendData, timeRanges, rosterSelectedTimeRangeIndex, setRosterFromDateIso, setRosterToDateIso]);
-
-  const getTrendData = useCallback((unitStatsByDate: ApiUnitStatsByDate, topUnitCount: number) => {
-    // Sum up each unit's non-muster percent to figure out who's performing worst overall.
-    const nonMusterPercentSumByUnit = {} as { [unitName: string]: number };
-    for (const date of Object.keys(unitStatsByDate)) {
-      for (const unitName of Object.keys(unitStatsByDate[date])) {
-        if (nonMusterPercentSumByUnit[unitName] == null) {
-          nonMusterPercentSumByUnit[unitName] = 0;
-        }
-        nonMusterPercentSumByUnit[unitName] += 100 - unitStatsByDate[date][unitName].musterPercent;
-      }
-    }
-
-    // Exclude compliant units and sort with worst performing units first.
-    const unitsSorted = Object.keys(nonMusterPercentSumByUnit)
-      .filter(unitName => nonMusterPercentSumByUnit[unitName] > 0)
-      .sort(unitName => nonMusterPercentSumByUnit[unitName])
-      .reverse()
-      .slice(0, topUnitCount);
-
-    // Build chart data.
-    const datesSorted = Object.keys(unitStatsByDate).sort();
-    const trendChartData = [] as Plotly.Data[];
-    for (const unitName of unitsSorted) {
-      const chartData = {
-        type: 'bar',
-        x: datesSorted,
-        y: [] as number[],
-        name: unitName,
-        hovertemplate: `%{y:.1f}%`,
-      };
-
-      for (const date of datesSorted) {
-        const nonMusterPercent = 100 - unitStatsByDate[date][unitName].musterPercent;
-        chartData.y.push(nonMusterPercent);
-      }
-
-      trendChartData.push(chartData as Plotly.Data);
-    }
-
-    return trendChartData;
-  }, []);
+  }, [dispatch, initializeRosterColumnInfo, getUnits, reloadTable, timeRanges, rosterSelectedTimeRangeIndex, setRosterFromDateIso, setRosterToDateIso]);
 
   useEffect(() => {
     void initialize();
   }, [initialize]);
 
   useEffect(() => {
-    // Rebuild weekly chart data.
-    const weeklyTrendDataNew = getTrendData(rawTrendData.weekly, weeklyTrendTopUnitCount);
-    setWeeklyTrendData(weeklyTrendDataNew);
-  }, [rawTrendData, weeklyTrendTopUnitCount, getTrendData]);
+    void reloadMusterComplianceData();
+  }, [reloadMusterComplianceData]);
 
-  useEffect(() => {
-    // Rebuild monthly chart data.
-    const monthlyTrendDataNew = getTrendData(rawTrendData.monthly, monthlyTrendTopUnitCount);
-    setMonthlyTrendData(monthlyTrendDataNew);
-  }, [rawTrendData, monthlyTrendTopUnitCount, getTrendData]);
 
   //
   // Functions
@@ -446,6 +417,34 @@ export const MusterPage = () => {
     setRosterSelectedTimeRangeIndex(index);
     setRosterFromDateIso(range.fromDateIso);
     setRosterToDateIso(range.toDateIso);
+  };
+
+  const renderUnitComplianceTableRows = () => {
+    const rows: any[] = [];
+    unitComplianceData.forEach((value: Plotly.Data[], key: string) => {
+      rows.push(
+        <TableRow key={key}>
+          <TableCell>
+            {key}
+          </TableCell>
+          <TableCell align="right">
+            { `${overallUnitCompliance.get(key)?.toFixed(2)}%` }
+          </TableCell>
+          <TableCell align="right">
+            { `${todaysUnitCompliance.get(key)?.toFixed(2)}%` }
+          </TableCell>
+          <TableCell align="right">
+            <Plot
+              style={{ width: '100%' }}
+              data={value}
+              layout={complianceBarChart.layout}
+              config={complianceBarChart.config}
+            />
+          </TableCell>
+        </TableRow>,
+      );
+    });
+    return rows;
   };
 
   //
@@ -599,69 +598,28 @@ export const MusterPage = () => {
             </Grid>
           )}
 
-          {/* Weekly Non-Compliance */}
-          <Grid item xs={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h5" gutterBottom>
-                  Weekly Non-Compliance
-                </Typography>
-
-                <div>
-                  <span>Viewing the top </span>
-                  <Select
-                    className={classes.trendCountSelect}
-                    value={weeklyTrendTopUnitCount}
-                    onChange={e => setWeeklyTrendTopUnitCount(parseInt(e.target.value as string))}
-                  >
-                    {Array.from(Array(maxTopUnitsCount).keys()).map(value => (
-                      <MenuItem key={value} value={value + 1}>{value + 1}</MenuItem>
-                    ))}
-                  </Select>
-                  <span> offending units.</span>
-                </div>
-
-                <Plot
-                  style={{ width: '100%' }}
-                  data={weeklyTrendData}
-                  layout={weeklyTrendChart.layout}
-                  config={weeklyTrendChart.config}
-                />
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Monthly Non-Compliance */}
-          <Grid item xs={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h5" gutterBottom>
-                  Monthly Non-Compliance
-                </Typography>
-
-                <div>
-                  <span>Viewing the top </span>
-                  <Select
-                    className={classes.trendCountSelect}
-                    value={monthlyTrendTopUnitCount}
-                    onChange={e => setMonthlyTrendTopUnitCount(parseInt(e.target.value as string))}
-                  >
-                    {Array.from(Array(maxTopUnitsCount).keys()).map(value => (
-                      <MenuItem key={value} value={value + 1}>{value + 1}</MenuItem>
-                    ))}
-                  </Select>
-                  <span> offending units.</span>
-                </div>
-
-                <Plot
-                  style={{ width: '100%' }}
-                  data={monthlyTrendData}
-                  layout={monthlyTrendChart.layout}
-                  config={monthlyTrendChart.config}
-                />
-              </CardContent>
-            </Card>
-          </Grid>
+          {/* Muster compliance Table */}
+          {user.activeRole?.role.canViewPII && (
+            <Grid item xs={12}>
+              <Paper>
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Unit</TableCell>
+                        <TableCell align="right">Overall Compliance</TableCell>
+                        <TableCell align="right">Today&apos;s Compliance</TableCell>
+                        <TableCell align="right">Daily Compliance</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      { renderUnitComplianceTableRows() }
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Paper>
+            </Grid>
+          )}
         </Grid>
       </Container>
     </main>

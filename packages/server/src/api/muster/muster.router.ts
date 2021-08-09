@@ -35,9 +35,15 @@ router.get(
 );
 
 router.get(
-  '/:orgId/:unitName/compliance',
+  '/:orgId/:unitName/complianceByDate',
   bodyParser.json(),
   controller.getMusterComplianceByDate,
+);
+
+router.get(
+  '/:orgId/:unitName/complianceByDateRange',
+  bodyParser.json(),
+  controller.getMusterComplianceByDateRange,
 );
 
 export default router;
