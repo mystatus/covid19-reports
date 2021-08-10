@@ -38,7 +38,6 @@ class MusterPostgresCtr {
       const rosters = await getRosterWithUnitsAndEdipis(unitId, orgId);
       const musterTimeView = await getMusteringOpportunities(orgId, rosters.unitIds, fromDate, toDate);
       const observations = await getObservations(rosters.edipis, fromDate, toDate);
-      // console.log(observations);
       musterCompliance = toMusterCompliance(rosters.roster, observations, musterTimeView);
     } catch (e) {
       console.error(e);

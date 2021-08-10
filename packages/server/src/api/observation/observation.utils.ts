@@ -17,5 +17,8 @@ export async function getObservations(edipis: string[], fromDate: moment.Moment,
 
 export type RecordedObservations = {
   edipi: string;
+} & RecordedObservationTimestamp;
+
+export type RecordedObservationTimestamp = {
   timestamp: Date;
 };

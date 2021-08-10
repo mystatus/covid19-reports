@@ -1,6 +1,7 @@
+import { Moment } from 'moment-timezone';
 import { Roster } from '../roster/roster.model';
-import { MusteringOpportunities } from './mustering.opportunities';
-import { RecordedObservations } from '../observation/observation.utils';
+import { MusteringOpportunities, MusterWindowWithStartAndEndDate } from './mustering.opportunities';
+import { RecordedObservations, RecordedObservationTimestamp } from '../observation/observation.utils';
 
 /**
  * The <strong><code>toMusterCompliance()</code></strong> function <strong>calculates muster compliance for all
@@ -15,8 +16,8 @@ export function toMusterCompliance(
   recordedObservations: RecordedObservations[],
   musteringOpportunities: MusteringOpportunities,
 ): MusterCompliance[] {
-  const musterIntermediateCompliance = toMusterIntermediateCompliance(rosterIndividualsInformation);
-  return calculateMusterCompliance(recordedObservations, musteringOpportunities, musterIntermediateCompliance);
+  const rosterForMusterCompliance = toRosterForMusterCompliance(rosterIndividualsInformation);
+  return calculateMusterCompliance(recordedObservations, musteringOpportunities, rosterForMusterCompliance);
 }
 
 /**
@@ -27,7 +28,7 @@ export function toMusterCompliance(
  *
  * @param rosters The array of <code>Roster</code> data
  */
-export function toMusterIntermediateCompliance(rosters: Roster[]): IntermediateMusterCompliance[] {
+export function toRosterForMusterCompliance(rosters: Roster[]): RosterForMusterCompliance[] {
   return rosters.map(roster => {
     return {
       edipi: roster.edipi,
@@ -45,15 +46,55 @@ export function toMusterIntermediateCompliance(rosters: Roster[]): IntermediateM
  * TBD later....
  * @param observations
  * @param musteringOpportunities
- * @param musterComplianceReport
+ * @param rosterForMusterCompliance
  */
 export function calculateMusterCompliance(
   observations: RecordedObservations[],
   musteringOpportunities: MusteringOpportunities,
-  musterComplianceReport: IntermediateMusterCompliance[],
+  rosterForMusterCompliance: RosterForMusterCompliance[],
 ): MusterCompliance[] {
-  return [];
+  return rosterForMusterCompliance.map(roster => {
+    const edipi = roster.edipi;
+    const unitId = roster.unitId;
+    const totalMusters = musteringOpportunities[unitId].length;
+
+    const edipiObservations = filterObservationsByEdipi(observations, edipi);
+    const mustersReported = calculateIndividualMusterCompliance(edipiObservations, musteringOpportunities[unitId]);
+    const musterPercent = (100 * mustersReported) / totalMusters;
+
+
+    return { totalMusters, mustersReported, musterPercent, ...roster };
+  });
 }
+
+function calculateIndividualMusterCompliance(observations: RecordedObservationTimestamp[], musteringOpportunities: MusterWindowWithStartAndEndDate[]): number {
+  let compliance = 0;
+  musteringOpportunities.forEach(musteringOpportunity => {
+    compliance += calculateCompliance(observations, musteringOpportunity.startMusterDate, musteringOpportunity.endMusterDate);
+  });
+  return compliance;
+}
+
+function filterObservationsByEdipi(observations: RecordedObservations[], edipi: string): RecordedObservationTimestamp[] {
+  return observations
+    .filter(observation => observation.edipi === edipi)
+    .map(observation => { return { timestamp: observation.timestamp }; });
+}
+
+function calculateCompliance(observationTimestamps: RecordedObservationTimestamp[], startMusterDate: Moment, endMusterDate: Moment): number {
+  let compliance = 0;
+
+  for (const obTs of observationTimestamps) {
+    const epochTimestamp = obTs.timestamp.getTime();
+    if (epochTimestamp >= startMusterDate.valueOf() && epochTimestamp <= endMusterDate.valueOf()) {
+      compliance = 1;
+      break;
+    }
+  }
+
+  return compliance;
+}
+
 
 /**
  * Represents muster compliance for an individual
@@ -62,12 +103,12 @@ export type MusterCompliance = {
   totalMusters: number;
   mustersReported: number;
   musterPercent: number;
-} & IntermediateMusterCompliance;
+} & RosterForMusterCompliance;
 
 /**
  * Represents muster compliance without any compliance calculations
  */
-type IntermediateMusterCompliance = {
+export type RosterForMusterCompliance = {
   edipi: string;
   firstName: string;
   lastName: string;
