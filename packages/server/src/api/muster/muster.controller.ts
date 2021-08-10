@@ -253,8 +253,8 @@ class MusterController {
     res: Response<GetMusterComplianceByDateRangeResponse>,
   ) {
     const out: GetMusterComplianceByDateRangeResponse = { musterComplianceRates: [] };
-    let fromDate: moment.Moment = moment(req.query.isoStartDate);
-    const toDate: moment.Moment = moment(req.query.isoEndDate);
+    let fromDate: moment.Moment = moment(req.query.isoStartDate, 'YYYY-MM-DD');
+    const toDate: moment.Moment = moment(req.query.isoEndDate, 'YYYY-MM-DD');
 
     if (!fromDate.isValid() || !toDate.isValid() || fromDate > toDate) {
       throw new BadRequestError('Invalid ISO date range.');
@@ -300,8 +300,7 @@ async function getMusterComplianceByDate(orgId: number, unitName: string, isoDat
     }
 
     let numActiveConfigs: number = 0;
-    for (let i = 0; i < usersOnRoster.musterConfig.length; i++) {
-      const musterConfig = usersOnRoster.musterConfig[i];
+    for (const musterConfig of usersOnRoster.musterConfig) {
       if (musterConfig.days) {
         // handle recurring muster...
         // early out if the reportDate in question is not on a muster day.

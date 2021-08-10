@@ -6,19 +6,13 @@ import {
   MenuItem,
   Paper,
   Select,
-  Table,
-  TableBody,
   TableContainer,
-  TableCell,
-  TableHead,
-  TableRow,
 } from '@material-ui/core';
 import {
   DateTimePicker,
   MuiPickersUtilsProvider,
 } from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
-import * as Plotly from 'plotly.js';
 import React, {
   ChangeEvent,
   MouseEvent,
@@ -27,7 +21,6 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import Plot from 'react-plotly.js';
 import _ from 'lodash';
 import moment from 'moment';
 import { RosterColumnType } from '@covid19-reports/shared';
@@ -60,47 +53,19 @@ import { RosterClient } from '../../../client/roster.client';
 import { AppFrameActions } from '../../../slices/app-frame.slice';
 import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import { UnitMusterComplianceTable } from './table-unit-muster-compliance';
 
 export const MusterPage = () => {
   const classes = useStyles();
   const dispatch = useAppDispatch();
   const units = useAppSelector(UnitSelector.all);
   const user = useAppSelector(state => state.user);
+  const org = useAppSelector(UserSelector.org)!;
+  const isPageLoading = useAppSelector(state => state.appFrame.isPageLoading);
 
+  const orgId = org.id;
+  const orgName = org.name;
   const maxNumColumnsToShow = 6;
-  const trendChart = {
-    layout: {
-      height: 128,
-      autosize: true,
-      barmode: 'group',
-      yaxis: {
-        color: '#A9AEB1',
-        hoverformat: '.0f%',
-        showticklabels: false,
-      },
-      xaxis: {
-        color: '#A9AEB1',
-        hoverformat: '',
-      },
-      hovermode: 'closest',
-      showlegend: false,
-      colorway: ['#7776AF', '#54BEA5', '#E87779', '#EACC73', '#81B2DA'],
-      margin: {
-        l: 40,
-        r: 20,
-        b: 20,
-        t: 20,
-      },
-    } as Partial<Plotly.Layout>,
-    config: {
-      displayModeBar: false,
-    } as Partial<Plotly.Config>,
-  };
-
-  const complianceBarChart = {
-    ...trendChart,
-  };
-
 
   const [rosterSelectedTimeRangeIndex, setRosterSelectedTimeRangeIndex] = usePersistedState('musterRosterSelectedTimeRangeIndex', 0);
   const [rosterFromDateIso, setRosterFromDateIso] = usePersistedState('musterRosterFromDateIso', moment().startOf('day').toISOString());
@@ -110,18 +75,10 @@ export const MusterPage = () => {
   const [rosterRowsPerPage, setRosterRowsPerPage] = usePersistedState('musterRosterRowsPerPage', 10);
   const [exportLoading, setExportLoading] = useState(false);
   const [rosterColumnInfos, setRosterColumnInfos] = useState<ApiRosterColumnInfo[]>([]);
-  const [unitComplianceData, setUnitComplianceData] = useState<Map<string, Plotly.Data[]>>(new Map());
-  const [todaysUnitCompliance, setTodaysUnitCompliance] = useState<Map<string, number>>(new Map());
-  const [overallUnitCompliance, setOverallUnitCompliance] = useState<Map<string, number>>(new Map());
   const [rosterData, setRosterData] = useState<ApiMusterRosterEntriesPaginated>({
     rows: [],
     totalRowsCount: 0,
   });
-
-  const org = useAppSelector(UserSelector.org)!;
-  const orgId = org.id;
-  const orgName = org.name;
-  const isPageLoading = useAppSelector(state => state.appFrame.isPageLoading);
 
   const timeRanges: Readonly<Readonly<TimeRange>[]> = useMemo(() => ([
     {
@@ -217,47 +174,6 @@ export const MusterPage = () => {
     }
   }, [rosterFromDateIso, rosterToDateIso, rosterRowsPerPage, rosterPage, orgId, rosterUnitId, showErrorDialog]);
 
-  const reloadMusterComplianceData = useCallback(async () => {
-    try {
-      // determine if we are displaying for all units or just a single unit
-      const unitsToDisplay = rosterUnitId === -1 ? units : [units.find(unit => unit.id === rosterUnitId)];
-      const plotData = new Map();
-      const overallComplianceData = new Map();
-      const todaysComplianceData = new Map();
-      for (let i = 0; i < unitsToDisplay.length; i++) {
-        const unit = unitsToDisplay[i];
-        const xRange: string[] = [];
-        const yRange: number[] = [];
-        let dayCount: number = 0;
-        let totalCompliance: number = 0;
-        if (unit) {
-          const res = await MusterClient.getMusterComplianceByDateRange(orgId, unit.name, { isoStartDate: `${rosterFromDateIso}`, isoEndDate: `${rosterToDateIso}` });
-          if (res.musterComplianceRates.length > 0) {
-            res.musterComplianceRates.forEach(rate => {
-              yRange.push(rate.musterComplianceRate);
-              xRange.push(rate.isoDate);
-              totalCompliance += rate.musterComplianceRate;
-              dayCount += 1;
-            });
-            todaysComplianceData.set(unit.name, yRange[yRange.length - 1]);
-            overallComplianceData.set(unit.name, totalCompliance / dayCount);
-            plotData.set(unit.name, [{
-              x: xRange,
-              y: yRange,
-              type: 'bar',
-            },
-            ]);
-          }
-        }
-      }
-      setTodaysUnitCompliance(todaysComplianceData);
-      setOverallUnitCompliance(overallComplianceData);
-      setUnitComplianceData(plotData);
-    } catch (error) {
-      showErrorDialog('Muster Trends', error);
-    }
-  }, [orgId, showErrorDialog, rosterUnitId, units, rosterFromDateIso, rosterToDateIso]);
-
   const initializeRosterColumnInfo = useCallback(async () => {
     try {
       const infos = await RosterClient.getAllowedRosterColumnsInfo(orgId);
@@ -292,11 +208,6 @@ export const MusterPage = () => {
   useEffect(() => {
     void initialize();
   }, [initialize]);
-
-  useEffect(() => {
-    void reloadMusterComplianceData();
-  }, [reloadMusterComplianceData]);
-
 
   //
   // Functions
@@ -417,34 +328,6 @@ export const MusterPage = () => {
     setRosterSelectedTimeRangeIndex(index);
     setRosterFromDateIso(range.fromDateIso);
     setRosterToDateIso(range.toDateIso);
-  };
-
-  const renderUnitComplianceTableRows = () => {
-    const rows: any[] = [];
-    unitComplianceData.forEach((value: Plotly.Data[], key: string) => {
-      rows.push(
-        <TableRow key={key}>
-          <TableCell>
-            {key}
-          </TableCell>
-          <TableCell align="right">
-            { `${overallUnitCompliance.get(key)?.toFixed(2)}%` }
-          </TableCell>
-          <TableCell align="right">
-            { `${todaysUnitCompliance.get(key)?.toFixed(2)}%` }
-          </TableCell>
-          <TableCell align="right">
-            <Plot
-              style={{ width: '100%' }}
-              data={value}
-              layout={complianceBarChart.layout}
-              config={complianceBarChart.config}
-            />
-          </TableCell>
-        </TableRow>,
-      );
-    });
-    return rows;
   };
 
   //
@@ -600,25 +483,11 @@ export const MusterPage = () => {
 
           {/* Muster compliance Table */}
           {user.activeRole?.role.canViewPII && (
-            <Grid item xs={12}>
-              <Paper>
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Unit</TableCell>
-                        <TableCell align="right">Overall Compliance</TableCell>
-                        <TableCell align="right">Today&apos;s Compliance</TableCell>
-                        <TableCell align="right">Daily Compliance</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      { renderUnitComplianceTableRows() }
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Paper>
-            </Grid>
+            <UnitMusterComplianceTable
+              rosterFromDateIso={rosterFromDateIso}
+              rosterToDateIso={rosterToDateIso}
+              rosterUnitId={rosterUnitId}
+            />
           )}
         </Grid>
       </Container>
@@ -633,3 +502,4 @@ type TimeRange = {
     toDateIso: string;
   };
 };
+
