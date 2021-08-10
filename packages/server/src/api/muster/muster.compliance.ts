@@ -48,18 +48,20 @@ export function toRosterForMusterCompliance(rosters: Roster[]): RosterForMusterC
  * @param musteringOpportunities
  * @param rosterForMusterCompliance
  */
-export function calculateMusterCompliance(
-  observations: RecordedObservations[],
-  musteringOpportunities: MusteringOpportunities,
-  rosterForMusterCompliance: RosterForMusterCompliance[],
-): MusterCompliance[] {
+export function calculateMusterCompliance(observations: RecordedObservations[], musteringOpportunities: MusteringOpportunities, rosterForMusterCompliance: RosterForMusterCompliance[]): MusterCompliance[] {
   return rosterForMusterCompliance.map(roster => {
     const edipi = roster.edipi;
     const unitId = roster.unitId;
-    const totalMusters = musteringOpportunities[unitId].length;
+    const unitMusteringOpportunities = musteringOpportunities[unitId];
+
+    if (!unitMusteringOpportunities || unitMusteringOpportunities.length === 0) {
+      return { totalMusters: 0, mustersReported: 0, musterPercent: 100, ...roster };
+    }
+
+    const totalMusters = unitMusteringOpportunities.length;
 
     const edipiObservations = filterObservationsByEdipi(observations, edipi);
-    const mustersReported = calculateIndividualMusterCompliance(edipiObservations, musteringOpportunities[unitId]);
+    const mustersReported = calculateIndividualMusterCompliance(edipiObservations, unitMusteringOpportunities);
     const musterPercent = (100 * mustersReported) / totalMusters;
 
 
