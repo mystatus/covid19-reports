@@ -22,10 +22,10 @@ import {
   RosterFileRow,
   RosterInfo,
   SearchRosterBody,
-  SearchRosterBodyEntry,
   edipiColumnDisplayName,
   unitColumnDisplayName,
   CustomColumnData,
+  FilterConfigItem,
 } from '@covid19-reports/shared';
 import {
   assertRequestBody,
@@ -401,10 +401,9 @@ const formatColumnSelect = (column: RosterColumnInfo) => {
   }
 };
 
-function applyWhere(queryBuilder: SelectQueryBuilder<Roster>, column: RosterColumnInfo, {
-  op,
-  value,
-}: SearchRosterBodyEntry) {
+function applyWhere(queryBuilder: SelectQueryBuilder<Roster>, column: RosterColumnInfo, filterConfigItem: FilterConfigItem) {
+  const { op, value } = filterConfigItem;
+
   const columnSelect = formatColumnSelect(column);
 
   if (op === 'in') {
