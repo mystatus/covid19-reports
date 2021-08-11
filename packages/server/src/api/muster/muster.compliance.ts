@@ -2,6 +2,7 @@ import { Moment } from 'moment-timezone';
 import { Roster } from '../roster/roster.model';
 import { MusteringOpportunities, MusterWindowWithStartAndEndDate } from './mustering.opportunities';
 import { RecordedObservations, RecordedObservationTimestamp } from '../observation/observation.utils';
+import { RosterEntry } from '../../util/roster-utils';
 
 /**
  * The <strong><code>toMusterCompliance()</code></strong> function <strong>calculates muster compliance for all
@@ -108,14 +109,3 @@ export type MusterCompliance = {
   musterPercent: number;
 } & RosterEntry;
 
-/**
- * Represents muster compliance without any compliance calculations
- */
-export type RosterEntry = {
-  edipi: string;
-  firstName: string;
-  lastName: string;
-  myCustomColumn1: string;
-  unitId: number;
-  phone?: string;
-};

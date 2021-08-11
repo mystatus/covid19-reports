@@ -3,10 +3,11 @@ import moment from 'moment-timezone';
 import {
   calculateMusterCompliance,
   MusterCompliance,
-  RosterEntry,
+
 } from './muster.compliance';
 import { RecordedObservations } from '../observation/observation.utils';
 import { MusteringOpportunities } from './mustering.opportunities';
+import { RosterEntry } from '../../util/roster-utils';
 
 
 describe('Muster Compliance', () => {

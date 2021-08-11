@@ -1,18 +1,12 @@
 import { EntityManager } from 'typeorm';
-import {
-  RosterColumnInfo,
-  RosterEntryData,
-} from '@covid19-reports/shared';
+import { RosterColumnInfo, RosterEntryData } from '@covid19-reports/shared';
 import { Org } from '../api/org/org.model';
 import { Role } from '../api/role/role.model';
 import { RosterHistory } from '../api/roster/roster-history.model';
 import { Roster } from '../api/roster/roster.model';
 import { Unit } from '../api/unit/unit.model';
 import { UserRole } from '../api/user/user-role.model';
-import {
-  BadRequestError,
-  NotFoundError,
-} from './error-types';
+import { BadRequestError, NotFoundError } from './error-types';
 
 export async function addRosterEntry(org: Org, role: Role, entryData: RosterEntryData, manager: EntityManager) {
   const edipi = entryData.edipi as string;
@@ -169,4 +163,13 @@ type RosterWithUnitsAndEdipis = {
   roster: Roster[];
   unitIds: number[];
   edipis: string[];
+};
+
+export type RosterEntry = {
+  edipi: string;
+  firstName: string;
+  lastName: string;
+  myCustomColumn1: string;
+  unitId: number;
+  phone?: string;
 };
