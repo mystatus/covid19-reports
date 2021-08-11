@@ -16,6 +16,7 @@ export function toMusterCompliance(
   recordedObservations: RecordedObservations[],
   musteringOpportunities: MusteringOpportunities,
 ): MusterCompliance[] {
+  // TODO move this method out
   const rosterForMusterCompliance = toRosterForMusterCompliance(rosterIndividualsInformation);
   return calculateMusterCompliance(recordedObservations, musteringOpportunities, rosterForMusterCompliance);
 }
