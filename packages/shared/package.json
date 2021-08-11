@@ -19,6 +19,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "chai": "^4.3.4",
     "eslint": "^7.29.0",
     "eslint-config-airbnb": "^18.2.1",
     "eslint-config-airbnb-typescript": "^12.3.1",
