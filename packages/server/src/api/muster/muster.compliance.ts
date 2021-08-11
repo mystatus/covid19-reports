@@ -29,7 +29,7 @@ export function toMusterCompliance(
  *
  * @param rosters The array of <code>Roster</code> data
  */
-export function toRosterForMusterCompliance(rosters: Roster[]): RosterForMusterCompliance[] {
+export function toRosterForMusterCompliance(rosters: Roster[]): RosterEntry[] {
   return rosters.map(roster => {
     return {
       edipi: roster.edipi,
@@ -49,7 +49,7 @@ export function toRosterForMusterCompliance(rosters: Roster[]): RosterForMusterC
  * @param musteringOpportunities
  * @param rosterForMusterCompliance
  */
-export function calculateMusterCompliance(observations: RecordedObservations[], musteringOpportunities: MusteringOpportunities, rosterForMusterCompliance: RosterForMusterCompliance[]): MusterCompliance[] {
+export function calculateMusterCompliance(observations: RecordedObservations[], musteringOpportunities: MusteringOpportunities, rosterForMusterCompliance: RosterEntry[]): MusterCompliance[] {
   return rosterForMusterCompliance.map(roster => {
     const edipi = roster.edipi;
     const unitId = roster.unitId;
@@ -106,12 +106,12 @@ export type MusterCompliance = {
   totalMusters: number;
   mustersReported: number;
   musterPercent: number;
-} & RosterForMusterCompliance;
+} & RosterEntry;
 
 /**
  * Represents muster compliance without any compliance calculations
  */
-export type RosterForMusterCompliance = {
+export type RosterEntry = {
   edipi: string;
   firstName: string;
   lastName: string;

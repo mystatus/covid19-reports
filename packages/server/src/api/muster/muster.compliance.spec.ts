@@ -3,7 +3,7 @@ import moment from 'moment-timezone';
 import {
   calculateMusterCompliance,
   MusterCompliance,
-  RosterForMusterCompliance,
+  RosterEntry,
 } from './muster.compliance';
 import { RecordedObservations } from '../observation/observation.utils';
 import { MusteringOpportunities } from './mustering.opportunities';
@@ -16,7 +16,7 @@ describe('Muster Compliance', () => {
     let observations: RecordedObservations[];
     let musteringOpportunities: MusteringOpportunities;
     let noMusteringOpportunities: MusteringOpportunities;
-    let rosterForMusterCompliance: RosterForMusterCompliance[];
+    let rosterForMusterCompliance: RosterEntry[];
     let totalMusteringOpportunities: number;
     beforeEach(() => {
       edipi = '0000000007';
