@@ -11,7 +11,8 @@
     "react-hooks",
     "import",
     "chai-friendly",
-    "mocha-no-only"
+    "mocha-no-only",
+    "only-warn"
   ],
   "rules": {
     "jsx-a11y/label-has-associated-control": "off",
