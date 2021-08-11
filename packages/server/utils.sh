@@ -6,11 +6,6 @@ database_exists() {
   fi
 }
 
-drop_connections() {
-  echo -n "Terminating connections..."
-  psql -h "$SQL_HOST" -p "$SQL_PORT" -U "$SQL_USER" -c "select pg_terminate_backend(pid) from pg_stat_activity where datname='$SQL_DATABASE'";
-}
-
 create_database() {
   echo -n "Creating '$SQL_DATABASE' database... "
   createdb -h "$SQL_HOST" -p "$SQL_PORT" -U "$SQL_USER" "$SQL_DATABASE" || {
@@ -21,8 +16,6 @@ create_database() {
 }
 
 drop_database() {
-  # drop_connections
-
   echo -n "Dropping '$SQL_DATABASE' database... "
   dropdb -h "$SQL_HOST" -p "$SQL_PORT" -U "$SQL_USER" "$SQL_DATABASE" || {
     echo "Failed to drop '$SQL_DATABASE' database. Aborting..."
