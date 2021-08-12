@@ -4,7 +4,7 @@ import { GetMusterRosterQuery, Paginated } from '@covid19-reports/shared';
 import { assertRequestQuery } from '../../util/api-utils';
 import { ApiRequest, OrgRoleParams } from '../api.router';
 import { Log } from '../../util/log';
-import { toMusterCompliance, MusterCompliance } from './muster.compliance';
+import { calculateMusterCompliance, MusterCompliance } from './muster.compliance';
 import { getRosterWithUnitsAndEdipis } from '../../util/roster-utils';
 import { getMusteringOpportunities } from './mustering.opportunities';
 import { getObservations } from '../observation/observation.utils';
@@ -38,7 +38,7 @@ class MusterPostgresCtr {
       const rosters = await getRosterWithUnitsAndEdipis(unitId, orgId);
       const musterTimeView = await getMusteringOpportunities(orgId, rosters.unitIds, fromDate, toDate);
       const observations = await getObservations(rosters.edipis, fromDate, toDate);
-      musterCompliance = toMusterCompliance(rosters.roster, observations, musterTimeView);
+      musterCompliance = calculateMusterCompliance(observations, musterTimeView, rosters.roster);
     } catch (e) {
       console.error(e);
       throw e;
