@@ -2,8 +2,7 @@ import bodyParser from 'body-parser';
 import express from 'express';
 import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth/auth-middleware';
 import controller from './muster.controller';
-import masterController from './muster.master.contoller';
-
+import masterPostgresController from './muster.postgres.controller';
 
 const router = express.Router() as any;
 
@@ -24,7 +23,7 @@ router.get(
   '/:orgId/roster',
   requireOrgAccess,
   requireRolePermission(role => role.canViewMuster),
-  masterController.getMusterRoster,
+  masterPostgresController.getUserMusterCompliance,
 );
 
 router.get(

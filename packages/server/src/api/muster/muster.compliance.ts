@@ -17,6 +17,7 @@ export function calculateMusterCompliance(observations: RecordedObservations[], 
     const unitId = roster.unitId;
     const unitMusteringOpportunities = musteringOpportunities[unitId];
 
+    // mustering is not required
     if (!unitMusteringOpportunities || unitMusteringOpportunities.length === 0) {
       return { totalMusters: 0, mustersReported: 0, musterPercent: 100, ...roster };
     }

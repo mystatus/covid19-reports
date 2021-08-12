@@ -6,7 +6,7 @@ import { User } from '../user/user.model';
 import { Unit } from '../unit/unit.model';
 
 
-describe('Muster Controller - Compliance', () => {
+describe('Muster Controller Compliance', () => {
   const basePath = '/api/muster';
   let req: TestRequest;
   let seedData: any[];
@@ -17,32 +17,65 @@ describe('Muster Controller - Compliance', () => {
     seedData = await seedAll();
     req = new TestRequest(basePath);
     req.setUser(await User.findOne());
-    // We don't' use a static id since ids may auto increment.
+
     orgId = seedData[0].org.id;
-    unitId = seedData[0].units.filter(((u: Unit) => u.name === 'Unit 1')).map((unit: { id: any }) => unit.id)[0];
+    unitId = seedData[0].units.filter(((u: Unit) => u.name === 'Unit 1' && u.org!.id === orgId)).map((unit: { id: any }) => unit.id)[0];
   });
 
-  it('should return full compliance with multiple active configs', async () => {
-    const fromDate = '2020-01-05T14:00:00.000Z';
-    const toDate = '2020-01-05T16:00:00.000Z';
-    const res = await req.get(`/${orgId}/roster?fromDate=${fromDate}Z&toDate=${toDate}&unitId=${unitId}&page=0&limit=1`);
+  it('should return calculated compliance', async () => {
+    const fromDate = '2020-01-01T00:00:00.000';
+    const toDate = '2020-01-14T23:00:00.000';
+
+    const res = await req.get(`/${orgId}/roster?fromDate=${fromDate}Z&toDate=${toDate}&unitId=${unitId}&page=0&limit=10`);
+
     expectNoErrors(res);
     expect(res.data)
       .is
-      .eql({});
+      .eql(
+        { rows: [
+          { totalMusters: 10,
+            mustersReported: 5,
+            musterPercent: 50,
+            edipi: '0000000007',
+            firstName: 'RosterFirst7',
+            lastName: 'RosterLast7',
+            myCustomColumn1: 'tbd',
+            unitId,
+            phone: null },
+          {
+            edipi: '0000000012',
+            firstName: 'RosterFirst12',
+            lastName: 'RosterLast12',
+            musterPercent: 50,
+            mustersReported: 5,
+            myCustomColumn1: 'tbd',
+            phone: null,
+            totalMusters: 10,
+            unitId,
+          },
+          {
+            edipi: '0000000017',
+            firstName: 'RosterFirst17',
+            lastName: 'RosterLast17',
+            musterPercent: 50,
+            mustersReported: 5,
+            myCustomColumn1: 'tbd',
+            phone: null,
+            totalMusters: 10,
+            unitId,
+          },
+          {
+            edipi: '0000000022',
+            firstName: 'RosterFirst22',
+            lastName: 'RosterLast22',
+            musterPercent: 50,
+            mustersReported: 5,
+            myCustomColumn1: 'tbd',
+            phone: null,
+            totalMusters: 10,
+            unitId,
+          }],
+        totalRowsCount: 4 },
+      );
   });
-
-  // describe('Muster Compliance', () => {
-  //   describe(`${basePath}/:orgId/:unitName/complianceByDate : get`, () => {
-  //     it('should return full compliance with multiple active configs', async () => {
-  //       const fromDate = '2020-01-05T14:00:00.000Z';
-  //       const toDate = '2020-01-05T16:00:00.000Z';
-  //       const res = await req.get(`/${orgId}/roster?fromDate=${fromDate}Z&toDate=${toDate}&unitId=${unitId}&page=0&limit=1`);
-  //       expectNoErrors(res);
-  //       expect(res.data)
-  //         .is
-  //         .eql({});
-  //     });
-  //   });
-  // });
 });
