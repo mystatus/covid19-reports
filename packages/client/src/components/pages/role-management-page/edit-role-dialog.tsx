@@ -15,12 +15,9 @@ import {
   TextField,
   Typography,
 } from '@material-ui/core';
-import { AddRoleBody } from '@covid19-reports/shared';
+import { AddRoleBody, ColumnInfo } from '@covid19-reports/shared';
 import useStyles from './edit-role-dialog.styles';
-import {
-  ApiRole,
-  ApiRosterColumnInfo,
-} from '../../../models/api-response';
+import { ApiRole } from '../../../models/api-response';
 import {
   RolePermissions,
   parsePermissions,
@@ -182,7 +179,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
     return !formDisabled && name.length > 0 && description.length > 0;
   };
 
-  const columnAllowed = (column: ApiRosterColumnInfo) => {
+  const columnAllowed = (column: ColumnInfo) => {
     return (!column.pii || canViewPII || canViewPHI) && (!column.phi || canViewPHI);
   };
 

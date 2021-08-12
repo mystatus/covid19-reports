@@ -9,11 +9,10 @@ import {
 } from 'typeorm';
 import {
   CustomColumns,
-  edipiColumnDisplayName,
   formatPhoneNumber,
-  RosterColumnInfo,
-  RosterColumnType,
-  RosterColumnValue,
+  ColumnInfo,
+  ColumnType,
+  ColumnValue,
   RosterEntryData,
   RosterFileRow,
 } from '@covid19-reports/shared';
@@ -28,6 +27,7 @@ import {
   getRequiredValue,
 } from '../../util/util';
 import { Unit } from '../unit/unit.model';
+import { columnTypeToDataType, isEdipiColumn } from 'server/src/util/entity-utils';
 
 /**
  * This class serves as the base entity for both Roster and RosterHistory.  This allows both Roster and RosterHistory
@@ -97,7 +97,7 @@ export abstract class RosterEntity extends BaseEntity {
     return entryData;
   }
 
-  getColumnValue(column: RosterColumnInfo) {
+  getColumnValue(column: ColumnInfo) {
     if (column.custom) {
       return this.customColumns?.[column.name];
     }
@@ -105,7 +105,7 @@ export abstract class RosterEntity extends BaseEntity {
     return Reflect.get(this, column.name);
   }
 
-  setColumnValue(column: RosterColumnInfo, value: RosterColumnValue | undefined) {
+  setColumnValue(column: ColumnInfo, value: ColumnValue | undefined) {
     const validValue = this.validateColumnValue(column, value);
     if (validValue === undefined) {
       return;
@@ -122,11 +122,11 @@ export abstract class RosterEntity extends BaseEntity {
     }
   }
 
-  setColumnValueFromData(column: RosterColumnInfo, data: RosterEntryData) {
-    const expectedType = columnTypeToEntryDataType(column.type);
+  setColumnValueFromData(column: ColumnInfo, data: RosterEntryData) {
+    const expectedType = columnTypeToDataType(column.type);
 
     // Get the column value from the data.
-    let value: RosterColumnValue | undefined;
+    let value: ColumnValue | undefined;
     if (column.required) {
       value = getRequiredValue(column.name, data, expectedType);
     } else {
@@ -136,7 +136,7 @@ export abstract class RosterEntity extends BaseEntity {
     this.setColumnValue(column, value);
   }
 
-  setColumnValueFromFileRow(column: RosterColumnInfo, row: RosterFileRow) {
+  setColumnValueFromFileRow(column: ColumnInfo, row: RosterFileRow) {
     // Get the string value from the row data.
     let value: string | null | undefined;
     if (column.required) {
@@ -151,7 +151,7 @@ export abstract class RosterEntity extends BaseEntity {
     this.setColumnValue(column, value);
   }
 
-  validateColumnValue(column: RosterColumnInfo, value: RosterColumnValue | undefined): RosterColumnValue | undefined {
+  validateColumnValue(column: ColumnInfo, value: ColumnValue | undefined): ColumnValue | undefined {
     if (typeof value === 'string') {
       const maxLength = getColumnMaxLength(this.getEntityTarget(), column.name);
       if (maxLength) {
@@ -187,19 +187,19 @@ export abstract class RosterEntity extends BaseEntity {
     }
 
     // Convert string data into the type our model expects.
-    if (typeof value === 'string' && column.type !== RosterColumnType.String) {
+    if (typeof value === 'string' && column.type !== ColumnType.String) {
       switch (column.type) {
-        case RosterColumnType.Number:
+        case ColumnType.Number:
           value = +value;
           if (Number.isNaN(value)) {
             throw new BadRequestError(`"${column.displayName}" number value is invalid.`);
           }
           break;
-        case RosterColumnType.Date:
-        case RosterColumnType.DateTime:
+        case ColumnType.Date:
+        case ColumnType.DateTime:
           value = dateFromString(value, true)!.toISOString();
           break;
-        case RosterColumnType.Boolean:
+        case ColumnType.Boolean:
           value = (value === 'true');
           break;
         default:
@@ -218,20 +218,4 @@ export abstract class RosterEntity extends BaseEntity {
     }
   }
 
-}
-
-function columnTypeToEntryDataType(columnType: RosterColumnType) {
-  // Get dates and enums as strings.
-  switch (columnType) {
-    case RosterColumnType.Date:
-    case RosterColumnType.DateTime:
-    case RosterColumnType.Enum:
-      return 'string';
-    default:
-      return columnType;
-  }
-}
-
-function isEdipiColumn(column: RosterColumnInfo) {
-  return (column.displayName === edipiColumnDisplayName);
 }

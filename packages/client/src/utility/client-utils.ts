@@ -1,11 +1,27 @@
 import axios, {
   AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
   AxiosResponse,
+  Method,
 } from 'axios';
 import axiosRetry from 'axios-retry';
 
-export function createApiClient(basePath: string) {
-  const client = axios.create({
+export type PossiblyAbortable = { abort?: () => void };
+
+export type ClientPromise<T = any> = Promise<T> & PossiblyAbortable;
+// export type ClientPromise<T = any, R = AxiosResponse<T>> = Promise<R> & PossiblyAbortable;
+
+export type AxiosClient = AxiosInstance & {
+  abortable(): {
+    request<T = any> (config: AxiosRequestConfig): ClientPromise<T>;
+    get<T = any>(url: string, config?: AxiosRequestConfig): ClientPromise<T>;
+    post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): ClientPromise<T>;
+  };
+};
+
+export function createApiClient(basePath: string): AxiosClient {
+  const client: AxiosInstance & Partial<AxiosClient> = axios.create({
     baseURL: `${window.location.origin}/api/${basePath}`,
     headers: {
       Accept: 'application/json',
@@ -34,5 +50,27 @@ export function createApiClient(basePath: string) {
     retryDelay: axiosRetry.exponentialDelay,
   });
 
-  return client;
+  const request = <T>(url: string, method: Method | undefined, config?: AxiosRequestConfig) => {
+    let abort: () => void;
+    const promise: Promise<T> & Partial<ClientPromise<T>> = client.request({
+      cancelToken: new axios.CancelToken(cancel => {
+        abort = cancel;
+      }),
+      url,
+      method,
+      ...config,
+    });
+    promise.abort = () => {
+      abort?.();
+    };
+    return promise as ClientPromise<T>;
+  };
+
+  client.abortable = () => ({
+    request: (config: AxiosRequestConfig) => request(config.url!, config.method, config),
+    get: (url: string, config?: AxiosRequestConfig) => request(url, 'get', config),
+    post: (url: string, config?: AxiosRequestConfig) => request(url, 'post', config),
+  });
+
+  return client as AxiosClient;
 }

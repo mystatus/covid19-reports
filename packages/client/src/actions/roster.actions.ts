@@ -1,5 +1,5 @@
+import { ColumnInfo } from '@covid19-reports/shared';
 import { Dispatch } from 'redux';
-import { ApiRosterColumnInfo } from '../models/api-response';
 import { RosterClient } from '../client/roster.client';
 
 export namespace Roster {
@@ -18,7 +18,7 @@ export namespace Roster {
       static type = `${FetchColumns.type}_SUCCESS`;
       type = FetchColumnsSuccess.type;
       constructor(public payload: {
-        columns: ApiRosterColumnInfo[];
+        columns: ColumnInfo[];
       }) {}
 
     }

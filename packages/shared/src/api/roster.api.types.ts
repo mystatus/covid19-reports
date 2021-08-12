@@ -1,28 +1,7 @@
-import { FilterConfig } from '@covid19-reports/shared';
-import { PaginatedQuery } from './api.types';
+import { CustomColumnData } from '@covid19-reports/shared';
 import {
-  CustomColumnConfig,
-  RosterColumnType,
   RosterEntryData,
 } from '../roster.types';
-
-export type CustomColumnData = {
-  type?: RosterColumnType;
-  pii?: boolean;
-  phi?: boolean;
-  required?: boolean;
-  config?: CustomColumnConfig;
-  displayName?: string;
-};
-
-export type GetRosterQuery = {
-  orderBy?: string;
-  sortDirection?: 'ASC' | 'DESC';
-} & PaginatedQuery;
-
-export type SearchRosterQuery = GetRosterQuery;
-
-export type SearchRosterBody = FilterConfig;
 
 export type ReportDateQuery = {
   reportDate: string;

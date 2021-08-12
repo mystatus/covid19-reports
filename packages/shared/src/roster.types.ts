@@ -1,33 +1,8 @@
+import { ColumnInfo, ColumnType, CustomColumns } from './entity.types';
 import { UnitSerialized } from './unit.types';
 
-export type CustomColumns = {
-  [columnName: string]: RosterColumnValue;
-};
 
-export enum RosterColumnType {
-  String = 'string',
-  Number = 'number',
-  Date = 'date',
-  DateTime = 'datetime',
-  Boolean = 'boolean',
-  Enum = 'enum',
-}
-
-export type RosterColumnValue = string | boolean | number | null;
-
-export type RosterColumnInfo = {
-  name: string;
-  displayName: string;
-  type: RosterColumnType;
-  pii: boolean;
-  phi: boolean;
-  custom: boolean;
-  required: boolean;
-  updatable: boolean;
-  config?: CustomColumnConfig;
-};
-
-export type BaseRosterColumnInfo = RosterColumnInfo & {
+export type BaseRosterColumnInfo = ColumnInfo & {
   name: 'edipi' | 'firstName' | 'lastName';
 };
 
@@ -37,7 +12,7 @@ export const baseRosterColumnLookup: Readonly<{
   edipi: {
     name: 'edipi',
     displayName: 'DoD ID',
-    type: RosterColumnType.String,
+    type: ColumnType.String,
     pii: true,
     phi: false,
     custom: false,
@@ -47,7 +22,7 @@ export const baseRosterColumnLookup: Readonly<{
   firstName: {
     name: 'firstName',
     displayName: 'First Name',
-    type: RosterColumnType.String,
+    type: ColumnType.String,
     pii: true,
     phi: false,
     custom: false,
@@ -57,7 +32,7 @@ export const baseRosterColumnLookup: Readonly<{
   lastName: {
     name: 'lastName',
     displayName: 'Last Name',
-    type: RosterColumnType.String,
+    type: ColumnType.String,
     pii: true,
     phi: false,
     custom: false,
@@ -67,9 +42,6 @@ export const baseRosterColumnLookup: Readonly<{
 };
 
 export const baseRosterColumns: Readonly<Readonly<BaseRosterColumnInfo>>[] = Object.values(baseRosterColumnLookup);
-
-export const edipiColumnDisplayName = baseRosterColumnLookup.edipi.displayName;
-export const unitColumnDisplayName = 'Unit';
 
 export type RosterEntryData = {
   edipi: string;
@@ -83,13 +55,7 @@ export type RosterFileRow<TColumnValue = string> = {
   [columnDisplayName: string]: TColumnValue;
 };
 
-export type RosterColumnInfoWithValue = RosterColumnInfo & {
-  value: RosterColumnValue;
-};
-
 export type RosterInfo = {
   unit: UnitSerialized;
-  columns: RosterColumnInfo[];
+  columns: ColumnInfo[];
 };
-
-export type CustomColumnConfig = {};

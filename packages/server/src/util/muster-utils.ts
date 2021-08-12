@@ -122,7 +122,7 @@ export async function getMusterRosterStats(args: {
     }
   });
 
-  const allowedRosterColumns = await Roster.getAllowedColumns(org, userRole.role);
+  const allowedRosterColumns = Roster.filterAllowedColumns(await Roster.getColumns(org), userRole.role);
 
   // Collect reports and reports missed.
   const aggs = musterAggsResponse.aggregations as MusterRosterAggregations | undefined;

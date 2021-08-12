@@ -22,11 +22,10 @@ import {
 } from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import MomentUtils from '@date-io/moment';
-import { RosterColumnType } from '@covid19-reports/shared';
+import { ColumnInfo, ColumnType } from '@covid19-reports/shared';
 import useStyles from './edit-roster-entry-dialog.style';
 import {
   ApiOrphanedRecord,
-  ApiRosterColumnInfo,
   ApiRosterEntry,
   ApiRosterEnumColumnConfig,
   ApiRosterStringColumnConfig,
@@ -41,7 +40,7 @@ import { useAppSelector } from '../../../hooks/use-app-selector';
 export interface EditRosterEntryDialogProps {
   open: boolean;
   orgId?: number;
-  rosterColumnInfos?: ApiRosterColumnInfo[];
+  rosterColumnInfos?: ColumnInfo[];
   rosterEntry?: ApiRosterEntry;
   prepopulated?: Partial<ApiRosterEntry>;
   orphanedRecord?: Partial<ApiOrphanedRecord>;
@@ -164,9 +163,9 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
         }
 
         switch (column.type) {
-          case RosterColumnType.String:
-          case RosterColumnType.Date:
-          case RosterColumnType.DateTime:
+          case ColumnType.String:
+          case ColumnType.Date:
+          case ColumnType.DateTime:
             if (value.trim().length === 0) {
               return false;
             }
@@ -216,9 +215,9 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     );
   };
 
-  const buildTextInput = (columnInfo: ApiRosterColumnInfo) => {
-    const numberField = columnInfo.type === RosterColumnType.Number;
-    const multiline = columnInfo.type === RosterColumnType.String && (columnInfo?.config as ApiRosterStringColumnConfig)?.multiline === true;
+  const buildTextInput = (columnInfo: ColumnInfo) => {
+    const numberField = columnInfo.type === ColumnType.Number;
+    const multiline = columnInfo.type === ColumnType.String && (columnInfo?.config as ApiRosterStringColumnConfig)?.multiline === true;
     return (
       <TextField
         className={classes.textField}
@@ -236,7 +235,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     );
   };
 
-  const buildDateInput = (columnInfo: ApiRosterColumnInfo) => {
+  const buildDateInput = (columnInfo: ColumnInfo) => {
     return (
       <MuiPickersUtilsProvider utils={MomentUtils}>
         <DatePicker
@@ -254,7 +253,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     );
   };
 
-  const buildDateTimeInput = (columnInfo: ApiRosterColumnInfo) => {
+  const buildDateTimeInput = (columnInfo: ColumnInfo) => {
     return (
       <MuiPickersUtilsProvider utils={MomentUtils}>
         <DateTimePicker
@@ -272,7 +271,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     );
   };
 
-  const buildEnumInput = (columnInfo: ApiRosterColumnInfo) => {
+  const buildEnumInput = (columnInfo: ColumnInfo) => {
     const options = (columnInfo.config as ApiRosterEnumColumnConfig)?.options?.slice() ?? [];
 
     if (!columnInfo.required) {
@@ -320,16 +319,16 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
     ));
   };
 
-  const buildInputFieldForColumnType = (column: ApiRosterColumnInfo) => {
+  const buildInputFieldForColumnType = (column: ColumnInfo) => {
     switch (column.type) {
-      case RosterColumnType.String:
-      case RosterColumnType.Number:
+      case ColumnType.String:
+      case ColumnType.Number:
         return buildTextInput(column);
-      case RosterColumnType.DateTime:
+      case ColumnType.DateTime:
         return buildDateTimeInput(column);
-      case RosterColumnType.Date:
+      case ColumnType.Date:
         return buildDateInput(column);
-      case RosterColumnType.Enum:
+      case ColumnType.Enum:
         return buildEnumInput(column);
       default:
         console.warn(`Unhandled column type found while creating input fields: ${column.type}`);

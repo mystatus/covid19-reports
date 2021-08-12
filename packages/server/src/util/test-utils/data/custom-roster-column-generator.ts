@@ -1,4 +1,4 @@
-import { RosterColumnType } from '@covid19-reports/shared';
+import { ColumnType } from '@covid19-reports/shared';
 import { Org } from '../../../api/org/org.model';
 import { CustomRosterColumn } from '../../../api/roster/custom-roster-column.model';
 
@@ -6,7 +6,7 @@ export function customRosterColumnTestData(org: Org, customColumnOrgCount: numbe
   const customColumn = CustomRosterColumn.create({
     org,
     display: `My Custom Column ${customColumnOrgCount}`,
-    type: RosterColumnType.String,
+    type: ColumnType.String,
     phi: false,
     pii: false,
     required: false,

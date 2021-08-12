@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { EntityManager, getConnection } from 'typeorm';
-import { RosterInfo } from '@covid19-reports/shared';
+import { Paginated, PaginationParams, RosterInfo, SearchBody } from '@covid19-reports/shared';
 import { ObservationApiModel } from './observation.types';
 import { Observation } from './observation.model';
-import { ApiRequest, EdipiParam } from '../api.router';
+import { ApiRequest, EdipiParam, OrgParam } from '../api.router';
 import { Log } from '../../util/log';
 import { ReportSchema } from '../report-schema/report-schema.model';
 import { getRosterInfosForIndividualOnDate } from '../roster/roster.controller';
@@ -11,6 +11,7 @@ import { timestampColumnTransformer } from '../../util/util';
 import { BadRequestError } from '../../util/error-types';
 import { assertRequestBody } from '../../util/api-utils';
 import { saveRosterPhoneNumber } from '../../util/roster-utils';
+import { EntityService } from '../../util/entity-utils';
 
 class ObservationController {
 
@@ -50,6 +51,23 @@ class ObservationController {
     });
 
     res.json(observation);
+  }
+
+
+  async getAllowedColumnsInfo(req: ApiRequest<OrgParam>, res: Response) {
+    const service = new EntityService(Observation);
+    const columns = service.filterAllowedColumns(await Observation.getColumns(req.appOrg!, 'es6ddssymptomobs'), req.appUserRole!.role);
+    res.json(columns);
+  }
+
+  async getObservations(req: ApiRequest<OrgParam, any, PaginationParams>, res: Response<Paginated<Observation>>) {
+    const service = new EntityService(Observation);
+    res.json(await service.search(req.query, req.appOrg!, req.appUserRole!));
+  }
+
+  async searchObservations(req: ApiRequest<OrgParam, SearchBody, PaginationParams>, res: Response<Paginated<Observation>>) {
+    const service = new EntityService(Observation);
+    res.json(await service.search(req.query, req.appOrg!, req.appUserRole!, req.body));
   }
 
 }

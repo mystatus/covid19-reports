@@ -5,8 +5,8 @@ import moment from 'moment';
 import {
   ExportMusterIndividualsQuery,
   ExportOrgQuery,
-  RosterColumnInfo,
-  RosterColumnValue,
+  ColumnInfo,
+  ColumnValue,
   RosterEntryData,
   RosterFileRow,
 } from '@covid19-reports/shared';
@@ -102,7 +102,8 @@ class ExportController {
   async exportRosterToCsv(req: ApiRequest, res: Response) {
     const orgId = req.appOrg!.id;
 
-    const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appUserRole!);
+    const columns = await Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!), req.appUserRole!.role);
+    const queryBuilder = await Roster.search(req.appOrg!, req.appUserRole!, columns);
     const rosterData = await queryBuilder
       .orderBy({
         edipi: 'ASC',
@@ -120,8 +121,7 @@ class ExportController {
       unitIdNameMap[unit.id] = unit.name;
     });
 
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
-    const columnsLookup: { [columnName: string]: RosterColumnInfo } = {};
+    const columnsLookup: { [columnName: string]: ColumnInfo } = {};
     for (const column of columns) {
       columnsLookup[column.name] = column;
     }
@@ -129,7 +129,7 @@ class ExportController {
     // Convert data to csv format and download.
     const csv = await json2csvAsync(rosterData.map(entry => {
       // Convert column 'name' keys to column 'displayName' keys.
-      const row: RosterFileRow<RosterColumnValue> = {
+      const row: RosterFileRow<ColumnValue> = {
         Unit: unitIdNameMap[entry.unit],
       };
 

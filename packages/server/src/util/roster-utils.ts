@@ -1,6 +1,6 @@
 import { EntityManager } from 'typeorm';
 import {
-  RosterColumnInfo,
+  ColumnInfo,
   RosterEntryData,
 } from '@covid19-reports/shared';
 import { Org } from '../api/org/org.model';
@@ -47,7 +47,8 @@ export async function addRosterEntry(org: Org, role: Role, entryData: RosterEntr
   const entry = new Roster();
   entry.unit = unit;
 
-  const allowedColumns = await Roster.getAllowedColumns(org, role);
+  const allowedColumns = Roster.filterAllowedColumns(await Roster.getColumns(org), role);
+
   for (const column of allowedColumns) {
     entry.setColumnValueFromData(column, entryData);
   }
@@ -83,7 +84,7 @@ export async function editRosterEntry(org: Org, userRole: UserRole, entryId: num
     await manager.delete(Roster, oldEntry.id);
   }
 
-  const allowedColumns = await Roster.getAllowedColumns(org, userRole.role);
+  const allowedColumns = Roster.filterAllowedColumns(await Roster.getColumns(org), userRole.role);
   for (const column of allowedColumns) {
     if (entryData[column.name] === undefined) {
       continue;
@@ -106,11 +107,11 @@ export function getRosterHistoryForIndividual(edipi: string, unitId: number) {
     .getMany();
 }
 
-export function getCsvHeaderForRosterColumn(column: RosterColumnInfo) {
+export function getCsvHeaderForRosterColumn(column: ColumnInfo) {
   return column.displayName;
 }
 
-export function getCsvValueForRosterColumn(entry: RosterEntryData, column: RosterColumnInfo) {
+export function getCsvValueForRosterColumn(entry: RosterEntryData, column: ColumnInfo) {
   return entry[column.name] ?? '';
 }
 

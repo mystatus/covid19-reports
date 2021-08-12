@@ -1,5 +1,6 @@
 export * from './api/access-request.api.types';
 export * from './api/api.types';
+export * from './api/entity.api.types';
 export * from './api/export.api.types';
 export * from './api/muster.api.types';
 export * from './api/notification.api.types';
@@ -15,9 +16,10 @@ export * from './api/workspace.api.types';
 export * from './utils/days';
 export * from './utils/string-utils';
 
+export * from './entity.types';
+export * from './observation.types';
 export * from './org.types';
 export * from './orphaned-record.types';
-export * from './query-builder.types';
 export * from './role.types';
 export * from './roster.types';
 export * from './saved-filter.types';

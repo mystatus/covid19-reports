@@ -4,7 +4,8 @@ import {
   Typography,
 } from '@material-ui/core';
 import CheckIcon from '@material-ui/icons/Check';
-import { ApiRole, ApiRosterColumnInfo } from '../../models/api-response';
+import { ColumnInfo } from '@covid19-reports/shared';
+import { ApiRole } from '../../models/api-response';
 import useStyles, { ScrollHeightParam } from './role-info-panel.styles';
 import { parsePermissions } from '../../utility/permission-set';
 import { Notification } from '../../actions/notification.actions';
@@ -80,7 +81,7 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
 
   const permissions = parsePermissions(rosterColumns, role.allowedRosterColumns);
 
-  const columnAllowed = (column: ApiRosterColumnInfo) => {
+  const columnAllowed = (column: ColumnInfo) => {
     return permissions[column.name]
       && (!column.pii || role.canViewPII || role.canViewPHI)
       && (!column.phi || role.canViewPHI);

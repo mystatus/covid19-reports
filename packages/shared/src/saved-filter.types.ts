@@ -1,8 +1,5 @@
+import { QueryOp, QueryValueType } from './entity.types';
 import { OrgSerialized } from './org.types';
-import {
-  QueryOp,
-  QueryValueType,
-} from './query-builder.types';
 
 export enum FilterEntityType {
   Observation = 'Observation',
