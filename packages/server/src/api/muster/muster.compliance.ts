@@ -44,6 +44,7 @@ export function toRosterForMusterCompliance(rosters: Roster[]): RosterEntry[] {
   });
 }
 
+
 /**
  * TBD later....
  * @param observations
@@ -64,8 +65,7 @@ export function calculateMusterCompliance(observations: RecordedObservations[], 
 
     const edipiObservations = filterObservationsByEdipi(observations, edipi);
     const mustersReported = calculateIndividualMusterCompliance(edipiObservations, unitMusteringOpportunities);
-    const musterPercent = (100 * mustersReported) / totalMusters;
-
+    const musterPercent = calculatePercentageRounded(mustersReported, totalMusters);
 
     return { totalMusters, mustersReported, musterPercent, ...roster };
   });
@@ -99,6 +99,10 @@ function calculateCompliance(observationTimestamps: RecordedObservationTimestamp
   return compliance;
 }
 
+function calculatePercentageRounded(mustersReported: number, totalMusters: number) {
+  const musterPercent = (100 * mustersReported) / totalMusters;
+  return Math.round(10 * musterPercent) / 10;
+}
 
 /**
  * Represents muster compliance for an individual
