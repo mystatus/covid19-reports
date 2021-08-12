@@ -30,10 +30,20 @@ class MusterPostgresCtr {
     const unitId = req.query.unitId!;
     const orgId = req.appOrg!.id;
 
-    const rosters = await getRosterWithUnitsAndEdipis(unitId, orgId);
-    const musterTimeView = await getMusteringOpportunities(orgId, rosters.unitIds, fromDate, toDate);
-    const observations = await getObservations(rosters.edipis, fromDate, toDate);
-    const musterCompliance = toMusterCompliance(rosters.roster, observations, musterTimeView);
+    Log.info(`getUserMusterCompliance() for ${JSON.stringify({ orgId, unitId, fromDate, toDate })}`);
+
+    let musterCompliance;
+
+    try {
+      const rosters = await getRosterWithUnitsAndEdipis(unitId, orgId);
+      const musterTimeView = await getMusteringOpportunities(orgId, rosters.unitIds, fromDate, toDate);
+      const observations = await getObservations(rosters.edipis, fromDate, toDate);
+      // console.log(observations);
+      musterCompliance = toMusterCompliance(rosters.roster, observations, musterTimeView);
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
 
     return res.json({
       rows: toPageWithRowLimit(musterCompliance, pageNumber, rowLimit),

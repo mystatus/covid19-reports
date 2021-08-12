@@ -1,5 +1,5 @@
+import moment from 'moment-timezone';
 import { getManager } from 'typeorm';
-import { RosterColumnType } from '@covid19-reports/shared';
 import { Observation } from '../../api/observation/observation.model';
 import { Org } from '../../api/org/org.model';
 import { seedOrphanedRecords } from '../../api/orphaned-record/orphaned-record.model.mock';
@@ -7,29 +7,27 @@ import { Role } from '../../api/role/role.model';
 import { User } from '../../api/user/user.model';
 import { Workspace } from '../../api/workspace/workspace.model';
 import { Roster } from '../../api/roster/roster.model';
-import { CustomRosterColumn } from '../../api/roster/custom-roster-column.model';
 import { Unit } from '../../api/unit/unit.model';
 import { env } from '../env';
 import { Log } from '../log';
-import { RosterHistory, ChangeType } from '../../api/roster/roster-history.model';
-import { defaultReportSchemas, ReportSchema } from '../../api/report-schema/report-schema.model';
+import { ChangeType, RosterHistory } from '../../api/roster/roster-history.model';
+import { ReportSchema } from '../../api/report-schema/report-schema.model';
 import { seedOrg } from '../../api/org/org.model.mock';
-import {
-  seedRoleBasicUser,
-  seedRoleAdmin,
-} from '../../api/role/role.model.mock';
+import { seedRoleAdmin, seedRoleBasicUser } from '../../api/role/role.model.mock';
 import { seedUserRole } from '../../api/user/user-role.model.mock';
 import { seedUser } from '../../api/user/user.model.mock';
-import {
-  uniqueEdipi,
-  uniquePhone,
-} from './unique';
+import { resetUniqueEdipiGenerator, uniqueEdipi, uniquePhone } from './unique';
+import { rosterTestData } from './data/roster-generator';
+import { customRosterColumnTestData } from './data/custom-roster-column-generator';
+import { unitsTestData } from './data/unit-generator';
+import { observationTestData } from './data/observation-generator';
+import { orgTestData } from './data/org-generator';
+import { adminUserTestData } from './data/user-generator';
+import { reportSchemaTestData } from './data/report-schema-generator';
 
 require('dotenv').config();
 
 let orgCount = 0;
-let unitCount = 0;
-
 
 export async function seedOrgContactRoles() {
   const { org, contact } = await seedOrgContact();
@@ -62,25 +60,21 @@ export async function seedAll() {
 
   Log.info('Seeding database...');
 
+  resetUniqueEdipiGenerator();
+
   // Create Group Admin
-  const groupAdmin = User.create({
-    edipi: uniqueEdipi(),
-    firstName: 'Group',
-    lastName: 'Admin',
-    phone: uniquePhone(),
-    email: `groupadmin@setest.com`,
-    service: 'Space Force',
-    isRegistered: true,
-  });
-  await groupAdmin.save();
+  const adminUser = adminUserTestData();
+  await adminUser.save();
 
   const totalAppUsers = 5;
   const totalUnits = 5;
   const totalRosterEntries = 20;
 
   // Create Org 1 & 2 and their Users
-  const orgData1 = await generateOrg(groupAdmin, totalAppUsers, totalRosterEntries, totalUnits);
-  const orgData2 = await generateOrg(groupAdmin, totalAppUsers, totalRosterEntries, totalUnits);
+  const orgData1 = await generateOrg(adminUser, totalAppUsers, totalRosterEntries, totalUnits, 1);
+  const orgData2 = await generateOrg(adminUser, totalAppUsers, totalRosterEntries, totalUnits, 100);
+  // Create another Org with the same unit names as orgData1 for testing this edge case
+  await generateOrg(adminUser, totalAppUsers, totalRosterEntries, totalUnits, 1);
 
   // Set the start date on each roster entry to some time in the past to help with repeatable testing
   await RosterHistory.createQueryBuilder()
@@ -144,55 +138,17 @@ export async function seedAll() {
   return [orgData1, orgData2];
 }
 
-async function generateOrg(admin: User, numUsers: number, numRosterEntries: number, numUnits: number) {
+async function generateOrg(admin: User, numUsers: number, numRosterEntries: number, numUnits: number, unitsNameStartIndex: number) {
   orgCount += 1;
-
-  const org = Org.create({
-    name: `Group ${orgCount}`,
-    description: `Group ${orgCount} for testing.`,
-    contact: admin,
-    indexPrefix: `testgroup${orgCount}`,
-    reportingGroup: `test${orgCount}`,
-    defaultMusterConfiguration: [],
-  });
+  const org = orgTestData(admin, orgCount);
   await org.save();
-
-  let reportSchemas = ReportSchema.create(defaultReportSchemas);
-  reportSchemas = reportSchemas.concat(ReportSchema.create(defaultReportSchemas));
-  for (let i = 0; i < reportSchemas.length; i++) {
-    const report = reportSchemas[i];
-    report.org = org;
-    if (i > 0) {
-      report.id += i.toString();
-    }
-  }
+  const reportSchemas = reportSchemaTestData(org);
   await ReportSchema.save(reportSchemas);
-
-  const customColumn = CustomRosterColumn.create({
-    org,
-    display: `My Custom Column ${orgCount}`,
-    type: RosterColumnType.String,
-    phi: false,
-    pii: false,
-    required: false,
-  });
+  const customColumn = customRosterColumnTestData(org, orgCount);
   await customColumn.save();
 
   // Add Units
-  const units: Unit[] = [];
-  for (let i = 1; i <= numUnits; i++) {
-    unitCount += 1;
-    const unit = Unit.create({
-      org,
-      name: `Unit ${unitCount}`,
-      musterConfiguration: [
-        { days: 62, startTime: '00:00', timezone: 'America/Los_Angeles', durationMinutes: 120, reportId: reportSchemas[0].id },
-        { startTime: '2020-01-02T02:00:00.000', timezone: 'America/Los_Angeles', durationMinutes: 120, reportId: reportSchemas[1].id },
-      ],
-      includeDefaultConfig: true,
-    });
-    units.push(unit);
-  }
+  const units = unitsTestData(numUnits, unitsNameStartIndex, org, reportSchemas);
   await Unit.save(units);
 
   const groupAdminRole = createGroupAdminRole(org);
@@ -222,41 +178,29 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
   }
 
   // Add roster entries
-  const rosterEntries: Roster[] = [];
-  for (let i = 0; i < numRosterEntries; i++) {
-    const customColumns: any = {};
-    customColumns[customColumn.name] = `custom column value`;
-    const edipi = uniqueEdipi();
-    const edipiNum = parseInt(edipi);
-    const rosterEntry = Roster.create({
-      edipi,
-      firstName: `RosterFirst${edipiNum}`,
-      lastName: `RosterLast${edipiNum}`,
-      unit: units[i % numUnits],
-      customColumns,
-    });
-    rosterEntries.push(rosterEntry);
-  }
+  const rosterEntries = rosterTestData(numRosterEntries, customColumn, units, numUnits);
   await Roster.save(rosterEntries);
 
   // Insert observations per roster entry
-  const observations: Observation[] = [];
+  let observations: Observation[] = [];
   for (let i = 0; i < numRosterEntries; i++) {
-    const observation1 = Observation.create();
-    observation1.unit = 'Unit 1';
-    observation1.reportSchema = reportSchemas[0];
-    observation1.timestamp = new Date('2020-01-02T08:00:00Z');
-    observation1.documentId = `DocumentId_${i}`;
-    observation1.edipi = rosterEntries[i].edipi;
-    observations.push(observation1);
+    observations = observations.concat(
+      observationTestData(rosterEntries[i].edipi,
+        rosterEntries[i].unit.name,
+        reportSchemas[0],
+        moment('2020-01-01T08:00:00Z'),
+        moment('2020-01-07T08:00:00Z')),
+    );
 
-    const observation2 = Observation.create();
-    observation2.unit = 'Unit 1';
-    observation2.reportSchema = reportSchemas[1];
-    observation2.timestamp = new Date('2020-01-02T10:00:00Z');
-    observation2.documentId = `DocumentId_${i}`;
-    observation2.edipi = rosterEntries[i].edipi;
-    observations.push(observation2);
+    // these observations are for the single-muster config
+    // hence the same timestamp for start and end
+    observations = observations.concat(
+      observationTestData(rosterEntries[i].edipi,
+        rosterEntries[i].unit.name,
+        reportSchemas[1],
+        moment('2020-01-02T10:00:00Z'),
+        moment('2020-01-02T10:00:00Z')),
+    );
   }
   await Observation.save(observations);
 

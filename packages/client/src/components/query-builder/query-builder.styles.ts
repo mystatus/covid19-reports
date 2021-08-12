@@ -11,13 +11,19 @@ export default makeStyles((theme: Theme) => createStyles({
     '& > .MuiGrid-container': {
       flexWrap: 'nowrap',
     },
+    marginBottom: theme.spacing(2),
   },
-  addRowButton: {
+  button: {
     borderColor: 'transparent',
-    marginTop: theme.spacing(2),
+    marginRight: theme.spacing(2),
   },
-  removeRowButton: {
+  deleteButton: {
+    borderColor: 'transparent',
     color: '#E41D3D',
+    marginRight: theme.spacing(2),
+    '&:hover': {
+      borderColor: '#E41D3D',
+    },
   },
   textField: {
     margin: 0,

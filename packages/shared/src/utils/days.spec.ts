@@ -56,11 +56,11 @@ describe('days', () => {
       expect(binaryDaysToDateArray(DaysOfTheWeek.Saturday)).to.eql([7]);
     });
     it('expect to return 2nd and 7th day of the week', () => {
-    // eslint-disable-next-line no-bitwise
+      // eslint-disable-next-line no-bitwise
       expect(binaryDaysToDateArray(DaysOfTheWeek.Saturday | DaysOfTheWeek.Monday)).to.eql([2, 7]);
     });
     it('expect to return all day of the week', () => {
-    // eslint-disable-next-line no-bitwise
+      // eslint-disable-next-line no-bitwise
       expect(binaryDaysToDateArray(DaysOfTheWeek.Sunday | DaysOfTheWeek.Monday | DaysOfTheWeek.Tuesday | DaysOfTheWeek.Wednesday
       | DaysOfTheWeek.Thursday | DaysOfTheWeek.Friday | DaysOfTheWeek.Saturday)).to.eql([1, 2, 3, 4, 5, 6, 7]);
     });

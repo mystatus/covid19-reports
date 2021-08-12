@@ -48,11 +48,13 @@ if ! [[ "$(database_exists)" ]]; then
   ./migration-run.sh
 fi
 
+# seeding DB takes too long when SQL debug is turned on
+# resulting in mocha time out hence the ----timeout parameter
 npx ts-mocha \
   --project "tsconfig.json" \
   --config ".mocharc.yml" \
   --exit \
+  ----timeout 20000 \
   $TYPE
 
-# Remove the unittest container
 database_unittest "stop"

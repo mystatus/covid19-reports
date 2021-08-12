@@ -148,6 +148,16 @@ export class CsvRowError extends RequestError {
 
 }
 
+export class SavedFilterNotFoundError extends RequestError {
+
+  constructor(savedFilterId: number, showErrorPage = false) {
+    const message = `Unable to locate saved filter with id: ${savedFilterId}`;
+    super(message, 'NotFound', 404, showErrorPage);
+    Error.captureStackTrace(this, SavedFilterNotFoundError);
+  }
+
+}
+
 export type RequestErrorType = (
   'BadRequest' |
   'Unauthorized' |

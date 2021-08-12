@@ -30,6 +30,8 @@ const start = async () => {
     Log.error('Database connection failed: ', err);
   }
 
+  makeTimestampWithoutTimeZoneToBeInterpretedAsUTC();
+
   if (env.isDev) {
     require('dotenv').config();
   }
@@ -120,5 +122,13 @@ const start = async () => {
     });
   }
 };
+
+// See: https://github.com/brianc/node-postgres/issues/993#issuecomment-267684417
+function makeTimestampWithoutTimeZoneToBeInterpretedAsUTC() {
+  const timestampWithoutTzOid = 1114;
+  require('pg').types.setTypeParser(timestampWithoutTzOid, (stringValue: string) => {
+    return new Date(`${stringValue}Z`);
+  });
+}
 
 export default start();

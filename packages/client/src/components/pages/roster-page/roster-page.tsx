@@ -2,7 +2,9 @@ import {
   Box,
   Button,
   Checkbox,
+  Collapse,
   Container,
+  Divider,
   FormControlLabel,
   Menu,
   MenuItem,
@@ -16,23 +18,29 @@ import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import DeleteSweepIcon from '@material-ui/icons/DeleteSweep';
 import ViewWeekIcon from '@material-ui/icons/ViewWeek';
+import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
+import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import React, {
   ChangeEvent,
   createRef,
   MouseEvent,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
 import _ from 'lodash';
 import moment from 'moment';
 import {
+  FilterEntityType,
   OrphanedRecordActionType,
   RosterColumnType,
+  SavedFilterSerialized,
   SearchRosterBody,
   SearchRosterQuery,
 } from '@covid19-reports/shared';
+import deepEquals from 'fast-deep-equal';
 import { Roster } from '../../../actions/roster.actions';
 import { Unit } from '../../../actions/unit.actions';
 import useEffectDebounced from '../../../hooks/use-effect-debounced';
@@ -49,11 +57,11 @@ import { TablePagination } from '../../tables/table-pagination/table-pagination'
 import { RosterPageHelp } from './roster-page-help';
 import useStyles from './roster-page.styles';
 import {
-  ApiRosterColumnInfo,
-  ApiRosterEnumColumnConfig,
-  ApiRosterEntry,
   ApiOrphanedRecord,
+  ApiRosterColumnInfo,
+  ApiRosterEntry,
   ApiRosterEntryData,
+  ApiRosterEnumColumnConfig,
 } from '../../../models/api-response';
 import {
   EditRosterEntryDialog,
@@ -62,12 +70,7 @@ import {
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
-import {
-  QueryBuilder,
-  QueryFieldPickListItem,
-  QueryFieldType,
-  QueryFilterState,
-} from '../../query-builder/query-builder';
+import { QueryBuilder } from '../../query-builder/query-builder';
 import { formatErrorMessage } from '../../../utility/errors';
 import { ButtonSet } from '../../buttons/button-set';
 import { DataExportIcon } from '../../icons/data-export-icon';
@@ -77,10 +80,20 @@ import usePersistedState from '../../../hooks/use-persisted-state';
 import { ExportClient } from '../../../client/export.client';
 import { OrphanedRecordClient } from '../../../client/orphaned-record.client';
 import { RosterClient } from '../../../client/roster.client';
+import { SavedFilterClient } from '../../../client/saved-filter.client';
 import { AppFrameActions } from '../../../slices/app-frame.slice';
 import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { OrphanedRecordActions } from '../../../slices/orphaned-record.slice';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import {
+  filterConfigToQueryRows,
+  QueryField,
+  QueryFieldEnumItem,
+  QueryFieldType,
+  QueryRow,
+  queryRowsToFilterConfig,
+} from '../../../utility/query-builder-utils';
+import { SaveNewFilterDialog } from './save-new-filter-dialog';
 
 const unitColumn: ApiRosterColumnInfo = {
   name: 'unit',
@@ -99,6 +112,10 @@ interface SortState {
   sortDirection: SortDirection;
 }
 
+type FilterId = SavedFilterSerialized['id'];
+const customFilterId = -1;
+const noFilterId = -2;
+
 export const RosterPage = () => {
   const classes = useStyles();
   const dispatch = useAppDispatch();
@@ -108,12 +125,13 @@ export const RosterPage = () => {
   const org = useAppSelector(UserSelector.org)!;
   const canManageRoster = useAppSelector(UserSelector.canManageRoster);
 
-  const fileInputRef = createRef<HTMLInputElement>();
-  const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
+  // Orphaned Records Table
   const [orphanedRecordsWaiting, setOrphanedRecordsWaiting] = useState(false);
   const [orphanedRecordsPage, setOrphanedRecordsPage] = useState(0);
   const [orphanedRecordsRowsPerPage, setOrphanedRecordsRowsPerPage] = usePersistedState('orphanRowsPerPage', 10);
   const [orphanedRecordsUnitFilter, setOrphanedRecordsUnitFilter] = usePersistedState('orphanUnitFilter', '');
+
+  // Roster Table
   const [rows, setRows] = useState<ApiRosterEntry[]>([]);
   const [page, setPage] = useState(0);
   const [totalRowsCount, setTotalRowsCount] = useState(0);
@@ -122,18 +140,52 @@ export const RosterPage = () => {
   const [editRosterEntryDialogProps, setEditRosterEntryDialogProps] = useState<EditRosterEntryDialogProps>({ open: false });
   const [downloadTemplateLoading, setDownloadTemplateLoading] = useState(false);
   const [exportRosterLoading, setExportRosterLoading] = useState(false);
-  const [queryFilterState, setQueryFilterState] = usePersistedState<QueryFilterState | undefined>('rosterFilter');
   const [sortState, setSortState] = usePersistedState<SortState>('rosterSort');
   const [rosterColumnInfos, setRosterColumnInfos] = useState<ApiRosterColumnInfo[]>([]);
-  const [visibleColumns, setVisibleColumns] = usePersistedState<ApiRosterColumnInfo[]>('rosterVisibleColumns', []);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
-  const [applyingFilters, setApplyingFilters] = useState(false);
   const fetchRosterInvokeCount = useRef(0);
+  const fileInputRef = createRef<HTMLInputElement>();
+
+  // Roster Filter
+  const [savedFilters, setSavedFilters] = useState<SavedFilterSerialized[]>([]);
+  const [selectedFilterId, setSelectedFilterId] = usePersistedState<FilterId>('selectedFilterId', noFilterId);
+  const [selectFilterMenuOpen, setSelectFilterMenuOpen] = useState(false);
+  const [filterEditorOpen, setFilterEditorOpen] = usePersistedState('rosterFilterEditorOpen', false);
+  const [filterQueryRows, setFilterQueryRows] = usePersistedState<QueryRow[]>('rosterFilterQueryRows', []);
+  const [applyingFilters, setApplyingFilters] = useState(false);
+  const [saveNewFilterDialogOpen, setSaveNewFilterDialogOpen] = useState(false);
+  const selectFilterButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Roster Visible Columns
+  const [visibleColumns, setVisibleColumns] = usePersistedState<ApiRosterColumnInfo[]>('rosterVisibleColumns', []);
+  const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
+  const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
 
   const orgId = org.id;
   const orgName = org.name;
   const maxNumColumnsToShow = 5;
+
+  const queryBuilderFields = useMemo((): QueryField[] => {
+    return rosterColumnInfos.map(column => {
+      let type = column.type as unknown as QueryFieldType;
+      let enumItems: QueryFieldEnumItem[] | undefined;
+
+      if (column.name === 'unit') {
+        type = QueryFieldType.Enum;
+        enumItems = units.map(({ id, name }) => ({ label: name, value: id }));
+      } else if (column.type === RosterColumnType.Enum) {
+        const options = (column.config as ApiRosterEnumColumnConfig)?.options?.slice() ?? [];
+        options.unshift({ id: '', label: '' });
+        enumItems = options.map(({ id, label }) => ({ label, value: id }));
+      }
+
+      return {
+        type,
+        enumItems,
+        displayName: column.displayName,
+        name: column.name,
+      };
+    });
+  }, [rosterColumnInfos, units]);
 
   //
   // Effects
@@ -165,12 +217,14 @@ export const RosterPage = () => {
         params.orderBy = sortState.column;
         params.sortDirection = sortState.sortDirection;
       }
-      if (queryFilterState) {
+      if (filterQueryRows?.length) {
         if (fetchRosterInvokeCount.current === fetchRosterInvocation) {
           setApplyingFilters(true);
           setTotalRowsCount(0);
         }
-        const data = await RosterClient.searchRoster(orgId, queryFilterState, params);
+
+        const filterConfig = queryRowsToFilterConfig(filterQueryRows);
+        const data = await RosterClient.searchRoster(orgId, filterConfig, params);
 
         setApplyingFilters(false);
         if (fetchRosterInvokeCount.current === fetchRosterInvocation) {
@@ -187,7 +241,7 @@ export const RosterPage = () => {
     } catch (e) {
       void dispatch(Modal.alert('Error', formatErrorMessage(e, 'Error Applying Filters')));
     }
-  }, [dispatch, page, rowsPerPage, orgId, queryFilterState, sortState]);
+  }, [dispatch, page, rowsPerPage, orgId, filterQueryRows, sortState]);
 
   const fetchRosterEntry = useCallback(async (orphanedRecord: ApiOrphanedRecord) => {
     try {
@@ -223,6 +277,27 @@ export const RosterPage = () => {
     }
   }, [dispatch, initialLoadComplete, orgId, setVisibleColumns, visibleColumns.length]);
 
+  const fetchSavedFilters = useCallback(async () => {
+    try {
+      const filters = await SavedFilterClient.getSavedFilters(orgId, {
+        entityType: FilterEntityType.RosterEntry,
+      });
+      setSavedFilters(filters);
+
+      const selectedFilterFound = (
+        selectedFilterId === noFilterId
+        || selectedFilterId === customFilterId
+        || filters.some(x => x.id === selectedFilterId)
+      );
+
+      if (!selectedFilterFound) {
+        setSelectedFilterId(noFilterId);
+      }
+    } catch (error) {
+      void dispatch(Modal.alert('Get Saved Filters', formatErrorMessage(error, 'Failed to get saved filters')));
+    }
+  }, [dispatch, orgId, setSavedFilters, selectedFilterId, setSelectedFilterId]);
+
   const fetchUnits = useCallback(() => {
     void dispatch(Unit.fetch(orgId));
   }, [dispatch, orgId]);
@@ -249,6 +324,14 @@ export const RosterPage = () => {
     }
   }, [canManageRoster, dispatch, orgId, orphanedRecordsPage, orphanedRecordsRowsPerPage, orphanedRecordsUnitFilter]);
 
+  const getSelectedSavedFilter = useCallback(() => {
+    return savedFilters.find(x => x.id === selectedFilterId);
+  }, [savedFilters, selectedFilterId]);
+
+  const handleChangeFilterQueryRows = useCallback((queryRows: QueryRow[]) => {
+    setFilterQueryRows(queryRows);
+  }, [setFilterQueryRows]);
+
   // Initial load.
   useEffect(() => {
     dispatch(AppFrameActions.setPageLoading({ isLoading: !initialLoadComplete }));
@@ -260,6 +343,7 @@ export const RosterPage = () => {
         await Promise.all([
           fetchRosterColumnInfo(),
           fetchUnits(),
+          fetchSavedFilters(),
         ]);
         incrementInitialLoadStep();
       })();
@@ -298,6 +382,17 @@ export const RosterPage = () => {
     }
     setUnitNameMap(unitNames);
   }, [units]);
+
+  // Refresh roster filter query rows on selected filter change.
+  useEffect(() => {
+    const savedFilter = getSelectedSavedFilter();
+    if (savedFilter) {
+      const queryRowsNew = filterConfigToQueryRows(savedFilter.config, queryBuilderFields);
+      setFilterQueryRows(queryRowsNew);
+    } else if (selectedFilterId === noFilterId) {
+      setFilterQueryRows([]);
+    }
+  }, [queryBuilderFields, getSelectedSavedFilter, selectedFilterId, setFilterQueryRows]);
 
   //
   // Functions
@@ -586,6 +681,99 @@ export const RosterPage = () => {
     setOrphanedRecordsUnitFilter(event.target.value as string);
   };
 
+  const getFilterButtonText = () => {
+    switch (selectedFilterId) {
+      case noFilterId:
+        return 'No Filter';
+      case customFilterId:
+        return 'Custom';
+      default:
+        return getSelectedSavedFilter()?.name;
+    }
+  };
+
+  const selectFilter = (filterId: FilterId) => {
+    setSelectedFilterId(filterId);
+    setSelectFilterMenuOpen(false);
+
+    if (filterId === customFilterId) {
+      setFilterEditorOpen(true);
+    }
+  };
+
+  const handleFilterSaveClick = async (queryRows: QueryRow[]) => {
+    const savedFilter = getSelectedSavedFilter();
+    if (!savedFilter) {
+      setSaveNewFilterDialogOpen(true);
+      return;
+    }
+
+    const result = await dispatch(Modal.confirm('Overwrite Saved Filter', 'Are you sure?', {
+      confirmText: 'Overwrite',
+    }));
+
+    if (!result?.button?.value) {
+      return;
+    }
+
+    await SavedFilterClient.updateSavedFilter(orgId, savedFilter.id, {
+      config: queryRowsToFilterConfig(queryRows),
+    });
+
+    await fetchSavedFilters();
+  };
+
+  const handleFilterDeleteClick = async () => {
+    const result = await dispatch(Modal.confirm('Delete Saved Filter', 'Are you sure?', {
+      destructive: true,
+      confirmText: 'Delete',
+    }));
+
+    if (!result?.button?.value) {
+      return;
+    }
+
+    await SavedFilterClient.deleteSavedFilter(orgId, selectedFilterId);
+
+    await fetchSavedFilters();
+  };
+
+  const isSelectedFilterSaved = () => {
+    return (selectedFilterId !== noFilterId && selectedFilterId !== customFilterId);
+  };
+
+  const filterHasChanges = useMemo(() => {
+    if (selectedFilterId === customFilterId) {
+      return true;
+    }
+
+    const savedFilter = getSelectedSavedFilter();
+    if (!savedFilter) {
+      return false;
+    }
+
+    const savedFilterQueryRows = filterConfigToQueryRows(savedFilter.config, queryBuilderFields);
+    return !deepEquals(savedFilterQueryRows, filterQueryRows);
+  }, [filterQueryRows, getSelectedSavedFilter, queryBuilderFields, selectedFilterId]);
+
+  const handleSaveNewFilterConfirm = async (name: string) => {
+    let savedFilter: SavedFilterSerialized;
+    try {
+      savedFilter = await SavedFilterClient.addSavedFilter(orgId, {
+        name,
+        entityType: FilterEntityType.RosterEntry,
+        config: queryRowsToFilterConfig(filterQueryRows),
+      });
+    } catch (err) {
+      void dispatch(Modal.alert('Save New Filter', `Unable to save filter: ${formatErrorMessage(err)}`));
+      return;
+    }
+
+    await fetchSavedFilters();
+    setSelectedFilterId(savedFilter.id);
+    setSaveNewFilterDialogOpen(false);
+  };
+
   //
   // Render
   //
@@ -601,6 +789,7 @@ export const RosterPage = () => {
           }}
         />
 
+        {/* Orphaned Records */}
         <TableContainer component={Paper} className={classes.table}>
           <Box className={classes.tableHeader}>
             <h2>Orphaned Records ({orphanedRecords.count})</h2>
@@ -648,6 +837,7 @@ export const RosterPage = () => {
               renderCell: getOrphanCellDisplayValue,
             }}
           />
+
           <TablePagination
             className={classes.pagination}
             count={orphanedRecords.totalRowsCount}
@@ -659,6 +849,7 @@ export const RosterPage = () => {
           />
         </TableContainer>
 
+        {/* Roster */}
         <ButtonSet>
           {canManageRoster && (
             <>
@@ -671,6 +862,7 @@ export const RosterPage = () => {
                 ref={fileInputRef}
                 onChange={handleFileInputChange}
               />
+
               <label
                 htmlFor="raised-button-file"
                 hidden={!canManageRoster}
@@ -738,34 +930,82 @@ export const RosterPage = () => {
         </ButtonSet>
 
         <TableContainer component={Paper}>
-          <div className={classes.tableHeader}>
-            <Button
-              aria-label="Filters"
-              className={classes.tableHeaderButton}
-              onClick={() => setFiltersOpen(!filtersOpen)}
-              size="small"
-              startIcon={
-                queryFilterState
-                  ? <div className={classes.tableHeaderButtonCount}>{Object.keys(queryFilterState).length}</div>
-                  : <FilterListIcon />
-              }
-              variant="outlined"
-            >
-              Filters
-            </Button>
-            <Button
-              aria-label="Visible columns"
-              className={classes.tableHeaderButton}
-              onClick={() => setVisibleColumnsMenuOpen(!visibleColumnsMenuOpen)}
-              size="small"
-              startIcon={<ViewWeekIcon />}
-              variant="outlined"
-            >
-              <span ref={visibleColumnsButtonRef}>
-                Columns
-              </span>
-            </Button>
-          </div>
+          <Box className={classes.tableHeader}>
+            <Box>
+              <Button
+                aria-label="Select Filter"
+                className={classes.tableHeaderButtonSelect}
+                onClick={() => setSelectFilterMenuOpen(!selectFilterMenuOpen)}
+                size="small"
+                startIcon={<FilterListIcon />}
+                endIcon={selectFilterMenuOpen ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
+                variant="outlined"
+                ref={selectFilterButtonRef}
+              >
+                <span className={classes.filterButtonText}>
+                  {getFilterButtonText()}
+                </span>
+              </Button>
+
+              <Menu
+                anchorEl={selectFilterButtonRef.current}
+                keepMounted
+                open={selectFilterMenuOpen}
+                onClose={() => setSelectFilterMenuOpen(false)}
+              >
+                <MenuItem onClick={() => selectFilter(noFilterId)}>
+                  No Filter
+                </MenuItem>
+
+                <MenuItem onClick={() => selectFilter(customFilterId)}>
+                  Custom
+                </MenuItem>
+
+                {(savedFilters.length > 0) && (
+                  <Box marginY={1}>
+                    <Divider />
+                  </Box>
+                )}
+
+                {savedFilters.map(savedFilter => (
+                  <MenuItem
+                    key={savedFilter.id}
+                    onClick={() => selectFilter(savedFilter.id)}
+                  >
+                    {savedFilter.name}
+                  </MenuItem>
+                ))}
+              </Menu>
+
+              {selectedFilterId !== noFilterId && (
+                <Button
+                  aria-label="Toggle Filter Editor"
+                  className={classes.tableHeaderButton}
+                  onClick={() => setFilterEditorOpen(!filterEditorOpen)}
+                  size="small"
+                  variant="outlined"
+                >
+                  {`${filterEditorOpen ? 'Hide' : 'Show'} Filter Editor`}
+                </Button>
+              )}
+            </Box>
+
+            <Box>
+              <Button
+                aria-label="Visible columns"
+                className={classes.tableHeaderButton}
+                onClick={() => setVisibleColumnsMenuOpen(!visibleColumnsMenuOpen)}
+                size="small"
+                startIcon={<ViewWeekIcon />}
+                variant="outlined"
+              >
+                <span ref={visibleColumnsButtonRef}>
+                  Columns
+                </span>
+              </Button>
+            </Box>
+          </Box>
+
           <Menu
             id="user-more-menu"
             anchorEl={visibleColumnsButtonRef.current}
@@ -795,30 +1035,20 @@ export const RosterPage = () => {
               </MenuItem>
             ))}
           </Menu>
-          <QueryBuilder
-            fields={rosterColumnInfos
-              .map(column => {
-                let items: QueryFieldPickListItem[] | undefined;
-                if (column.name === 'unit') {
-                  items = units.map(({ id, name }) => ({ label: name, value: id }));
-                } else if (column.type === RosterColumnType.Enum) {
-                  const options = (column.config as ApiRosterEnumColumnConfig)?.options?.slice() ?? [];
-                  options.unshift({ id: '', label: '' });
-                  items = options.map(({ id, label }) => ({ label, value: id }));
-                } else {
-                  items = undefined;
-                }
-                return {
-                  items,
-                  displayName: column.displayName,
-                  name: column.name,
-                  type: column.type as unknown as QueryFieldType,
-                };
-              })}
-            onChange={setQueryFilterState}
-            open={filtersOpen}
-            persistKey="rosterQuery"
-          />
+
+          <Collapse in={selectedFilterId !== noFilterId && filterEditorOpen}>
+            <QueryBuilder
+              queryFields={queryBuilderFields}
+              queryRows={filterQueryRows}
+              onChangeQueryRows={handleChangeFilterQueryRows}
+              onSaveClick={handleFilterSaveClick}
+              onSaveAsClick={() => setSaveNewFilterDialogOpen(true)}
+              onDeleteClick={handleFilterDeleteClick}
+              isSaved={isSelectedFilterSaved()}
+              hasChanges={filterHasChanges}
+            />
+          </Collapse>
+
           <div className={classes.tableWrapper}>
             <TableCustomColumnsContent
               rows={rows}
@@ -839,6 +1069,7 @@ export const RosterPage = () => {
                 renderCell: getCellDisplayValue,
               }}
             />
+
             <TablePagination
               className={classes.pagination}
               count={totalRowsCount}
@@ -851,9 +1082,16 @@ export const RosterPage = () => {
           </div>
         </TableContainer>
       </Container>
+
       {editRosterEntryDialogProps.open && (
         <EditRosterEntryDialog {...editRosterEntryDialogProps} />
       )}
+
+      <SaveNewFilterDialog
+        open={saveNewFilterDialogOpen}
+        onSave={handleSaveNewFilterConfirm}
+        onCancel={() => setSaveNewFilterDialogOpen(false)}
+      />
     </main>
   );
 };

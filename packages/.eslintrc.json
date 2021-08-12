@@ -15,10 +15,11 @@
     "@typescript-eslint",
     "import",
     "chai-friendly",
-    "mocha-no-only"
+    "mocha-no-only",
+    "only-warn"
   ],
   "rules": {
-    "@typescript-eslint/type-annotation-spacing": ["error", {
+    "@typescript-eslint/type-annotation-spacing": ["warn", {
       "overrides" : {
         "colon": {
           "before": false,
@@ -27,46 +28,46 @@
       }
     }],
     "@typescript-eslint/lines-between-class-members": "off",
-    "@typescript-eslint/member-delimiter-style": "error",
-    "@typescript-eslint/no-floating-promises": "error",
+    "@typescript-eslint/member-delimiter-style": "warn",
+    "@typescript-eslint/no-floating-promises": "warn",
     "@typescript-eslint/no-unused-expressions": "off",
     "@typescript-eslint/no-use-before-define": "off",
     "@typescript-eslint/object-curly-spacing": "off",
-    "@typescript-eslint/quotes": ["error", "single", { "allowTemplateLiterals": true }],
+    "@typescript-eslint/quotes": ["warn", "single", { "allowTemplateLiterals": true }],
     "@typescript-eslint/return-await": "off",
-    "@typescript-eslint/space-before-function-paren": ["error", {
+    "@typescript-eslint/space-before-function-paren": ["warn", {
       "anonymous": "never",
       "named": "never",
       "asyncArrow": "always"
     }],
     "arrow-body-style": "off",
-    "arrow-parens": ["error", "as-needed", { "requireForBlockBody": false }],
-    "chai-friendly/no-unused-expressions": ["error", { "allowShortCircuit": true }],
+    "arrow-parens": ["warn", "as-needed", { "requireForBlockBody": false }],
+    "chai-friendly/no-unused-expressions": ["warn", { "allowShortCircuit": true }],
     "class-methods-use-this": "off",
-    "curly": ["error", "all"],
+    "curly": ["warn", "all"],
     "func-names": "off",
     "global-require": "off",
     "import/no-cycle": "off",
     "import/no-dynamic-require": "off",
     "import/prefer-default-export": "off",
-    "key-spacing": ["error", {
+    "key-spacing": ["warn", {
       "beforeColon": false,
       "afterColon": true
     }],
     "max-classes-per-file": "off",
     "max-len": "off",
-    "mocha-no-only/mocha-no-only": "error",
+    "mocha-no-only/mocha-no-only": "warn",
     "no-await-in-loop": "off",
     "no-console": "off",
     "no-continue": "off",
-    "no-empty": ["error", { "allowEmptyCatch":  true }],
-    "no-multiple-empty-lines": ["error", { "max": 2, "maxBOF": 0, "maxEOF": 1 }],
+    "no-empty": ["warn", { "allowEmptyCatch":  true }],
+    "no-multiple-empty-lines": ["warn", { "max": 2, "maxBOF": 0, "maxEOF": 1 }],
     "no-nested-ternary": "off",
     "no-param-reassign": "off",
-    "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
+    "no-plusplus": ["warn", { "allowForLoopAfterthoughts": true }],
     "no-prototype-builtins": "off",
     "no-restricted-syntax": [
-      "error",
+      "warn",
       {
         "selector": "ForInStatement",
         "message": "for..in loops iterate over the entire prototype chain, which is virtually never what you want. Use Object.{keys,values,entries}, and iterate over the resulting array."
@@ -85,19 +86,19 @@
     "no-unused-expressions": "off",
     "no-use-before-define": "off",
     "no-void": "off",
-    "object-curly-newline": ["error", { "consistent": true }],
-    "object-curly-spacing": ["error", "always"],
-    "padded-blocks": ["error", {
+    "object-curly-newline": ["warn", { "consistent": true }],
+    "object-curly-spacing": ["warn", "always"],
+    "padded-blocks": ["warn", {
       "blocks": "never",
       "classes": "always",
       "switches": "never"
     }],
     "prefer-destructuring": "off",
-    "promise/prefer-await-to-then": ["error", "always"],
-    "promise/prefer-await-to-callbacks": ["error", "always"],
+    "promise/prefer-await-to-then": ["warn", "always"],
+    "promise/prefer-await-to-callbacks": ["warn", "always"],
     "radix": "off",
-    "require-await": "error",
-    "space-before-function-paren": ["error", {
+    "require-await": "warn",
+    "space-before-function-paren": ["warn", {
       "anonymous": "never",
       "named": "never",
       "asyncArrow": "always"
