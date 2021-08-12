@@ -2,84 +2,84 @@ import { expect } from 'chai';
 import moment from 'moment-timezone';
 import { calculateMusterCompliance } from './muster.compliance';
 
+const edipi7 = '0000000007';
+const edipi8 = '0000000008';
+const edipi9 = '0000000009';
+const unitId1 = 1;
+const nonExistentUnitId = 1000000;
+
+const eightAM = '2020-01-02T08:00:00.000Z';
+const tenAM = '2020-01-02T10:00:00.000Z';
+const fivePM = '2020-01-03T17:00:00.000Z';
+const fiveThirtyPM = '2020-01-03T17:30:00.000Z';
+const tenPM = '2020-01-05T22:00:00.000Z';
+const tenThirtyPM = '2020-01-05T22:30:00.000Z';
+const elevenPM = '2020-01-05T23:00:00.000Z';
+
+
+const observationsWithSingleEdipi = [
+  { edipi: edipi7, timestamp: new Date(eightAM) },
+];
+
+const observationsWithTwoEdipis = [
+  // edipi7 100% compliance
+  { edipi: edipi7, timestamp: new Date(eightAM) },
+  { edipi: edipi7, timestamp: new Date(fiveThirtyPM) },
+  { edipi: edipi7, timestamp: new Date(tenPM) },
+  // edipi9 33% compliance
+  { edipi: edipi9, timestamp: new Date(tenThirtyPM) },
+  // edipi8 0% compliance
+];
+
+const singleMusteringOpportunity = { [unitId1]:
+    [{ startMusterDate: moment(eightAM),
+      endMusterDate: moment(tenAM) }] };
+
+const threeMusteringOpportunities = { [unitId1]: [
+  { startMusterDate: moment(eightAM), endMusterDate: moment(tenAM) },
+  { startMusterDate: moment(fivePM), endMusterDate: moment(fiveThirtyPM) },
+  { startMusterDate: moment(tenPM), endMusterDate: moment(elevenPM) },
+] };
+
+const noMusteringOpportunities = { [nonExistentUnitId]:
+    [{ startMusterDate: moment(eightAM),
+      endMusterDate: moment(tenAM) }] };
+
+const totalMusteringOpportunities = singleMusteringOpportunity[unitId1].length;
+
+const singleEdipiRoster = [
+  { edipi: edipi7,
+    firstName: 'test firstName',
+    lastName: 'test lastName',
+    myCustomColumn1: 'test customColumn',
+    unitId: unitId1,
+    phone: 'test phone' },
+];
+
+const rosterWithThreeEdipis = [
+  { edipi: edipi7,
+    firstName: 'test firstName',
+    lastName: 'test lastName',
+    myCustomColumn1: 'test customColumn',
+    unitId: unitId1,
+    phone: 'test phone' },
+  { edipi: edipi8,
+    firstName: 'test firstName',
+    lastName: 'test lastName',
+    myCustomColumn1: 'test customColumn',
+    unitId: unitId1,
+    phone: 'test phone' },
+  { edipi: edipi9,
+    firstName: 'test firstName',
+    lastName: 'test lastName',
+    myCustomColumn1: 'test customColumn',
+    unitId: unitId1,
+    phone: 'test phone' },
+];
+
 
 describe('Muster Compliance', () => {
   describe('calculateMusterCompliance()', () => {
-    const edipi7 = '0000000007';
-    const edipi8 = '0000000008';
-    const edipi9 = '0000000009';
-    const unitId1 = 1;
-    const nonExistentUnitId = 1000000;
-
-    const eightAM = '2020-01-02T08:00:00.000Z';
-    const tenAM = '2020-01-02T10:00:00.000Z';
-    const fivePM = '2020-01-03T17:00:00.000Z';
-    const fiveThirtyPM = '2020-01-03T17:30:00.000Z';
-    const tenPM = '2020-01-05T22:00:00.000Z';
-    const tenThirtyPM = '2020-01-05T22:30:00.000Z';
-    const elevenPM = '2020-01-05T23:00:00.000Z';
-
-
-    const observationsWithSingleEdipi = [
-      { edipi: edipi7, timestamp: new Date(eightAM) },
-    ];
-
-    const observationsWithTwoEdipis = [
-      // edipi7 100% compliance
-      { edipi: edipi7, timestamp: new Date(eightAM) },
-      { edipi: edipi7, timestamp: new Date(fiveThirtyPM) },
-      { edipi: edipi7, timestamp: new Date(tenPM) },
-      // edipi9 33% compliance
-      { edipi: edipi9, timestamp: new Date(tenThirtyPM) },
-      // edipi8 0% compliance
-    ];
-
-    const singleMusteringOpportunity = { [unitId1]:
-          [{ startMusterDate: moment(eightAM),
-            endMusterDate: moment(tenAM) }] };
-
-    const threeMusteringOpportunities = { [unitId1]: [
-      { startMusterDate: moment(eightAM), endMusterDate: moment(tenAM) },
-      { startMusterDate: moment(fivePM), endMusterDate: moment(fiveThirtyPM) },
-      { startMusterDate: moment(tenPM), endMusterDate: moment(elevenPM) },
-    ] };
-
-    const noMusteringOpportunities = { [nonExistentUnitId]:
-          [{ startMusterDate: moment(eightAM),
-            endMusterDate: moment(tenAM) }] };
-
-    const totalMusteringOpportunities = singleMusteringOpportunity[unitId1].length;
-
-    const singleEdipiRoster = [
-      { edipi: edipi7,
-        firstName: 'test firstName',
-        lastName: 'test lastName',
-        myCustomColumn1: 'test customColumn',
-        unitId: unitId1,
-        phone: 'test phone' },
-    ];
-
-    const rosterWithThreeEdipis = [
-      { edipi: edipi7,
-        firstName: 'test firstName',
-        lastName: 'test lastName',
-        myCustomColumn1: 'test customColumn',
-        unitId: unitId1,
-        phone: 'test phone' },
-      { edipi: edipi8,
-        firstName: 'test firstName',
-        lastName: 'test lastName',
-        myCustomColumn1: 'test customColumn',
-        unitId: unitId1,
-        phone: 'test phone' },
-      { edipi: edipi9,
-        firstName: 'test firstName',
-        lastName: 'test lastName',
-        myCustomColumn1: 'test customColumn',
-        unitId: unitId1,
-        phone: 'test phone' },
-    ];
-
     describe('single unit', () => {
       describe('single edipi', () => {
         it(`should return unit muster compliance`, () => {
@@ -146,5 +146,50 @@ describe('Muster Compliance', () => {
         });
       });
     });
+    describe('multiple units', () => {
+      describe('multiple edipis', () => {
+        describe('multiple mustering opportunities', () => {
+          it(`should return total mustering opportunities`, () => {
+            // const musterCompliance = calculateMusterCompliance(observationsWithTwoEdipis, threeMusteringOpportunities, rosterWithThreeEdipis);
+            // expect(musterCompliance).is.eql([
+            //   {
+            //     edipi: '0000000007',
+            //     firstName: 'test firstName',
+            //     lastName: 'test lastName',
+            //     musterPercent: 100,
+            //     mustersReported: 3,
+            //     myCustomColumn1: 'test customColumn',
+            //     phone: 'test phone',
+            //     totalMusters: 3,
+            //     unitId: 1,
+            //   },
+            //   {
+            //     edipi: '0000000008',
+            //     firstName: 'test firstName',
+            //     lastName: 'test lastName',
+            //     musterPercent: 0,
+            //     mustersReported: 0,
+            //     myCustomColumn1: 'test customColumn',
+            //     phone: 'test phone',
+            //     totalMusters: 3,
+            //     unitId: 1,
+            //   },
+            //   {
+            //     edipi: '0000000009',
+            //     firstName: 'test firstName',
+            //     lastName: 'test lastName',
+            //     musterPercent: 33.3,
+            //     mustersReported: 1,
+            //     myCustomColumn1: 'test customColumn',
+            //     phone: 'test phone',
+            //     totalMusters: 3,
+            //     unitId: 1,
+            //   },
+            // ]);
+          });
+        });
+      });
+    });
   });
 });
+
