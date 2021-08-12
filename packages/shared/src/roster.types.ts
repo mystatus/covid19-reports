@@ -83,17 +83,6 @@ export type RosterFileRow<TColumnValue = string> = {
   [columnDisplayName: string]: TColumnValue;
 };
 
-export type QueryOp =
-  | '='
-  | '<>'
-  | '~'
-  | '>'
-  | '<'
-  | 'startsWith'
-  | 'endsWith'
-  | 'in'
-  | 'between';
-
 export type RosterColumnInfoWithValue = RosterColumnInfo & {
   value: RosterColumnValue;
 };

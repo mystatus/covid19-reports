@@ -12,6 +12,8 @@ export default makeStyles((theme: Theme) => createStyles({
   tableHeader: {
     marginLeft: theme.spacing(2),
     marginTop: theme.spacing(2),
+    display: 'flex',
+    justifyContent: 'space-between',
   },
   tableHeaderButton: {
     borderWidth: 2,
@@ -60,5 +62,18 @@ export default makeStyles((theme: Theme) => createStyles({
     '& td': {
       fontWeight: 'bold',
     },
+  },
+  tableHeaderButtonSelect: {
+    borderWidth: 2,
+    marginRight: theme.spacing(2),
+    '&:hover': {
+      borderWidth: 2,
+    },
+  },
+  filterButtonText: {
+    maxWidth: '10rem',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
 }));

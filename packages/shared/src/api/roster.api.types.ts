@@ -1,9 +1,8 @@
+import { FilterConfig } from '@covid19-reports/shared';
 import { PaginatedQuery } from './api.types';
 import {
   CustomColumnConfig,
-  QueryOp,
   RosterColumnType,
-  RosterColumnValue,
   RosterEntryData,
 } from '../roster.types';
 
@@ -23,16 +22,7 @@ export type GetRosterQuery = {
 
 export type SearchRosterQuery = GetRosterQuery;
 
-export type SearchRosterBodyEntry = {
-  op: QueryOp;
-  value: RosterColumnValue | RosterColumnValue[];
-  expression?: string;
-  expressionEnabled?: boolean;
-};
-
-export type SearchRosterBody = {
-  [column: string]: SearchRosterBodyEntry;
-};
+export type SearchRosterBody = FilterConfig;
 
 export type ReportDateQuery = {
   reportDate: string;
