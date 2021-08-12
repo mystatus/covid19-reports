@@ -133,10 +133,30 @@ export async function saveRosterPhoneNumber(edipi: string, phoneNumber: string, 
 export async function getRosterWithUnitsAndEdipis(unitId: string, orgId: number): Promise<RosterWithUnitsAndEdipis> {
   const rostersFromDb = await getRosters(unitId, orgId);
   return {
-    roster: rostersFromDb,
+    roster: toRosterEntry(rostersFromDb),
     unitIds: getUnitIds(rostersFromDb),
     edipis: getEdipi(rostersFromDb),
   };
+}
+
+/**
+ * The <strong><code>RosterEntry()</code></strong> function <strong>converts an array of
+ * <code>Roster</code> entity data into a subset of such data.
+ *
+ * @param rosters The array of <code>Roster</code> entity
+ */
+export function toRosterEntry(rosters: Roster[]): RosterEntry[] {
+  return rosters.map(roster => {
+    return {
+      edipi: roster.edipi,
+      firstName: roster.firstName,
+      lastName: roster.lastName,
+      // This filed is to be implemented as part of a different task
+      myCustomColumn1: 'tbd',
+      unitId: roster.unit.id,
+      phone: roster.phoneNumber,
+    };
+  });
 }
 
 async function getRosters(unitId: string, orgId: number): Promise<Roster[]> {
@@ -160,7 +180,7 @@ function getEdipi(rosters: Roster[]): string[] {
 }
 
 type RosterWithUnitsAndEdipis = {
-  roster: Roster[];
+  roster: RosterEntry[];
   unitIds: number[];
   edipis: string[];
 };
