@@ -18,12 +18,11 @@ import {
   MuiPickersUtilsProvider,
 } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
-import { QueryValueType } from '@covid19-reports/shared';
+import { ColumnType, QueryValueType } from '@covid19-reports/shared';
 import useStyles from './query-builder.styles';
 import {
   getFieldDefaultQueryValue,
   queryDateFormat,
-  QueryFieldType,
   QueryRow,
 } from '../../utility/query-builder-utils';
 
@@ -38,16 +37,16 @@ export const QueryBuilderValueEditor = (props: QueryBuilderRowValueProps) => {
   let editor: React.ReactElement<QueryBuilderRowValueProps>;
 
   switch (row.field.type) {
-    case QueryFieldType.Date:
+    case ColumnType.Date:
       editor = <QueryBuilderDateTimeEditor hasTime={false} {...props} />;
       break;
-    case QueryFieldType.DateTime:
+    case ColumnType.DateTime:
       editor = <QueryBuilderDateTimeEditor hasTime {...props} />;
       break;
-    case QueryFieldType.Boolean:
+    case ColumnType.Boolean:
       editor = <QueryBuilderBooleanEditor {...props} />;
       break;
-    case QueryFieldType.Enum:
+    case ColumnType.Enum:
       editor = <QueryBuilderEnumEditor {...props} />;
       break;
     default:
@@ -98,7 +97,7 @@ const QueryBuilderStringEditor = ({ onChange, row }: QueryBuilderRowValueProps) 
           });
         }}
         placeholder={isExpression === true ? '{{ expression... }}' : row.field.displayName}
-        type={row.field.type === QueryFieldType.Number ? 'number' : 'text'}
+        type={row.field.type === ColumnType.Number ? 'number' : 'text'}
         value={row.value}
       />
     );
@@ -125,7 +124,7 @@ const QueryBuilderStringEditor = ({ onChange, row }: QueryBuilderRowValueProps) 
   return (
     <div id={uuidv4()}>
       {isExpression ? expressionField() : textField()}
-      {(row.op !== 'in' && row.field.type !== QueryFieldType.String) && (
+      {(row.op !== 'in' && row.field.type !== ColumnType.String) && (
         <Tooltip title="Use Expression">
           <Checkbox
             onChange={event => {

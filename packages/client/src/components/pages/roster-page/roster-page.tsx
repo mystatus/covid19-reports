@@ -33,12 +33,13 @@ import React, {
 import _ from 'lodash';
 import moment from 'moment';
 import {
-  FilterEntityType,
+  EntityType,
   OrphanedRecordActionType,
-  RosterColumnType,
+  ColumnType,
   SavedFilterSerialized,
-  SearchRosterBody,
-  SearchRosterQuery,
+  SearchBody,
+  PaginationParams,
+  ColumnInfo,
 } from '@covid19-reports/shared';
 import deepEquals from 'fast-deep-equal';
 import { Roster } from '../../../actions/roster.actions';
@@ -58,7 +59,6 @@ import { RosterPageHelp } from './roster-page-help';
 import useStyles from './roster-page.styles';
 import {
   ApiOrphanedRecord,
-  ApiRosterColumnInfo,
   ApiRosterEntry,
   ApiRosterEntryData,
   ApiRosterEnumColumnConfig,
@@ -89,19 +89,18 @@ import {
   filterConfigToQueryRows,
   QueryField,
   QueryFieldEnumItem,
-  QueryFieldType,
   QueryRow,
   queryRowsToFilterConfig,
 } from '../../../utility/query-builder-utils';
 import { SaveNewFilterDialog } from './save-new-filter-dialog';
 
-const unitColumn: ApiRosterColumnInfo = {
+const unitColumn: ColumnInfo = {
   name: 'unit',
   displayName: 'Unit',
   custom: false,
   phi: false,
   pii: false,
-  type: RosterColumnType.String,
+  type: ColumnType.String,
   updatable: true,
   required: false,
   config: {},
@@ -141,7 +140,7 @@ export const RosterPage = () => {
   const [downloadTemplateLoading, setDownloadTemplateLoading] = useState(false);
   const [exportRosterLoading, setExportRosterLoading] = useState(false);
   const [sortState, setSortState] = usePersistedState<SortState>('rosterSort');
-  const [rosterColumnInfos, setRosterColumnInfos] = useState<ApiRosterColumnInfo[]>([]);
+  const [rosterColumnInfos, setRosterColumnInfos] = useState<ColumnInfo[]>([]);
   const fetchRosterInvokeCount = useRef(0);
   const fileInputRef = createRef<HTMLInputElement>();
 
@@ -156,7 +155,7 @@ export const RosterPage = () => {
   const selectFilterButtonRef = useRef<HTMLButtonElement>(null);
 
   // Roster Visible Columns
-  const [visibleColumns, setVisibleColumns] = usePersistedState<ApiRosterColumnInfo[]>('rosterVisibleColumns', []);
+  const [visibleColumns, setVisibleColumns] = usePersistedState<ColumnInfo[]>('rosterVisibleColumns', []);
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
   const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
 
@@ -166,13 +165,13 @@ export const RosterPage = () => {
 
   const queryBuilderFields = useMemo((): QueryField[] => {
     return rosterColumnInfos.map(column => {
-      let type = column.type as unknown as QueryFieldType;
+      let type = column.type as unknown as ColumnType;
       let enumItems: QueryFieldEnumItem[] | undefined;
 
       if (column.name === 'unit') {
-        type = QueryFieldType.Enum;
+        type = ColumnType.Enum;
         enumItems = units.map(({ id, name }) => ({ label: name, value: id }));
-      } else if (column.type === RosterColumnType.Enum) {
+      } else if (column.type === ColumnType.Enum) {
         const options = (column.config as ApiRosterEnumColumnConfig)?.options?.slice() ?? [];
         options.unshift({ id: '', label: '' });
         enumItems = options.map(({ id, label }) => ({ label, value: id }));
@@ -209,7 +208,7 @@ export const RosterPage = () => {
     const fetchRosterInvocation = fetchRosterInvokeCount.current;
 
     try {
-      const params: SearchRosterQuery = {
+      const params: PaginationParams = {
         limit: `${rowsPerPage}`,
         page: `${page}`,
       };
@@ -245,11 +244,11 @@ export const RosterPage = () => {
 
   const fetchRosterEntry = useCallback(async (orphanedRecord: ApiOrphanedRecord) => {
     try {
-      const query: SearchRosterQuery = {
+      const query: PaginationParams = {
         limit: '1',
         page: '0',
       };
-      const body: SearchRosterBody = {
+      const body: SearchBody = {
         edipi: { op: '=', value: orphanedRecord.edipi, expression: '', expressionEnabled: false },
       };
       if (orphanedRecord.unitId) {
@@ -280,7 +279,7 @@ export const RosterPage = () => {
   const fetchSavedFilters = useCallback(async () => {
     try {
       const filters = await SavedFilterClient.getSavedFilters(orgId, {
-        entityType: FilterEntityType.RosterEntry,
+        entityType: EntityType.RosterEntry,
       });
       setSavedFilters(filters);
 
@@ -398,7 +397,7 @@ export const RosterPage = () => {
   // Functions
   //
 
-  const sortRosterColumns = (columns: ApiRosterColumnInfo[]) => {
+  const sortRosterColumns = (columns: ColumnInfo[]) => {
     const columnPriority: {
       [key: string]: number | undefined;
       default: number;
@@ -409,7 +408,7 @@ export const RosterPage = () => {
       unit: 4,
       default: 5,
     };
-    return columns.sort((a: ApiRosterColumnInfo, b: ApiRosterColumnInfo) => {
+    return columns.sort((a: ColumnInfo, b: ColumnInfo) => {
       return (columnPriority[a.name] || columnPriority.default) - (columnPriority[b.name] || columnPriority.default);
     });
   };
@@ -461,7 +460,7 @@ export const RosterPage = () => {
     void handleRosterOrOrphanedRecordsModified();
   };
 
-  const getCellDisplayValue = (rosterEntry: ApiRosterEntry, column: ApiRosterColumnInfo) => {
+  const getCellDisplayValue = (rosterEntry: ApiRosterEntry, column: ColumnInfo) => {
     const value = rosterEntry[column.name];
     if (value == null) {
       return '';
@@ -470,11 +469,11 @@ export const RosterPage = () => {
       return unitNameMap[value as string];
     }
     switch (column.type) {
-      case RosterColumnType.Date:
+      case ColumnType.Date:
         return new Date(value as string).toLocaleDateString();
-      case RosterColumnType.DateTime:
+      case ColumnType.DateTime:
         return new Date(value as string).toUTCString();
-      case RosterColumnType.Boolean:
+      case ColumnType.Boolean:
         return value ? 'Yes' : 'No';
       default:
         return value;
@@ -761,7 +760,7 @@ export const RosterPage = () => {
     try {
       savedFilter = await SavedFilterClient.addSavedFilter(orgId, {
         name,
-        entityType: FilterEntityType.RosterEntry,
+        entityType: EntityType.RosterEntry,
         config: queryRowsToFilterConfig(filterQueryRows),
       });
     } catch (err) {

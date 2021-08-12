@@ -1,6 +1,6 @@
-import { ApiRosterColumnInfo } from '../models/api-response';
+import { ColumnInfo } from '@covid19-reports/shared';
 import { AppState } from '../store';
 
 export namespace RosterSelector {
-  export const columns = (state: AppState): ApiRosterColumnInfo[] => state.roster.columns;
+  export const columns = (state: AppState): ColumnInfo[] => state.roster.columns;
 }

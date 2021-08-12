@@ -3,7 +3,7 @@ import FormData from 'form-data';
 import _ from 'lodash';
 import {
   baseRosterColumns,
-  RosterColumnType,
+  ColumnType,
 } from '@covid19-reports/shared';
 import { expectNoErrors } from '../../util/test-utils/expect';
 import {
@@ -72,7 +72,7 @@ describe(`Roster Controller`, () => {
 
       const body = {
         displayName: 'Some Column Name',
-        type: RosterColumnType.String,
+        type: ColumnType.String,
         pii: true,
         phi: true,
         required: true,

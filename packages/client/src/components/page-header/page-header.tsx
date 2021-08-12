@@ -9,6 +9,7 @@ import useStyles from './page-header.styles';
 
 export interface PageHeaderProps {
   title: string;
+  adjacentComponent?: React.ReactElement;
   help?: {
     contentComponent: ElementType;
     cardId: string;
@@ -17,7 +18,7 @@ export interface PageHeaderProps {
 }
 
 const PageHeader = (props: PageHeaderProps) => {
-  const { title, help } = props;
+  const { adjacentComponent, help, title } = props;
   const HelpContent = help?.contentComponent;
   const classes = useStyles();
 
@@ -28,13 +29,17 @@ const PageHeader = (props: PageHeaderProps) => {
           {title}
         </Typography>
 
-        {help && (
-          <HelpButton
-            title={title}
-            contentComponent={help.contentComponent}
-            variant={help.variant}
-          />
-        )}
+        <Box display="flex" alignItems="center" width="100%">
+          {adjacentComponent}
+
+          {help && (
+            <HelpButton
+              title={title}
+              contentComponent={help.contentComponent}
+              variant={help.variant}
+            />
+          )}
+        </Box>
       </Box>
 
       {(help && HelpContent) && (

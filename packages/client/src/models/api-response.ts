@@ -1,8 +1,9 @@
 import {
   DaysOfTheWeek,
   OrphanedRecordActionType,
-  RosterColumnType,
-  RosterColumnValue,
+  ColumnType,
+  CustomColumns,
+  CustomColumnConfig,
 } from '@covid19-reports/shared';
 
 export interface ApiPaginated<TData> {
@@ -76,19 +77,19 @@ export interface ApiAccessRequest {
 
 export interface ApiRosterPaginated extends ApiPaginated<ApiRosterEntry> {}
 
-export function rosterColumnTypeDisplayName(type: RosterColumnType) {
+export function rosterColumnTypeDisplayName(type: ColumnType) {
   switch (type) {
-    case RosterColumnType.Boolean:
+    case ColumnType.Boolean:
       return 'Yes/No';
-    case RosterColumnType.Number:
+    case ColumnType.Number:
       return 'Number';
-    case RosterColumnType.String:
+    case ColumnType.String:
       return 'Text';
-    case RosterColumnType.Enum:
+    case ColumnType.Enum:
       return 'Option';
-    case RosterColumnType.Date:
+    case ColumnType.Date:
       return 'Date';
-    case RosterColumnType.DateTime:
+    case ColumnType.DateTime:
       return 'Date and Time';
     default:
       return 'Unknown';
@@ -115,47 +116,42 @@ export interface ApiUserNotificationSetting {
   emailEnabled: boolean;
 }
 
-export interface ColumnInfo {
-  name: string;
-  displayName: string;
-}
-
-export interface ApiRosterCustomColumnConfig {}
-
-export interface ApiRosterStringColumnConfig extends ApiRosterCustomColumnConfig {
+export interface ApiRosterStringColumnConfig extends CustomColumnConfig {
   multiline?: boolean;
 }
 
 export type ApiRosterEnumColumnConfigOption = { id: string; label: string };
 
-export interface ApiRosterEnumColumnConfig extends ApiRosterCustomColumnConfig {
+export interface ApiRosterEnumColumnConfig extends CustomColumnConfig {
   options?: ApiRosterEnumColumnConfigOption[];
 }
 
-export interface ApiRosterColumnInfo extends ColumnInfo {
-  type: RosterColumnType;
-  pii: boolean;
-  phi: boolean;
-  custom: boolean;
-  required: boolean;
-  updatable: boolean;
-  config: ApiRosterCustomColumnConfig;
-}
+export type ApiEnumColumnConfigOption = { id: string; label: string };
 
-export type ApiCustomColumns = {
-  [columnName: string]: RosterColumnValue;
-};
+export interface ApiEnumColumnConfig extends CustomColumnConfig {
+  options?: ApiEnumColumnConfigOption[];
+}
 
 export type ApiRosterEntryData = {
   edipi: string;
   unit: number;
   firstName?: string;
   lastName?: string;
-} & ApiCustomColumns;
+} & CustomColumns;
 
 export type ApiRosterEntry = ApiRosterEntryData & {
   id: number;
 };
+
+export type ApiObservationData = {
+  edipi: string;
+} & CustomColumns;
+
+export type ApiObservation = ApiObservationData & {
+  id: number;
+};
+
+export interface ApiObservationsPaginated extends ApiPaginated<ApiObservation> {}
 
 export interface ApiOrphanedRecord {
   id: string;

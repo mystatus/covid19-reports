@@ -29,14 +29,15 @@ export interface TableColumn {
   displayName: string;
 }
 
+export type TableRowOptions = {
+  menuItems?: TableCustomColumnsMenuItem[] | ((row: any) => TableCustomColumnsMenuItem[]);
+  renderCell?: (row: any, column: any) => void;
+  rowProps?: Partial<TableRowProps> | ((row: any) => Partial<TableRowProps> | void | null | undefined);
+};
 type TableCustomColumnsContentProps = OverrideType<TableProps, {
   rows: TableCustomColumnsRow[];
   columns: TableColumn[];
-  rowOptions?: {
-    menuItems?: TableCustomColumnsMenuItem[] | ((row: any) => TableCustomColumnsMenuItem[]);
-    renderCell?: (row: any, column: any) => void;
-    rowProps?: Partial<TableRowProps> | ((row: any) => Partial<TableRowProps> | void | null | undefined);
-  };
+  rowOptions?: TableRowOptions;
   idColumn: string | ((row: any) => string);
   sortable?: boolean;
   defaultSort?: { column: string; direction: SortDirection };

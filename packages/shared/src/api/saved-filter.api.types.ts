@@ -1,16 +1,14 @@
-import {
-  FilterEntityType,
-  FilterConfig,
-} from '../saved-filter.types';
+import { EntityType } from '../entity.types';
+import { FilterConfig } from '../saved-filter.types';
 
 export type SavedFilterData = {
   name: string;
-  entityType: FilterEntityType;
+  entityType: EntityType;
   config?: FilterConfig;
 };
 
 export type GetSavedFiltersQuery = {
-  entityType?: FilterEntityType;
+  entityType?: EntityType;
 };
 
 export type AddSavedFilterBody = SavedFilterData;

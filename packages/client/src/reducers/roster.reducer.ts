@@ -1,8 +1,8 @@
+import { ColumnInfo } from '@covid19-reports/shared';
 import { Roster } from '../actions/roster.actions';
-import { ApiRosterColumnInfo } from '../models/api-response';
 
 export interface RosterState {
-  columns: ApiRosterColumnInfo[];
+  columns: ColumnInfo[];
   columnsLoading: boolean;
   lastUpdated: number;
 }

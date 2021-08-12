@@ -18,4 +18,12 @@ router.post(
   controller.createObservation,
 );
 
+controller.registerEntityRoutes(
+  router,
+  {
+    hasVersionedColumns: true,
+  },
+  // requireRolePermission(role => role.canViewObservation),
+);
+
 export default router;

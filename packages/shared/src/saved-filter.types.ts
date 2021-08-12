@@ -1,13 +1,5 @@
+import { EntityType, QueryOp, QueryValueType } from './entity.types';
 import { OrgSerialized } from './org.types';
-import {
-  QueryOp,
-  QueryValueType,
-} from './query-builder.types';
-
-export enum FilterEntityType {
-  Observation = 'Observation',
-  RosterEntry = 'RosterEntry',
-}
 
 export type FilterConfig = {
   [column: string]: FilterConfigItem;
@@ -24,6 +16,6 @@ export type SavedFilterSerialized = {
   id: number;
   org?: OrgSerialized;
   name: string;
-  entityType: FilterEntityType;
+  entityType: EntityType;
   config: FilterConfig;
 };

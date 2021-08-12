@@ -15,6 +15,7 @@ import { HomePage } from './pages/home-page/home-page';
 import useStyles from './app.styles';
 import { GroupsPage } from './pages/groups-page/groups-page';
 import { MusterPage } from './pages/muster-page/muster-page';
+import { ObservationsPage } from './pages/observations-page/observations-page';
 import { RosterPage } from './pages/roster-page/roster-page';
 import { UserRegistrationPage } from './pages/user-registration-page/user-registration-page';
 import { UsersPage } from './pages/users-page/users-page';
@@ -90,6 +91,9 @@ export const App = () => {
               </Route>
               <Route path="/units">
                 <UnitsPage />
+              </Route>
+              <Route path="/observations">
+                <ObservationsPage />
               </Route>
               <Route path="/roster">
                 <RosterPage />
