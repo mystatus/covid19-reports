@@ -21,6 +21,9 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
+# Start a docker container for Postgres if there isn't aready one
+database_unittest "start"
+
 export NODE_ENV="test"
 export SYNC_DATABASE="false"
 export SQL_DATABASE="dds_test"
@@ -53,3 +56,5 @@ npx ts-mocha \
   --exit \
   ----timeout 20000 \
   $TYPE
+
+database_unittest "stop"
