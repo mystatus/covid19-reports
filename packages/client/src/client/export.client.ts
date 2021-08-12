@@ -6,7 +6,7 @@ const client = createApiClient('export');
 export class ExportClient {
 
   static exportRosterToCsv(orgId: number): Promise<BlobPart> {
-    return client.get(`${orgId}/roster`, {
+    return client.get(`${orgId}/roster/sql`, {
       responseType: 'blob',
     });
   }

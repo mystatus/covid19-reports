@@ -50,7 +50,7 @@ export const DataExportPage = () => {
     if (endDate) {
       queryParams.push(`endDate=${endDate.toISOString()}`);
     }
-    const response = await fetch(new Request(`api/export/${orgId}/elasticsearch?${queryParams.join('&')}`, {
+    const response = await fetch(new Request(`api/export/${orgId}/sql?${queryParams.join('&')}`, {
       headers: {
         'Content-Type': 'application/octet-stream',
       },
