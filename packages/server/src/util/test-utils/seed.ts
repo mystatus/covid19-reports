@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import moment from 'moment-timezone';
 import { getManager } from 'typeorm';
 import { Observation } from '../../api/observation/observation.model';
@@ -60,6 +61,7 @@ export async function seedAll() {
 
   Log.info('Seeding database...');
 
+  orgCount = 0;
   resetUniqueEdipiGenerator();
 
   // Create Group Admin
@@ -183,25 +185,39 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
 
   // Insert observations per roster entry
   let observations: Observation[] = [];
-  for (let i = 0; i < numRosterEntries; i++) {
-    observations = observations.concat(
-      observationTestData(rosterEntries[i].edipi,
-        rosterEntries[i].unit.name,
-        reportSchemas[0],
-        moment('2020-01-01T08:00:00Z'),
-        moment('2020-01-07T08:00:00Z')),
-    );
+  const rosterEntriesByUnit = _.groupBy(rosterEntries, entry => entry.unit.name);
+  // for each unit...
+  _.forOwn(rosterEntriesByUnit, (currUnitRosterEntries: Roster[]) => {
+    let count = 0;
+    // for each person on roster for the unit...
+    currUnitRosterEntries.forEach((rosterEntry: Roster) => {
+      // The intent of this logic is to limit the number of users submitting
+      // observations and ultimately gain more compliance based on higher unit numbers.
+      // It does this based on the unit "number" which is equal to
+      // parseInt(rosterEntry.unit.name.split(' ')[1]). We use this number because
+      // IDs (from the database) can't be trusted to be constant when running tests multiple times
+      if (count < parseInt(rosterEntry.unit.name.split(' ')[1])) {
+        observations = observations.concat(
+          observationTestData(rosterEntry.edipi,
+            rosterEntry.unit.name,
+            reportSchemas[0],
+            moment('2020-01-01T08:00:00Z'),
+            moment('2020-01-07T08:00:00Z')),
+        );
 
-    // these observations are for the single-muster config
-    // hence the same timestamp for start and end
-    observations = observations.concat(
-      observationTestData(rosterEntries[i].edipi,
-        rosterEntries[i].unit.name,
-        reportSchemas[1],
-        moment('2020-01-02T10:00:00Z'),
-        moment('2020-01-02T10:00:00Z')),
-    );
-  }
+        // these observations are for the single-muster config
+        // hence the same timestamp for start and end
+        observations = observations.concat(
+          observationTestData(rosterEntry.edipi,
+            rosterEntry.unit.name,
+            reportSchemas[1],
+            moment('2020-01-02T10:00:00Z'),
+            moment('2020-01-02T10:00:00Z')),
+        );
+      }
+      count += 1;
+    });
+  });
   await Observation.save(observations);
 
   return { org, rosterEntries, units, observations };
