@@ -26,7 +26,7 @@ import {
 import { Roster } from '../roster/roster.model';
 import { Unit } from '../unit/unit.model';
 
-class ExportController {
+class ExportElasticsearchController {
 
   async exportOrgToCsv(req: ApiRequest<null, null, ExportOrgQuery>, res: Response) {
     const startDate = moment(req.query.startDate ?? 0);
@@ -185,4 +185,4 @@ class ExportController {
 
 }
 
-export default new ExportController();
+export default new ExportElasticsearchController();
