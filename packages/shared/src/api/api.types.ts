@@ -6,7 +6,7 @@ export type PaginatedQuery = {
 export type SortedQuery = {
   orderBy?: string;
   sortDirection?: 'ASC' | 'DESC';
-}
+};
 
 export type PaginationParams = SortedQuery & PaginatedQuery;
 

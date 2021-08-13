@@ -1,7 +1,5 @@
-import { CustomColumnData } from '@covid19-reports/shared';
-import {
-  RosterEntryData,
-} from '../roster.types';
+import { RosterEntryData } from '../roster.types';
+import { CustomColumnData } from './entity.api.types';
 
 export type ReportDateQuery = {
   reportDate: string;

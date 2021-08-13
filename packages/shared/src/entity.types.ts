@@ -16,7 +16,7 @@ export type ColumnTypeMapping = {
   [ColumnType.DateTime]: ColumnValue;
   [ColumnType.Boolean]: boolean | null;
   [ColumnType.Enum]: ColumnValue;
-}
+};
 
 export const friendlyColumnValue = <T>(entity: T & Record<string, unknown>, column: ColumnInfo) => {
   const value: any = entity[column.name];
@@ -59,7 +59,7 @@ export type ColumnInfo = {
 };
 
 export type ColumnInfoWithValue = ColumnInfo & {
-  value: ColumnValue
+  value: ColumnValue;
 };
 
 export type QueryOp =
