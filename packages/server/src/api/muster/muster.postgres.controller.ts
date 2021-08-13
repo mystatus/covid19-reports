@@ -16,7 +16,7 @@ class MusterPostgresCtr {
    * Provides Muster Compliance details for all service members for the given unit id(s)
    */
   async getUserMusterCompliance(req: ApiRequest<OrgRoleParams, null, GetMusterRosterQuery>, res: Response<Paginated<Partial<MusterCompliance>>>) {
-    Log.info('Muster Postgres Ctr - getMusterRoster()');
+    Log.info('getUserMusterCompliance() - start');
     assertRequestQuery(req, ['fromDate', 'toDate', 'limit', 'page']);
 
     /* Dates come in UTC timezone.
@@ -43,6 +43,8 @@ class MusterPostgresCtr {
       console.error(e);
       throw e;
     }
+
+    Log.info('getUserMusterCompliance() - end');
 
     return res.json({
       rows: toPageWithRowLimit(musterCompliance, pageNumber, rowLimit),
