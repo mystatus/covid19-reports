@@ -4,7 +4,7 @@ import { GetMusterRosterQuery, Paginated } from '@covid19-reports/shared';
 import { assertRequestQuery } from '../../util/api-utils';
 import { ApiRequest, OrgRoleParams } from '../api.router';
 import { Log } from '../../util/log';
-import { toMusterCompliance, MusterCompliance } from './muster.compliance';
+import { calculateMusterCompliance, MusterCompliance } from './muster.compliance';
 import { getRosterWithUnitsAndEdipis } from '../../util/roster-utils';
 import { getMusteringOpportunities } from './mustering.opportunities';
 import { getObservations } from '../observation/observation.utils';
@@ -16,7 +16,7 @@ class MusterPostgresCtr {
    * Provides Muster Compliance details for all service members for the given unit id(s)
    */
   async getUserMusterCompliance(req: ApiRequest<OrgRoleParams, null, GetMusterRosterQuery>, res: Response<Paginated<Partial<MusterCompliance>>>) {
-    Log.info('Muster Postgres Ctr - getMusterRoster()');
+    Log.info('getUserMusterCompliance() - start');
     assertRequestQuery(req, ['fromDate', 'toDate', 'limit', 'page']);
 
     /* Dates come in UTC timezone.
@@ -32,18 +32,12 @@ class MusterPostgresCtr {
 
     Log.info(`getUserMusterCompliance() for ${JSON.stringify({ orgId, unitId, fromDate, toDate })}`);
 
-    let musterCompliance;
+    const rosters = await getRosterWithUnitsAndEdipis(unitId, orgId);
+    const musterTimeView = await getMusteringOpportunities(orgId, rosters.unitIds, fromDate, toDate);
+    const observations = await getObservations(rosters.edipis, fromDate, toDate);
+    const musterCompliance = calculateMusterCompliance(observations, musterTimeView, rosters.roster);
 
-    try {
-      const rosters = await getRosterWithUnitsAndEdipis(unitId, orgId);
-      const musterTimeView = await getMusteringOpportunities(orgId, rosters.unitIds, fromDate, toDate);
-      const observations = await getObservations(rosters.edipis, fromDate, toDate);
-      // console.log(observations);
-      musterCompliance = toMusterCompliance(rosters.roster, observations, musterTimeView);
-    } catch (e) {
-      console.error(e);
-      throw e;
-    }
+    Log.info('getUserMusterCompliance() - end');
 
     return res.json({
       rows: toPageWithRowLimit(musterCompliance, pageNumber, rowLimit),

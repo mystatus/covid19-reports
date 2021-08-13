@@ -20,6 +20,7 @@ export function rosterTestData(numRosterEntries: number, customColumn: CustomRos
       firstName: `RosterFirst${edipiNum}`,
       lastName: `RosterLast${edipiNum}`,
       unit: units[i % numUnits],
+      phoneNumber: '1234567890',
       customColumns,
     });
     rosterEntries.push(rosterEntry);

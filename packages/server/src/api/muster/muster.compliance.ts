@@ -1,58 +1,81 @@
-import { Roster } from '../roster/roster.model';
-import { MusteringOpportunities } from './mustering.opportunities';
-import { RecordedObservations } from '../observation/observation.utils';
+import { Moment } from 'moment-timezone';
+import { MusteringOpportunities, MusterWindowWithStartAndEndDate } from './mustering.opportunities';
+import { RecordedObservations, RecordedObservationTimestamp } from '../observation/observation.utils';
+import { RosterEntry } from '../../util/roster-utils';
+
 
 /**
- * The <strong><code>toMusterCompliance()</code></strong> function <strong>calculates muster compliance for all
+ * The <strong><code>calculateMusterCompliance()</code></strong> function <strong>calculates muster compliance for all
  * individuals on <code>Roster</code> using provided recorded observations which are compared with mustering opportunities
  * in order to perform these calculations</strong>.
- * @param rosterIndividualsInformation The roster information for a set of individuals
- * @param recordedObservations The observations recorded for a set of individuals
+ * @param rosterEntries The roster information for individuals
+ * @param observations The observations recorded by the individuals
  * @param musteringOpportunities The required mustering opportunities, mustering time windows
  */
-export function toMusterCompliance(
-  rosterIndividualsInformation: Roster[],
-  recordedObservations: RecordedObservations[],
-  musteringOpportunities: MusteringOpportunities,
-): MusterCompliance[] {
-  const musterIntermediateCompliance = toMusterIntermediateCompliance(rosterIndividualsInformation);
-  return calculateMusterCompliance(recordedObservations, musteringOpportunities, musterIntermediateCompliance);
-}
-
-/**
- * The <strong><code>toMusterIntermediateCompliance()</code></strong> function <strong>converts an array of
- * <code>Roster</code> data into an intermediate muster compliance array structure</strong>.
- * The intermediate muster compliance array contains only existing data elements from the <strong><code>Roster</code></strong>
- * data without any compliance calculations.
- *
- * @param rosters The array of <code>Roster</code> data
- */
-export function toMusterIntermediateCompliance(rosters: Roster[]): IntermediateMusterCompliance[] {
-  return rosters.map(roster => {
-    return {
-      edipi: roster.edipi,
-      firstName: roster.firstName,
-      lastName: roster.lastName,
-      // This filed is to be implemented as part of a different task
-      myCustomColumn1: 'tbd',
-      unitId: roster.unit.id,
-      phone: roster.phoneNumber,
-    };
+export function calculateMusterCompliance(observations: RecordedObservations[], musteringOpportunities: MusteringOpportunities, rosterEntries: RosterEntry[]): MusterCompliance[] {
+  return rosterEntries.map(roster => {
+    return calculateSingleRosterCompliance(roster, musteringOpportunities, observations);
   });
 }
 
-/**
- * TBD later....
- * @param observations
- * @param musteringOpportunities
- * @param musterComplianceReport
- */
-export function calculateMusterCompliance(
-  observations: RecordedObservations[],
-  musteringOpportunities: MusteringOpportunities,
-  musterComplianceReport: IntermediateMusterCompliance[],
-): MusterCompliance[] {
-  return [];
+function calculateSingleRosterCompliance(roster: RosterEntry, musteringOpportunities: MusteringOpportunities, observations: RecordedObservations[]) {
+  const edipi = roster.edipi;
+  const unitId = roster.unitId;
+  const unitMusteringOpportunities = musteringOpportunities[unitId];
+
+  if (isMusteringNotRequired(unitMusteringOpportunities)) {
+    return { totalMusters: 0, mustersReported: 0, musterPercent: 100, ...roster };
+  }
+
+  const totalMusters = unitMusteringOpportunities.length;
+  const edipiObservations = filterObservationsByEdipi(observations, edipi);
+  const mustersReported = calculateIndividualMusterCompliance(edipiObservations, unitMusteringOpportunities);
+  const musterPercent = calculatePercentageRounded(mustersReported, totalMusters);
+
+  return {
+    totalMusters,
+    mustersReported,
+    musterPercent,
+    ...roster,
+  };
+}
+
+
+function isMusteringNotRequired(unitMusteringOpportunities: MusterWindowWithStartAndEndDate[]) {
+  return !unitMusteringOpportunities || unitMusteringOpportunities.length === 0;
+}
+
+function calculateIndividualMusterCompliance(observations: RecordedObservationTimestamp[], musteringOpportunities: MusterWindowWithStartAndEndDate[]): number {
+  let compliance = 0;
+  musteringOpportunities.forEach(musteringOpportunity => {
+    compliance += calculateCompliance(observations, musteringOpportunity.startMusterDate, musteringOpportunity.endMusterDate);
+  });
+  return compliance;
+}
+
+function filterObservationsByEdipi(observations: RecordedObservations[], edipi: string): RecordedObservationTimestamp[] {
+  return observations
+    .filter(observation => observation.edipi === edipi)
+    .map(observation => { return { timestamp: observation.timestamp }; });
+}
+
+function calculateCompliance(observationTimestamps: RecordedObservationTimestamp[], startMusterDate: Moment, endMusterDate: Moment): number {
+  let compliance = 0;
+
+  for (const obTs of observationTimestamps) {
+    const epochTimestamp = obTs.timestamp.getTime();
+    if (epochTimestamp >= startMusterDate.valueOf() && epochTimestamp <= endMusterDate.valueOf()) {
+      compliance = 1;
+      break;
+    }
+  }
+
+  return compliance;
+}
+
+function calculatePercentageRounded(mustersReported: number, totalMusters: number) {
+  const musterPercent = (100 * mustersReported) / totalMusters;
+  return Math.round(10 * musterPercent) / 10;
 }
 
 /**
@@ -62,16 +85,5 @@ export type MusterCompliance = {
   totalMusters: number;
   mustersReported: number;
   musterPercent: number;
-} & IntermediateMusterCompliance;
+} & RosterEntry;
 
-/**
- * Represents muster compliance without any compliance calculations
- */
-type IntermediateMusterCompliance = {
-  edipi: string;
-  firstName: string;
-  lastName: string;
-  myCustomColumn1: string;
-  unitId: number;
-  phone?: string;
-};
