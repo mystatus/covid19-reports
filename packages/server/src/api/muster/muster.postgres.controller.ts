@@ -32,17 +32,10 @@ class MusterPostgresCtr {
 
     Log.info(`getUserMusterCompliance() for ${JSON.stringify({ orgId, unitId, fromDate, toDate })}`);
 
-    let musterCompliance;
-
-    try {
-      const rosters = await getRosterWithUnitsAndEdipis(unitId, orgId);
-      const musterTimeView = await getMusteringOpportunities(orgId, rosters.unitIds, fromDate, toDate);
-      const observations = await getObservations(rosters.edipis, fromDate, toDate);
-      musterCompliance = calculateMusterCompliance(observations, musterTimeView, rosters.roster);
-    } catch (e) {
-      console.error(e);
-      throw e;
-    }
+    const rosters = await getRosterWithUnitsAndEdipis(unitId, orgId);
+    const musterTimeView = await getMusteringOpportunities(orgId, rosters.unitIds, fromDate, toDate);
+    const observations = await getObservations(rosters.edipis, fromDate, toDate);
+    const musterCompliance = calculateMusterCompliance(observations, musterTimeView, rosters.roster);
 
     Log.info('getUserMusterCompliance() - end');
 
