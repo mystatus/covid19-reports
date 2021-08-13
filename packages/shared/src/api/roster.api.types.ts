@@ -1,10 +1,10 @@
-import { FilterConfig } from '@covid19-reports/shared';
 import { PaginatedQuery } from './api.types';
 import {
   CustomColumnConfig,
   RosterColumnType,
   RosterEntryData,
 } from '../roster.types';
+import { FilterConfig } from '../saved-filter.types';
 
 export type CustomColumnData = {
   type?: RosterColumnType;
