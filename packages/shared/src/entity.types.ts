@@ -18,6 +18,26 @@ export type ColumnTypeMapping = {
   [ColumnType.Enum]: ColumnValue;
 }
 
+export const friendlyColumnValue = <T>(entity: T & Record<string, unknown>, column: ColumnInfo) => {
+  const value: any = entity[column.name];
+  if (value == null) {
+    return '';
+  }
+  // if (column.name === 'unit') {
+  //   return unitNameMap[value as string];
+  // }
+  switch (column.type) {
+    case ColumnType.Date:
+      return new Date(value as string).toLocaleDateString();
+    case ColumnType.DateTime:
+      return new Date(value as string).toUTCString();
+    case ColumnType.Boolean:
+      return value ? 'Yes' : 'No';
+    default:
+      return value;
+  }
+};
+
 export type NarrowTypeForColumnType<T extends ColumnType> = ColumnTypeMapping[T];
 
 export type CustomColumnConfig = {};

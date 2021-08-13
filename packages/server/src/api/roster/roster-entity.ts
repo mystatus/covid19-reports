@@ -27,7 +27,7 @@ import {
   getRequiredValue,
 } from '../../util/util';
 import { Unit } from '../unit/unit.model';
-import { columnTypeToDataType, isEdipiColumn } from 'server/src/util/entity-utils';
+import { columnTypeToDataType, isEdipiColumn } from '../../util/entity-utils';
 
 /**
  * This class serves as the base entity for both Roster and RosterHistory.  This allows both Roster and RosterHistory

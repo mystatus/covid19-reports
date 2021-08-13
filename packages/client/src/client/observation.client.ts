@@ -15,7 +15,7 @@ export class ObservationClient {
   }
 
   static getAllowedColumnsInfo(orgId: number): Promise<ColumnInfo[]> {
-    return client.get(`${orgId}/allowed-column`);
+    return client.get(`${orgId}/allowed-column/es6ddssymptomobs`);
   }
 
   static getObservations(orgId: number, query: PaginationParams, body?: SearchBody) {

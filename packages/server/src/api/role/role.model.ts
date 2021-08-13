@@ -77,6 +77,11 @@ export class Role extends BaseEntity {
   @Column({
     default: false,
   })
+  canViewObservation: boolean = false;
+
+  @Column({
+    default: false,
+  })
   canViewMuster: boolean = false;
 
   @Column({

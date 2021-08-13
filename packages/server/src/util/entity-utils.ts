@@ -1,26 +1,31 @@
-import { ColumnInfo, ColumnType, ColumnValue, edipiColumnDisplayName, Paginated, PaginationParams, QueryOp, SearchBody, SearchBodyEntry } from "@covid19-reports/shared";
-import { snakeCase } from "lodash";
-import moment from "moment";
-import { OrderByCondition, SelectQueryBuilder } from "typeorm";
-import { Org } from "../api/org/org.model";
-import { Role } from "../api/role/role.model";
-import { UserRole } from "../api/user/user-role.model";
-import { BadRequestError } from "./error-types";
+import { ColumnInfo, ColumnType, ColumnValue, edipiColumnDisplayName, Paginated, PaginationParams, QueryOp, SearchBody, SearchBodyEntry } from '@covid19-reports/shared';
+import bodyParser from 'body-parser';
+import { Response } from 'express';
+import { snakeCase } from 'lodash';
+import moment from 'moment';
+import { OrderByCondition, SelectQueryBuilder } from 'typeorm';
+import { ApiRequest, OrgParam } from '../api/api.router';
+import { Org } from '../api/org/org.model';
+import { Role } from '../api/role/role.model';
+import { UserRole } from '../api/user/user-role.model';
+import { requireOrgAccess } from '../auth/auth-middleware';
+import { BadRequestError } from './error-types';
 
-const join = (...args: Array<string | null | undefined>) => args.filter(Boolean).join('.')
+const join = (...args: Array<string | null | undefined>) => args.filter(Boolean).join('.');
 
-export interface IEntityInstance {}
+export interface IEntity {
+}
 
-export interface IEntity<T extends IEntityInstance> {
+export interface IEntityModel<T extends IEntity> {
   new(): T;
   getColumnSelect(column: ColumnInfo): string;
   filterAllowedColumns?(columns: ColumnInfo[], role: Role): ColumnInfo[];
 
   getColumns(org: Org, version?: string): Promise<ColumnInfo[]>;
-  search(org: Org, userRole: UserRole, columns: ColumnInfo[]): Promise<SelectQueryBuilder<T>>
+  search(org: Org, userRole: UserRole, columns: ColumnInfo[]): Promise<SelectQueryBuilder<T>>;
 }
 
-export function MakeEntity<T, S extends IEntity<T>>() {
+export function MakeEntity<T, S extends IEntityModel<T>>() {
   return <U extends S>(constructor: U) => {
     return constructor;
   };
@@ -45,10 +50,9 @@ export function getColumnSelect(column: ColumnInfo, customColumn: string, alias:
 
 export const isColumnAllowed = (column: ColumnInfo, role: Role) => {
   return ((!column.pii || role.canViewPII) && (!column.phi || role.canViewPHI));
-}
+};
 
-export const filterAllowedColumns = (columns: ColumnInfo[], role: Role) =>
-  columns.filter(column => isColumnAllowed(column, role));
+export const filterAllowedColumns = (columns: ColumnInfo[], role: Role) => columns.filter(column => isColumnAllowed(column, role));
 
 
 export function columnTypeToDataType(columnType: ColumnType) {
@@ -115,8 +119,9 @@ function findColumnByName(name: string, columns: ColumnInfo[]): ColumnInfo {
   return column;
 }
 
-export class EntityService<T extends IEntityInstance> {
-  constructor(private entity: IEntity<T>) {}
+export class EntityService<T extends IEntity> {
+
+  constructor(private entity: IEntityModel<T>) {}
 
   getColumnSelect(column: ColumnInfo) {
     return this.entity.getColumnSelect(column);
@@ -174,9 +179,9 @@ export class EntityService<T extends IEntityInstance> {
   }
 
   private applyWhere(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, body: SearchBodyEntry) {
-    const method = this.where[body.op]
+    const method = this.where[body.op];
     if (method) {
-      return method.call(this, queryBuilder, column, body)
+      return method.call(this, queryBuilder, column, body);
     }
     throw new BadRequestError(`Malformed search query. Received unexpected parameters for '${column.name}', op: ${body.op}`);
   }
@@ -191,7 +196,7 @@ export class EntityService<T extends IEntityInstance> {
     '<>': this.whereCompare,
     '>': this.whereCompare,
     '<': this.whereCompare,
-  }
+  };
 
   whereIn(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, {
     op,
@@ -248,4 +253,63 @@ export class EntityService<T extends IEntityInstance> {
       [column.name]: formatValue(value, column),
     });
   }
+
+}
+
+export type AllowedColumnsParam = OrgParam & {
+  version?: string;
+};
+
+export type EntityRouteOptions = {
+  hasVersionedColumns?: boolean;
+};
+
+export const defaultEntityRouteOptions: EntityRouteOptions = {
+  hasVersionedColumns: false,
+};
+
+export class EntityController<T = any> {
+
+  protected service: EntityService<T>;
+
+  constructor(protected entityConstructor: IEntityModel<T>) {
+    this.service = new EntityService(entityConstructor);
+    this.getAllowedColumns = this.getAllowedColumns.bind(this);
+    this.getEntities = this.getEntities.bind(this);
+    this.registerEntityRoutes = this.registerEntityRoutes.bind(this);
+  }
+
+  async getAllowedColumns(req: ApiRequest<AllowedColumnsParam>, res: Response<ColumnInfo[]>) {
+    const columns = this.service.filterAllowedColumns(await this.entityConstructor.getColumns(req.appOrg!, req.params.version), req.appUserRole!.role);
+    res.json(columns);
+  }
+
+  async getEntities(req: ApiRequest<OrgParam, SearchBody | null, PaginationParams>, res: Response<Paginated<T>>) {
+    res.json(await this.service.search(req.query, req.appOrg!, req.appUserRole!, req.body ?? undefined));
+  }
+
+  registerEntityRoutes(router: any, { hasVersionedColumns }: EntityRouteOptions, ...middleware: any[]) {
+    router.get(
+      `/:orgId/allowed-column${hasVersionedColumns ? '/:version' : ''}`,
+      requireOrgAccess,
+      ...middleware,
+      this.getAllowedColumns,
+    );
+
+    router.get(
+      '/:orgId',
+      requireOrgAccess,
+      ...middleware,
+      this.getEntities,
+    );
+
+    router.post(
+      '/:orgId',
+      requireOrgAccess,
+      ...middleware,
+      bodyParser.json(),
+      this.getEntities,
+    );
+  }
+
 }

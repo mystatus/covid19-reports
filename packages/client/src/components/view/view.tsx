@@ -10,10 +10,8 @@ import React, {
 import {
   Box,
   Button,
-  Checkbox,
   Collapse,
   Divider,
-  FormControlLabel,
   Menu,
   MenuItem,
   Paper,
@@ -22,13 +20,11 @@ import {
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import FilterListIcon from '@material-ui/icons/FilterList';
-import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import deepEquals from 'fast-deep-equal';
 import {
-  ColumnInfo,
   ColumnType,
   FilterConfig,
-  FilterEntityType,
+  PaginatedQuery,
   PaginationParams,
   SavedFilterSerialized,
 } from '@covid19-reports/shared';
@@ -58,24 +54,20 @@ import { ClientPromise } from '../../utility/client-utils';
 import { filterConfigToQueryRows, QueryField, QueryFieldEnumItem, QueryRow, queryRowsToFilterConfig } from '../../utility/query-builder-utils';
 import { SavedFilterClient } from '../../client/saved-filter.client';
 import { SaveNewFilterDialog } from '../pages/roster-page/save-new-filter-dialog';
-
-// const unitColumn: ColumnInfo = {
-//   name: 'unit',
-//   displayName: 'Unit',
-//   custom: false,
-//   phi: false,
-//   pii: false,
-//   type: ColumnType.String,
-//   updatable: true,
-//   required: false,
-//   config: {},
-// };
+import { Layout } from './view-layout';
 
 type ViewProps<T> = {
-  allowedColumns: (orgId: number) => Promise<ColumnInfo[]>;
-  entityType: FilterEntityType;
-  maxTableColumns?: number;
+  layout: Layout;
   query: (orgId: number, params: PaginationParams, filterConfig?: FilterConfig) => ClientPromise<ApiPaginated<T>>;
+};
+
+type FilterId = SavedFilterSerialized['id'];
+const customFilterId = -1;
+const noFilterId = -2;
+
+const initialPaginatedQuery = {
+  limit: '10',
+  page: '0',
 };
 
 const initialResponse = function <T>() {
@@ -85,42 +77,29 @@ const initialResponse = function <T>() {
   } as ApiPaginated<T>;
 };
 
-const initialPaginationParams = {
-  limit: '10',
-  page: '0',
-};
-
-type FilterId = SavedFilterSerialized['id'];
-const customFilterId = -1;
-const noFilterId = -2;
-
-export default function View<T>({ allowedColumns, entityType, maxTableColumns = 5, query }: ViewProps<T>) {
+export default function View<T>({ layout, query }: ViewProps<T>) {
+  const { columns, entityType, orderBy, rowOptions, sortDirection, visibleColumns } = layout;
   const classes = useStyles();
   const dispatch = useAppDispatch();
   const units = useAppSelector(UnitSelector.all);
   const { id: orgId } = useAppSelector(UserSelector.org)!;
-  const [unitNameMap, setUnitNameMap] = useState<{ [key: string]: string }>({});
-  const [visibleColumns, setVisibleColumns] = usePersistedState<ColumnInfo[]>(`${entityType}VisibleColumns`, []);
-  const [columnInfos, setColumnInfos] = useState<ColumnInfo[]>([]);
-  const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
+  // const [unitNameMap, setUnitNameMap] = useState<{ [key: string]: string }>({});
   const [applyingFilters, setApplyingFilters] = useState(false);
-  const visibleColumnsButtonRef = useRef<HTMLDivElement>(null);
   const queryPromiseRef = useRef<ClientPromise<ApiPaginated<T>>>();
 
   const [{ rows, totalRowsCount }, setResponse] = useState<ApiPaginated<T>>(initialResponse<T>());
-  const [paginationParams, setPaginationParams] = usePersistedState<PaginationParams>(`${entityType}Pagination`, initialPaginationParams);
-
+  const [paginatedQuery, setPaginatedQuery] = usePersistedState<PaginatedQuery>(`${layout.name}Pagination`, initialPaginatedQuery);
 
   const [savedFilters, setSavedFilters] = useState<SavedFilterSerialized[]>([]);
-  const [selectedFilterId, setSelectedFilterId] = usePersistedState<FilterId>('selectedFilterId', noFilterId);
+  const [selectedFilterId, setSelectedFilterId] = usePersistedState<FilterId>(`${layout.name}selectedFilterId`, noFilterId);
   const [selectFilterMenuOpen, setSelectFilterMenuOpen] = useState(false);
-  const [filterEditorOpen, setFilterEditorOpen] = usePersistedState('rosterFilterEditorOpen', false);
-  const [filterQueryRows, setFilterQueryRows] = usePersistedState<QueryRow[]>('rosterFilterQueryRows', []);
+  const [filterEditorOpen, setFilterEditorOpen] = usePersistedState(`${layout.name}FilterEditorOpen`, false);
+  const [filterQueryRows, setFilterQueryRows] = usePersistedState<QueryRow[]>(`${layout.name}FilterQueryRows`, []);
   const [saveNewFilterDialogOpen, setSaveNewFilterDialogOpen] = useState(false);
   const selectFilterButtonRef = useRef<HTMLButtonElement>(null);
 
   const queryBuilderFields = useMemo((): QueryField[] => {
-    return columnInfos.map(column => {
+    return columns.map(column => {
       let type = column.type as unknown as ColumnType;
       let enumItems: QueryFieldEnumItem[] | undefined;
 
@@ -140,7 +119,7 @@ export default function View<T>({ allowedColumns, entityType, maxTableColumns = 
         name: column.name,
       };
     });
-  }, [columnInfos, units]);
+  }, [columns, units]);
 
   const fetchEntities = useCallback(async () => {
     if (!applyingFilters) {
@@ -152,7 +131,7 @@ export default function View<T>({ allowedColumns, entityType, maxTableColumns = 
       queryPromiseRef.current?.abort?.();
 
       const filterConfig = queryRowsToFilterConfig(filterQueryRows);
-      queryPromiseRef.current = query(orgId, paginationParams, filterConfig);
+      queryPromiseRef.current = query(orgId, { ...paginatedQuery, orderBy, sortDirection }, filterConfig);
       const promise = queryPromiseRef.current;
       const response = await promise;
 
@@ -170,7 +149,7 @@ export default function View<T>({ allowedColumns, entityType, maxTableColumns = 
       queryPromiseRef.current?.abort?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, paginationParams, orgId, query, filterQueryRows]);
+  }, [dispatch, paginatedQuery, orgId, query, filterQueryRows]);
 
   const fetchSavedFilters = useCallback(async () => {
     try {
@@ -203,43 +182,17 @@ export default function View<T>({ allowedColumns, entityType, maxTableColumns = 
     void fetchSavedFilters();
   }, [fetchSavedFilters]);
 
-  useEffectDebounced(() => {
-    if (!columnInfos.length) {
-      void (async () => {
-        try {
-          const columns = await allowedColumns(orgId);
-          // const unitColumnWithInfos = sortColumns([unitColumn, ...infos]);
-          setColumnInfos(columns);
+  // useEffectDebounced(() => {
+  //   setVisibleColumns(columns.filter(column => column.isVisible))
+  // }, [columns, setVisibleColumns]);
 
-          if (visibleColumns.length === 0) {
-            setVisibleColumns(columns.slice(0, maxTableColumns));
-          }
-        } catch (error) {
-          void dispatch(Modal.alert('Error', formatErrorMessage(error, 'Failed to fetch the available Entity columns')));
-        }
-      })();
-    }
-  }, [allowedColumns, dispatch, orgId, columnInfos, maxTableColumns, setColumnInfos, setVisibleColumns, visibleColumns.length]);
-
-  useEffect(() => {
-    const unitNames: { [key: string]: string } = {};
-    for (const unit of units) {
-      unitNames[unit.id] = unit.name;
-    }
-    setUnitNameMap(unitNames);
-  }, [units]);
-
-  // const sortColumns = (columns: ColumnInfo[]) => {
-  //   const columnPriority: Record<string, number> = {
-  //     edipi: 1,
-  //     unit: 4,
-  //   };
-  //   return columns.sort((a: ColumnInfo, b: ColumnInfo) => {
-  //     const ap = (columnPriority[a.name] || columnPriority.default);
-  //     const bp = (columnPriority[b.name] || columnPriority.default);
-  //     return ap - bp;
-  //   });
-  // };
+  // useEffect(() => {
+  //   const unitNames: { [key: string]: string } = {};
+  //   for (const unit of units) {
+  //     unitNames[unit.id] = unit.name;
+  //   }
+  //   setUnitNameMap(unitNames);
+  // }, [units]);
 
   const getSelectedSavedFilter = useCallback(() => {
     return savedFilters.find(x => x.id === selectedFilterId);
@@ -260,48 +213,28 @@ export default function View<T>({ allowedColumns, entityType, maxTableColumns = 
   }, [queryBuilderFields, getSelectedSavedFilter, selectedFilterId, setFilterQueryRows]);
 
   const handleSortChanged = useCallback((column: TableColumn, direction: SortDirection) => {
-    setPaginationParams(prev => ({
+    setPaginatedQuery(prev => ({
       ...prev,
       orderBy: column.name,
       sortDirection: direction,
     }));
-  }, [setPaginationParams]);
+  }, [setPaginatedQuery]);
 
   const handleChangePage = useCallback((event: MouseEvent<HTMLButtonElement> | null, page: number) => {
-    setPaginationParams(prev => ({
+    setPaginatedQuery(prev => ({
       ...prev,
       page: `${page}`,
     }));
-  }, [setPaginationParams]);
+  }, [setPaginatedQuery]);
 
   const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const page = getNewPageIndex(+paginationParams.limit, +paginationParams.page, +event.target.value);
-    setPaginationParams({
-      ...paginationParams,
+    const page = getNewPageIndex(+paginatedQuery.limit, +paginatedQuery.page, +event.target.value);
+    setPaginatedQuery({
       limit: event.target.value,
       page: `${page}`,
     });
   };
 
-  const getCellDisplayValue = (entity: T & Record<string, unknown>, column: ColumnInfo) => {
-    const value: any = entity[column.name];
-    if (value == null) {
-      return '';
-    }
-    if (column.name === 'unit') {
-      return unitNameMap[value as string];
-    }
-    switch (column.type) {
-      case ColumnType.Date:
-        return new Date(value as string).toLocaleDateString();
-      case ColumnType.DateTime:
-        return new Date(value as string).toUTCString();
-      case ColumnType.Boolean:
-        return value ? 'Yes' : 'No';
-      default:
-        return value;
-    }
-  };
 
   const getFilterButtonText = () => {
     switch (selectedFilterId) {
@@ -383,7 +316,7 @@ export default function View<T>({ allowedColumns, entityType, maxTableColumns = 
     try {
       savedFilter = await SavedFilterClient.addSavedFilter(orgId, {
         name,
-        entityType: FilterEntityType.RosterEntry,
+        entityType,
         config: queryRowsToFilterConfig(filterQueryRows),
       });
     } catch (err) {
@@ -457,76 +390,7 @@ export default function View<T>({ allowedColumns, entityType, maxTableColumns = 
             </Button>
           )}
         </Box>
-
-        <Box>
-          <Button
-            aria-label="Visible columns"
-            className={classes.tableHeaderButton}
-            onClick={() => setVisibleColumnsMenuOpen(!visibleColumnsMenuOpen)}
-            size="small"
-            startIcon={<ViewWeekIcon />}
-            variant="outlined"
-          >
-            <span ref={visibleColumnsButtonRef}>
-              Columns
-            </span>
-          </Button>
-        </Box>
       </Box>
-
-      <Menu
-        id="user-more-menu"
-        anchorEl={visibleColumnsButtonRef.current}
-        keepMounted
-        open={Boolean(visibleColumnsMenuOpen)}
-        onClose={() => setVisibleColumnsMenuOpen(false)}
-      >
-        {columnInfos.map(column => (
-          <MenuItem key={column.name} className={classes.columnItem}>
-            <FormControlLabel
-              control={(
-                <Checkbox
-                  color="primary"
-                  checked={visibleColumns.some(col => col.name === column.name)}
-                  onChange={event => {
-                    const { checked } = event.target;
-                    if (checked) {
-                      setVisibleColumns(columnInfos.filter(col => col.name === column.name || visibleColumns.some(({ name }) => name === col.name)));
-                    } else {
-                      setVisibleColumns([...visibleColumns.filter(col => col.name !== column.name)]);
-                    }
-                  }}
-                />
-              )}
-              label={column.displayName}
-            />
-          </MenuItem>
-        ))}
-      </Menu>
-      {/* <QueryBuilder
-        fields={columnInfos
-          .map(column => {
-            let items: QueryFieldPickListItem[] | undefined;
-            if (column.name === 'unit') {
-              items = units.map(({ id, name }) => ({ label: name, value: id }));
-            } else if (column.type === ColumnType.Enum) {
-              const options = (column.config as ApiEnumColumnConfig)?.options?.slice() ?? [];
-              options.unshift({ id: '', label: '' });
-              items = options.map(({ id, label }) => ({ label, value: id }));
-            } else {
-              items = undefined;
-            }
-            return {
-              items,
-              displayName: column.displayName,
-              name: column.name,
-              type: column.type as unknown as ColumnType,
-            };
-          })}
-        onChange={setQueryFilterState}
-        open={filtersOpen}
-        persistKey={`${entityType}Query`}
-      /> */}
       <Collapse in={selectedFilterId !== noFilterId && filterEditorOpen}>
         <QueryBuilder
           queryFields={queryBuilderFields}
@@ -544,26 +408,17 @@ export default function View<T>({ allowedColumns, entityType, maxTableColumns = 
           rows={rows}
           columns={visibleColumns}
           sortable
-          defaultSort={paginationParams.orderBy ? { column: paginationParams.orderBy, direction: paginationParams.sortDirection ?? 'ASC' } : undefined}
+          defaultSort={orderBy && sortDirection ? { column: orderBy, direction: sortDirection ?? 'ASC' } : undefined}
           onSortChange={handleSortChanged}
           idColumn="id"
           noDataText={applyingFilters ? 'Searching...' : 'No Data'}
-          rowOptions={{
-            // menuItems: canManageRoster ? [{
-            //   name: 'Edit Entry',
-            //   callback: editEntryClicked,
-            // }, {
-            //   name: 'Delete Entry',
-            //   callback: deleteEntryClicked,
-            // }] : [],
-            renderCell: getCellDisplayValue,
-          }}
+          rowOptions={rowOptions}
         />
         <TablePagination
           className={classes.pagination}
           count={totalRowsCount}
-          page={+paginationParams.page}
-          rowsPerPage={+paginationParams.limit}
+          page={+paginatedQuery.page}
+          rowsPerPage={+paginatedQuery.limit}
           rowsPerPageOptions={[10, 25, 50]}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}

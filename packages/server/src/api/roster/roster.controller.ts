@@ -22,6 +22,7 @@ import {
   unitColumnDisplayName,
   CustomColumnData,
 } from '@covid19-reports/shared';
+import { EntityService } from 'server/src/util/entity-utils';
 import {
   assertRequestBody,
   assertRequestParams,
@@ -56,7 +57,6 @@ import {
   RosterHistory,
 } from './roster-history.model';
 import { Roster } from './roster.model';
-import { EntityService } from 'server/src/util/entity-utils';
 
 class RosterController {
 

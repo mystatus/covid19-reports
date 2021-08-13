@@ -1,10 +1,10 @@
 import { BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { startCase } from 'lodash';
 import { baseObservationColumns, ColumnInfo, ColumnType, CustomColumns } from '@covid19-reports/shared';
 import { ReportSchema } from '../report-schema/report-schema.model';
 import { timestampColumnTransformer } from '../../util/util';
-import { getColumnSelect, IEntity, isColumnAllowed, MakeEntity } from '../../util/entity-utils';
+import { getColumnSelect, MakeEntity } from '../../util/entity-utils';
 import { Org } from '../org/org.model';
-import { Role } from '../role/role.model';
 import { UserRole } from '../user/user-role.model';
 
 /**
@@ -70,14 +70,14 @@ export class Observation extends BaseEntity {
 
     const customColumns: ColumnInfo[] = reportSchema.columns.map(column => ({
       name: column.keyPath.join(''),
-      displayName: column.keyPath[column.keyPath.length - 1],
+      displayName: startCase(column.keyPath[column.keyPath.length - 1]),
       type: ['long', 'float'].includes(column.type) ? ColumnType.Number : ColumnType.String,
       pii: column.pii,
       phi: column.phi,
       custom: true,
       required: false,
       updatable: false,
-    }))
+    }));
 
     return [...baseObservationColumns, ...customColumns];
   }
