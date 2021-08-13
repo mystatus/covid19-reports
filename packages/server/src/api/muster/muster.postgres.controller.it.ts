@@ -19,7 +19,7 @@ describe('Muster Controller Compliance', () => {
     req.setUser(await User.findOne());
 
     orgId = seedData[0].org.id;
-    unitId = seedData[0].units.filter(((u: Unit) => u.name === 'Unit 1' && u.org!.id === orgId))[0].id;
+    unitId = seedData[0].units.find(((u: Unit) => u.name === 'Unit 1' && u.org!.id === orgId)).id;
   });
 
   it('should return calculated compliance', async () => {
