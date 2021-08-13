@@ -3,33 +3,46 @@ import { MusteringOpportunities, MusterWindowWithStartAndEndDate } from './muste
 import { RecordedObservations, RecordedObservationTimestamp } from '../observation/observation.utils';
 import { RosterEntry } from '../../util/roster-utils';
 
+
 /**
  * The <strong><code>calculateMusterCompliance()</code></strong> function <strong>calculates muster compliance for all
  * individuals on <code>Roster</code> using provided recorded observations which are compared with mustering opportunities
  * in order to perform these calculations</strong>.
- * @param rosterIndividualsInformation The roster information for a set of individuals
- * @param recordedObservations The observations recorded for a set of individuals
+ * @param rosterEntries The roster information for individuals
+ * @param observations The observations recorded by the individuals
  * @param musteringOpportunities The required mustering opportunities, mustering time windows
  */
-export function calculateMusterCompliance(observations: RecordedObservations[], musteringOpportunities: MusteringOpportunities, rosterForMusterCompliance: RosterEntry[]): MusterCompliance[] {
-  return rosterForMusterCompliance.map(roster => {
-    const edipi = roster.edipi;
-    const unitId = roster.unitId;
-    const unitMusteringOpportunities = musteringOpportunities[unitId];
-
-    // mustering is not required
-    if (!unitMusteringOpportunities || unitMusteringOpportunities.length === 0) {
-      return { totalMusters: 0, mustersReported: 0, musterPercent: 100, ...roster };
-    }
-
-    const totalMusters = unitMusteringOpportunities.length;
-
-    const edipiObservations = filterObservationsByEdipi(observations, edipi);
-    const mustersReported = calculateIndividualMusterCompliance(edipiObservations, unitMusteringOpportunities);
-    const musterPercent = calculatePercentageRounded(mustersReported, totalMusters);
-
-    return { totalMusters, mustersReported, musterPercent, ...roster };
+export function calculateMusterCompliance(observations: RecordedObservations[], musteringOpportunities: MusteringOpportunities, rosterEntries: RosterEntry[]): MusterCompliance[] {
+  return rosterEntries.map(roster => {
+    return calculateSingleRosterCompliance(roster, musteringOpportunities, observations);
   });
+}
+
+function calculateSingleRosterCompliance(roster: RosterEntry, musteringOpportunities: MusteringOpportunities, observations: RecordedObservations[]) {
+  const edipi = roster.edipi;
+  const unitId = roster.unitId;
+  const unitMusteringOpportunities = musteringOpportunities[unitId];
+
+  if (isMusteringNotRequired(unitMusteringOpportunities)) {
+    return { totalMusters: 0, mustersReported: 0, musterPercent: 100, ...roster };
+  }
+
+  const totalMusters = unitMusteringOpportunities.length;
+  const edipiObservations = filterObservationsByEdipi(observations, edipi);
+  const mustersReported = calculateIndividualMusterCompliance(edipiObservations, unitMusteringOpportunities);
+  const musterPercent = calculatePercentageRounded(mustersReported, totalMusters);
+
+  return {
+    totalMusters,
+    mustersReported,
+    musterPercent,
+    ...roster,
+  };
+}
+
+
+function isMusteringNotRequired(unitMusteringOpportunities: MusterWindowWithStartAndEndDate[]) {
+  return !unitMusteringOpportunities || unitMusteringOpportunities.length === 0;
 }
 
 function calculateIndividualMusterCompliance(observations: RecordedObservationTimestamp[], musteringOpportunities: MusterWindowWithStartAndEndDate[]): number {
