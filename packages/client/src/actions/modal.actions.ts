@@ -57,14 +57,14 @@ export namespace Modal {
     } = options ?? {};
 
     return alert(title, message, [{
-      text: confirmText,
-      value: true,
-      destructive,
-    }, {
       text: cancelText,
       value: false,
       destructive: false,
       variant: 'outlined',
+    }, {
+      text: confirmText,
+      value: true,
+      destructive,
     }]);
   };
 
