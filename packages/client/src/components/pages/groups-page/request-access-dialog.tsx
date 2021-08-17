@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   Checkbox,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogProps,
@@ -31,6 +30,7 @@ import {
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import useStyles from './request-access-dialog.styles';
 import { AccessRequestClient } from '../../../client/access-request.client';
+import { Dialog } from '../../dialog/dialog';
 
 export type RequestAccessDialogProps = DialogProps & {
   onClose: () => void;
@@ -362,7 +362,6 @@ export const RequestAccessDialog = (props: RequestAccessDialogProps) => {
         open={open}
         onClose={onClose}
         onExited={reset}
-        disableBackdropClick
       >
         <DialogContent>
           <Box component="p" marginTop={0}>

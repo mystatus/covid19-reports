@@ -5,7 +5,6 @@ import {
   CardContent,
   CardHeader,
   Container,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
@@ -54,6 +53,7 @@ import { UnitClient } from '../../../client/unit.client';
 import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { UserActions } from '../../../slices/user.slice';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import { Dialog } from '../../dialog/dialog';
 
 interface UnitMenuState {
   anchor: HTMLElement | null;

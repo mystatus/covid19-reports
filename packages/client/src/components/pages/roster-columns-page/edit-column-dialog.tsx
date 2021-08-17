@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Button,
   Checkbox,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -34,6 +33,7 @@ import {
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
 import { formatErrorMessage } from '../../../utility/errors';
 import { RosterClient } from '../../../client/roster.client';
+import { Dialog } from '../../dialog/dialog';
 
 export interface EditColumnDialogProps {
   open: boolean;

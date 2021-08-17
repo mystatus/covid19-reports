@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   Checkbox,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogProps,
@@ -41,6 +40,7 @@ import useStyles from './view-access-request-dialog.styles';
 import { AccessRequestClient } from '../../../client/access-request.client';
 import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import { Dialog } from '../../dialog/dialog';
 
 export type ViewAccessRequestDialogProps = DialogProps & {
   onClose: () => void;

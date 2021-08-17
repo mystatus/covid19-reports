@@ -5,7 +5,6 @@ import React, {
 import {
   Button,
   Checkbox,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -32,6 +31,7 @@ import { Roster } from '../../../actions/roster.actions';
 import RoleInfoPanel from '../../role-info-panel/role-info-panel';
 import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import { Dialog } from '../../dialog/dialog';
 
 export type SelectRoleDialogProps = {
   confirmButtonText: string;

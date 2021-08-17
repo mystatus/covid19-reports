@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Checkbox,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -37,6 +36,7 @@ import { UnitSelector } from '../../../selectors/unit.selector';
 import { formatErrorMessage } from '../../../utility/errors';
 import { RosterClient } from '../../../client/roster.client';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import { Dialog } from '../../dialog/dialog';
 
 export interface EditRosterEntryDialogProps {
   open: boolean;

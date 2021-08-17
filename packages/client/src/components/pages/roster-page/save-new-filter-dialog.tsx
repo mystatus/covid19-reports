@@ -4,7 +4,6 @@ import React, {
 } from 'react';
 import {
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
@@ -13,6 +12,7 @@ import {
   TextField,
 } from '@material-ui/core';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
+import { Dialog } from '../../dialog/dialog';
 
 export interface SaveNewFilterDialogProps {
   open: boolean;

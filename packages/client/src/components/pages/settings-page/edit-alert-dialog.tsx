@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import {
-  Button, Checkbox,
-  Dialog,
+  Button,
+  Checkbox,
   DialogActions,
   DialogContent,
-  DialogTitle, FormControlLabel,
-  Grid, Paper, TextField, Typography,
+  DialogTitle,
+  FormControlLabel,
+  Grid,
+  Paper,
+  TextField,
+  Typography,
 } from '@material-ui/core';
 import useStyles from './edit-alert-dialog.styles';
 import {
@@ -16,6 +20,7 @@ import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { buildSettingText } from './notifications-tab';
 import { formatErrorMessage } from '../../../utility/errors';
 import { NotificationClient } from '../../../client/notification.client';
+import { Dialog } from '../../dialog/dialog';
 
 export interface EditAlertDialogProps {
   open: boolean;

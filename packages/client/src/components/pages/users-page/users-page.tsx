@@ -11,7 +11,6 @@ import {
   TableHead,
   TableRow,
   DialogActions,
-  Dialog,
   DialogContent,
   DialogContentText,
   IconButton,
@@ -37,6 +36,7 @@ import { UserClient } from '../../../client/user.client';
 import { AppFrameActions } from '../../../slices/app-frame.slice';
 import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import { Dialog } from '../../dialog/dialog';
 
 type UserMoreMenuState = {
   element: HTMLElement;
