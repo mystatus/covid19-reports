@@ -58,6 +58,7 @@ import {
   localStorageInitialState,
   localStorageSlice,
 } from './slices/local-storage.slice';
+import { Modal } from './actions/modal.actions';
 
 const initialState = {
   appFrame: appFrameInitialState,
@@ -106,7 +107,9 @@ export const store = configureStore({
   middleware: getDefaultMiddleware => {
     return getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: persistActions,
+        ignoredActions: persistActions.concat([
+          Modal.Actions.Alert.type,
+        ]),
       },
     }).concat(middleware);
   },
