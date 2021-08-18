@@ -3,7 +3,6 @@ import {
   Avatar,
   Box,
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -41,6 +40,7 @@ import { ReportSchemaSelector } from '../../../selectors/report-schema.selector'
 import { formatErrorMessage } from '../../../utility/errors';
 import { OrgClient } from '../../../client/org.client';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import { Dialog } from '../../dialog/dialog';
 
 export interface DefaultMusterDialogProps {
   open: boolean;

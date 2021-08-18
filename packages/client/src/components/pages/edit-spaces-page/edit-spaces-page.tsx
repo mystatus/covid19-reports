@@ -1,7 +1,6 @@
 import {
   Button,
   Container,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
@@ -42,6 +41,7 @@ import { EditSpacesPageHelp } from './edit-spaces-page-help';
 import { WorkspaceClient } from '../../../client/workspace.client';
 import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import { Dialog } from '../../dialog/dialog';
 
 interface WorkspaceMenuState {
   anchor: HTMLElement | null;

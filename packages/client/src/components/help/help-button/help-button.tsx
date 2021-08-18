@@ -1,6 +1,5 @@
 import {
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -13,6 +12,7 @@ import React, {
   useState,
 } from 'react';
 import { HelpContent } from '../help-content/help-content';
+import { Dialog } from '../../dialog/dialog';
 
 export interface HelpButtonProps {
   title: string;

@@ -1,7 +1,6 @@
 import {
   Button,
   Container,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
@@ -36,6 +35,7 @@ import { RosterClient } from '../../../client/roster.client';
 import { AppFrameActions } from '../../../slices/app-frame.slice';
 import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import { Dialog } from '../../dialog/dialog';
 
 interface ColumnMenuState {
   anchor: HTMLElement | null;

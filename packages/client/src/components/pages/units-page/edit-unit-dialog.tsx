@@ -7,7 +7,6 @@ import {
   Avatar,
   Button,
   Checkbox,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -53,6 +52,7 @@ import {
 } from '../../../utility/muster-utils';
 import { UnitClient } from '../../../client/unit.client';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import { Dialog } from '../../dialog/dialog';
 
 export interface EditUnitDialogProps {
   open: boolean;

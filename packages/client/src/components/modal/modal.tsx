@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
@@ -12,6 +11,7 @@ import { ModalButton } from '../../reducers/modal.reducer';
 import useStyles from './modal.styles';
 import { useAppDispatch } from '../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../hooks/use-app-selector';
+import { Dialog } from '../dialog/dialog';
 
 const defaultButtons: ModalButton[] = [
   { text: 'Ok' },

@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Checkbox,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -34,6 +33,7 @@ import { WorkspaceSelector } from '../../../selectors/workspace.selector';
 import { formatErrorMessage } from '../../../utility/errors';
 import { RoleClient } from '../../../client/role.client';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import { Dialog } from '../../dialog/dialog';
 
 export interface EditRoleDialogProps {
   open: boolean;

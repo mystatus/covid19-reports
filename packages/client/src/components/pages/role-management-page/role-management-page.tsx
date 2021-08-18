@@ -5,7 +5,6 @@ import {
   AccordionSummary,
   Button,
   Container,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
@@ -38,6 +37,7 @@ import { RoleClient } from '../../../client/role.client';
 import { AppFrameActions } from '../../../slices/app-frame.slice';
 import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import { Dialog } from '../../dialog/dialog';
 
 export const RoleManagementPage = () => {
   const classes = useStyles();

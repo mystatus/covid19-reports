@@ -245,9 +245,6 @@ theme.props = {
   MuiCheckbox: {
     color: 'primary',
   },
-  MuiDialog: {
-    disableBackdropClick: true,
-  },
   MuiIconButton: {
     color: 'primary',
   },
