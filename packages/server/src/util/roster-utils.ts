@@ -189,7 +189,6 @@ export type RosterEntry = {
   edipi: string;
   firstName: string;
   lastName: string;
-  myCustomColumn1: string;
   unitId: number;
   phone?: string;
 };

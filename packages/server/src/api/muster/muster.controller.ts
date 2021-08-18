@@ -1,15 +1,14 @@
 import { Response } from 'express';
-import { Brackets } from 'typeorm';
+import { Brackets, In } from 'typeorm';
+import _ from 'lodash';
 import moment from 'moment-timezone';
 import {
   getDayBitFromMomentDay,
-  GetMusterComplianceByDateQuery,
   GetMusterComplianceByDateRangeQuery,
   GetClosedMusterWindowsQuery,
   GetMusterRosterQuery,
   GetMusterUnitTrendsQuery,
   GetNearestMusterWindowQuery,
-  GetMusterComplianceByDateResponse,
   GetMusterComplianceByDateRangeResponse,
   MusterConfiguration,
   Paginated,
@@ -21,13 +20,24 @@ import {
 } from '../../util/error-types';
 import {
   buildMusterWindow,
+  calcMusterPercent,
   getDistanceToWindow,
   getEarliestMusterWindowTime,
   getMusterRosterStats,
   getMusterUnitTrends,
   getOneTimeMusterWindowTime,
   MusterWindow,
+  getCompliantUserObserverationCount,
+  getUnitRequiredMusterCount,
+  MusterCompliance,
 } from '../../util/muster-utils';
+import {
+  dateFromString,
+  dayIsIn,
+  DaysOfTheWeek,
+  nextDay,
+  oneDaySeconds,
+} from '../../util/util';
 import {
   ApiRequest,
   OrgRoleParams,
@@ -39,14 +49,9 @@ import {
   ChangeType,
   RosterHistory,
 } from '../roster/roster-history.model';
+import { ReportSchema } from '../report-schema/report-schema.model';
 import { Unit } from '../unit/unit.model';
-import {
-  dateFromString,
-  dayIsIn,
-  DaysOfTheWeek,
-  nextDay,
-  oneDaySeconds,
-} from '../../util/util';
+
 
 class MusterController {
 
@@ -233,22 +238,109 @@ class MusterController {
   }
 
   /**
-   * This method returns the normalized rate (0 - 1.0) of compliance on a given
-   * date for a given unit, against all of the unit's muster configs.
+   * Provides Muster Compliance details for all service members for the given unit id(s) curent roster
    */
-  async getMusterComplianceByDate(
-    req: ApiRequest<{ orgId: number; unitName: string }, null, GetMusterComplianceByDateQuery>,
-    res: Response<GetMusterComplianceByDateResponse>,
-  ) {
-    const musterComplianceRate = await getMusterComplianceByDate(req.params.orgId, req.params.unitName, req.query.isoDate);
-    res.json({ musterComplianceRate, isoDate: req.query.isoDate });
+  async getRosterMusterComplianceByDateRange(req: ApiRequest<OrgRoleParams, null, GetMusterRosterQuery>, res: Response<Paginated<Partial<MusterCompliance>>>) {
+    assertRequestQuery(req, ['fromDate', 'toDate', 'limit', 'page']);
+
+    /* Dates come in UTC timezone.
+      For example the date 2021-07-04 11:59 PM selected in a browser
+                  comes as 2021-07-05T04:59:00.000Z */
+    const fromDate: moment.Moment = moment(req.query.fromDate, 'YYYY-MM-DD');
+    const toDate: moment.Moment = moment(req.query.toDate, 'YYYY-MM-DD');
+
+    if (!fromDate.isValid() || !toDate.isValid() || fromDate > toDate) {
+      throw new BadRequestError('Invalid ISO date range.');
+    }
+
+    const rowLimit = parseInt(req.query.limit);
+    const pageNumber = parseInt(req.query.page);
+    // When unit id is missing, then data for all units are requested
+    const unitId = (req.query.unitId != null) ? parseInt(req.query.unitId) : undefined;
+    const orgId = req.appOrg!.id;
+
+
+    // get units for the org
+    const orgUnits = await Unit.find({
+      where: { org: orgId },
+    });
+
+    // get unit information for the org
+    const unitIds: number[] = [];
+    const unitNames: string[] = [];
+    const configsByUnitId: Map<number, MusterConfiguration[]> = new Map<number, MusterConfiguration[]>();
+
+    orgUnits.forEach(unit => {
+      if (!unitId || unitId === unit.id) {
+        unitIds.push(unit.id);
+        unitNames.push(unit.name);
+        configsByUnitId.set(unit.id, unit.musterConfiguration);
+      }
+    });
+
+    // get the roster entries based on the unit IDs for the org
+    const rosterEntries = await Roster.find({
+      relations: ['unit'],
+      where: { unit: In(unitIds) },
+    });
+
+    // get the edipis for all roster entries
+    const rosterEdipis: string[] = rosterEntries.map(rosterEntry => rosterEntry.edipi);
+
+    // get observations for all users on roster for this org
+    // we use query builder here to get the data back in a flat manner
+    // rather than nested
+
+    // get edipi, timestamp and report schema id
+    type ObservationRaw = Pick<Observation, 'edipi' | 'timestamp'> & {
+      report_schema_id: ReportSchema['id'];
+    };
+    const observations = await Observation.createQueryBuilder('observation')
+      .select('observation.edipi, observation.timestamp, observation.report_schema_id')
+      .andWhere(`observation.timestamp between :fromDate and :toDate`, { fromDate, toDate })
+      .andWhere(`observation.edipi in (:...edipis)`, { edipis: rosterEdipis })
+      .andWhere(`observation.unit in (:...unitNames)`, { unitNames })
+      .andWhere(`observation.report_schema_org = :orgId`, { orgId })
+      .getRawMany<ObservationRaw>();
+
+    const observationsByEdipi = _.groupBy(observations, obs => obs.edipi);
+    const complianceRecords: MusterCompliance[] = rosterEntries.map(rosterEntry => {
+      const configs = configsByUnitId.get(rosterEntry.unit.id);
+      const totalMustersRequired = getUnitRequiredMusterCount(configs, fromDate, toDate);
+      const complianceRecord: MusterCompliance = {
+        edipi: rosterEntry.edipi,
+        firstName: rosterEntry.firstName,
+        lastName: rosterEntry.lastName,
+        unitId: rosterEntry.unit.id,
+        phone: rosterEntry.phoneNumber,
+        totalMusters: totalMustersRequired,
+        mustersReported: 0,
+        musterPercent: 100,
+      };
+
+      // get the compliant observation count for this current user/edipi
+      const userObservations = observationsByEdipi[rosterEntry.edipi];
+      complianceRecord.mustersReported = getCompliantUserObserverationCount(userObservations, configs);
+
+      // only perform percentage calculation if there are required musters,
+      // otherwise we default to 100% compliance.
+      if (complianceRecord.totalMusters > 0) {
+        complianceRecord.musterPercent = calcMusterPercent(complianceRecord.totalMusters, complianceRecord.mustersReported);
+      }
+      return complianceRecord;
+    });
+
+    return res.json({
+      rows: toRosterCompliancePageWithRowLimit(complianceRecords, pageNumber, rowLimit),
+      totalRowsCount: complianceRecords.length,
+    });
   }
 
   /**
    * This method returns the normalized rate (0 - 1.0) of compliance on a given
    * date range for a given unit, against all of the unit's muster configs.
    */
-  async getMusterComplianceByDateRange(
+  async getUnitMusterComplianceByDateRange(
     req: ApiRequest<{ orgId: number; unitName: string }, null, GetMusterComplianceByDateRangeQuery>,
     res: Response<GetMusterComplianceByDateRangeResponse>,
   ) {
@@ -268,6 +360,11 @@ class MusterController {
     res.json(out);
   }
 
+}
+
+function toRosterCompliancePageWithRowLimit(musterInfo: MusterCompliance[], page: number, limit: number): MusterCompliance[] {
+  const offset = page * limit;
+  return musterInfo.slice(offset, offset + limit);
 }
 
 /**

@@ -1,8 +1,11 @@
+// @ts-ignore
+import later from '@breejs/later';
 import { MSearchResponse } from 'elasticsearch';
 import moment, { Moment } from 'moment-timezone';
 import {
-  MusterConfiguration,
+  binaryDaysToDateArray,
   formatPhoneNumber,
+  MusterConfiguration,
 } from '@covid19-reports/shared';
 import { Org } from '../api/org/org.model';
 import { UserRole } from '../api/user/user-role.model';
@@ -21,6 +24,7 @@ import {
   TimeInterval,
 } from './util';
 import { diffEpsilon } from './math-utils';
+import { RosterEntry } from './roster-utils';
 
 /**
  * Get muster stats for each individual on the roster, given a time range and optional unit to filter by. The returned
@@ -576,6 +580,115 @@ function buildUnitStats(args: {
 
   return unitStats;
 }
+
+/**
+ * Converts the information from a muster config to a later.js schedule
+ * @param timezone timezone of the schedule startTime
+ * @param days array of numbers in the range 1-7
+ * @param startTime schedule start time
+ * @param durationMinutes how long the muster event window lasts for
+ */
+export function getMusterSchedule(timezone: string, days: number[] | undefined, startTime: string, durationMinutes: number): later.Schedule {
+  // handle recurring muster schedule
+  if (days && days.length > 0) {
+    const start = moment.tz(startTime, 'HH:mm', timezone)
+      .utc()
+      .format('HH:mm');
+    const end = moment.tz(startTime, 'HH:mm', timezone)
+      .add(durationMinutes, 'minutes')
+      .utc()
+      .format('HH:mm');
+
+    return later.schedule(later.parse.recur()
+      .on(days)
+      .dayOfWeek()
+      .after(start)
+      .time()
+      .before(end)
+      .time());
+  }
+
+  // handle one-time muster schedule
+  const start = moment.tz(startTime, 'YYYY-MM-DDTHH:mm:ss', timezone).utc();
+  const end = moment.tz(startTime, 'YYYY-MM-DDTHH:mm:ss', timezone)
+    .add(durationMinutes, 'minutes')
+    .utc()
+    .format('HH:mm');
+
+  return later.schedule(later.parse.recur()
+    .on(start.year())
+    .year()
+    .on(start.dayOfYear())
+    .dayOfYear()
+    .after(start.format('HH:mm'))
+    .time()
+    .before(end)
+    .time());
+}
+
+/**
+ * Gets the total required number of musters for a unit based on all configs for the unit
+ * over a given period of time.
+ * @param unitConfigs an array of config objects to check the count for the unit
+ * @param fromDate start of date range to get muster count for
+ * @param toDate cutoff for date range to get muster count for
+ */
+export function getUnitRequiredMusterCount(unitConfigs: MusterConfiguration[] | undefined, fromDate: moment.Moment, toDate: moment.Moment): number {
+  let totalMustersRequired = 0;
+  unitConfigs?.forEach((config: any) => {
+    const sched = getMusterSchedule(config.timezone, binaryDaysToDateArray(config.days), config.startTime, config.durationMinutes);
+    // the parameter order below may seem unintuitive but moment.prev() requires startTime to be greater than endTime
+    const schedRange = sched.prevRange(10000, toDate.toDate(), fromDate.toDate());
+    if (schedRange) {
+      totalMustersRequired += schedRange.length;
+    }
+  });
+  return totalMustersRequired;
+}
+
+/**
+ * Returns the number of compliant musters/observations for a given set of configs
+ * @param userObservations an array of {reportSchema, timestamp} objects for a single user
+ * @param unitConfigs an array of muster configurations for a single unit
+ */
+export function getCompliantUserObserverationCount(
+  userObservations: CompliantUserObservationInput[],
+  unitConfigs: MusterConfiguration[] | undefined,
+): number {
+  let complianceCount = 0;
+  if (userObservations) {
+    userObservations.forEach(userObs => {
+      // for each observation find out which config it should be related to
+      const config: MusterConfiguration | undefined = unitConfigs?.find((c: MusterConfiguration) => c.reportId === userObs.report_schema_id);
+
+      // if a matching configuration is found then generate the schedule for it and see if the
+      // observation timestamp is valid
+      if (config) {
+        const sched = getMusterSchedule(config.timezone, binaryDaysToDateArray(config.days), config.startTime, config.durationMinutes);
+        if (sched.isValid(userObs.timestamp)) {
+          complianceCount += 1;
+        }
+      }
+    });
+  }
+  return complianceCount;
+}
+/**
+ * interface for specifying observation input to getCompliantUserObserverationCount()
+ */
+interface CompliantUserObservationInput {
+  report_schema_id: string;
+  timestamp: Date;
+}
+
+/**
+ * Represents muster compliance for an individual
+ */
+export type MusterCompliance = {
+  totalMusters: number;
+  mustersReported: number;
+  musterPercent: number;
+} & RosterEntry;
 
 type MusterRosterAggregations = {
   muster: {

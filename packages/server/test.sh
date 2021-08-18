@@ -24,7 +24,6 @@ done
 # Start a docker container for Postgres if there isn't aready one
 database_unittest "start"
 
-export MUSTER_POSTGRES_CONTROLLER=true
 export NODE_ENV="test"
 export SYNC_DATABASE="false"
 export SQL_DATABASE="dds_test"

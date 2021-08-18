@@ -2,7 +2,6 @@ import bodyParser from 'body-parser';
 import express from 'express';
 import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth/auth-middleware';
 import controller from './muster.controller';
-import musterPostgresController from './muster.postgres.controller';
 
 const router = express.Router() as any;
 
@@ -19,12 +18,11 @@ router.get(
   controller.getNearestMusterWindow,
 );
 
-const musterController = process.env.MUSTER_POSTGRES_CONTROLLER !== 'true' ? controller.getMusterRoster : musterPostgresController.getUserMusterCompliance;
 router.get(
-  '/:orgId/roster',
+  '/:orgId/roster/complianceByDateRange',
   requireOrgAccess,
   requireRolePermission(role => role.canViewMuster),
-  musterController,
+  controller.getRosterMusterComplianceByDateRange,
 );
 
 router.get(
@@ -35,15 +33,9 @@ router.get(
 );
 
 router.get(
-  '/:orgId/:unitName/complianceByDate',
-  bodyParser.json(),
-  controller.getMusterComplianceByDate,
-);
-
-router.get(
   '/:orgId/:unitName/complianceByDateRange',
   bodyParser.json(),
-  controller.getMusterComplianceByDateRange,
+  controller.getUnitMusterComplianceByDateRange,
 );
 
 export default router;

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { GetMusterComplianceByDateResponse } from '@covid19-reports/shared';
+import { MusterComplianceByDate, GetMusterRosterQuery, GetMusterComplianceByDateRangeQuery } from '@covid19-reports/shared';
 import { expectError, expectNoErrors } from '../../util/test-utils/expect';
 import { seedAll } from '../../util/test-utils/seed';
 import { TestRequest } from '../../util/test-utils/test-request';
@@ -7,6 +7,10 @@ import { User } from '../user/user.model';
 
 describe(`Muster Controller`, () => {
   const basePath = '/api/muster';
+  const pageParams = {
+    limit: '10',
+    page: '0',
+  };
   const unit5 = 'Unit 5';
   let req: TestRequest;
   let seedData: any[];
@@ -20,52 +24,106 @@ describe(`Muster Controller`, () => {
     org1 = seedData.find(data => data.org.indexPrefix === 'testgroup1').org.id;
   });
 
-  describe(`${basePath}/:orgId/:unitName/complianceByDate : get`, () => {
+  describe(`${basePath}/:orgId/roster/complianceByDateRange : get`, () => {
     it(`should return full compliance with multiple active configs`, async () => {
-      const res = await req.get(`/${org1}/${unit5}/complianceByDate?isoDate=2020-01-02`);
+      const query: GetMusterRosterQuery = {
+        fromDate: '2020-01-01',
+        toDate: '2020-01-03',
+        ...pageParams,
+      };
+      const res = await req.get(`/${org1}/roster/complianceByDateRange`, {
+        params: query,
+      });
       expectNoErrors(res);
-      expect(res.data.musterComplianceRate).equal(1);
+      // this is based on known user data, if the data changes update all the tests under this 'describe'
+      const userRate = res.data.rows.find((row: any) => { return row.edipi === '0000000007'; });
+      expect(userRate.musterPercent).equal(100);
+      expect(userRate.totalMusters).greaterThan(0);
+      expect(userRate.totalMusters).equal(userRate.mustersReported);
     });
 
     it(`should return full compliance with a single active config`, async () => {
-      const res = await req.get(`/${org1}/${unit5}/complianceByDate?isoDate=2020-01-03`);
+      const query: GetMusterRosterQuery = {
+        fromDate: '2020-01-03',
+        toDate: '2020-01-04',
+        ...pageParams,
+      };
+      const res = await req.get(`/${org1}/roster/complianceByDateRange`, {
+        params: query,
+      });
       expectNoErrors(res);
-      expect(res.data.musterComplianceRate).equal(1);
+      const userRate = res.data.rows.find((row: any) => { return row.edipi === '0000000007'; });
+      expect(userRate.musterPercent).equal(100);
+      expect(userRate.totalMusters).greaterThan(0);
+      expect(userRate.totalMusters).equal(userRate.mustersReported);
     });
 
     it(`should error with bad date input`, async () => {
-      let res = await req.get(`/${org1}/${unit5}/complianceByDate?isoDate=YYYY-MM-DD`);
-      expectError(res, 'Invalid ISO date.');
+      const query: GetMusterRosterQuery = {
+        fromDate: 'YYYY-MM-DD',
+        toDate: '2020-01-04',
+        ...pageParams,
+      };
+      let res = await req.get(`/${org1}/roster/complianceByDateRange`, {
+        params: query,
+      });
+      expectError(res, 'Invalid ISO date range');
 
-      res = await req.get(`/${org1}/${unit5}/complianceByDate?isoDate=9999-99-99`);
-      expectError(res, 'Invalid ISO date.');
+      query.fromDate = '9999-99-99';
+      res = await req.get(`/${org1}/roster/complianceByDateRange`, {
+        params: query,
+      });
+      expectError(res, 'Invalid ISO date range');
     });
   });
 
   describe(`${basePath}/:orgId/:unitName/complianceByDateRange : get`, () => {
     it(`should return full compliance with multiple active configs`, async () => {
-      const res = await req.get(`/${org1}/${unit5}/complianceByDateRange?isoStartDate=2020-01-01&isoEndDate=2020-01-02`);
+      const query: GetMusterComplianceByDateRangeQuery = {
+        isoStartDate: '2020-01-01',
+        isoEndDate: '2020-01-02',
+      };
+      const res = await req.get(`/${org1}/${unit5}/complianceByDateRange`, {
+        params: query,
+      });
+
       expectNoErrors(res);
 
       // The configs are active on jan 2 so we make sure to select its entry for testing
-      const dayRate = res.data.musterComplianceRates.find((rate: GetMusterComplianceByDateResponse) => rate.isoDate.split('T')[0] === '2020-01-02');
+      const dayRate = res.data.musterComplianceRates.find((rate: MusterComplianceByDate) => rate.isoDate.split('T')[0] === query.isoEndDate);
       expect(dayRate.musterComplianceRate).equal(1);
     });
 
     it(`should return full compliance with a single active config`, async () => {
-      const res = await req.get(`/${org1}/${unit5}/complianceByDateRange?isoStartDate=2020-01-03&isoEndDate=2020-01-04`);
+      const query: GetMusterComplianceByDateRangeQuery = {
+        isoStartDate: '2020-01-03',
+        isoEndDate: '2020-01-04',
+      };
+      const res = await req.get(`/${org1}/${unit5}/complianceByDateRange`, {
+        params: query,
+      });
+
       expectNoErrors(res);
 
       // The single config is active on jan 3 so we select the item in the list for testing
-      const dayRate = res.data.musterComplianceRates.find((rate: GetMusterComplianceByDateResponse) => rate.isoDate.split('T')[0] === '2020-01-03');
+      const dayRate = res.data.musterComplianceRates.find((rate: MusterComplianceByDate) => rate.isoDate.split('T')[0] === query.isoStartDate);
       expect(dayRate.musterComplianceRate).equal(1);
     });
 
     it(`should error with bad date input`, async () => {
-      let res = await req.get(`/${org1}/${unit5}/complianceByDateRange?isoStartDate=YYYY-MM-DD&isoEndDate=2020-01-04`);
+      const query: GetMusterComplianceByDateRangeQuery = {
+        isoStartDate: 'YYYY-MM-DD',
+        isoEndDate: '2020-01-04',
+      };
+      let res = await req.get(`/${org1}/${unit5}/complianceByDateRange`, {
+        params: query,
+      });
       expectError(res, 'Invalid ISO date range');
 
-      res = await req.get(`/${org1}/${unit5}/complianceByDateRange?isoStartDate=9999-99-99&isoEndDate=2020-01-04`);
+      query.isoStartDate = '9999-99-99';
+      res = await req.get(`/${org1}/${unit5}/complianceByDateRange`, {
+        params: query,
+      });
       expectError(res, 'Invalid ISO date range');
     });
   });
