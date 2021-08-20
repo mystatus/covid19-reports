@@ -652,7 +652,7 @@ export function getUnitRequiredMusterCount(unitConfigs: MusterConfiguration[] | 
  * @param unitConfigs an array of muster configurations for a single unit
  */
 export function getCompliantUserObserverationCount(
-  userObservations: CompliantUserObservationInput[],
+  userObservations: { report_schema_id: string; timestamp: Date }[],
   unitConfigs: MusterConfiguration[] | undefined,
 ): number {
   let complianceCount = 0;
@@ -672,13 +672,6 @@ export function getCompliantUserObserverationCount(
     });
   }
   return complianceCount;
-}
-/**
- * interface for specifying observation input to getCompliantUserObserverationCount()
- */
-interface CompliantUserObservationInput {
-  report_schema_id: string;
-  timestamp: Date;
 }
 
 /**

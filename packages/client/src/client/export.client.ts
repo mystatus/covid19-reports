@@ -12,7 +12,7 @@ export class ExportClient {
   }
 
   static exportMusterRosterToCsv(orgId: number, query: ExportMusterIndividualsQuery): Promise<BlobPart> {
-    return client.get(`${orgId}/muster/roster`, {
+    return client.get(`${orgId}/muster/roster/sql`, {
       params: query,
       responseType: 'blob',
     });

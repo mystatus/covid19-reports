@@ -16,4 +16,7 @@ done
 npx ts-mocha \
   --project "tsconfig.json" \
   --exit \
-  $TYPE
+  $TYPE 2> /dev/null
+
+TEST_EXIT_CODE=$?
+exit $TEST_EXIT_CODE

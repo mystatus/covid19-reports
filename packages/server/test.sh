@@ -55,6 +55,9 @@ npx ts-mocha \
   --config ".mocharc.yml" \
   --exit \
   ----timeout 20000 \
-  $TYPE
+  $TYPE 2> /dev/null
+TEST_EXIT_CODE=$?
 
 database_unittest "stop"
+
+exit $TEST_EXIT_CODE

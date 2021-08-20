@@ -1,15 +1,20 @@
 import moment from 'moment-timezone';
 import { Response } from 'express';
 import { json2csvAsync } from 'json-2-csv';
-import { ExportOrgQuery } from '@covid19-reports/shared';
+import {
+  ExportOrgQuery,
+  ExportMusterIndividualsQuery,
+} from '@covid19-reports/shared';
 import {
   ApiRequest,
   OrgParam,
 } from '../api.router';
+import { getRosterMusterComplianceRecordsByDateRange } from '../muster/muster.controller';
 import { Observation } from '../observation/observation.model';
 import { Roster } from '../roster/roster.model';
 import { RosterHistory } from '../roster/roster-history.model';
 import { Unit } from '../unit/unit.model';
+import { BadRequestError } from '../../util/error-types';
 
 class ExportSqlController {
 
@@ -63,6 +68,27 @@ class ExportSqlController {
       .getRawMany();
 
     const csvChunk = await json2csvAsync(history, {
+      emptyFieldValue: '',
+    });
+
+    res.write(Buffer.from(csvChunk));
+    res.end();
+  }
+
+  async exportRosterMusterComplianceToCsv(req: ApiRequest<OrgParam, null, ExportMusterIndividualsQuery>, res: Response) {
+    const fromDate: moment.Moment = moment(req.query.fromDate, 'YYYY-MM-DD');
+    const toDate: moment.Moment = moment(req.query.toDate, 'YYYY-MM-DD');
+
+    if (!fromDate.isValid() || !toDate.isValid() || fromDate > toDate) {
+      throw new BadRequestError('Invalid ISO date range.');
+    }
+
+    // When unit id is missing, then data for all units are requested in getRosterMusterComplianceCalcByDateRange()
+    const unitId = (req.query.unitId != null) ? parseInt(req.query.unitId) : undefined;
+    const orgId = req.appOrg!.id;
+
+    const complianceRecords = await getRosterMusterComplianceRecordsByDateRange(orgId, unitId, fromDate, toDate);
+    const csvChunk = await json2csvAsync(complianceRecords, {
       emptyFieldValue: '',
     });
 
