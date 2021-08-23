@@ -1,7 +1,5 @@
 import {
-  GetMusterComplianceByDateQuery,
   GetMusterComplianceByDateRangeQuery,
-  GetMusterComplianceByDateResponse,
   GetMusterComplianceByDateRangeResponse,
   GetMusterRosterQuery,
   GetMusterUnitTrendsQuery,
@@ -16,8 +14,8 @@ const client = createApiClient('muster');
 
 export class MusterClient {
 
-  static getMusterRoster(orgId: number, query: GetMusterRosterQuery): Promise<ApiMusterRosterEntriesPaginated> {
-    return client.get(`${orgId}/roster`, {
+  static getRosterMusterComplianceByDateRange(orgId: number, query: GetMusterRosterQuery): Promise<ApiMusterRosterEntriesPaginated> {
+    return client.get(`${orgId}/roster/complianceByDateRange`, {
       params: query,
     });
   }
@@ -28,13 +26,7 @@ export class MusterClient {
     });
   }
 
-  static getMusterComplianceByDate(orgId: number, unitName: string, query: GetMusterComplianceByDateQuery): Promise<GetMusterComplianceByDateResponse> {
-    return client.get(`${orgId}/${unitName}/complianceByDate`, {
-      params: query,
-    });
-  }
-
-  static getMusterComplianceByDateRange(orgId: number, unitName: string, query: GetMusterComplianceByDateRangeQuery): Promise<GetMusterComplianceByDateRangeResponse> {
+  static getUnitMusterComplianceByDateRange(orgId: number, unitName: string, query: GetMusterComplianceByDateRangeQuery): Promise<GetMusterComplianceByDateRangeResponse> {
     return client.get(`${orgId}/${unitName}/complianceByDateRange`, {
       params: query,
     });

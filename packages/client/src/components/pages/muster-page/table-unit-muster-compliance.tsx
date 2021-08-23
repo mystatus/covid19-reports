@@ -130,7 +130,7 @@ export const UnitMusterComplianceTable = (props: any) => {
       maxCompliance: 0,
       avgCompliance: 0,
     };
-    const unitComplianceByDateRange = await MusterClient.getMusterComplianceByDateRange(organizationId, unitName, { isoStartDate, isoEndDate });
+    const unitComplianceByDateRange = await MusterClient.getUnitMusterComplianceByDateRange(organizationId, unitName, { isoStartDate, isoEndDate });
     if (unitComplianceByDateRange.musterComplianceRates.length > 0) {
       unitComplianceByDateRange.musterComplianceRates.forEach(rate => {
         const compliancePerc = rate.musterComplianceRate * 100;

@@ -151,7 +151,7 @@ export const MusterPage = () => {
   const reloadTable = useCallback(async () => {
     let data: ApiMusterRosterEntriesPaginated;
     try {
-      data = await MusterClient.getMusterRoster(orgId, {
+      data = await MusterClient.getRosterMusterComplianceByDateRange(orgId, {
         fromDate: rosterFromDateIso,
         toDate: rosterToDateIso,
         unitId: rosterUnitId >= 0 ? `${rosterUnitId}` : undefined,
