@@ -82,10 +82,6 @@ export class Observation extends BaseEntity {
     return [...baseObservationColumns, ...customColumns];
   }
 
-  // static async filterAllowedColumns(columns: ColumnInfo[], role: Role) {
-  //   return columns.filter(column => isColumnAllowed(column, role));
-  // }
-
   static async search(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     const queryBuilder = Observation.createQueryBuilder('observation').select([]);
     queryBuilder.leftJoin('observation.reportSchema', 'rs');
