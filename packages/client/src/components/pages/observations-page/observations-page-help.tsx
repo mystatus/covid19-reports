@@ -10,7 +10,6 @@ export const ObservationsPageHelp = () => {
       bullets={[
         'Identify and resolve misplaced observations',
         'Filter the Observations by any number of columns and combinations',
-        'Show or hide columns',
       ]}
     />
   );
