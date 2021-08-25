@@ -15,10 +15,6 @@ import { EntityController } from '../../util/entity-utils';
 
 class ObservationController extends EntityController<Observation> {
 
-  // constructor(o: any) {
-  //   super(o);
-  // }
-
   async getAllObservations(req: Request, res: Response) {
     return res.json(await Observation.find());
   }
