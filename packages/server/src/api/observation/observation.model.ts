@@ -98,11 +98,6 @@ export class Observation extends BaseEntity {
     queryBuilder
       .where('rs.org_id = :orgId', { orgId: org.id });
 
-    // if (!userRole.allUnits) {
-    //   queryBuilder
-    //     .andWhere(`u.id IN (${(await userRole.getUnits()).map(unit => unit.id).join(',')})`);
-    // }
-
     return queryBuilder;
   }
 
