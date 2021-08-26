@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { EntityManager, getConnection } from 'typeorm';
 import { CustomColumns, RosterInfo } from '@covid19-reports/shared';
-import { ObservationApiModel, Report } from './observation.types';
+import { Report } from './observation.types';
 import { Observation } from './observation.model';
 import { ApiRequest, EdipiParam } from '../api.router';
 import { Log } from '../../util/log';
@@ -57,13 +57,13 @@ class ObservationController extends EntityController<Observation> {
       const roster = rosters[0];
       if (!hasReportingGroup(roster, getReportingGroup(req))) {
         Log.error('Unable to find reporting group from:', req.body);
-        throw new BadRequestError('Reporting group not found.')
+        throw new BadRequestError('Reporting group not found.');
       }
 
       const reportSchema = await findReportSchema(ReportType, roster.unit.org?.id);
       if (!reportSchema) {
         Log.error(`Unable to find report schema ('${ReportType}') from:`, req.body);
-        throw new BadRequestError('ReportType not found.')
+        throw new BadRequestError('ReportType not found.');
       }
 
       await saveRosterPhoneNumber(EDIPI, `${req.body.Details?.PhoneNumber ?? ''}`, manager);

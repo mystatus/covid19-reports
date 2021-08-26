@@ -1,4 +1,5 @@
 import {
+  getFullyQualifiedColumnName,
   ColumnInfo,
   ColumnType,
   ColumnValue,
@@ -172,7 +173,25 @@ export class EntityService<T extends IEntity> {
 
     Object.keys(filterConfig)
       .forEach(columnName => {
-        queryBuilder = this.applyWhere(queryBuilder, findColumnByName(columnName, allowedColumns), filterConfig[columnName]);
+        const column = findColumnByName(columnName, allowedColumns);
+        // check for expressions
+        const colFilter = filterConfig[columnName];
+        if (colFilter.expressionEnabled && colFilter.expression) {
+          if (column.type === ColumnType.Date || column.type === ColumnType.DateTime) {
+            if (colFilter.expressionRef) {
+              const refColumn = findColumnByName(colFilter.expressionRef, allowedColumns);
+              colFilter.expressionRef = formatColumnSelect(this.getColumnSelect(refColumn), refColumn);
+              const expressionVal = parseInt(colFilter.expression);
+              const sign = expressionVal < 0 ? '-' : '+';
+              colFilter.expressionRef = `${colFilter.expressionRef} ${sign} interval'${Math.abs(expressionVal)} days'`;
+            } else {
+              colFilter.value = moment().startOf('day').add({ days: parseInt(colFilter.expression) }).toISOString();
+            }
+          } else if (column.type === ColumnType.Number) {
+            // Placeholder for numeric expressions if desired in the future...
+          }
+        }
+        queryBuilder = this.applyWhere(queryBuilder, column, colFilter);
       });
 
     const pagedQuery = queryBuilder
@@ -204,7 +223,7 @@ export class EntityService<T extends IEntity> {
     if (method) {
       return method.call(this, queryBuilder, column, filterItem);
     }
-    throw new BadRequestError(`Malformed search query. Received unexpected parameters for '${column.name}', op: ${filterItem.op}`);
+    throw new BadRequestError(`Malformed search query. Received unexpected parameters for '${getFullyQualifiedColumnName(column)}', op: ${filterItem.op}`);
   }
 
   where: Record<QueryOp, (queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) => SelectQueryBuilder<T>> = {
@@ -217,15 +236,15 @@ export class EntityService<T extends IEntity> {
     '<>': this.whereCompare,
     '>': this.whereCompare,
     '<': this.whereCompare,
-    'null': this.whereNull,
-    'notnull': this.whereNull,
+    null: this.whereNull,
+    notnull: this.whereNull,
   };
 
   whereIn(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) {
     const { op, value } = filterConfigItem;
 
     if (!Array.isArray(value)) {
-      throw new BadRequestError(`Malformed search query. Expected array value for ${column.name}.`);
+      throw new BadRequestError(`Malformed search query. Expected array value for ${getFullyQualifiedColumnName(column)}.`);
     }
     const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
     return queryBuilder.andWhere(`${columnSelect} ${op} (:...${column.name})`, {
@@ -239,7 +258,7 @@ export class EntityService<T extends IEntity> {
     const maxKey = `${column.name}Max`;
     const minKey = `${column.name}Min`;
     if (!Array.isArray(value)) {
-      throw new BadRequestError(`Malformed search query. Expected array value for ${column.name}.`);
+      throw new BadRequestError(`Malformed search query. Expected array value for ${getFullyQualifiedColumnName(column)}.`);
     }
     const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
     return queryBuilder.andWhere(`${columnSelect} BETWEEN (:${minKey}) AND (:${maxKey})`, {
@@ -263,12 +282,17 @@ export class EntityService<T extends IEntity> {
   }
 
   whereCompare(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) {
-    const { op, value } = filterConfigItem;
+    const { op, value, expressionRef } = filterConfigItem;
 
     if (Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected scalar value for ${column.name}.`);
     }
     const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
+
+    if (expressionRef) {
+      return queryBuilder.andWhere(`${columnSelect} ${op} ${expressionRef}`);
+    }
+
     return queryBuilder.andWhere(`${columnSelect} ${op} :${column.name}`, {
       [column.name]: formatValue(value, column),
     });
@@ -277,7 +301,7 @@ export class EntityService<T extends IEntity> {
   whereNull(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) {
     const { op } = filterConfigItem;
     const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
-    const nullOrNot = op === 'null' ? 'NULL' : 'NOT NULL'
+    const nullOrNot = op === 'null' ? 'NULL' : 'NOT NULL';
     return queryBuilder.andWhere(`${columnSelect} IS ${nullOrNot}`);
   }
 

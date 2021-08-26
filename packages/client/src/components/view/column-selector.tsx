@@ -26,7 +26,7 @@ function reorder<T>(list: T[], startIndex: number, endIndex: number) {
   const [removed] = result.splice(startIndex, 1);
   result.splice(endIndex, 0, removed);
   return result;
-};
+}
 
 const reorderColumnMap = (columnMap: Record<string, ColumnInfo[]>, dropResult: DropResult) => {
   const { source, destination } = dropResult;
@@ -135,7 +135,7 @@ export type ColumnSelectorProps = {
   columns: ColumnInfo[];
   onVisibleColumnsChange: (columns: ColumnInfo[]) => void;
   visibleColumns: ColumnInfo[];
-}
+};
 
 export function ColumnSelector(props: ColumnSelectorProps) {
   const classes = useStyles();
@@ -264,4 +264,4 @@ export function ColumnSelector(props: ColumnSelectorProps) {
       </Menu>
     </>
   );
-};
+}

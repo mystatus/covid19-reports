@@ -1,3 +1,4 @@
+import moment from 'moment';
 import {
   getFullyQualifiedColumnName,
   QueryOp,
@@ -6,7 +7,6 @@ import {
   FilterConfig,
   ColumnType,
 } from '@covid19-reports/shared';
-import moment from 'moment';
 
 export type QueryFieldEnumItem = {
   label: string;
@@ -27,7 +27,13 @@ export type QueryRow = {
   op: QueryOp;
   value: QueryValueType;
   expression: string;
+  expressionRef?: string;
   expressionEnabled: boolean;
+};
+
+export type ExpressionReference = {
+  displayName: string;
+  reference: string;
 };
 
 export const queryDateFormat = 'YYYY-MM-DD';
@@ -142,13 +148,11 @@ export function queryRowsToFilterConfig(queryRows: QueryRow[]): FilterConfig {
       value = listValues;
     }
 
-    const columnName = row.field.table
-      ? `${row.field.table}.${row.field.name}`
-      : row.field.name;
-
+    const columnName = getFullyQualifiedColumnName(row.field);
     config[columnName] = {
       op: row.op,
       expression: row.expression ?? '',
+      expressionRef: row.expressionRef,
       expressionEnabled: row.expressionEnabled ?? false,
       value,
     };
@@ -167,48 +171,6 @@ export function filterConfigToQueryRows(filterConfig: FilterConfig, fields: Quer
       ...filterConfig[getFullyQualifiedColumnName(field)],
       field,
     }));
-}
-
-export function isValidMathExpression(expression: string) {
-  const regex = /^([-+/*]\d+(\.\d+)?)*/;
-  return regex.test(expression);
-}
-
-export function evalMathExpression(expression: string) {
-  if (!isValidMathExpression(expression)) {
-    return {
-      isValid: false,
-      value: NaN,
-    };
-  }
-
-  let isValid: boolean;
-  let value: number;
-  try {
-    // eslint-disable-next-line no-eval
-    value = eval(expression);
-    isValid = true;
-  } catch (err) {
-    value = NaN;
-    isValid = false;
-  }
-
-  return { isValid, value };
-}
-
-export function evalDateExpression(expression: string) {
-  let isValid: boolean;
-  let value: string;
-  try {
-    const jsonValue = JSON.parse(expression);
-    value = moment().startOf('day').add(jsonValue).toISOString();
-    isValid = true;
-  } catch (e) {
-    value = '';
-    isValid = false;
-  }
-
-  return { isValid, value };
 }
 
 export function getExpressionHelperText(row: QueryRow, isExpressionValid: boolean) {

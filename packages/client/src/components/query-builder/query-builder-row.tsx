@@ -14,6 +14,7 @@ import {
   getFieldDefaultQueryValue,
   getFieldQueryOpDesc,
   isArrayOp,
+  ExpressionReference,
   QueryField,
   QueryRow,
 } from '../../utility/query-builder-utils';
@@ -27,10 +28,11 @@ export type QueryBuilderRowProps = {
   onChange: (row: QueryRow) => void;
   onRemoveClick: (row: QueryRow) => void;
   row: QueryRow;
+  expressionRefsByType?: Map<QueryValueType, ExpressionReference[]>;
 };
 
 export const QueryBuilderRow = (props: QueryBuilderRowProps) => {
-  const { availableFields, onChange, onRemoveClick, row } = props;
+  const { availableFields, onChange, onRemoveClick, row, expressionRefsByType } = props;
 
   const classes = useStyles();
   const ops = getFieldQueryOpDesc(row.field);
@@ -97,7 +99,7 @@ export const QueryBuilderRow = (props: QueryBuilderRowProps) => {
       )}
 
       <Grid item>
-        <QueryBuilderValueEditor onChange={onChange} row={row} />
+        <QueryBuilderValueEditor onChange={onChange} row={row} expressionRefsByType={expressionRefsByType} />
       </Grid>
 
       <IconButton

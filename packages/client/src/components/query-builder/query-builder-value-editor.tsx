@@ -18,32 +18,37 @@ import {
   MuiPickersUtilsProvider,
 } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
+import _ from 'lodash';
 import {
+  getFullyQualifiedColumnDisplayName,
+  validateMathematicExpression,
+  validateTimeExpression,
   ColumnType,
   QueryValueScalarType,
   QueryValueType,
 } from '@covid19-reports/shared';
-import _ from 'lodash';
 import useStyles from './query-builder.styles';
 import {
-  evalDateExpression,
-  evalMathExpression,
   getExpressionHelperText,
   getFieldDefaultQueryValue,
   queryDateFormat,
+  ExpressionReference,
   QueryRow,
 } from '../../utility/query-builder-utils';
 
-const expressionFieldPlaceholder = 'Expression';
-const expressionCheckboxTooltip = 'Use Expression';
+const expressionFieldPlaceholder = '0';
+const expressionCheckboxTooltip = 'Use Relative Value';
+const relativeTimeExpressionDefault = ['Today', ''];
+const relativeTimeExpressionTooltip = '+/- Days';
 
 export type QueryBuilderValueEditorProps = {
   onChange: (row: QueryRow) => void;
   row: QueryRow;
+  expressionRefsByType?: Map<QueryValueType, ExpressionReference[]>;
 };
 
 export const QueryBuilderValueEditor = (props: QueryBuilderValueEditorProps) => {
-  const { row } = props;
+  const { row, expressionRefsByType } = props;
 
   let editor: React.ReactElement<QueryBuilderValueEditorProps>;
 
@@ -53,10 +58,10 @@ export const QueryBuilderValueEditor = (props: QueryBuilderValueEditorProps) => 
 
   switch (row.field.type) {
     case ColumnType.Date:
-      editor = <QueryBuilderDateTimeEditor hasTime={false} {...props} />;
+      editor = <QueryBuilderDateTimeEditor expressionReferences={expressionRefsByType?.get(ColumnType.Date)} hasTime={false} {...props} />;
       break;
     case ColumnType.DateTime:
-      editor = <QueryBuilderDateTimeEditor hasTime {...props} />;
+      editor = <QueryBuilderDateTimeEditor expressionReferences={expressionRefsByType?.get(ColumnType.DateTime)} hasTime {...props} />;
       break;
     case ColumnType.Boolean:
       editor = <QueryBuilderBooleanEditor {...props} />;
@@ -79,7 +84,7 @@ const QueryBuilderStringEditor = ({ onChange, row }: QueryBuilderValueEditorProp
   const classes = useStyles();
 
   const isExpressionValid = useMemo(() => {
-    const { isValid } = evalDateExpression(row.expression);
+    const { isValid } = validateTimeExpression(row.expression);
     return isValid;
   }, [row.expression]);
 
@@ -101,7 +106,7 @@ const QueryBuilderStringEditor = ({ onChange, row }: QueryBuilderValueEditorProp
   };
 
   const handleExpressionChange = (expression: string) => {
-    const { value } = evalMathExpression(expression);
+    const { value } = validateMathematicExpression(expression);
 
     onChange({
       ...row,
@@ -111,7 +116,7 @@ const QueryBuilderStringEditor = ({ onChange, row }: QueryBuilderValueEditorProp
   };
 
   const handleUseExpressionChange = (checked: boolean) => {
-    const { value } = evalMathExpression(row.expression);
+    const { value } = validateMathematicExpression(row.expression);
 
     onChange({
       ...row,
@@ -167,13 +172,14 @@ const QueryBuilderBooleanEditor = ({ onChange, row }: QueryBuilderValueEditorPro
 
 type QueryBuilderDateTimeEditorProps = QueryBuilderValueEditorProps & {
   hasTime: boolean;
+  expressionReferences?: ExpressionReference[];
 };
 
-const QueryBuilderDateTimeEditor = ({ hasTime, onChange, row }: QueryBuilderDateTimeEditorProps) => {
+const QueryBuilderDateTimeEditor = ({ expressionReferences, hasTime, onChange, row }: QueryBuilderDateTimeEditorProps) => {
   const classes = useStyles();
 
   const isExpressionValid = useMemo(() => {
-    const { isValid } = evalDateExpression(row.expression);
+    const { isValid } = validateTimeExpression(row.expression);
     return isValid;
   }, [row.expression]);
 
@@ -215,58 +221,99 @@ const QueryBuilderDateTimeEditor = ({ hasTime, onChange, row }: QueryBuilderDate
   };
 
   const handleExpressionChange = (expression: string) => {
-    const { value } = evalDateExpression(expression);
-
     onChange({
       ...row,
-      value,
       expression,
     });
   };
 
-  const expressionField = () => {
-    return (
-      <Tooltip
-        title={(
-          <span className={classes.tooltipMultiline}>
-            {'e.g. { "days": -1, "hours" : 12, "mins": 15 } \nNote: format is relative to "today" at 00:00 hours'}
-          </span>
-        )}
-      >
-        <TextField
-          className={classes.textField}
-          value={row.expression}
-          onChange={event => handleExpressionChange(event.target.value)}
-          error={!isExpressionValid}
-          helperText={getExpressionHelperText(row, isExpressionValid)}
-          placeholder={expressionFieldPlaceholder}
-        />
-      </Tooltip>
-    );
-  };
-
-  const handleUseExpressionChange = (checked: boolean) => {
-    const { value } = evalDateExpression(row.expression);
-
+  const handleExpressionRefChange = (reference: string) => {
     onChange({
       ...row,
-      value,
-      expressionEnabled: checked,
+      expressionRef: reference,
     });
   };
 
+  const handleUseExpressionChange = (checked: boolean) => {
+    onChange({
+      ...row,
+      expressionEnabled: checked,
+      expressionRef: '',
+    });
+  };
+
+  const expressionOperandField = () => {
+    return (
+      <div>
+        <Select
+          native
+          autoFocus
+          value={row.expressionRef}
+          onChange={event => handleExpressionRefChange(event.target.value as string)}
+        >
+          {
+            expressionReferences?.map((ref: ExpressionReference) => {
+              if (getFullyQualifiedColumnDisplayName(row.field) !== ref.displayName) {
+                return (
+                  <option key={ref.displayName} value={ref.reference}>
+                    { ref.displayName }
+                  </option>
+                );
+              }
+              return '';
+            })
+          }
+          <option key={relativeTimeExpressionDefault[0]} value={relativeTimeExpressionDefault[1]}>
+            {relativeTimeExpressionDefault[0]}
+          </option>
+        </Select>
+      </div>
+    );
+  };
+
+  const expressionField = () => {
+    return (
+      <TextField
+        type="number"
+        className={classes.textField}
+        value={row.expression}
+        onChange={event => handleExpressionChange(event.target.value)}
+        error={!isExpressionValid}
+        helperText={relativeTimeExpressionTooltip}
+        placeholder={expressionFieldPlaceholder}
+      />
+    );
+  };
+
   return (
-    <div>
-      {row.expressionEnabled ? expressionField() : dateField()}
-      {row.op !== 'between' && (
-        <Tooltip title={expressionCheckboxTooltip}>
-          <Checkbox
-            checked={row.expressionEnabled}
-            onChange={event => handleUseExpressionChange(event.target.checked)}
-          />
-        </Tooltip>
+    <>
+      {row.expressionEnabled ? (
+        <Grid container spacing={2}>
+          <Grid item>
+            {expressionOperandField()}
+          </Grid>
+          <Grid item>
+            {expressionField()}
+            <Tooltip title={expressionCheckboxTooltip}>
+              <Checkbox
+                checked={row.expressionEnabled}
+                onChange={event => handleUseExpressionChange(event.target.checked)}
+              />
+            </Tooltip>
+          </Grid>
+        </Grid>
+      ) : (
+        <>
+          {dateField()}
+          <Tooltip title={expressionCheckboxTooltip}>
+            <Checkbox
+              checked={row.expressionEnabled}
+              onChange={event => handleUseExpressionChange(event.target.checked)}
+            />
+          </Tooltip>
+        </>
       )}
-    </div>
+    </>
   );
 };
 

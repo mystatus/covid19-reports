@@ -9,6 +9,7 @@ export type FilterConfigItem = {
   op: QueryOp;
   value: QueryValueType;
   expression: string;
+  expressionRef?: string;
   expressionEnabled: boolean;
 };
 

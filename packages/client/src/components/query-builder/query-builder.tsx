@@ -8,12 +8,13 @@ import SaveIcon from '@material-ui/icons/Save';
 import FileCopyIcon from '@material-ui/icons/FileCopy';
 import React, { useEffect } from 'react';
 import DeleteIcon from '@material-ui/icons/Delete';
-import { getFullyQualifiedColumnName, QueryOp } from '@covid19-reports/shared';
+import { getFullyQualifiedColumnName, QueryOp, QueryValueType } from '@covid19-reports/shared';
 import useStyles from './query-builder.styles';
 import {
   getFieldDefaultQueryOp,
   getFieldDefaultQueryValueForOp,
   opRequiresValue,
+  ExpressionReference,
   QueryField,
   QueryRow,
 } from '../../utility/query-builder-utils';
@@ -22,6 +23,7 @@ import { QueryBuilderRow } from './query-builder-row';
 export interface QueryBuilderProps {
   queryFields: QueryField[];
   queryRows: QueryRow[];
+  expressionRefsByType?: Map<QueryValueType, ExpressionReference[]>;
   onChangeQueryRows: (queryRows: QueryRow[]) => void;
   onSaveClick: (queryRows: QueryRow[]) => void;
   onSaveAsClick: (queryRows: QueryRow[]) => void;
@@ -40,6 +42,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
     onDeleteClick,
     isSaved,
     hasChanges,
+    expressionRefsByType,
   } = props;
 
   const classes = useStyles();
@@ -64,6 +67,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
         value,
         expression: '',
         expressionEnabled: false,
+        expressionRef: '',
       },
     ]);
   };
@@ -74,6 +78,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
 
   const onRowChange = (rowIndex: number) => (row: QueryRow) => {
     const queryRowsNew = [...queryRows];
+
     queryRowsNew.splice(rowIndex, 1, row);
     onChangeQueryRows(queryRowsNew);
   };
@@ -104,6 +109,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
                 onChange={onRowChange(index)}
                 onRemoveClick={removeRow(index)}
                 row={row}
+                expressionRefsByType={expressionRefsByType}
               />
             </Grid>
           ))}
