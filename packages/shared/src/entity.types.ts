@@ -23,9 +23,6 @@ export const friendlyColumnValue = <T>(entity: T & Record<string, unknown>, colu
   if (value == null) {
     return '';
   }
-  // if (column.name === 'unit') {
-  //   return unitNameMap[value as string];
-  // }
   switch (column.type) {
     case ColumnType.Date:
       return new Date(value as string).toLocaleDateString();
