@@ -1,5 +1,6 @@
 import React, {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -7,19 +8,19 @@ import React, {
 import {
   Box,
   Button,
-  Checkbox,
-  FormControlLabel,
   IconButton,
   Menu,
   MenuItem,
+  Paper,
   Tooltip,
 } from '@material-ui/core';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
-import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import SaveIcon from '@material-ui/icons/Save';
+import CloseIcon from '@material-ui/icons/Close';
 import FileCopyIcon from '@material-ui/icons/FileCopy';
 import DeleteIcon from '@material-ui/icons/Delete';
 import deepEquals from 'fast-deep-equal';
+
 import {
   ColumnInfo,
   ColumnsConfig,
@@ -41,9 +42,10 @@ import { useAppDispatch } from '../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../hooks/use-app-selector';
 import { SavedLayoutClient } from '../../client/saved-layout.client';
 import { SaveNewLayoutDialog } from '../pages/roster-page/save-new-layout-dialog';
+import { useSticky } from '../../hooks/use-sticky';
+import ColumnSelector from './column-selector';
 
 export type LayoutConfigParams = SortedQuery & {
-  // actions: ActionInfo[];
   columns: ColumnInfo[];
   entityType: EntityType;
   maxTableColumns?: number;
@@ -89,6 +91,12 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
   const [selectLayoutMenuOpen, setSelectLayoutMenuOpen] = useState(false);
   const [saveNewLayoutDialogOpen, setSaveNewLayoutDialogOpen] = useState(false);
   const selectLayoutButtonRef = useRef<HTMLButtonElement>(null);
+  const [stickyRef, shouldBeSticky] = useSticky<HTMLDivElement>(-70, 40);
+  const [noticeClosed, setNoticeClosed] = useState(false);
+
+  useEffect(() => {
+    setNoticeClosed(false);
+  }, [selectedLayout]);
 
   const selectLayout = useCallback((layoutId: LayoutId) => {
     setSelectLayoutMenuOpen(false);
@@ -140,6 +148,14 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
       && selectedLayout.name === currentLayout.name);
   }, [selectedLayout, currentLayout]);
 
+  const handleUndoChanges = useCallback(() => {
+    onChange(selectedLayout);
+  }, [onChange, selectedLayout]);
+
+  const handleCloseNotice = useCallback(() => {
+    setNoticeClosed(true);
+  }, [setNoticeClosed]);
+
   const handleSaveNewLayoutConfirm = useCallback(async (name: string) => {
     try {
       const { actions, columns } = currentLayout;
@@ -186,8 +202,10 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   ), [selectLayout, setSaveNewLayoutDialogOpen, handleLayoutDeleteClick]);
 
+  const isSticky = shouldBeSticky && !noticeClosed;
+
   return (
-    <Box display="flex">
+    <Box display="flex" alignItems="center">
       {(savedLayouts.length > 1) && (
         <Button
           aria-label="Select Layout"
@@ -204,16 +222,34 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
       )}
 
       {layoutHasChanges && (
-        <Button
-          aria-label="Save"
-          className={classes.button}
-          onClick={handleLayoutSaveClick}
-          size="small"
-          startIcon={<SaveIcon />}
-          variant="outlined"
-        >
-          {savedLayouts.length > 1 ? 'Save' : 'Save Layout'}
-        </Button>
+        <div ref={stickyRef} style={{ position: 'relative' }}>
+          <Paper elevation={isSticky ? 6 : 0} className={isSticky ? classes.saveNoticeSticky : classes.saveNoticeStatic}>
+            <React.Fragment>
+              <Button
+                aria-label="Save"
+                className={classes.saveButton}
+                onClick={handleLayoutSaveClick}
+                size="small"
+                startIcon={<SaveIcon />}
+                variant="outlined"
+              >
+                {savedLayouts.length > 1 ? 'Save' : 'Save Layout'}
+              </Button>
+
+              {isSticky && 'Changes were made to this layout.'}
+
+              <Button size="small" className={classes.undoButton} onClick={handleUndoChanges}>
+                UNDO
+              </Button>
+
+              {isSticky && (
+                <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseNotice}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              )}
+            </React.Fragment>
+          </Paper>
+        </div>
       )}
 
       <Menu
@@ -265,8 +301,6 @@ export default function ViewLayout<E extends EntityType>({
   const dispatch = useAppDispatch();
   const { id: orgId } = useAppSelector(UserSelector.org)!;
   const [columnInfos, setColumnInfos] = useState<ColumnInfo[]>([]);
-  const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
-  const visibleColumnsButtonRef = useRef<HTMLSpanElement>(null);
   const [sortedQuery, setSortedQuery] = usePersistedState<SortedQuery>(`${name}Sort`);
   const [currentLayout, setCurrentLayout] = usePersistedState<SavedLayoutSerialized>(`${entityType}CurrentLayout`, makeDefaultLayout(entityType, columnInfos, maxTableColumns));
   const [selectedLayout, setSelectedLayout] = useState<SavedLayoutSerialized>(makeDefaultLayout(entityType, columnInfos, maxTableColumns));
@@ -371,48 +405,11 @@ export default function ViewLayout<E extends EntityType>({
             selectedLayout={selectedLayout}
           />
 
-          <Button
-            aria-label="Visible columns"
-            className={classes.tableHeaderButton}
-            onClick={() => setVisibleColumnsMenuOpen(!visibleColumnsMenuOpen)}
-            size="small"
-            startIcon={<ViewWeekIcon />}
-            variant="outlined"
-          >
-            <span ref={visibleColumnsButtonRef}>
-              Columns
-            </span>
-          </Button>
-
-          <Menu
-            id="layout-visible-columns-menu"
-            anchorEl={visibleColumnsButtonRef.current}
-            keepMounted
-            open={Boolean(visibleColumnsMenuOpen)}
-            onClose={() => setVisibleColumnsMenuOpen(false)}
-          >
-            {columnInfos.map(column => (
-              <MenuItem key={column.name} className={classes.columnItem}>
-                <FormControlLabel
-                  control={(
-                    <Checkbox
-                      color="primary"
-                      checked={visibleColumns.some(col => col.name === column.name)}
-                      onChange={event => {
-                        const { checked } = event.target;
-                        if (checked) {
-                          setVisibleColumns(columnInfos.filter(col => col.name === column.name || visibleColumns.some(({ name: n }) => n === col.name)));
-                        } else {
-                          setVisibleColumns([...visibleColumns.filter(col => col.name !== column.name)]);
-                        }
-                      }}
-                    />
-                  )}
-                  label={column.displayName}
-                />
-              </MenuItem>
-            ))}
-          </Menu>
+          <ColumnSelector
+            columnInfos={columnInfos}
+            setVisibleColumns={setVisibleColumns}
+            visibleColumns={visibleColumns}
+          />
         </Box>
       ))}
     </>

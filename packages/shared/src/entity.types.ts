@@ -79,4 +79,3 @@ export enum EntityType {
   Observation = 'Observation',
   RosterEntry = 'RosterEntry',
 }
-
