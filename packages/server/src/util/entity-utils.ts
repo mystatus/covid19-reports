@@ -276,10 +276,10 @@ export class EntityController<T = any> {
     this.registerEntityRoutes = this.registerEntityRoutes.bind(this);
   }
 
-  async getAllowedColumns(req: ApiRequest<AllowedColumnsParam>, res: Response<ColumnInfo[]>) {
+ getAllowedColumns = async (req: ApiRequest<AllowedColumnsParam>, res: Response<ColumnInfo[]>) => {
     const columns = this.service.filterAllowedColumns(await this.entityConstructor.getColumns(req.appOrg!, req.params.version), req.appUserRole!.role);
     res.json(columns);
-  }
+  };
 
   async getEntities(req: ApiRequest<OrgParam, SearchBody | null, PaginationParams>, res: Response<Paginated<T>>) {
     res.json(await this.service.search(req.query, req.appOrg!, req.appUserRole!, req.body ?? undefined));
