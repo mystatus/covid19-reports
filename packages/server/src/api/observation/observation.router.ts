@@ -23,7 +23,6 @@ controller.registerEntityRoutes(
   {
     hasVersionedColumns: true,
   },
-  // requireRolePermission(role => role.canViewObservation),
 );
 
 export default router;
