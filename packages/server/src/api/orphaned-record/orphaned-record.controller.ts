@@ -225,9 +225,9 @@ class OrphanedRecordController {
     orphanedRecordAction.user = req.appUser;
 
     if (timeToLiveMs) {
-      const date = new Date(Date.now() + timeToLiveMs);
-      date.setTime(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
-      orphanedRecordAction.expiresOn = date;
+      const localDate = new Date(Date.now() + timeToLiveMs);
+      const zuluDate = new Date(localDate.toISOString());
+      orphanedRecordAction.expiresOn = new Date(zuluDate);
     }
 
     await orphanedRecordAction.save();
