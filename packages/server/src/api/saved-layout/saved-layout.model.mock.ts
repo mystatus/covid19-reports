@@ -8,7 +8,8 @@ export function mockSavedLayout(org: Org, customData?: Partial<SavedLayout>) {
     org,
     name: uniqueString(),
     entityType: EntityType.RosterEntry,
-    config: {},
+    columns: {},
+    actions: {},
     ...customData,
   });
 }

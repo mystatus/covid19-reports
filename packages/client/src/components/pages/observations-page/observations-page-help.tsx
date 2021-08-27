@@ -5,7 +5,7 @@ export const ObservationsPageHelp = () => {
   return (
     <PageHelp
       description={`
-        Observations rock.
+        Observations are simply the list of reports submitted by individuals on your Roster.
       `}
       bullets={[
         'Identify and resolve misplaced observations',
