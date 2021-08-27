@@ -80,14 +80,3 @@ export enum EntityType {
   RosterEntry = 'RosterEntry',
 }
 
-
-// type Boxed<Mapping> = { [K in keyof Mapping]: { key: K; value: Mapping[K] } }[keyof Mapping];
-
-// function paired<Mapping>(key: keyof Mapping, value: Mapping[keyof Mapping]) {
-//   return { key, value } as Boxed<Mapping>;
-// }
-
-// export type ColumnInfoWithValue<T extends ColumnInfo> = ColumnInfo & {
-//   value: ColumnTypeMapping[T['type']];
-// };
-
