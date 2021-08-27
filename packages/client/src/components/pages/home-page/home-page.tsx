@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { 
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import {
   Box,
   Card,
@@ -29,14 +33,16 @@ import {
   ApiDashboard,
   ApiWorkspace,
 } from '../../../models/api-response';
+import { Modal } from '../../../actions/modal.actions';
 import { Workspace } from '../../../actions/workspace.actions';
+import { formatErrorMessage } from '../../../utility/errors';
 import { getDashboardUrl } from '../../../utility/url-utils';
 import { AccessRequestClient } from '../../../client/access-request.client';
 import { MusterClient } from '../../../client/muster.client';
-import { AppFrameActions } from '../../../slices/app-frame.slice';
 import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
-
+import { AppFrameActions } from '../../../slices/app-frame.slice';
+import { OrphanedRecordActions } from '../../../slices/orphaned-record.slice';
 
 const HomePageHelp = () => {
   const user = useAppSelector(state => state.user);
@@ -133,7 +139,19 @@ export const HomePage = () => {
       for (const workspace of workspaces) {
         await dispatch(Workspace.fetchDashboards(orgId, workspace.id));
       }
-
+      
+      try {
+        await dispatch(OrphanedRecordActions.fetchPage({
+          orgId,
+          query: {
+            page: '',
+            limit: '',
+            unit: undefined,
+          },
+        }));
+      } catch (error) {
+        void dispatch(Modal.alert('Get Orphaned Records', formatErrorMessage(error, 'Failed to get orphaned records')));
+      }
       dispatch(AppFrameActions.setPageLoading({ isLoading: false }));
     })();
   }, [dispatch, orgId, workspaces]);
