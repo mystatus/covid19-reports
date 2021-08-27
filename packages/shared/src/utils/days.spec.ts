@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import { binaryDaysToDateArray, DaysOfTheWeek, nextDay, daysToString, dayIsIn } from './days';
 
 describe('days', () => {
@@ -25,11 +25,11 @@ describe('days', () => {
       expect(daysToString(DaysOfTheWeek.Saturday)).to.eql('Sat');
     });
     it('expect to return Every day', () => {
-      expect(daysToString(DaysOfTheWeek.Monday | DaysOfTheWeek.Sunday | DaysOfTheWeek.Tuesday | DaysOfTheWeek.Wednesday 
+      expect(daysToString(DaysOfTheWeek.Monday | DaysOfTheWeek.Sunday | DaysOfTheWeek.Tuesday | DaysOfTheWeek.Wednesday
       | DaysOfTheWeek.Thursday | DaysOfTheWeek.Friday | DaysOfTheWeek.Saturday)).to.eql('Every day');
     });
     it('expect to return Every weekday', () => {
-      expect(daysToString(DaysOfTheWeek.Monday | DaysOfTheWeek.Tuesday | DaysOfTheWeek.Wednesday 
+      expect(daysToString(DaysOfTheWeek.Monday | DaysOfTheWeek.Tuesday | DaysOfTheWeek.Wednesday
       | DaysOfTheWeek.Thursday | DaysOfTheWeek.Friday)).to.eql('Every weekday');
     });
   });
@@ -67,7 +67,7 @@ describe('days', () => {
   });
   describe('dayIsIn()', () => {
     it('expect true if Saturday is in the weekend', () => {
-      expect(dayIsIn(DaysOfTheWeek.Saturday, DaysOfTheWeek.Saturday | DaysOfTheWeek.Sunday)).to.eql(true)
+      expect(dayIsIn(DaysOfTheWeek.Saturday, DaysOfTheWeek.Saturday | DaysOfTheWeek.Sunday)).to.eql(true);
     });
   });
   describe('nextDay()', () => {
