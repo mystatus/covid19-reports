@@ -199,7 +199,7 @@ export class EntityService<T extends IEntity> {
   };
 
   whereIn(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, searchBody: SearchBodyEntry) {
-    const { value } = searchBody;
+    const { op, value } = searchBody;
     if (!Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected array value for ${column.name}.`);
     }
