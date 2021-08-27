@@ -198,10 +198,7 @@ export class EntityService<T extends IEntity> {
     '<': this.whereCompare,
   };
 
-  whereIn(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, {
-    op,
-    value,
-  }: SearchBodyEntry) {
+  whereIn(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, searchBodyEntry: SearchBodyEntry) {
     if (!Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected array value for ${column.name}.`);
     }
