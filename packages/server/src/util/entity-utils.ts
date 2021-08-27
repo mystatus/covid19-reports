@@ -198,7 +198,8 @@ export class EntityService<T extends IEntity> {
     '<': this.whereCompare,
   };
 
-  whereIn(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, searchBodyEntry: SearchBodyEntry) {
+  whereIn(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, searchBody: SearchBodyEntry) {
+    const { value } = searchBody;
     if (!Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected array value for ${column.name}.`);
     }
@@ -208,9 +209,8 @@ export class EntityService<T extends IEntity> {
     });
   }
 
-  whereBetween(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, {
-    value,
-  }: SearchBodyEntry) {
+  whereBetween(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, searchBody: SearchBodyEntry) {
+    const { value } = searchBody;
     const maxKey = `${column.name}Max`;
     const minKey = `${column.name}Min`;
     if (!Array.isArray(value)) {
@@ -223,13 +223,11 @@ export class EntityService<T extends IEntity> {
     });
   }
 
-  whereLike(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, {
-    op,
-    value,
-  }: SearchBodyEntry) {
+  whereLike(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, searchBody: SearchBodyEntry) {
     if (column.type !== ColumnType.String) {
       throw new BadRequestError('Malformed search query. Expected string value.');
     }
+    const { op, value } = searchBody;
     const prefix = op !== 'startsWith' ? '%' : '';
     const suffix = op !== 'endsWith' ? '%' : '';
     const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
@@ -238,10 +236,8 @@ export class EntityService<T extends IEntity> {
     });
   }
 
-  whereCompare(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, {
-    op,
-    value,
-  }: SearchBodyEntry) {
+  whereCompare(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, searchBody: SearchBodyEntry) {
+    const { op, value } = searchBody;
     if (Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected scalar value for ${column.name}.`);
     }
