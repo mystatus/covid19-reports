@@ -255,81 +255,11 @@ class MusterController {
 
     const rowLimit = parseInt(req.query.limit);
     const pageNumber = parseInt(req.query.page);
-    // When unit id is missing, then data for all units are requested
+    // When unit id is missing, then data for all units are requested in getRosterMusterComplianceCalcByDateRange()
     const unitId = (req.query.unitId != null) ? parseInt(req.query.unitId) : undefined;
     const orgId = req.appOrg!.id;
 
-
-    // get units for the org
-    const orgUnits = await Unit.find({
-      where: { org: orgId },
-    });
-
-    // get unit information for the org
-    const unitIds: number[] = [];
-    const unitNames: string[] = [];
-    const configsByUnitId: Map<number, MusterConfiguration[]> = new Map<number, MusterConfiguration[]>();
-
-    orgUnits.forEach(unit => {
-      if (!unitId || unitId === unit.id) {
-        unitIds.push(unit.id);
-        unitNames.push(unit.name);
-        configsByUnitId.set(unit.id, unit.musterConfiguration);
-      }
-    });
-
-    // get the roster entries based on the unit IDs for the org
-    const rosterEntries = await Roster.find({
-      relations: ['unit'],
-      where: { unit: In(unitIds) },
-    });
-
-    // get the edipis for all roster entries
-    const rosterEdipis: string[] = rosterEntries.map(rosterEntry => rosterEntry.edipi);
-
-    // get observations for all users on roster for this org
-    // we use query builder here to get the data back in a flat manner
-    // rather than nested
-
-    // get edipi, timestamp and report schema id
-    type ObservationRaw = Pick<Observation, 'edipi' | 'timestamp'> & {
-      report_schema_id: ReportSchema['id'];
-    };
-    const observations = await Observation.createQueryBuilder('observation')
-      .select('observation.edipi, observation.timestamp, observation.report_schema_id')
-      .andWhere(`observation.timestamp between :fromDate and :toDate`, { fromDate, toDate })
-      .andWhere(`observation.edipi in (:...edipis)`, { edipis: rosterEdipis })
-      .andWhere(`observation.unit in (:...unitNames)`, { unitNames })
-      .andWhere(`observation.report_schema_org = :orgId`, { orgId })
-      .getRawMany<ObservationRaw>();
-
-    const observationsByEdipi = _.groupBy(observations, obs => obs.edipi);
-    const complianceRecords: MusterCompliance[] = rosterEntries.map(rosterEntry => {
-      const configs = configsByUnitId.get(rosterEntry.unit.id);
-      const totalMustersRequired = getUnitRequiredMusterCount(configs, fromDate, toDate);
-      const complianceRecord: MusterCompliance = {
-        edipi: rosterEntry.edipi,
-        firstName: rosterEntry.firstName,
-        lastName: rosterEntry.lastName,
-        unitId: rosterEntry.unit.id,
-        phone: rosterEntry.phoneNumber,
-        totalMusters: totalMustersRequired,
-        mustersReported: 0,
-        musterPercent: 100,
-      };
-
-      // get the compliant observation count for this current user/edipi
-      const userObservations = observationsByEdipi[rosterEntry.edipi];
-      complianceRecord.mustersReported = getCompliantUserObserverationCount(userObservations, configs);
-
-      // only perform percentage calculation if there are required musters,
-      // otherwise we default to 100% compliance.
-      if (complianceRecord.totalMusters > 0) {
-        complianceRecord.musterPercent = calcMusterPercent(complianceRecord.totalMusters, complianceRecord.mustersReported);
-      }
-      return complianceRecord;
-    });
-
+    const complianceRecords = await getRosterMusterComplianceRecordsByDateRange(orgId, unitId, fromDate, toDate);
     return res.json({
       rows: toRosterCompliancePageWithRowLimit(complianceRecords, pageNumber, rowLimit),
       totalRowsCount: complianceRecords.length,
@@ -490,5 +420,89 @@ async function getUsersOnRosterByDate(orgId: number, unitName: string, date: str
     users: [],
     musterConfig: [],
   };
+}
+
+/**
+ * Returns the compliance per individual for each member of the roster
+ * @param schemaOrgId the organization that the observation must belong under to be compliant
+ * @param units the units of the org to calculate the compliance for, these should all be from the same org.
+ * @param fromDate the start of the date range to calc compliance for.
+ * @param toDate the end of the date range to calc compliance for.
+ */
+export async function getRosterMusterComplianceRecordsByDateRange(
+  orgId: number,
+  unitId: number | undefined,
+  fromDate: moment.Moment,
+  toDate: moment.Moment,
+) {
+  // get units for the org
+  const orgUnits = await Unit.find({
+    where: { org: orgId },
+  });
+  const requestedUnits = orgUnits.filter(unit => !unitId || unitId === unit.id);
+
+  // get unit information/structures for queries and methods below
+  const unitIds: number[] = [];
+  const unitNames: string[] = [];
+  const configsByUnitId: Map<number, MusterConfiguration[]> = new Map<number, MusterConfiguration[]>();
+
+  requestedUnits.forEach(unit => {
+    unitIds.push(unit.id);
+    unitNames.push(unit.name);
+    configsByUnitId.set(unit.id, unit.musterConfiguration);
+  });
+
+  // get the roster entries based on the unit IDs for the org
+  const rosterEntries = await Roster.find({
+    relations: ['unit'],
+    where: { unit: In(unitIds) },
+  });
+
+  // get the edipis for all roster entries
+  const rosterEdipis: string[] = rosterEntries.map(rosterEntry => rosterEntry.edipi);
+
+  // get observations for all users on roster for this org
+  // we use query builder here to get the data back in a flat manner
+  // rather than nested
+
+  // get edipi, timestamp and report schema id
+  type ObservationRaw = Pick<Observation, 'edipi' | 'timestamp'> & {
+    report_schema_id: ReportSchema['id'];
+  };
+  const observations = await Observation.createQueryBuilder('observation')
+    .select('observation.edipi, observation.timestamp, observation.report_schema_id')
+    .andWhere(`observation.timestamp between :fromDate and :toDate`, { fromDate, toDate })
+    .andWhere(`observation.edipi in (:...edipis)`, { edipis: rosterEdipis })
+    .andWhere(`observation.unit in (:...unitNames)`, { unitNames })
+    .andWhere(`observation.report_schema_org = :orgId`, { orgId })
+    .getRawMany<ObservationRaw>();
+
+  const observationsByEdipi = _.groupBy(observations, obs => obs.edipi);
+  const complianceRecords: MusterCompliance[] = rosterEntries.map(rosterEntry => {
+    const configs = configsByUnitId.get(rosterEntry.unit.id);
+    const totalMustersRequired = getUnitRequiredMusterCount(configs, fromDate, toDate);
+    const complianceRecord: MusterCompliance = {
+      edipi: rosterEntry.edipi,
+      firstName: rosterEntry.firstName,
+      lastName: rosterEntry.lastName,
+      unitId: rosterEntry.unit.id,
+      phone: rosterEntry.phoneNumber,
+      totalMusters: totalMustersRequired,
+      mustersReported: 0,
+      musterPercent: 100,
+    };
+
+    // get the compliant observation count for this current user/edipi
+    const userObservations = observationsByEdipi[rosterEntry.edipi];
+    complianceRecord.mustersReported = getCompliantUserObserverationCount(userObservations, configs);
+
+    // only perform percentage calculation if there are required musters,
+    // otherwise we default to 100% compliance.
+    if (complianceRecord.totalMusters > 0) {
+      complianceRecord.musterPercent = calcMusterPercent(complianceRecord.totalMusters, complianceRecord.mustersReported);
+    }
+    return complianceRecord;
+  });
+  return complianceRecords;
 }
 export default new MusterController();

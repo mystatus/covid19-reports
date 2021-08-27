@@ -40,4 +40,11 @@ router.get(
   esController.exportMusterRosterToCsv,
 );
 
+router.get(
+  '/:orgId/muster/roster/sql',
+  requireOrgAccess,
+  requireRolePermission(role => role.canViewMuster),
+  sqlController.exportRosterMusterComplianceToCsv,
+);
+
 export default router;
