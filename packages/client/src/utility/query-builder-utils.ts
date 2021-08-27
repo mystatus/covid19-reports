@@ -3,17 +3,9 @@ import {
   QueryValueScalarType,
   QueryValueType,
   FilterConfig,
+  ColumnType,
 } from '@covid19-reports/shared';
 import moment from 'moment';
-
-export enum QueryFieldType {
-  String = 'string',
-  Boolean = 'boolean',
-  Date = 'date',
-  DateTime = 'datetime',
-  Number = 'number',
-  Enum = 'enum',
-}
 
 export type QueryFieldEnumItem = {
   label: string;
@@ -23,7 +15,7 @@ export type QueryFieldEnumItem = {
 export type QueryField = {
   displayName?: string;
   name: string;
-  type: QueryFieldType;
+  type: ColumnType;
   enumItems?: QueryFieldEnumItem[];
 };
 
@@ -43,13 +35,13 @@ export function isArrayOp(op: QueryOp) {
 
 export function getFieldDefaultQueryValue(field: QueryField): QueryValueScalarType {
   switch (field.type) {
-    case QueryFieldType.Enum:
+    case ColumnType.Enum:
       return field.enumItems![0].value;
-    case QueryFieldType.Boolean:
+    case ColumnType.Boolean:
       return false;
-    case QueryFieldType.Date:
+    case ColumnType.Date:
       return moment().format(queryDateFormat);
-    case QueryFieldType.DateTime:
+    case ColumnType.DateTime:
       return moment().toISOString();
     default:
       return '';
@@ -67,13 +59,13 @@ export type QueryOpsDesc = {
 
 export function getFieldQueryOpDesc(field: QueryField): QueryOpsDesc {
   switch (field.type) {
-    case QueryFieldType.Boolean:
-    case QueryFieldType.Enum:
+    case ColumnType.Boolean:
+    case ColumnType.Enum:
       return {
         '=': 'is',
         '<>': 'is not',
       };
-    case QueryFieldType.String:
+    case ColumnType.String:
       return {
         '=': 'is',
         in: 'in',
@@ -82,8 +74,8 @@ export function getFieldQueryOpDesc(field: QueryField): QueryOpsDesc {
         startsWith: 'starts with',
         endsWith: 'ends with',
       };
-    case QueryFieldType.Date:
-    case QueryFieldType.DateTime:
+    case ColumnType.Date:
+    case ColumnType.DateTime:
       return {
         '=': 'is',
         '<>': 'is not',
@@ -91,7 +83,7 @@ export function getFieldQueryOpDesc(field: QueryField): QueryOpsDesc {
         '<': 'before',
         between: 'between',
       };
-    case QueryFieldType.Number:
+    case ColumnType.Number:
       return {
         '=': 'is',
         '<>': 'is not',

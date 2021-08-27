@@ -158,6 +158,16 @@ export class SavedFilterNotFoundError extends RequestError {
 
 }
 
+export class SavedLayoutNotFoundError extends RequestError {
+
+  constructor(savedLayoutId: number, showErrorPage = false) {
+    const message = `Unable to locate saved layout with id: ${savedLayoutId}`;
+    super(message, 'NotFound', 404, showErrorPage);
+    Error.captureStackTrace(this, SavedLayoutNotFoundError);
+  }
+
+}
+
 export type RequestErrorType = (
   'BadRequest' |
   'Unauthorized' |

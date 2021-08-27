@@ -1,4 +1,4 @@
-import { RosterColumnType } from '@covid19-reports/shared';
+import { ColumnType } from '@covid19-reports/shared';
 import { uniqueString } from '../../util/test-utils/unique';
 import { Org } from '../org/org.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
@@ -14,7 +14,7 @@ export function mockCustomRosterColumn(org: Org, options?: {
     name,
     org,
     display: name,
-    type: RosterColumnType.String,
+    type: ColumnType.String,
     pii: true,
     phi: true,
     required: true,

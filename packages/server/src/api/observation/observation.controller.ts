@@ -11,8 +11,9 @@ import { timestampColumnTransformer } from '../../util/util';
 import { BadRequestError } from '../../util/error-types';
 import { assertRequestBody } from '../../util/api-utils';
 import { saveRosterPhoneNumber } from '../../util/roster-utils';
+import { EntityController } from '../../util/entity-utils';
 
-class ObservationController {
+class ObservationController extends EntityController<Observation> {
 
   async getAllObservations(req: Request, res: Response) {
     return res.json(await Observation.find());
@@ -80,4 +81,4 @@ function saveObservationWithReportSchema(req: ApiRequest<EdipiParam, Observation
   return manager.save(observation);
 }
 
-export default new ObservationController();
+export default new ObservationController(Observation);

@@ -1,11 +1,17 @@
 import { BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { startCase } from 'lodash';
+import { baseObservationColumns, ColumnInfo, ColumnType, CustomColumns } from '@covid19-reports/shared';
 import { ReportSchema } from '../report-schema/report-schema.model';
 import { timestampColumnTransformer } from '../../util/util';
+import { getColumnSelect, MakeEntity } from '../../util/entity-utils';
+import { Org } from '../org/org.model';
+import { UserRole } from '../user/user-role.model';
 
 /**
  * Observation are created when users self-report COVID-19 symptoms via https://mystatus.mil/
  * This data is then replicated from the original storage to this entity.
  */
+@MakeEntity()
 @Entity()
 @Unique(['id', 'documentId'])
 export class Observation extends BaseEntity {
@@ -37,5 +43,62 @@ export class Observation extends BaseEntity {
 
   @Column({ length: 100, nullable: true })
   reportingGroup?: string;
+
+
+  @Column('json', {
+    nullable: false,
+    default: '{}',
+  })
+  customColumns!: CustomColumns;
+
+
+  static getColumnSelect(column: ColumnInfo) {
+    return getColumnSelect(column, 'custom_columns', 'observation');
+  }
+
+  static async getColumns(org: Org, version?: string) {
+    const reportSchema = await ReportSchema.findOne({
+      where: {
+        org: org.id,
+        id: version,
+      },
+    });
+
+    if (!reportSchema) {
+      throw new Error(`Report Schema '${version}' not defined for org '${org.id}'`);
+    }
+
+    const customColumns: ColumnInfo[] = reportSchema.columns.map(column => ({
+      name: column.keyPath.join(''),
+      displayName: startCase(column.keyPath[column.keyPath.length - 1]),
+      type: ['long', 'float'].includes(column.type) ? ColumnType.Number : ColumnType.String,
+      pii: column.pii,
+      phi: column.phi,
+      custom: true,
+      required: false,
+      updatable: false,
+    }));
+
+    return [...baseObservationColumns, ...customColumns];
+  }
+
+  static async search(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
+    const queryBuilder = Observation.createQueryBuilder('observation').select([]);
+    queryBuilder.leftJoin('observation.reportSchema', 'rs');
+
+    // Always select the id column
+    queryBuilder.addSelect('observation.id', 'id');
+    queryBuilder.addSelect('rs.id', 'reportSchema');
+
+    // Add all columns that are allowed by the user's role
+    columns.forEach(column => {
+      queryBuilder.addSelect(Observation.getColumnSelect(column), column.name);
+    });
+
+    queryBuilder
+      .where('rs.org_id = :orgId', { orgId: org.id });
+
+    return queryBuilder;
+  }
 
 }

@@ -1,14 +1,13 @@
 import {
   AddCustomColumnBody,
   AddRosterEntryBody,
-  GetRosterQuery,
-  SearchRosterBody,
-  SearchRosterQuery,
+  ColumnInfo,
+  PaginationParams,
+  SearchBody,
   UpdateCustomColumnBody,
   UpdateRosterEntryBody,
 } from '@covid19-reports/shared';
 import {
-  ApiRosterColumnInfo,
   ApiRosterEntry,
   ApiRosterPaginated,
   ApiRosterUploadInfo,
@@ -19,23 +18,23 @@ const client = createApiClient('roster');
 
 export class RosterClient {
 
-  static getRosterColumnsInfo(orgId: number): Promise<ApiRosterColumnInfo[]> {
+  static getRosterColumnsInfo(orgId: number): Promise<ColumnInfo[]> {
     return client.get(`${orgId}/column`);
   }
 
-  static getAllowedRosterColumnsInfo(orgId: number): Promise<ApiRosterColumnInfo[]> {
+  static getAllowedRosterColumnsInfo(orgId: number): Promise<ColumnInfo[]> {
     return client.get(`${orgId}/allowed-column`);
   }
 
-  static addCustomColumn(orgId: number, body: AddCustomColumnBody): Promise<ApiRosterColumnInfo> {
+  static addCustomColumn(orgId: number, body: AddCustomColumnBody): Promise<ColumnInfo> {
     return client.post(`${orgId}/column`, body);
   }
 
-  static updateCustomColumn(orgId: number, columnName: string, body: UpdateCustomColumnBody): Promise<ApiRosterColumnInfo> {
+  static updateCustomColumn(orgId: number, columnName: string, body: UpdateCustomColumnBody): Promise<ColumnInfo> {
     return client.put(`${orgId}/column/${columnName}`, body);
   }
 
-  static deleteCustomColumn(orgId: number, columnName: string): Promise<ApiRosterColumnInfo> {
+  static deleteCustomColumn(orgId: number, columnName: string): Promise<ColumnInfo> {
     return client.delete(`${orgId}/column/${columnName}`);
   }
 
@@ -45,13 +44,13 @@ export class RosterClient {
     });
   }
 
-  static getRoster(orgId: number, query: GetRosterQuery): Promise<ApiRosterPaginated> {
+  static getRoster(orgId: number, query: PaginationParams): Promise<ApiRosterPaginated> {
     return client.get(`${orgId}`, {
       params: query,
     });
   }
 
-  static searchRoster(orgId: number, body: SearchRosterBody, query: SearchRosterQuery): Promise<ApiRosterPaginated> {
+  static searchRoster(orgId: number, body: SearchBody, query: PaginationParams): Promise<ApiRosterPaginated> {
     return client.post(`${orgId}/search`, body, {
       params: query,
     });

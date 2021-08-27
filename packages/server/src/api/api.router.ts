@@ -16,6 +16,7 @@ import exportRoutes from './export/export.router';
 import orphanedRecordRoutes from './orphaned-record/orphaned-record.router';
 import observationRoutes from './observation/observation.router';
 import savedFilterRoutes from './saved-filter/saved-filter.router';
+import savedLayoutRoutes from './saved-layout/saved-layout.router';
 import { User } from './user/user.model';
 import { Org } from './org/org.model';
 import { UserRole } from './user/user-role.model';
@@ -38,6 +39,7 @@ router.use('/reingest', reingestRoutes);
 router.use('/orphaned-record', orphanedRecordRoutes);
 router.use('/observation', observationRoutes);
 router.use('/saved-filter', savedFilterRoutes);
+router.use('/saved-layout', savedLayoutRoutes);
 
 export interface ApiRequest<ReqParams = object, ReqBody = object, ReqQuery = object, ResBody = object> extends Request<ReqParams, ResBody, ReqBody, ReqQuery> {
   appUser: User;
@@ -107,6 +109,10 @@ export type SavedFilterParam = {
   savedFilterId: number;
 };
 
+export type SavedLayoutParam = {
+  savedLayoutId: number;
+};
+
 export type OrgRoleParams = OrgParam & RoleParam;
 export type OrgReportParams = OrgParam & ReportParam;
 export type OrgEdipiParams = OrgParam & EdipiParam;
@@ -114,6 +120,7 @@ export type OrgRosterParams = OrgParam & RosterParam;
 export type OrgWorkspaceParams = OrgParam & WorkspaceParam;
 export type OrgUnitParams = OrgParam & UnitParam;
 export type OrgSavedFilterParams = OrgParam & SavedFilterParam;
+export type OrgSavedLayoutParams = OrgParam & SavedLayoutParam;
 export type OrgSettingParams = OrgParam & SettingParam;
 export type OrgColumnParams = OrgParam & ColumnParam;
 

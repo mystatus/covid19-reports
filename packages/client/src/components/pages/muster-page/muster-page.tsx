@@ -23,7 +23,7 @@ import React, {
 } from 'react';
 import _ from 'lodash';
 import moment from 'moment';
-import { RosterColumnType } from '@covid19-reports/shared';
+import { ColumnInfo, ColumnType } from '@covid19-reports/shared';
 import { downloadFile } from '../../../utility/download';
 import {
   getMaxPageIndex,
@@ -37,7 +37,6 @@ import { MusterPageHelp } from './muster-page-help';
 import useStyles from './muster-page.styles';
 import {
   ApiMusterRosterEntriesPaginated,
-  ApiRosterColumnInfo,
 } from '../../../models/api-response';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { UnitSelector } from '../../../selectors/unit.selector';
@@ -74,7 +73,7 @@ export const MusterPage = () => {
   const [rosterPage, setRosterPage] = useState(0);
   const [rosterRowsPerPage, setRosterRowsPerPage] = usePersistedState('musterRosterRowsPerPage', 10);
   const [exportLoading, setExportLoading] = useState(false);
-  const [rosterColumnInfos, setRosterColumnInfos] = useState<ApiRosterColumnInfo[]>([]);
+  const [rosterColumnInfos, setRosterColumnInfos] = useState<ColumnInfo[]>([]);
   const [rosterData, setRosterData] = useState<ApiMusterRosterEntriesPaginated>({
     rows: [],
     totalRowsCount: 0,
@@ -246,12 +245,12 @@ export const MusterPage = () => {
   };
 
   const getVisibleColumns = () => {
-    const customRosterColumnInfos: ApiRosterColumnInfo[] = [
+    const customRosterColumnInfos: ColumnInfo[] = [
       ...rosterColumnInfos,
       {
         name: 'unitId',
         displayName: 'Unit',
-        type: RosterColumnType.String,
+        type: ColumnType.String,
         pii: false,
         phi: false,
         custom: false,
@@ -262,7 +261,7 @@ export const MusterPage = () => {
       {
         name: 'musterPercent',
         displayName: 'Muster Rate',
-        type: RosterColumnType.String,
+        type: ColumnType.String,
         pii: false,
         phi: false,
         custom: false,
@@ -279,7 +278,7 @@ export const MusterPage = () => {
     filteredCustomRosterColumnInfos.push({
       name: 'phone',
       displayName: 'Phone',
-      type: RosterColumnType.String,
+      type: ColumnType.String,
       pii: true,
       phi: false,
       custom: true,

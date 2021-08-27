@@ -12,7 +12,7 @@ import _ from 'lodash';
 import {
   baseRosterColumns,
   CustomColumnConfig,
-  RosterColumnType,
+  ColumnType,
 } from '@covid19-reports/shared';
 import { Org } from '../org/org.model';
 
@@ -38,10 +38,10 @@ export class CustomRosterColumn extends BaseEntity {
 
   @Column({
     type: 'enum',
-    enum: RosterColumnType,
-    default: RosterColumnType.String,
+    enum: ColumnType,
+    default: ColumnType.String,
   })
-  type!: RosterColumnType;
+  type!: ColumnType;
 
   @Column({
     default: false,

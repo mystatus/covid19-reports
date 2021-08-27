@@ -2,20 +2,21 @@ import _ from 'lodash';
 import {
   Entity,
   EntityTarget,
+  SelectQueryBuilder,
   Unique,
 } from 'typeorm';
-import { snakeCase } from 'typeorm/util/StringUtils';
 import {
   baseRosterColumns,
-  RosterColumnInfo,
-  RosterColumnType,
+  ColumnInfo,
 } from '@covid19-reports/shared';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { RosterEntity } from './roster-entity';
 import { UserRole } from '../user/user-role.model';
+import { getColumnSelect, isColumnAllowed, MakeEntity } from '../../util/entity-utils';
 
+@MakeEntity()
 @Entity()
 @Unique(['edipi', 'unit'])
 export class Roster extends RosterEntity {
@@ -34,28 +35,14 @@ export class Roster extends RosterEntity {
     return entry;
   }
 
-  static getColumnSelect(column: RosterColumnInfo) {
-    // Make sure custom columns are converted to appropriate types
-    if (column.custom) {
-      switch (column.type) {
-        case RosterColumnType.Boolean:
-          return `(roster.custom_columns ->> '${column.name}')::BOOLEAN`;
-        case RosterColumnType.Number:
-          return `(roster.custom_columns ->> '${column.name}')::DOUBLE PRECISION`;
-        default:
-          return `roster.custom_columns ->> '${column.name}'`;
-      }
-    }
-    return `roster.${snakeCase(column.name)}`;
+  static getColumnSelect(column: ColumnInfo) {
+    return getColumnSelect(column, 'custom_columns', 'roster');
   }
 
-  static async queryAllowedRoster(org: Org, userRole: UserRole, columns?: RosterColumnInfo[]) {
+  static async search(org: Org, userRole: UserRole, columns: ColumnInfo[]): Promise<SelectQueryBuilder<Roster>> {
     //
     // Query the roster, returning only columns and rows that are allowed for the role of the requester.
     //
-    if (!columns) {
-      columns = await Roster.getAllowedColumns(org, userRole.role);
-    }
     const queryBuilder = Roster.createQueryBuilder('roster').select([]);
     queryBuilder.leftJoin('roster.unit', 'u');
     // Always select the id column
@@ -79,36 +66,27 @@ export class Roster extends RosterEntity {
     return queryBuilder;
   }
 
-  static async getAllowedColumns(org: Org, role: Role) {
-    const allColumns = await Roster.getColumns(org.id);
+  static filterAllowedColumns(columns: ColumnInfo[], role: Role) {
     const fineGrained = !(role.allowedRosterColumns.length === 1 && role.allowedRosterColumns[0] === '*');
-    return allColumns.filter(column => {
-      let allowed = true;
+    return columns.filter(column => {
       if (fineGrained && role.allowedRosterColumns.indexOf(column.name) < 0) {
-        allowed = false;
-      } else if (!role.canViewPII && column.pii) {
-        allowed = false;
-      } else if (!role.canViewPHI && column.phi) {
-        allowed = false;
+        return false;
       }
-      return allowed;
+      return isColumnAllowed(column, role);
     });
   }
 
-  static async getColumns(orgId: number) {
-    const customColumns = (await CustomRosterColumn.find({
+  static async getColumns(org: Org) {
+    const customColumns: ColumnInfo[] = (await CustomRosterColumn.find({
       where: {
-        org: orgId,
+        org: org.id,
       },
-    })).map(customColumn => {
-      const columnInfo: RosterColumnInfo = {
-        ...customColumn,
-        displayName: customColumn.display,
-        custom: true,
-        updatable: true,
-      };
-      return columnInfo;
-    });
+    })).map(customColumn => ({
+      ...customColumn,
+      displayName: customColumn.display,
+      custom: true,
+      updatable: true,
+    }));
     return [...baseRosterColumns, ...customColumns];
   }
 

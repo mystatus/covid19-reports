@@ -1,32 +1,28 @@
 import csv from 'csvtojson';
 import { Response } from 'express';
 import fs from 'fs';
-import moment from 'moment';
 import {
   getConnection,
   getManager,
   In,
-  OrderByCondition,
-  SelectQueryBuilder,
 } from 'typeorm';
 import {
   AddCustomColumnBody,
-  GetRosterQuery,
+  PaginationParams,
   Paginated,
   ReportDateQuery,
-  RosterColumnInfo,
-  RosterColumnInfoWithValue,
-  RosterColumnType,
-  RosterColumnValue,
+  ColumnInfo,
+  ColumnInfoWithValue,
+  ColumnType,
   RosterEntryData,
   RosterFileRow,
   RosterInfo,
-  SearchRosterBody,
+  SearchBody,
   edipiColumnDisplayName,
   unitColumnDisplayName,
   CustomColumnData,
-  FilterConfigItem,
 } from '@covid19-reports/shared';
+import { EntityService } from 'server/src/util/entity-utils';
 import {
   assertRequestBody,
   assertRequestParams,
@@ -54,9 +50,7 @@ import {
   OrgParam,
   OrgRosterParams,
 } from '../api.router';
-import { Org } from '../org/org.model';
 import { Unit } from '../unit/unit.model';
-import { UserRole } from '../user/user-role.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import {
   ChangeType,
@@ -118,7 +112,7 @@ class RosterController {
   }
 
   async getRosterTemplate(req: ApiRequest, res: Response) {
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
+    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!), req.appUserRole!.role);
     const headers: string[] = ['Unit'];
     const example: string[] = ['unit1'];
     columns.forEach(column => {
@@ -128,19 +122,19 @@ class RosterController {
       } else {
         headers.push(column.displayName.includes('"') ? `"${column.displayName.replaceAll('"', '\\"')}"` : column.displayName);
         switch (column.type) {
-          case RosterColumnType.Number:
+          case ColumnType.Number:
             example.push('12345');
             break;
-          case RosterColumnType.Boolean:
+          case ColumnType.Boolean:
             example.push('false');
             break;
-          case RosterColumnType.String:
+          case ColumnType.String:
             example.push('Example Text');
             break;
-          case RosterColumnType.Date:
+          case ColumnType.Date:
             example.push(new Date().toISOString().split('T')[0]);
             break;
-          case RosterColumnType.DateTime:
+          case ColumnType.DateTime:
             example.push(new Date().toISOString());
             break;
           default:
@@ -155,13 +149,16 @@ class RosterController {
     res.send(csvContents);
   }
 
-  async getRoster(req: ApiRequest<OrgParam, any, GetRosterQuery>, res: Response<Paginated<RosterEntryData>>) {
-    res.json(await internalSearchRoster(req.query, req.appOrg!, req.appUserRole!));
+  async getRoster(req: ApiRequest<OrgParam, any, PaginationParams>, res: Response<Paginated<RosterEntryData>>) {
+    const service = new EntityService(Roster);
+    res.json(await service.search<RosterEntryData>(req.query, req.appOrg!, req.appUserRole!));
   }
 
-  async searchRoster(req: ApiRequest<OrgParam, SearchRosterBody, GetRosterQuery>, res: Response<Paginated<RosterEntryData>>) {
-    res.json(await internalSearchRoster(req.query, req.appOrg!, req.appUserRole!, req.body));
+  async searchRoster(req: ApiRequest<OrgParam, SearchBody, PaginationParams>, res: Response<Paginated<RosterEntryData>>) {
+    const service = new EntityService(Roster);
+    res.json(await service.search<RosterEntryData>(req.query, req.appOrg!, req.appUserRole!, req.body));
   }
+
 
   async uploadRosterEntries(req: ApiRequest<OrgParam>, res: Response) {
     if (!req.file || !req.file.path) {
@@ -187,7 +184,7 @@ class RosterController {
       throw new BadRequestError('No units found.');
     }
 
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
+    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!), req.appUserRole!.role);
 
     const requiredColumns = columns
       .filter(x => x.required)
@@ -262,12 +259,12 @@ class RosterController {
   }
 
   async getRosterColumnsInfo(req: ApiRequest<OrgParam>, res: Response) {
-    const columns = await Roster.getColumns(req.appOrg!.id);
+    const columns = await Roster.getColumns(req.appOrg!);
     res.json(columns);
   }
 
   async getAllowedRosterColumnsInfo(req: ApiRequest<OrgParam>, res: Response) {
-    const columns = await Roster.getAllowedColumns(req.appOrg!, req.appUserRole!.role);
+    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!), req.appUserRole!.role);
     res.json(columns);
   }
 
@@ -287,7 +284,8 @@ class RosterController {
   async getRosterEntry(req: ApiRequest<OrgRosterParams>, res: Response) {
     const rosterId = req.params.rosterId;
 
-    const queryBuilder = await Roster.queryAllowedRoster(req.appOrg!, req.appUserRole!);
+    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!), req.appUserRole!.role);
+    const queryBuilder = await Roster.search(req.appOrg!, req.appUserRole!, columns);
     const rosterEntry = await queryBuilder
       .andWhere('roster.id = :rosterId', { rosterId })
       .getRawOne<RosterEntryData>();
@@ -356,10 +354,10 @@ export async function getRosterInfosForIndividualOnDate(edipi: string, dateStr: 
       continue;
     }
 
-    const columns = (await Roster.getColumns(roster.unit.org!.id)).map(column => ({
+    const columns = (await Roster.getColumns(roster.unit.org!)).map(column => ({
       ...column,
       value: roster.getColumnValue(column),
-    } as RosterColumnInfoWithValue));
+    } as ColumnInfoWithValue));
 
     const rosterInfo: RosterInfo = {
       unit: roster.unit,
@@ -370,146 +368,7 @@ export async function getRosterInfosForIndividualOnDate(edipi: string, dateStr: 
   return responseData;
 }
 
-const formatValue = (val: RosterColumnValue, column: RosterColumnInfo) => {
-  if (val === null) {
-    return val;
-  }
-  switch (column.type) {
-    case RosterColumnType.String:
-      return val.toString().toLowerCase();
-    case RosterColumnType.DateTime:
-      return `'${moment.utc(val.toString()).format('YYYY-MM-DD HH:mm')}:00.000000'`;
-    case RosterColumnType.Date:
-      return `'${moment.utc(val.toString()).format('YYYY-MM-DD')} 00:00:00.000000'`;
-    default:
-      return val;
-  }
-};
-
-const formatColumnSelect = (column: RosterColumnInfo) => {
-  const columnSelect = Roster.getColumnSelect(column);
-
-  switch (column.type) {
-    case RosterColumnType.String:
-      return `LOWER(${columnSelect})`;
-    case RosterColumnType.DateTime:
-      return `date_trunc('minute', (${columnSelect})::TIMESTAMP)`;
-    case RosterColumnType.Date:
-      return `date_trunc('day', (${columnSelect})::TIMESTAMP)`;
-    default:
-      return columnSelect;
-  }
-};
-
-function applyWhere(queryBuilder: SelectQueryBuilder<Roster>, column: RosterColumnInfo, filterConfigItem: FilterConfigItem) {
-  const { op, value } = filterConfigItem;
-
-  const columnSelect = formatColumnSelect(column);
-
-  if (op === 'in') {
-    if (!Array.isArray(value)) {
-      throw new BadRequestError(`Malformed search query. Expected array value for ${column.name}.`);
-    }
-    return queryBuilder.andWhere(`${columnSelect} ${op} (:...${column.name})`, {
-      [column.name]: value.map(v => formatValue(v, column)),
-    });
-  }
-
-  if (op === 'between') {
-    const maxKey = `${column.name}Max`;
-    const minKey = `${column.name}Min`;
-    if (!Array.isArray(value)) {
-      throw new BadRequestError(`Malformed search query. Expected array value for ${column.name}.`);
-    }
-    return queryBuilder.andWhere(`${columnSelect} BETWEEN (:${minKey}) AND (:${maxKey})`, {
-      [minKey]: formatValue(value[0], column),
-      [maxKey]: formatValue(value[1], column),
-    });
-  }
-
-  if (op === '~' || op === 'startsWith' || op === 'endsWith') {
-    if (column.type !== RosterColumnType.String) {
-      throw new BadRequestError('Malformed search query. Expected string value.');
-    }
-    const prefix = op !== 'startsWith' ? '%' : '';
-    const suffix = op !== 'endsWith' ? '%' : '';
-    return queryBuilder.andWhere(`${columnSelect} LIKE :${column.name}`, {
-      [column.name]: `${prefix}${value}${suffix}`.toLowerCase(),
-    });
-  }
-
-  if (op === '=' || op === '<>' || op === '>' || op === '<') {
-    if (Array.isArray(value)) {
-      throw new BadRequestError(`Malformed search query. Expected scalar value for ${column.name}.`);
-    }
-    return queryBuilder.andWhere(`${columnSelect} ${op} :${column.name}`, {
-      [column.name]: formatValue(value, column),
-    });
-  }
-
-  throw new BadRequestError(`Malformed search query. Received unexpected parameters for '${column.name}', op: ${op}`);
-}
-
-function findColumnByName(name: string, columns: RosterColumnInfo[]): RosterColumnInfo {
-  if (name === 'unit') {
-    return {
-      name: 'unit',
-      displayName: 'Unit',
-      custom: false,
-      phi: false,
-      pii: false,
-      type: RosterColumnType.Number,
-      updatable: false,
-      required: false,
-    };
-  }
-  const column = columns.find(col => col.name === name);
-  if (!column) {
-    throw new BadRequestError(`Malformed search query. Unknown column name: '${name}'.`);
-  }
-  return column;
-}
-
-async function internalSearchRoster(query: GetRosterQuery, org: Org, userRole: UserRole, searchParams?: SearchRosterBody): Promise<Paginated<RosterEntryData>> {
-  const limit = parseInt(query.limit ?? '100');
-  const page = parseInt(query.page ?? '0');
-  const orderBy = query.orderBy || 'edipi';
-  const sortDirection = query.sortDirection || 'ASC';
-  const rosterColumns = await Roster.getAllowedColumns(org, userRole.role);
-  let queryBuilder = await Roster.queryAllowedRoster(org, userRole);
-
-  if (searchParams) {
-    Object.keys(searchParams)
-      .forEach(columnName => {
-        queryBuilder = applyWhere(queryBuilder, findColumnByName(columnName, rosterColumns), searchParams[columnName]);
-      });
-  }
-
-  const rosterQuery = queryBuilder
-    .clone()
-    .offset(page * limit)
-    .limit(limit);
-  const sortColumn = rosterColumns.find(column => column.name === orderBy);
-  if (sortColumn) {
-    const order: OrderByCondition = {};
-    order[Roster.getColumnSelect(sortColumn)] = sortDirection;
-    rosterQuery.orderBy(order);
-  } else if (orderBy === 'unit') {
-    const order: OrderByCondition = {};
-    order['u.name'] = sortDirection;
-    rosterQuery.orderBy(order);
-  }
-  const roster = await rosterQuery.getRawMany<RosterEntryData>();
-
-  const totalRowsCount = await queryBuilder.getCount();
-
-  return {
-    rows: roster,
-    totalRowsCount,
-  };
-}
-
-function getRosterEntryFromCsvRow(csvRow: RosterFileRow, columns: RosterColumnInfo[], rowIndex: number, orgUnits: Unit[], existingEntries: Roster[]) {
+function getRosterEntryFromCsvRow(csvRow: RosterFileRow, columns: ColumnInfo[], rowIndex: number, orgUnits: Unit[], existingEntries: Roster[]) {
   const unitName = csvRow.Unit;
   if (!unitName) {
     throw new CsvRowError('"Unit" is required.', csvRow, rowIndex, unitColumnDisplayName);

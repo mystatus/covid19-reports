@@ -76,4 +76,16 @@ export default makeStyles((theme: Theme) => createStyles({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
+  button: {
+    borderColor: 'transparent',
+    marginRight: theme.spacing(2),
+  },
+  deleteButton: {
+    borderColor: 'transparent',
+    color: '#E41D3D',
+    marginRight: theme.spacing(2),
+    '&:hover': {
+      borderColor: '#E41D3D',
+    },
+  },
 }));

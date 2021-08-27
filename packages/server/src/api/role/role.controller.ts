@@ -18,6 +18,7 @@ import {
 import { Workspace } from '../workspace/workspace.model';
 import { Notification } from '../notification/notification.model';
 import { UserRole } from '../user/user-role.model';
+import { Org } from '../org/org.model';
 
 class RoleController {
 
@@ -54,7 +55,7 @@ class RoleController {
 
     const role = new Role();
     role.org = req.appOrg;
-    await setRoleFromBody(req.appOrg.id, role, req.body);
+    await setRoleFromBody(req.appOrg, role, req.body);
 
     const newRole = await role.save();
 
@@ -132,7 +133,7 @@ class RoleController {
       throw new NotFoundError('Role could not be found.');
     }
 
-    await setRoleFromBody(req.appOrg.id, role, req.body);
+    await setRoleFromBody(req.appOrg, role, req.body);
 
     const updatedRole = await role.save();
 
@@ -141,7 +142,7 @@ class RoleController {
 
 }
 
-async function setRoleFromBody(orgId: number, role: Role, body: UpdateRoleBody) {
+async function setRoleFromBody(org: Org, role: Role, body: UpdateRoleBody) {
   if (body.name != null) {
     role.name = body.name;
   }
@@ -155,7 +156,7 @@ async function setRoleFromBody(orgId: number, role: Role, body: UpdateRoleBody) 
       workspaces = await Workspace.find({
         where: {
           id: In(body.workspaceIds),
-          org: orgId,
+          org: org.id,
         },
       });
 
@@ -189,7 +190,7 @@ async function setRoleFromBody(orgId: number, role: Role, body: UpdateRoleBody) 
   }
   if (body.allowedRosterColumns != null) {
     if (!(body.allowedRosterColumns.length === 1 && body.allowedRosterColumns[0] === '*')) {
-      const orgRosterColumns = await Roster.getColumns(orgId);
+      const orgRosterColumns = await Roster.getColumns(org);
       for (const column of body.allowedRosterColumns) {
         if (!orgRosterColumns.some(rosterColumn => rosterColumn.name === column)) {
           throw new BadRequestError(`Unknown roster column: ${column}`);

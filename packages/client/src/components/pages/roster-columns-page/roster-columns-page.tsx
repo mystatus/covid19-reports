@@ -22,10 +22,11 @@ import React, {
 } from 'react';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
+import { ColumnInfo } from '@covid19-reports/shared';
 import PageHeader from '../../page-header/page-header';
 import { RosterColumnsPageHelp } from './roster-columns-page-help';
 import useStyles from './roster-columns-page.styles';
-import { ApiRosterColumnInfo, rosterColumnTypeDisplayName } from '../../../models/api-response';
+import { rosterColumnTypeDisplayName } from '../../../models/api-response';
 import { EditColumnDialog, EditColumnDialogProps } from './edit-column-dialog';
 import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
@@ -39,15 +40,15 @@ import { Dialog } from '../../dialog/dialog';
 
 interface ColumnMenuState {
   anchor: HTMLElement | null;
-  column?: ApiRosterColumnInfo;
+  column?: ColumnInfo;
 }
 
 export const RosterColumnsPage = () => {
   const classes = useStyles();
   const dispatch = useAppDispatch();
 
-  const [columns, setColumns] = useState<ApiRosterColumnInfo[]>([]);
-  const [columnToDelete, setColumnToDelete] = useState<null | ApiRosterColumnInfo>(null);
+  const [columns, setColumns] = useState<ColumnInfo[]>([]);
+  const [columnToDelete, setColumnToDelete] = useState<null | ColumnInfo>(null);
   const [editColumnDialogProps, setEditColumnDialogProps] = useState<EditColumnDialogProps>({ open: false });
   const [columnMenu, setColumnMenu] = React.useState<ColumnMenuState>({ anchor: null });
 
@@ -119,7 +120,7 @@ export const RosterColumnsPage = () => {
     setColumnToDelete(null);
   };
 
-  const handleColumnMenuClick = (column: ApiRosterColumnInfo) => (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleColumnMenuClick = (column: ColumnInfo) => (event: React.MouseEvent<HTMLButtonElement>) => {
     setColumnMenu({ anchor: event.currentTarget, column });
   };
 

@@ -7,13 +7,13 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import {
-  FilterEntityType,
+  EntityType,
   FilterConfig,
 } from '@covid19-reports/shared';
 import { Org } from '../org/org.model';
 
 @Entity()
-@Index(['org', 'name'], { unique: true })
+@Index(['org', 'name', 'entityType'], { unique: true })
 export class SavedFilter extends BaseEntity {
 
   @PrimaryGeneratedColumn()
@@ -30,9 +30,9 @@ export class SavedFilter extends BaseEntity {
 
   @Column({
     type: 'enum',
-    enum: FilterEntityType,
+    enum: EntityType,
   })
-  entityType!: FilterEntityType;
+  entityType!: EntityType;
 
   @Column('json', {
     nullable: false,

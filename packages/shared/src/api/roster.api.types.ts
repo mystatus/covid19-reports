@@ -1,28 +1,5 @@
-import { PaginatedQuery } from './api.types';
-import {
-  CustomColumnConfig,
-  RosterColumnType,
-  RosterEntryData,
-} from '../roster.types';
-import { FilterConfig } from '../saved-filter.types';
-
-export type CustomColumnData = {
-  type?: RosterColumnType;
-  pii?: boolean;
-  phi?: boolean;
-  required?: boolean;
-  config?: CustomColumnConfig;
-  displayName?: string;
-};
-
-export type GetRosterQuery = {
-  orderBy?: string;
-  sortDirection?: 'ASC' | 'DESC';
-} & PaginatedQuery;
-
-export type SearchRosterQuery = GetRosterQuery;
-
-export type SearchRosterBody = FilterConfig;
+import { RosterEntryData } from '../roster.types';
+import { CustomColumnData } from './entity.api.types';
 
 export type ReportDateQuery = {
   reportDate: string;

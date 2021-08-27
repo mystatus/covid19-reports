@@ -18,4 +18,11 @@ router.post(
   controller.createObservation,
 );
 
+controller.registerEntityRoutes(
+  router,
+  {
+    hasVersionedColumns: true,
+  },
+);
+
 export default router;

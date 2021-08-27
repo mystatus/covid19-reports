@@ -156,6 +156,13 @@ export const AppSidenav = () => {
               icon={(<PersonCheckIcon />)}
             />
           )}
+          {/* {user.activeRole?.role.canViewObservations && ( */}
+          <SidenavLink
+            to="/observations"
+            name="Observations"
+            icon={(<AssignmentIndIcon />)}
+          />
+          {/* )} */}
           {user.activeRole?.role.canViewRoster && (
             <SidenavLink
               to="/roster"

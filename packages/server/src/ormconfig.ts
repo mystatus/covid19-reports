@@ -19,6 +19,7 @@ import { Workspace } from './api/workspace/workspace.model';
 import { Notification } from './api/notification/notification.model';
 import { Observation } from './api/observation/observation.model';
 import { SavedFilter } from './api/saved-filter/saved-filter.model';
+import { SavedLayout } from './api/saved-layout/saved-layout.model';
 
 export const ormConfig: PostgresConnectionOptions = {
   type: 'postgres',
@@ -40,6 +41,7 @@ export const ormConfig: PostgresConnectionOptions = {
     Roster,
     RosterHistory,
     SavedFilter,
+    SavedLayout,
     Unit,
     User,
     UserNotificationSetting,
