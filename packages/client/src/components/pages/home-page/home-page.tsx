@@ -19,6 +19,7 @@ import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 import FavoriteIcon from '@material-ui/icons/Favorite';
 import clsx from 'clsx';
 import moment from 'moment';
+import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
 import { UserSelector } from '../../../selectors/user.selector';
 import { WorkspaceSelector } from '../../../selectors/workspace.selector';
 import { Link } from '../../link/link';
@@ -26,16 +27,15 @@ import { UserActions } from '../../../slices/user.slice';
 import useStyles from './home-page.styles';
 import welcomeImage from '../../../media/images/welcome-image.png';
 import PageHeader from '../../page-header/page-header';
-import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
 import {
   ApiAccessRequest,
   ApiDashboard,
   ApiWorkspace,
 } from '../../../models/api-response';
-import { Modal } from '../../../actions/modal.actions';
 import { Workspace } from '../../../actions/workspace.actions';
 import { formatErrorMessage } from '../../../utility/errors';
 import { getDashboardUrl } from '../../../utility/url-utils';
+import { Modal } from '../../../actions/modal.actions';
 import { AccessRequestClient } from '../../../client/access-request.client';
 import { MusterClient } from '../../../client/muster.client';
 import { useAppDispatch } from '../../../hooks/use-app-dispatch';
@@ -119,13 +119,14 @@ export const HomePage = () => {
   const classes = useStyles();
   const dispatch = useAppDispatch();
   const orgId = useAppSelector(UserSelector.orgId)!;
-  const user = useAppSelector(state => state.user);
   const orphanedRecords = useAppSelector(OrphanedRecordSelector.root);
-  const [accessRequests, setAccessRequests] = useState<ApiAccessRequest[]>([]);
-  const [musterComplianceLastTwoWeeks, setMusterComplianceLastTwoWeek] = useState<number[]>([1.0, 0.0]);
+  const user = useAppSelector(state => state.user);
   const favoriteDashboards = useAppSelector(UserSelector.favoriteDashboards)!;
   const workspaces = useAppSelector(UserSelector.workspaces)!;
   const dashboards = useAppSelector(WorkspaceSelector.dashboards)!;
+  
+  const [accessRequests, setAccessRequests] = useState<ApiAccessRequest[]>([]);
+  const [musterComplianceLastTwoWeeks, setMusterComplianceLastTwoWeek] = useState<number[]>([1.0, 0.0]);
 
   useEffect(() => {
     dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
@@ -140,14 +141,7 @@ export const HomePage = () => {
       }
 
       try {
-        await dispatch(OrphanedRecordActions.fetchPage({
-          orgId,
-          query: {
-            page: '',
-            limit: '',
-            unit: undefined,
-          },
-        }));
+        await dispatch(OrphanedRecordActions.fetchCount({ orgId: orgId! }));
       } catch (error) {
         void dispatch(Modal.alert('Get Orphaned Records', formatErrorMessage(error, 'Failed to get orphaned records')));
       }
@@ -259,7 +253,7 @@ export const HomePage = () => {
                     Orphaned Records
                   </Typography>
                   <Typography className={classes.metricValue}>
-                    {orphanedRecords.totalRowsCount}
+                    {orphanedRecords.count}
                   </Typography>
                   <Link to="/roster">View Now &rarr;</Link>
                 </CardContent>
