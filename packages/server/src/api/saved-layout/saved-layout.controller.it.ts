@@ -90,7 +90,8 @@ describe(`SavedLayout Controller`, () => {
       const body: SavedLayoutData = {
         name: uniqueString(),
         entityType: EntityType.RosterEntry,
-        config: {},
+        actions: {},
+        columns: {},
       };
 
       const res = await req.post(`/${org.id}`, body);
@@ -101,7 +102,8 @@ describe(`SavedLayout Controller`, () => {
         'name',
         'entityType',
         'org',
-        'config',
+        'actions',
+        'columns',
       ]);
       const savedLayoutId = res.data.id;
 
@@ -112,7 +114,8 @@ describe(`SavedLayout Controller`, () => {
       expect(savedLayoutAfter.name).to.eql(body.name);
       expect(savedLayoutAfter.org).to.exist;
       expect(savedLayoutAfter.org!.id).to.eql(org.id);
-      expect(savedLayoutAfter.config).to.eql(body.config);
+      expect(savedLayoutAfter.actions).to.eql(body.actions);
+      expect(savedLayoutAfter.columns).to.eql(body.columns);
 
       expect(await SavedLayout.count()).to.eql(savedLayoutCountBefore + 1);
       const orgSavedLayoutCountAfter = await SavedLayout.count({
@@ -123,7 +126,8 @@ describe(`SavedLayout Controller`, () => {
 
     it(`fails if missing required body data`, async () => {
       const body = {
-        config: {},
+        actions: {},
+        columns: {},
       };
 
       const res = await req.post(`/${org.id}`, body);
@@ -139,7 +143,8 @@ describe(`SavedLayout Controller`, () => {
       const body: SavedLayoutData = {
         name: uniqueString(),
         entityType: EntityType.Observation,
-        config: {},
+        actions: {},
+        columns: {},
       };
 
       const res = await req.put(`/${org.id}/${savedLayout.id}`, body);
@@ -149,13 +154,15 @@ describe(`SavedLayout Controller`, () => {
         'id',
         'name',
         'entityType',
-        'config',
+        'actions',
+        'columns',
       ]);
       expect(res.data.id).to.eql(savedLayout.id);
 
       const savedLayoutAfter = (await SavedLayout.findOne(savedLayout.id))!;
       expect(savedLayoutAfter.name).to.eql(body.name);
-      expect(savedLayoutAfter.config).to.eql(body.config);
+      expect(savedLayoutAfter.actions).to.eql(body.actions);
+      expect(savedLayoutAfter.columns).to.eql(body.columns);
     });
   });
 
@@ -174,7 +181,8 @@ describe(`SavedLayout Controller`, () => {
       expect(res.data).to.include.keys([
         'name',
         'entityType',
-        'config',
+        'actions',
+        'columns',
       ]);
 
       expect(await SavedLayout.count()).to.eql(savedLayoutCountBefore - 1);

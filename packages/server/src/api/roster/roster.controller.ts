@@ -22,7 +22,7 @@ import {
   unitColumnDisplayName,
   CustomColumnData,
 } from '@covid19-reports/shared';
-import { EntityService } from 'server/src/util/entity-utils';
+import { EntityService } from '../../util/entity-utils';
 import {
   assertRequestBody,
   assertRequestParams,
