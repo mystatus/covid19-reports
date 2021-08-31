@@ -6,6 +6,7 @@ import {
   EntityTarget,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Index,
 } from 'typeorm';
 import {
   CustomColumns,
@@ -45,6 +46,7 @@ export abstract class RosterEntity extends BaseEntity {
   })
   unit!: Unit;
 
+  @Index()
   @Column({
     length: 10,
   })

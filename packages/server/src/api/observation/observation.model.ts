@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { BaseEntity, Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { startCase } from 'lodash';
 import { baseObservationColumns, ColumnInfo, ColumnType, CustomColumns } from '@covid19-reports/shared';
 import { ReportSchema } from '../report-schema/report-schema.model';
@@ -26,10 +26,12 @@ export class Observation extends BaseEntity {
   /* DOD unique ID that is associated with personnel and their CAC card.
   We don't maintain the list of these IDs so there is no integrity constraint (foreign key).
   */
+  @Index('observation-edipi')
   @Column({ length: 10 })
   edipi!: string;
 
   // timestamp when the observation was reported
+  @Index('observation-timestamp')
   @Column({ type: 'timestamp', transformer: timestampColumnTransformer })
   timestamp!: Date;
 
@@ -38,6 +40,7 @@ export class Observation extends BaseEntity {
   reportSchema?: ReportSchema;
 
   // military unit
+  @Index('observation-unit')
   @Column({ length: 300 })
   unit!: string;
 
@@ -82,6 +85,7 @@ export class Observation extends BaseEntity {
     return [...baseObservationColumns, ...customColumns];
   }
 
+  // eslint-disable-next-line require-await
   static async search(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     const queryBuilder = Observation.createQueryBuilder('observation').select([]);
     queryBuilder.leftJoin('observation.reportSchema', 'rs');

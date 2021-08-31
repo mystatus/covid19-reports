@@ -6,6 +6,7 @@ import {
   DeleteDateColumn,
   Entity,
   EntityManager,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
@@ -27,6 +28,7 @@ export class OrphanedRecord extends BaseEntity {
   // Due to the irregular nature of the join to actions table, we
   // define this single compositeId, used as a more efficient identifier
   // and to allow more readable join.
+  @Index('orphaned-record-compositeId')
   @Column()
   compositeId!: string;
 

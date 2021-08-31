@@ -5,6 +5,7 @@ import {
   BaseEntity,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { MusterConfiguration } from '@covid19-reports/shared';
 import { User } from '../user/user.model';
@@ -15,6 +16,7 @@ export class Org extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Index('org-name')
   @Column({
     length: 200,
   })
@@ -28,8 +30,10 @@ export class Org extends BaseEntity {
   @Column({
     default: '',
   })
+  @Index('org-indexPrefix')
   indexPrefix!: string;
 
+  @Index('org-reportingGroup')
   @Column({
     nullable: true,
   })

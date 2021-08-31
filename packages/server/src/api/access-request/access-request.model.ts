@@ -8,6 +8,7 @@ import {
   Column,
   BeforeInsert,
   BeforeUpdate,
+  Index,
 } from 'typeorm';
 import { formatPhoneNumber } from '@covid19-reports/shared';
 import { Org } from '../org/org.model';
@@ -53,6 +54,7 @@ export class AccessRequest extends BaseEntity {
   })
   whatYouDo!: string[];
 
+  @Index('access-request-sponsorName')
   @Column()
   sponsorName!: string;
 
