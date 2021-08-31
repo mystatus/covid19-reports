@@ -5,7 +5,7 @@ export NODE_OPTIONS="--max-old-space-size=4096"
 echo -e "\nBuilding client..."
 
 ./clean.sh
-npx craco build
+npx craco build || exit 1
 mkdir ./build/public
 mv ./build/*.* ./build/public
 mv ./build/static ./build/public/static
