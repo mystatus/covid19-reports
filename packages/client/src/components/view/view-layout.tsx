@@ -1,6 +1,7 @@
 import React, {
   CSSProperties,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -11,11 +12,14 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Paper,
+  Snackbar,
   Tooltip,
 } from '@material-ui/core';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import SaveIcon from '@material-ui/icons/Save';
+import CloseIcon from '@material-ui/icons/Close';
 import FileCopyIcon from '@material-ui/icons/FileCopy';
 import DeleteIcon from '@material-ui/icons/Delete';
 import deepEquals from 'fast-deep-equal';
@@ -52,6 +56,7 @@ import { useAppDispatch } from '../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../hooks/use-app-selector';
 import { SavedLayoutClient } from '../../client/saved-layout.client';
 import { SaveNewLayoutDialog } from '../pages/roster-page/save-new-layout-dialog';
+import { useSticky } from '../../hooks/use-sticky';
 
 export type LayoutConfigParams = SortedQuery & {
   // actions: ActionInfo[];
@@ -100,6 +105,12 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
   const [selectLayoutMenuOpen, setSelectLayoutMenuOpen] = useState(false);
   const [saveNewLayoutDialogOpen, setSaveNewLayoutDialogOpen] = useState(false);
   const selectLayoutButtonRef = useRef<HTMLButtonElement>(null);
+  const [stickyRef, shouldBeSticky] = useSticky<HTMLDivElement>(-70, 40);
+  const [noticeClosed, setNoticeClosed] = useState(false);
+
+  useEffect(() => {
+    setNoticeClosed(false);
+  }, [selectedLayout]);
 
   const selectLayout = useCallback((layoutId: LayoutId) => {
     setSelectLayoutMenuOpen(false);
@@ -151,6 +162,14 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
       && selectedLayout.name === currentLayout.name);
   }, [selectedLayout, currentLayout]);
 
+  const handleUndoChanges = useCallback(() => {
+    onChange(selectedLayout);
+  }, [onChange, selectedLayout]);
+
+  const handleCloseNotice = useCallback(() => {
+    setNoticeClosed(true);
+  }, [setNoticeClosed]);
+
   const handleSaveNewLayoutConfirm = useCallback(async (name: string) => {
     try {
       const { actions, columns } = currentLayout;
@@ -197,8 +216,10 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   ), [selectLayout, setSaveNewLayoutDialogOpen, handleLayoutDeleteClick]);
 
+  const isSticky = shouldBeSticky && !noticeClosed;
+
   return (
-    <Box display="flex">
+    <Box display="flex" alignItems="center">
       {(savedLayouts.length > 1) && (
         <Button
           aria-label="Select Layout"
@@ -215,16 +236,34 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
       )}
 
       {layoutHasChanges && (
-        <Button
-          aria-label="Save"
-          className={classes.button}
-          onClick={handleLayoutSaveClick}
-          size="small"
-          startIcon={<SaveIcon />}
-          variant="outlined"
-        >
-          {savedLayouts.length > 1 ? 'Save' : 'Save Layout'}
-        </Button>
+        <div ref={stickyRef} style={{ position: 'relative' }}>
+          <Paper elevation={isSticky ? 6 : 0} className={isSticky ? classes.saveNoticeSticky : classes.saveNoticeStatic}>
+            <React.Fragment>
+              <Button
+                aria-label="Save"
+                className={classes.saveButton}
+                onClick={handleLayoutSaveClick}
+                size="small"
+                startIcon={<SaveIcon />}
+                variant="outlined"
+              >
+                {savedLayouts.length > 1 ? 'Save' : 'Save Layout'}
+              </Button>
+
+              {isSticky && 'Changes were made to this layout.'}
+
+              <Button size="small" className={classes.undoButton} onClick={handleUndoChanges}>
+                UNDO
+              </Button>
+
+              {isSticky && (
+                <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseNotice}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              )}
+            </React.Fragment>
+          </Paper>
+        </div>
       )}
 
       <Menu
@@ -453,6 +492,8 @@ export function ColumnSelector({ columnInfos, setVisibleColumns, visibleColumns 
         onClose={() => setVisibleColumnsMenuOpen(false)}
       >
         <div>
+          <div className={classes.dragHint}>Drag &amp; drop to arrange columns</div>
+
           <DragDropContext
             onDragEnd={handleDragEnd}
             onDragUpdate={handleDragUpdate}

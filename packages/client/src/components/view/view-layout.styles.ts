@@ -71,19 +71,29 @@ export default makeStyles((theme: Theme) => createStyles({
     },
   },
   filterButtonText: {
+    marginRight: theme.spacing(2),
     maxWidth: '10rem',
-    whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
   menuItem: {
     paddingBottom: 0,
     paddingTop: 0,
   },
-  button: {
+  saveButton: {
     borderColor: 'transparent',
-    marginLeft: theme.spacing(2),
     marginRight: theme.spacing(2),
+  },
+  undoButton: {
+    backgroundColor: 'transparent',
+    border: '1px solid transparent',
+    color: '#777',
+    '&:hover': {
+      backgroundColor: '#f8f8f8',
+      borderColor: '#ddd',
+      color: '#666',
+  }
   },
   layoutName: {
     textOverflow: 'ellipsis',
@@ -152,5 +162,27 @@ export default makeStyles((theme: Theme) => createStyles({
     fontSize: '0.7rem',
     fontWeight: 300,
     opacity: 0.9,
+  },
+  dragHint: {
+    opacity: 0.7,
+    padding: '2px 8px 8px',
+    textAlign: 'center',
+  },
+  saveNoticeStatic: {
+    position: 'relative',
+    backgroundColor: 'transparent',
+  },
+  saveNoticeSticky: {
+    position: 'fixed',
+    top: 48,
+    zIndex: 1202,
+    minWidth: 'min-content',
+
+    backgroundColor: '#fff',
+    padding: 2,
+
+    '& $undoButton': {
+      marginLeft: theme.spacing(2),
+    },
   },
 }));
