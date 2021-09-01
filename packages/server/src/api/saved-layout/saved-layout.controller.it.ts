@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import {
-  EntityType,
   GetSavedLayoutsQuery,
   SavedLayoutData,
   SavedLayoutSerialized,
@@ -51,19 +50,19 @@ describe(`SavedLayout Controller`, () => {
       const rosterEntitySavedLayouts = await seedSavedLayouts(org, {
         count: 2,
         customData: {
-          entityType: EntityType.RosterEntry,
+          entityType: 'roster',
         },
       });
 
       await seedSavedLayouts(org, {
         count: 2,
         customData: {
-          entityType: EntityType.Observation,
+          entityType: 'observation',
         },
       });
 
       const query: GetSavedLayoutsQuery = {
-        entityType: EntityType.RosterEntry,
+        entityType: 'roster',
       };
 
       const res = await req.get(`/${org.id}`, {
@@ -89,7 +88,7 @@ describe(`SavedLayout Controller`, () => {
 
       const body: SavedLayoutData = {
         name: uniqueString(),
-        entityType: EntityType.RosterEntry,
+        entityType: 'roster',
         actions: {},
         columns: {},
       };
@@ -142,7 +141,7 @@ describe(`SavedLayout Controller`, () => {
 
       const body: SavedLayoutData = {
         name: uniqueString(),
-        entityType: EntityType.Observation,
+        entityType: 'observation',
         actions: {},
         columns: {},
       };

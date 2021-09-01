@@ -1,9 +1,12 @@
 import {
   CustomColumnConfig,
-  QueryOp,
   ColumnType,
-  ColumnValue,
 } from '../entity.types';
+import {
+  FilteredQuery,
+  PaginatedQuery,
+  SortedQuery,
+} from './api.types';
 
 export type CustomColumnData = {
   type?: ColumnType;
@@ -14,13 +17,4 @@ export type CustomColumnData = {
   displayName?: string;
 };
 
-export type SearchBodyEntry = {
-  op: QueryOp;
-  value: ColumnValue | ColumnValue[];
-  expression?: string;
-  expressionEnabled?: boolean;
-};
-
-export type SearchBody = {
-  [column: string]: SearchBodyEntry;
-};
+export type GetEntitiesQuery = PaginatedQuery & SortedQuery & FilteredQuery;

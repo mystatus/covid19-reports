@@ -23,9 +23,7 @@ import FilterListIcon from '@material-ui/icons/FilterList';
 import deepEquals from 'fast-deep-equal';
 import {
   ColumnType,
-  FilterConfig,
-  PaginatedQuery,
-  PaginationParams,
+  GetEntitiesQuery,
   SavedFilterSerialized,
 } from '@covid19-reports/shared';
 import useEffectDebounced from '../../hooks/use-effect-debounced';
@@ -36,11 +34,8 @@ import {
   TableCustomColumnsContent,
 } from '../tables/table-custom-columns-content';
 import { TablePagination } from '../tables/table-pagination/table-pagination';
-import useStyles from '../pages/roster-page/roster-page.styles';
-import {
-  ApiEnumColumnConfig,
-  ApiPaginated,
-} from '../../models/api-response';
+import useStyles from './view.styles';
+import { ApiEnumColumnConfig } from '../../models/api-response';
 import { UnitSelector } from '../../selectors/unit.selector';
 import { QueryBuilder } from '../query-builder/query-builder';
 import { formatErrorMessage } from '../../utility/errors';
@@ -50,46 +45,34 @@ import usePersistedState from '../../hooks/use-persisted-state';
 import { useAppDispatch } from '../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../hooks/use-app-selector';
 import { Unit } from '../../actions/unit.actions';
-import { ClientPromise } from '../../utility/client-utils';
 import { filterConfigToQueryRows, QueryField, QueryFieldEnumItem, QueryRow, queryRowsToFilterConfig } from '../../utility/query-builder-utils';
 import { SavedFilterClient } from '../../client/saved-filter.client';
 import { SaveNewFilterDialog } from '../pages/roster-page/save-new-filter-dialog';
 import { Layout } from './view-layout';
+import { entityApi } from '../../api/entity.api';
 
-type ViewProps<T> = {
+type ViewProps = {
   layout: Layout;
-  query: (orgId: number, params: PaginationParams, filterConfig?: FilterConfig) => ClientPromise<ApiPaginated<T>>;
 };
 
 type FilterId = SavedFilterSerialized['id'];
 const customFilterId = -1;
 const noFilterId = -2;
 
-const initialPaginatedQuery = {
-  limit: '10',
-  page: '0',
-};
-
-const initialResponse = function <T>() {
-  return {
-    rows: [],
-    totalRowsCount: 0,
-  } as ApiPaginated<T>;
-};
-
-export default function View<T>({ layout, query }: ViewProps<T>) {
+export default function View({ layout }: ViewProps) {
   const { columns, entityType, orderBy, rowOptions, sortDirection, visibleColumns } = layout;
   const classes = useStyles();
   const dispatch = useAppDispatch();
+
   const units = useAppSelector(UnitSelector.all);
-  const { id: orgId } = useAppSelector(UserSelector.org)!;
-  // const [unitNameMap, setUnitNameMap] = useState<{ [key: string]: string }>({});
-  const [applyingFilters, setApplyingFilters] = useState(false);
-  const queryPromiseRef = useRef<ClientPromise<ApiPaginated<T>>>();
+  const orgId = useAppSelector(UserSelector.orgId)!;
 
-  const [{ rows, totalRowsCount }, setResponse] = useState<ApiPaginated<T>>(initialResponse<T>());
-  const [paginatedQuery, setPaginatedQuery] = usePersistedState<PaginatedQuery>(`${layout.name}Pagination`, initialPaginatedQuery);
-
+  const [entitiesQuery, setEntitiesQuery] = usePersistedState<GetEntitiesQuery>(`${layout.name}EntitiesQuery`, {
+    limit: '10',
+    page: '0',
+    orderBy,
+    sortDirection,
+  });
   const [savedFilters, setSavedFilters] = useState<SavedFilterSerialized[]>([]);
   const [selectedFilterId, setSelectedFilterId] = usePersistedState<FilterId>(`${layout.name}selectedFilterId`, noFilterId);
   const [selectFilterMenuOpen, setSelectFilterMenuOpen] = useState(false);
@@ -98,9 +81,22 @@ export default function View<T>({ layout, query }: ViewProps<T>) {
   const [saveNewFilterDialogOpen, setSaveNewFilterDialogOpen] = useState(false);
   const selectFilterButtonRef = useRef<HTMLButtonElement>(null);
 
+  const {
+    data: entities,
+    error: entitiesError,
+    refetch: refetchEntities,
+    isFetching: entitiesFetching,
+  } = entityApi[entityType].useGetEntitiesQuery({
+    orgId,
+    query: {
+      ...entitiesQuery,
+      filterConfig: queryRowsToFilterConfig(filterQueryRows),
+    },
+  });
+
   const queryBuilderFields = useMemo((): QueryField[] => {
     return columns.map(column => {
-      let type = column.type as unknown as ColumnType;
+      let type = column.type;
       let enumItems: QueryFieldEnumItem[] | undefined;
 
       if (column.name === 'unit') {
@@ -120,36 +116,6 @@ export default function View<T>({ layout, query }: ViewProps<T>) {
       };
     });
   }, [columns, units]);
-
-  const fetchEntities = useCallback(async () => {
-    if (applyingFilters) {
-      setApplyingFilters(true);
-      setResponse(initialResponse<T>());
-    }
-
-    try {
-      queryPromiseRef.current?.abort?.();
-
-      const filterConfig = queryRowsToFilterConfig(filterQueryRows);
-      queryPromiseRef.current = query(orgId, { ...paginatedQuery, orderBy, sortDirection }, filterConfig);
-      const promise = queryPromiseRef.current;
-      const response = await promise;
-
-      if (promise === queryPromiseRef.current) {
-        queryPromiseRef.current = undefined;
-        setResponse(response);
-      }
-    } catch (error) {
-      void dispatch(Modal.alert('Error', formatErrorMessage(error, 'Error Applying Filters')));
-    } finally {
-      setApplyingFilters(false);
-    }
-
-    return () => {
-      queryPromiseRef.current?.abort?.();
-    };
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
-  }, [dispatch, orderBy, sortDirection, paginatedQuery, orgId, query, filterQueryRows]);
 
   const fetchSavedFilters = useCallback(async () => {
     try {
@@ -175,8 +141,14 @@ export default function View<T>({ layout, query }: ViewProps<T>) {
   }, [dispatch, orgId]);
 
   useEffectDebounced(() => {
-    void fetchEntities();
-  }, [fetchEntities]);
+    void refetchEntities();
+  }, [refetchEntities, filterQueryRows]);
+
+  useEffect(() => {
+    if (entitiesError) {
+      void dispatch(Modal.alert('Error', formatErrorMessage(entitiesError, 'Error Applying Filters')));
+    }
+  }, [dispatch, entitiesError]);
 
   useEffectDebounced(() => {
     void fetchSavedFilters();
@@ -213,28 +185,27 @@ export default function View<T>({ layout, query }: ViewProps<T>) {
   }, [queryBuilderFields, getSelectedSavedFilter, selectedFilterId, setFilterQueryRows]);
 
   const handleSortChanged = useCallback((column: TableColumn, direction: SortDirection) => {
-    setPaginatedQuery(prev => ({
-      ...prev,
+    setEntitiesQuery({
+      ...entitiesQuery,
       orderBy: column.name,
       sortDirection: direction,
-    }));
-  }, [setPaginatedQuery]);
+    });
+  }, [setEntitiesQuery, entitiesQuery]);
 
   const handleChangePage = useCallback((event: MouseEvent<HTMLButtonElement> | null, page: number) => {
-    setPaginatedQuery(prev => ({
-      ...prev,
+    setEntitiesQuery({
+      ...entitiesQuery,
       page: `${page}`,
-    }));
-  }, [setPaginatedQuery]);
+    });
+  }, [setEntitiesQuery, entitiesQuery]);
 
   const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const page = getNewPageIndex(+paginatedQuery.limit, +paginatedQuery.page, +event.target.value);
-    setPaginatedQuery({
+    const page = getNewPageIndex(+entitiesQuery.limit, +entitiesQuery.page, +event.target.value);
+    setEntitiesQuery({
       limit: event.target.value,
       page: `${page}`,
     });
   };
-
 
   const getFilterButtonText = () => {
     switch (selectedFilterId) {
@@ -405,20 +376,20 @@ export default function View<T>({ layout, query }: ViewProps<T>) {
       </Collapse>
       <div className={classes.tableWrapper}>
         <TableCustomColumnsContent
-          rows={rows}
+          rows={entities?.rows ?? []}
           columns={visibleColumns}
           sortable
           defaultSort={orderBy && sortDirection ? { column: orderBy, direction: sortDirection ?? 'ASC' } : undefined}
           onSortChange={handleSortChanged}
           idColumn="id"
-          noDataText={applyingFilters ? 'Searching...' : 'No Data'}
+          noDataText={entitiesFetching ? 'Searching...' : 'No Data'}
           rowOptions={rowOptions}
         />
         <TablePagination
           className={classes.pagination}
-          count={totalRowsCount}
-          page={+paginatedQuery.page}
-          rowsPerPage={+paginatedQuery.limit}
+          count={entities?.totalRowsCount ?? 0}
+          page={+entitiesQuery.page}
+          rowsPerPage={+entitiesQuery.limit}
           rowsPerPageOptions={[10, 25, 50]}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}

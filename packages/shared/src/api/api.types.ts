@@ -1,3 +1,5 @@
+import { FilterConfig } from '../saved-filter.types';
+
 export type PaginatedQuery = {
   limit: string;
   page: string;
@@ -8,7 +10,9 @@ export type SortedQuery = {
   sortDirection?: 'ASC' | 'DESC';
 };
 
-export type PaginationParams = SortedQuery & PaginatedQuery;
+export type FilteredQuery = {
+  filterConfig?: FilterConfig;
+};
 
 export type Paginated<TData> = {
   rows: TData[];

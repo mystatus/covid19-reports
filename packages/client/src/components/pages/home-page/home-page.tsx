@@ -1,5 +1,4 @@
-import React, { 
-  useCallback,
+import React, {
   useEffect,
   useState,
 } from 'react';
@@ -139,7 +138,7 @@ export const HomePage = () => {
       for (const workspace of workspaces) {
         await dispatch(Workspace.fetchDashboards(orgId, workspace.id));
       }
-      
+
       try {
         await dispatch(OrphanedRecordActions.fetchPage({
           orgId,

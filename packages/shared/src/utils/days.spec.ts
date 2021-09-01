@@ -1,5 +1,11 @@
 import { expect } from 'chai';
-import { binaryDaysToDateArray, DaysOfTheWeek, nextDay, daysToString, dayIsIn } from './days';
+import {
+  binaryDaysToDateArray,
+  dayIsIn,
+  DaysOfTheWeek,
+  daysToString,
+  nextDay,
+} from './days';
 
 describe('days', () => {
   describe('daysToString()', () => {
@@ -25,10 +31,12 @@ describe('days', () => {
       expect(daysToString(DaysOfTheWeek.Saturday)).to.eql('Sat');
     });
     it('expect to return Every day', () => {
+      // eslint-disable-next-line no-bitwise
       expect(daysToString(DaysOfTheWeek.Monday | DaysOfTheWeek.Sunday | DaysOfTheWeek.Tuesday | DaysOfTheWeek.Wednesday
       | DaysOfTheWeek.Thursday | DaysOfTheWeek.Friday | DaysOfTheWeek.Saturday)).to.eql('Every day');
     });
     it('expect to return Every weekday', () => {
+      // eslint-disable-next-line no-bitwise
       expect(daysToString(DaysOfTheWeek.Monday | DaysOfTheWeek.Tuesday | DaysOfTheWeek.Wednesday
       | DaysOfTheWeek.Thursday | DaysOfTheWeek.Friday)).to.eql('Every weekday');
     });
@@ -62,11 +70,12 @@ describe('days', () => {
     it('expect to return all day of the week', () => {
       // eslint-disable-next-line no-bitwise
       expect(binaryDaysToDateArray(DaysOfTheWeek.Sunday | DaysOfTheWeek.Monday | DaysOfTheWeek.Tuesday | DaysOfTheWeek.Wednesday
-      | DaysOfTheWeek.Thursday | DaysOfTheWeek.Friday | DaysOfTheWeek.Saturday)).to.eql([1, 2, 3, 4, 5, 6, 7]);
+        | DaysOfTheWeek.Thursday | DaysOfTheWeek.Friday | DaysOfTheWeek.Saturday)).to.eql([1, 2, 3, 4, 5, 6, 7]);
     });
   });
   describe('dayIsIn()', () => {
     it('expect true if Saturday is in the weekend', () => {
+      // eslint-disable-next-line no-bitwise
       expect(dayIsIn(DaysOfTheWeek.Saturday, DaysOfTheWeek.Saturday | DaysOfTheWeek.Sunday)).to.eql(true);
     });
   });

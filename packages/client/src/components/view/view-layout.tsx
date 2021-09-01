@@ -2,25 +2,8 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
-import {
-  Box,
-  Button,
-  IconButton,
-  Menu,
-  MenuItem,
-  Paper,
-  Tooltip,
-} from '@material-ui/core';
-import ChevronRightIcon from '@material-ui/icons/ChevronRight';
-import SaveIcon from '@material-ui/icons/Save';
-import CloseIcon from '@material-ui/icons/Close';
-import FileCopyIcon from '@material-ui/icons/FileCopy';
-import DeleteIcon from '@material-ui/icons/Delete';
-import deepEquals from 'fast-deep-equal';
-
 import {
   ColumnInfo,
   ColumnsConfig,
@@ -29,21 +12,32 @@ import {
   SavedLayoutSerialized,
   SortedQuery,
 } from '@covid19-reports/shared';
-import useEffectDebounced from '../../hooks/use-effect-debounced';
+import _ from 'lodash';
+import deepEquals from 'fast-deep-equal';
 import {
   TableRowOptions,
 } from '../tables/table-custom-columns-content';
-import useStyles from './view-layout.styles';
-import { formatErrorMessage } from '../../utility/errors';
-import { Modal } from '../../actions/modal.actions';
 import { UserSelector } from '../../selectors/user.selector';
 import usePersistedState from '../../hooks/use-persisted-state';
-import { useAppDispatch } from '../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../hooks/use-app-selector';
-import { SavedLayoutClient } from '../../client/saved-layout.client';
+import PageHeader, {
+  PageHeaderHelpProps,
+} from '../page-header/page-header';
+import { entityApi } from '../../api/entity.api';
+import View from './view';
+import { ViewLayoutSelector } from './view-layout-selector';
+import { Modal } from '../../actions/modal.actions';
+import { savedLayoutApi } from '../../api/saved-layout.api';
+import { useAppDispatch } from '../../hooks/use-app-dispatch';
+import {
+  isExistingLayout,
+  makeDefaultViewLayout,
+  viewLayoutDefaults,
+  ViewLayoutId,
+} from './view-layout-utils';
 import { SaveNewLayoutDialog } from '../pages/roster-page/save-new-layout-dialog';
-import { useSticky } from '../../hooks/use-sticky';
-import ColumnSelector from './column-selector';
+import { useEffectError } from '../../hooks/use-effect-error';
+import { ColumnSelector } from './column-selector';
 
 export type LayoutConfigParams = SortedQuery & {
   // actions: ActionInfo[];
@@ -56,56 +50,160 @@ export type LayoutConfigParams = SortedQuery & {
 
 export type Layout = LayoutConfigParams & {
   rowOptions?: TableRowOptions;
-  setSortedQuery: React.Dispatch<React.SetStateAction<SortedQuery>>;
-};
-
-export type ViewLayoutProps<K extends keyof typeof EntityType> = {
-  allowedColumns: (orgId: number) => Promise<ColumnInfo[]>;
-  children: (layout: Layout, editor: JSX.Element) => JSX.Element;
-  entityType: K extends 'Observation' ? EntityType.Observation : EntityType.RosterEntry;
-  maxTableColumns?: number;
-  name?: string;
-  rowOptions?: TableRowOptions;
 };
 
 export const defaultRowOptions: TableRowOptions = {
   renderCell: friendlyColumnValue,
 };
 
-type LayoutId = SavedLayoutSerialized['id'] | null;
-const defaultMaxTableColumns = 7;
-
-export type LayoutSelectorProps = {
-  columns: ColumnInfo[];
-  currentLayout: SavedLayoutSerialized;
+export type ViewLayoutProps = {
   entityType: EntityType;
-  fetchSavedLayouts: () => PromiseLike<any>;
-  onChange: (layout: SavedLayoutSerialized | null) => void;
-  savedLayouts: SavedLayoutSerialized[];
-  selectedLayout: SavedLayoutSerialized;
+  header: {
+    title: string;
+    help?: PageHeaderHelpProps;
+  };
+  maxTableColumns?: number;
+  name?: string;
+  rowOptions?: TableRowOptions;
+
+  // TODO: Build this from configured actions eventually instead of passing it in.
+  buttonSetComponent?: React.ComponentType;
 };
 
-export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, onChange, savedLayouts, selectedLayout }: LayoutSelectorProps) {
-  const classes = useStyles();
+export default function ViewLayout(props: ViewLayoutProps) {
+  const {
+    entityType,
+    header,
+    buttonSetComponent: ButtonSetComponent,
+    maxTableColumns = viewLayoutDefaults.maxTableColumns,
+    rowOptions = defaultRowOptions,
+  } = props;
+  const { name = entityType } = props;
   const dispatch = useAppDispatch();
-  const { id: orgId } = useAppSelector(UserSelector.org)!;
-  const [selectLayoutMenuOpen, setSelectLayoutMenuOpen] = useState(false);
+
+  const orgId = useAppSelector(UserSelector.orgId)!;
+
+  const [currentLayout, setCurrentLayout] = usePersistedState<SavedLayoutSerialized>(`${entityType}CurrentLayout`, makeDefaultViewLayout(entityType, [], maxTableColumns));
+  const [selectedLayoutId, setSelectedLayoutId] = usePersistedState<ViewLayoutId>(`${entityType}SelectedLayoutId`, currentLayout.id);
+  const [layoutSelectorOpen, setLayoutSelectorOpen] = useState(false);
   const [saveNewLayoutDialogOpen, setSaveNewLayoutDialogOpen] = useState(false);
-  const selectLayoutButtonRef = useRef<HTMLButtonElement>(null);
-  const [stickyRef, shouldBeSticky] = useSticky<HTMLDivElement>(-70, 40);
-  const [noticeClosed, setNoticeClosed] = useState(false);
 
-  useEffect(() => {
-    setNoticeClosed(false);
-  }, [selectedLayout]);
+  const {
+    data: columns = [],
+    error: columnsError,
+    isLoading: columnsIsLoading,
+  } = entityApi[entityType].useGetAllowedColumnsInfoQuery({ orgId });
 
-  const selectLayout = useCallback((layoutId: LayoutId) => {
-    setSelectLayoutMenuOpen(false);
-    onChange(layoutId !== null ? savedLayouts.find(x => x.id === layoutId) ?? null : null);
-  }, [onChange, savedLayouts, setSelectLayoutMenuOpen]);
+  const {
+    data: savedLayouts = [],
+    error: savedLayoutsError,
+    isLoading: savedLayoutsLoading,
+    isFetching: savedLayoutsIsFetching,
+  } = savedLayoutApi.useGetSavedLayoutsQuery({
+    orgId,
+    query: { entityType },
+  });
 
-  const handleLayoutSaveClick = useCallback(async () => {
-    if (selectedLayout.id === -1) {
+  const [addSavedLayout, {
+    error: addSavedLayoutError,
+    isLoading: addSavedLayoutIsLoading,
+  }] = savedLayoutApi.useAddSavedLayoutMutation();
+
+  const [updateSavedLayout, {
+    error: updateSavedLayoutError,
+  }] = savedLayoutApi.useUpdateSavedLayoutMutation();
+
+  const [deleteSavedLayout, {
+    error: deleteSavedLayoutError,
+  }] = savedLayoutApi.useDeleteSavedLayoutMutation();
+
+  //
+  // Layouts
+  //
+  const defaultLayout = useMemo(() => {
+    return makeDefaultViewLayout(entityType, columns, maxTableColumns);
+  }, [columns, entityType, maxTableColumns]);
+
+  const layouts = useMemo(() => {
+    return [
+      { ...defaultLayout },
+      ...savedLayouts,
+    ];
+  }, [defaultLayout, savedLayouts]);
+
+  const layoutsById = useMemo(() => {
+    return _.keyBy(layouts, x => x.id);
+  }, [layouts]);
+
+  //
+  // Visible Columns
+  //
+  const columnsMap = useMemo(() => {
+    return _.keyBy(columns, x => x.name);
+  }, [columns]);
+
+  const visibleColumns = useMemo(() => {
+    return Object.keys(currentLayout.columns)
+      .map(key => columnsMap[key])
+      .filter(column => !!column)
+      .sort((a, b) => {
+        const orderA = currentLayout.columns[a!.name].order;
+        const orderB = currentLayout.columns[b!.name].order;
+        return orderA - orderB;
+      }) as ColumnInfo[];
+  }, [columnsMap, currentLayout.columns]);
+
+  const setVisibleColumns = useCallback((visibleColumnsNew: ColumnInfo[]) => {
+    const columnsNew: ColumnsConfig = {};
+    visibleColumnsNew.forEach((column, index) => {
+      columnsNew[column.name] = { order: index };
+    });
+
+    if (!deepEquals(currentLayout.columns, columnsNew)) {
+      setCurrentLayout({
+        ...currentLayout,
+        columns: columnsNew,
+      });
+    }
+  }, [currentLayout, setCurrentLayout]);
+
+  //
+  // Layout Selector
+  //
+  const changeSelection = useCallback((layout: SavedLayoutSerialized) => {
+    setSelectedLayoutId(layout.id);
+    setCurrentLayout({ ...layout });
+    setLayoutSelectorOpen(false);
+  }, [setCurrentLayout, setSelectedLayoutId]);
+
+  const hasChanges = useMemo(() => {
+    const layout = layoutsById[currentLayout.id];
+    if (!layout) {
+      return false;
+    }
+
+    // Layouts much have at least one column to be saved.
+    if (Object.keys(currentLayout.columns).length === 0) {
+      return false;
+    }
+
+    return (
+      !deepEquals(layout.columns, currentLayout.columns)
+      || !deepEquals(layout.actions, currentLayout.actions)
+      || layout.name !== currentLayout.name
+    );
+  }, [currentLayout.actions, currentLayout.columns, currentLayout.id, currentLayout.name, layoutsById]);
+
+  const handleLayoutSelectorClick = useCallback(() => {
+    setLayoutSelectorOpen(true);
+  }, [setLayoutSelectorOpen]);
+
+  const handleLayoutSelectorClose = useCallback(() => {
+    setLayoutSelectorOpen(false);
+  }, [setLayoutSelectorOpen]);
+
+  const handleLayoutSelectorSaveClick = useCallback(async () => {
+    if (!isExistingLayout(selectedLayoutId)) {
       setSaveNewLayoutDialogOpen(true);
       return;
     }
@@ -118,13 +216,37 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
       return;
     }
 
-    const { actions, columns, name } = currentLayout;
-    onChange(await SavedLayoutClient.updateSavedLayout(orgId, selectedLayout.id, { actions, columns, entityType, name }));
-    await fetchSavedLayouts();
-  }, [currentLayout, dispatch, entityType, fetchSavedLayouts, onChange, orgId, selectedLayout]);
+    await updateSavedLayout({
+      orgId,
+      savedLayoutId: selectedLayoutId,
+      body: currentLayout!,
+    });
+  }, [currentLayout, dispatch, orgId, selectedLayoutId, updateSavedLayout]);
 
-  const handleLayoutDeleteClick = useCallback(async () => {
-    if (selectedLayout.id !== -1) {
+  const handleLayoutSelectorSaveAsClick = useCallback(() => {
+    setSaveNewLayoutDialogOpen(true);
+  }, [setSaveNewLayoutDialogOpen]);
+
+  const handleSaveNewLayoutConfirm = useCallback(async (layoutName: string) => {
+    let newLayout: SavedLayoutSerialized;
+    try {
+      newLayout = await addSavedLayout({
+        orgId,
+        body: {
+          ...currentLayout,
+          name: layoutName,
+        },
+      }).unwrap();
+    } catch (err) {
+      return;
+    }
+
+    changeSelection(newLayout);
+    setSaveNewLayoutDialogOpen(false);
+  }, [addSavedLayout, changeSelection, currentLayout, orgId]);
+
+  const handleLayoutSelectorDeleteClick = useCallback(async () => {
+    if (isExistingLayout(selectedLayoutId)) {
       const result = await dispatch(Modal.confirm('Delete Saved Layout', 'Are you sure?', {
         destructive: true,
         confirmText: 'Delete',
@@ -134,285 +256,99 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
         return;
       }
 
-      onChange(null);
-      await SavedLayoutClient.deleteSavedLayout(orgId, selectedLayout.id);
-      await fetchSavedLayouts();
+      await deleteSavedLayout({
+        orgId,
+        savedLayoutId: selectedLayoutId,
+      });
     }
-  }, [dispatch, fetchSavedLayouts, onChange, orgId, selectedLayout]);
+  }, [selectedLayoutId, dispatch, deleteSavedLayout, orgId]);
 
-  const layoutHasChanges = useMemo(() => {
-    if (!selectedLayout || !currentLayout || Object.keys(selectedLayout.columns).length === 0 || Object.keys(selectedLayout.columns).length === 0) {
-      return false;
+  //
+  // Effects
+  //
+  useEffectError(columnsError, 'Get Columns', 'Failed to get columns');
+  useEffectError(savedLayoutsError, 'Get Saved Layouts', 'Failed to get saved layouts');
+  useEffectError(addSavedLayoutError, 'Add Saved Layout', 'Failed to add saved layout');
+  useEffectError(updateSavedLayoutError, 'Update Saved Layout', 'Failed to update saved layout');
+  useEffectError(deleteSavedLayoutError, 'Delete Saved Layout', 'Failed to delete saved layout');
+
+  // If we can't find our current layout, revert back to the default.
+  useEffect(() => {
+    if (savedLayoutsIsFetching || addSavedLayoutIsLoading) {
+      return;
     }
-    return !(deepEquals(selectedLayout.columns ?? {}, currentLayout.columns ?? {})
-      && deepEquals(selectedLayout.actions ?? {}, currentLayout.actions ?? {})
-      && selectedLayout.name === currentLayout.name);
-  }, [selectedLayout, currentLayout]);
 
-  const handleUndoChanges = useCallback(() => {
-    onChange(selectedLayout);
-  }, [onChange, selectedLayout]);
-
-  const handleCloseNotice = useCallback(() => {
-    setNoticeClosed(true);
-  }, [setNoticeClosed]);
-
-  const handleSaveNewLayoutConfirm = useCallback(async (name: string) => {
-    try {
-      const { actions, columns } = currentLayout;
-      const savedLayout = await SavedLayoutClient.addSavedLayout(orgId, { actions, columns, entityType, name });
-      await fetchSavedLayouts();
-      setSaveNewLayoutDialogOpen(false);
-      onChange(savedLayout);
-    } catch (err) {
-      void dispatch(Modal.alert('Save New Layout', `Unable to save layout: ${formatErrorMessage(err)}`));
+    if (!layoutsById[currentLayout.id]) {
+      changeSelection(defaultLayout);
     }
-  }, [currentLayout, dispatch, entityType, fetchSavedLayouts, onChange, orgId, setSaveNewLayoutDialogOpen]);
+  }, [addSavedLayoutIsLoading, changeSelection, currentLayout.id, defaultLayout, layoutsById, savedLayouts, savedLayoutsIsFetching]);
 
-  const LayoutRow = useCallback(({ layout }) => (
-    <MenuItem
-      className={classes.menuItem}
-      onClick={() => selectLayout(layout.id)}
-    >
-      <span className={classes.layoutName}>{layout.name}</span>
+  // If all columns are turned off, reset them all to enabled.
+  useEffect(() => {
+    if (!columnsIsLoading && visibleColumns.length === 0) {
+      setVisibleColumns(columns.slice(0, maxTableColumns));
+    }
+  }, [columnsIsLoading, columns, maxTableColumns, setVisibleColumns, visibleColumns.length]);
 
-      <Tooltip title="Duplicate this layout">
-        <IconButton
-          aria-label="Duplicate"
-          component="span"
-          className={classes.iconButton}
-          onClick={() => setSaveNewLayoutDialogOpen(true)}
-        >
-          <FileCopyIcon />
-        </IconButton>
-      </Tooltip>
-
-      {layout.id !== -1 && (
-        <Tooltip title="Delete this layout">
-          <IconButton
-            aria-label="Delete"
-            className={classes.deleteButton}
-            component="span"
-            onClick={handleLayoutDeleteClick}
-          >
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-    </MenuItem>
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
-  ), [selectLayout, setSaveNewLayoutDialogOpen, handleLayoutDeleteClick]);
-
-  const isSticky = shouldBeSticky && !noticeClosed;
+  //
+  // Render
+  //
+  if (!columns) {
+    return <></>;
+  }
 
   return (
-    <Box display="flex" alignItems="center">
-      {(savedLayouts.length > 1) && (
-        <Button
-          aria-label="Select Layout"
-          onClick={() => setSelectLayoutMenuOpen(!selectLayoutMenuOpen)}
-          size="large"
-          startIcon={<ChevronRightIcon color="action" />}
-          variant="text"
-          ref={selectLayoutButtonRef}
-        >
-          <span className={classes.filterButtonText}>
-            {currentLayout?.name ?? ''}
-          </span>
-        </Button>
+    <>
+      <PageHeader
+        title={header.title}
+        help={header.help}
+        leftComponent={(
+          <>
+            {!savedLayoutsLoading && (
+              <ViewLayoutSelector
+                columns={columns}
+                layouts={layouts}
+                selectedLayoutId={selectedLayoutId}
+                hasChanges={hasChanges}
+                open={layoutSelectorOpen}
+                onClick={handleLayoutSelectorClick}
+                onClose={handleLayoutSelectorClose}
+                onSaveClick={handleLayoutSelectorSaveClick}
+                onSaveAsClick={handleLayoutSelectorSaveAsClick}
+                onDeleteClick={handleLayoutSelectorDeleteClick}
+                onSelectionChange={changeSelection}
+              />
+            )}
+          </>
+        )}
+        rightComponent={(
+          <ColumnSelector
+            columns={columns}
+            visibleColumns={visibleColumns}
+            onVisibleColumnsChange={setVisibleColumns}
+          />
+        )}
+      />
+
+      {ButtonSetComponent && (
+        <ButtonSetComponent />
       )}
 
-      {layoutHasChanges && (
-        <div ref={stickyRef} style={{ position: 'relative' }}>
-          <Paper elevation={isSticky ? 6 : 0} className={isSticky ? classes.saveNoticeSticky : classes.saveNoticeStatic}>
-            <React.Fragment>
-              <Button
-                aria-label="Save"
-                className={classes.saveButton}
-                onClick={handleLayoutSaveClick}
-                size="small"
-                startIcon={<SaveIcon />}
-                variant="outlined"
-              >
-                {savedLayouts.length > 1 ? 'Save' : 'Save Layout'}
-              </Button>
-
-              {isSticky && 'Changes were made to this layout.'}
-
-              <Button size="small" className={classes.undoButton} onClick={handleUndoChanges}>
-                UNDO
-              </Button>
-
-              {isSticky && (
-                <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseNotice}>
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              )}
-            </React.Fragment>
-          </Paper>
-        </div>
-      )}
-
-      <Menu
-        anchorEl={selectLayoutButtonRef.current}
-        keepMounted
-        open={selectLayoutMenuOpen}
-        onClose={() => setSelectLayoutMenuOpen(false)}
-      >
-        {savedLayouts.map(savedLayout => (
-          <div key={savedLayout.id}>
-            <LayoutRow layout={savedLayout} />
-          </div>
-        ))}
-      </Menu>
+      <View
+        layout={{
+          entityType,
+          columns,
+          name,
+          rowOptions,
+          visibleColumns,
+        }}
+      />
 
       <SaveNewLayoutDialog
         open={saveNewLayoutDialogOpen}
         onSave={handleSaveNewLayoutConfirm}
         onCancel={() => setSaveNewLayoutDialogOpen(false)}
       />
-    </Box>
-  );
-}
-
-function makeDefaultLayout(entityType: EntityType, columns: ColumnInfo[], maxTableColumns: number) {
-  const initial: SavedLayoutSerialized = {
-    id: -1,
-    name: 'Default',
-    entityType,
-    columns: {},
-    actions: {},
-  };
-  columns.slice(0, maxTableColumns).forEach((column, index) => {
-    initial.columns[column.name] = { order: index };
-  });
-  return initial;
-}
-
-export default function ViewLayout<E extends EntityType>({
-  allowedColumns,
-  children,
-  entityType,
-  maxTableColumns = defaultMaxTableColumns,
-  rowOptions = defaultRowOptions,
-  ...restProps
-}: ViewLayoutProps<E>) {
-  const { name = entityType } = restProps;
-  const classes = useStyles();
-  const dispatch = useAppDispatch();
-  const { id: orgId } = useAppSelector(UserSelector.org)!;
-  const [columnInfos, setColumnInfos] = useState<ColumnInfo[]>([]);
-  const [sortedQuery, setSortedQuery] = usePersistedState<SortedQuery>(`${name}Sort`);
-  const [currentLayout, setCurrentLayout] = usePersistedState<SavedLayoutSerialized>(`${entityType}CurrentLayout`, makeDefaultLayout(entityType, columnInfos, maxTableColumns));
-  const [selectedLayout, setSelectedLayout] = useState<SavedLayoutSerialized>(makeDefaultLayout(entityType, columnInfos, maxTableColumns));
-  const [savedLayouts, setSavedLayouts] = useState<SavedLayoutSerialized[]>([]);
-
-  const fetchSavedLayouts = useCallback(async (columns = columnInfos) => {
-    try {
-      const layouts: SavedLayoutSerialized[] = [
-        makeDefaultLayout(entityType, columns, maxTableColumns),
-        ...await SavedLayoutClient.getSavedLayouts(orgId, { entityType }),
-      ];
-      setSavedLayouts(layouts);
-
-      if (currentLayout.id !== -1 && !layouts.find(l => l.id === currentLayout.id)) {
-        setCurrentLayout({
-          ...currentLayout,
-          name: 'Default',
-          id: -1,
-        });
-      }
-      return layouts;
-    } catch (error) {
-      void dispatch(Modal.alert('Get Saved Layouts', formatErrorMessage(error, 'Failed to get saved layouts')));
-    }
-    return [];
-  }, [currentLayout, columnInfos, dispatch, entityType, maxTableColumns, orgId, setCurrentLayout]);
-
-  useEffectDebounced(() => {
-    // Loads columnInfos and savedLayouts, then handles setting of current and selected layout
-    if (!columnInfos.length) {
-      void (async () => {
-        try {
-          const columns = await allowedColumns(orgId);
-          setColumnInfos(columns);
-
-          const layouts = await fetchSavedLayouts(columns);
-
-          // currentLayout loads from localStorage but could be edited, so use currentLayout.id
-          // to find the the original saved layout.
-          const layout = layouts.find(l => l.id === currentLayout.id) ?? layouts[0];
-          setSelectedLayout(layout);
-
-          // Don't allow the UI get in the weird state of no columns.
-          if (Object.keys(currentLayout.columns).length === 0) {
-            setCurrentLayout(layout);
-          }
-        } catch (error) {
-          void dispatch(Modal.alert('Error', formatErrorMessage(error, 'Failed to fetch the available Entity columns')));
-        }
-      })();
-    }
-  }, [allowedColumns, columnInfos, currentLayout, dispatch, entityType, fetchSavedLayouts, orgId, maxTableColumns, setColumnInfos, setCurrentLayout, setSelectedLayout]);
-
-  const handleSavedLayoutChange = useCallback((layout: SavedLayoutSerialized | null) => {
-    const layoutOrDefault = layout ?? savedLayouts[0];
-    setSelectedLayout(layoutOrDefault);
-    setCurrentLayout(layoutOrDefault);
-  }, [savedLayouts, setCurrentLayout, setSelectedLayout]);
-
-  const visibleColumns = useMemo(() => {
-    return Object.keys(currentLayout.columns)
-      .map(key => columnInfos.find(c => c.name === key))
-      .filter(column => !!column)
-      .sort((a, b) => {
-        if (currentLayout.columns[a!.name].order < currentLayout.columns[b!.name].order) {
-          return -1;
-        }
-        if (currentLayout.columns[a!.name].order > currentLayout.columns[b!.name].order) {
-          return 1;
-        }
-        return 0;
-      }) as ColumnInfo[];
-  }, [columnInfos, currentLayout]);
-
-  const setVisibleColumns = useCallback((newVisibleColumns: ColumnInfo[]) => {
-    const result: ColumnsConfig = {};
-    newVisibleColumns.forEach((column, index) => {
-      result[column.name] = { order: index };
-    });
-    setCurrentLayout({ ...currentLayout, columns: result });
-  }, [currentLayout, setCurrentLayout]);
-
-  return (
-    <>
-      {children({
-        columns: columnInfos,
-        entityType,
-        name: name ?? entityType,
-        rowOptions,
-        visibleColumns,
-        ...sortedQuery,
-        setSortedQuery,
-      }, (
-        <Box display="flex" alignItems="center" justifyContent="space-between" className={classes.fullWidth}>
-          <LayoutSelector
-            columns={visibleColumns}
-            currentLayout={currentLayout}
-            entityType={entityType}
-            fetchSavedLayouts={fetchSavedLayouts}
-            onChange={handleSavedLayoutChange}
-            savedLayouts={savedLayouts}
-            selectedLayout={selectedLayout}
-          />
-
-          <ColumnSelector
-            columnInfos={columnInfos}
-            setVisibleColumns={setVisibleColumns}
-            visibleColumns={visibleColumns}
-          />
-        </Box>
-      ))}
     </>
   );
 }

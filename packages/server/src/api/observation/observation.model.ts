@@ -1,4 +1,12 @@
-import { BaseEntity, Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import {
+  BaseEntity,
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 import { startCase } from 'lodash';
 import { baseObservationColumns, ColumnInfo, ColumnType, CustomColumns } from '@covid19-reports/shared';
 import { ReportSchema } from '../report-schema/report-schema.model';
@@ -86,7 +94,7 @@ export class Observation extends BaseEntity {
   }
 
   // eslint-disable-next-line require-await
-  static async search(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
+  static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     const queryBuilder = Observation.createQueryBuilder('observation').select([]);
     queryBuilder.leftJoin('observation.reportSchema', 'rs');
 

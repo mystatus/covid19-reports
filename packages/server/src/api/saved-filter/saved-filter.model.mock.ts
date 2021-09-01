@@ -1,4 +1,3 @@
-import { EntityType } from '@covid19-reports/shared';
 import { uniqueString } from '../../util/test-utils/unique';
 import { Org } from '../org/org.model';
 import { SavedFilter } from './saved-filter.model';
@@ -7,7 +6,7 @@ export function mockSavedFilter(org: Org, customData?: Partial<SavedFilter>) {
   return SavedFilter.create({
     org,
     name: uniqueString(),
-    entityType: EntityType.RosterEntry,
+    entityType: 'roster',
     config: {},
     ...customData,
   });

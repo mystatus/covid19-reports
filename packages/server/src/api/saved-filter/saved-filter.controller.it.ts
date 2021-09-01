@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import {
-  EntityType,
   GetSavedFiltersQuery,
   SavedFilterData,
   SavedFilterSerialized,
@@ -51,19 +50,19 @@ describe(`SavedFilter Controller`, () => {
       const rosterEntitySavedFilters = await seedSavedFilters(org, {
         count: 2,
         customData: {
-          entityType: EntityType.RosterEntry,
+          entityType: 'roster',
         },
       });
 
       await seedSavedFilters(org, {
         count: 2,
         customData: {
-          entityType: EntityType.Observation,
+          entityType: 'observation',
         },
       });
 
       const query: GetSavedFiltersQuery = {
-        entityType: EntityType.RosterEntry,
+        entityType: 'roster',
       };
 
       const res = await req.get(`/${org.id}`, {
@@ -89,7 +88,7 @@ describe(`SavedFilter Controller`, () => {
 
       const body: SavedFilterData = {
         name: uniqueString(),
-        entityType: EntityType.RosterEntry,
+        entityType: 'roster',
         config: {},
       };
 
@@ -138,7 +137,7 @@ describe(`SavedFilter Controller`, () => {
 
       const body: SavedFilterData = {
         name: uniqueString(),
-        entityType: EntityType.Observation,
+        entityType: 'observation',
         config: {},
       };
 
