@@ -113,6 +113,7 @@ export default function View({ layout }: ViewProps) {
         enumItems,
         displayName: column.displayName,
         name: column.name,
+        table: column.table,
       };
     });
   }, [columns, units]);

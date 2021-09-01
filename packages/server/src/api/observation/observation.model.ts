@@ -10,8 +10,13 @@ import {
 import { startCase } from 'lodash';
 import { baseObservationColumns, ColumnInfo, ColumnType, CustomColumns } from '@covid19-reports/shared';
 import { ReportSchema } from '../report-schema/report-schema.model';
+import { Roster } from '../roster/roster.model';
 import { timestampColumnTransformer } from '../../util/util';
-import { getColumnSelect, MakeEntity } from '../../util/entity-utils';
+import {
+  getColumnSelect,
+  EntityService,
+  MakeEntity,
+} from '../../util/entity-utils';
 import { Org } from '../org/org.model';
 import { UserRole } from '../user/user-role.model';
 
@@ -90,6 +95,16 @@ export class Observation extends BaseEntity {
       updatable: false,
     }));
 
+    const service = new EntityService(Roster);
+    if (version) {
+      const joinColumns = (await service.getColumns(org, version)).map((columnInfo: ColumnInfo) => {
+        return {
+          ...columnInfo,
+          table: 'roster',
+        };
+      });
+      return [...baseObservationColumns, ...customColumns, ...joinColumns];
+    }
     return [...baseObservationColumns, ...customColumns];
   }
 
@@ -97,6 +112,7 @@ export class Observation extends BaseEntity {
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     const queryBuilder = Observation.createQueryBuilder('observation').select([]);
     queryBuilder.leftJoin('observation.reportSchema', 'rs');
+    queryBuilder.leftJoin(Roster, 'roster', `observation.edipi = roster.edipi`);
 
     // Always select the id column
     queryBuilder.addSelect('observation.id', 'id');
@@ -107,8 +123,7 @@ export class Observation extends BaseEntity {
       queryBuilder.addSelect(Observation.getColumnSelect(column), column.name);
     });
 
-    queryBuilder
-      .where('rs.org_id = :orgId', { orgId: org.id });
+    queryBuilder.where('rs.org_id = :orgId', { orgId: org.id });
 
     return queryBuilder;
   }

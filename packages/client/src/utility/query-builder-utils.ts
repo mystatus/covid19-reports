@@ -15,6 +15,7 @@ export type QueryFieldEnumItem = {
 export type QueryField = {
   displayName?: string;
   name: string;
+  table?: string;
   type: ColumnType;
   enumItems?: QueryFieldEnumItem[];
 };
@@ -124,7 +125,7 @@ export function queryRowsToFilterConfig(queryRows: QueryRow[]): FilterConfig {
       value = listValues;
     }
 
-    config[row.field.name] = {
+    config[row.field.table ? `${row.field.table}.${row.field.name}` : row.field.name] = {
       op: row.op,
       expression: row.expression ?? '',
       expressionEnabled: row.expressionEnabled ?? false,

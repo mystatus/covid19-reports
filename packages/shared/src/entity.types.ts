@@ -53,6 +53,7 @@ export type ColumnInfo = {
   required: boolean;
   updatable: boolean;
   config?: CustomColumnConfig;
+  table?: string;
 };
 
 export type ColumnInfoWithValue = ColumnInfo & {

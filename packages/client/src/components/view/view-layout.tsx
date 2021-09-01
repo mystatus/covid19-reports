@@ -349,6 +349,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
         onSave={handleSaveNewLayoutConfirm}
         onCancel={() => setSaveNewLayoutDialogOpen(false)}
       />
+      
     </>
   );
 }
