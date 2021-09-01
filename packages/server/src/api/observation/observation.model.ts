@@ -15,6 +15,7 @@ import {
   ColumnType,
   CustomColumns,
 } from '@covid19-reports/shared';
+import { ReportSchema } from '../report-schema/report-schema.model';
 import { Roster } from '../roster/roster.model';
 import { timestampColumnTransformer } from '../../util/util';
 import {
@@ -24,7 +25,6 @@ import {
 } from '../../util/entity-utils';
 import { Org } from '../org/org.model';
 import { UserRole } from '../user/user-role.model';
-import { ReportSchema } from '../report-schema/report-schema.model';
 import { RosterHistory } from '../roster/roster-history.model';
 
 /**
@@ -104,13 +104,12 @@ export class Observation extends BaseEntity {
 
     const service = new EntityService(RosterHistory);
     if (version) {
-      const joinColumns = (await service.getColumns(org, version)).filter((c: ColumnInfo) => { return c.name !== 'id'; }).map((columnInfo: ColumnInfo) => {
+      const joinColumns = (await service.getColumns(org, version)).map((columnInfo: ColumnInfo) => {
         return {
           ...columnInfo,
           table: 'roster',
         };
       });
-
       return [...baseObservationColumns, ...customColumns, ...joinColumns];
     }
     return [...baseObservationColumns, ...customColumns];
@@ -120,9 +119,9 @@ export class Observation extends BaseEntity {
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     const queryBuilder = Observation.createQueryBuilder('observation').select([]);
     queryBuilder.leftJoin('observation.reportSchema', 'rs');
+    queryBuilder.leftJoin(Roster, 'roster', `observation.edipi = roster.edipi`);
 
     const units = `rh.unit_id IN (${(await userRole.getUnits()).map(unit => unit.id).join(',')})`;
-    const unitIds = userRole.units.map(unit => unit.id);
     queryBuilder.leftJoin(
       qb =>
         qb
