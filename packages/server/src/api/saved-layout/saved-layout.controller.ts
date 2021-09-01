@@ -32,11 +32,12 @@ class SavedLayoutController {
   }
 
   async addSavedLayout(req: ApiRequest<OrgParam, AddSavedLayoutBody>, res: Response) {
-    const { name, entityType, columns, actions } = assertRequestBody(req, [
+    const { name, entityType, columns, actions, pinTarget } = assertRequestBody(req, [
       'name',
       'entityType',
       'columns',
       'actions',
+      'pinTarget'
     ]);
 
     const existingSavedLayout = await SavedLayout.findOne({
@@ -58,13 +59,14 @@ class SavedLayoutController {
     savedLayout.entityType = entityType;
     savedLayout.columns = columns;
     savedLayout.actions = actions;
+    savedLayout.pinTarget = pinTarget;
     await savedLayout.save();
 
     res.status(201).json(savedLayout);
   }
 
   async updateSavedLayout(req: ApiRequest<OrgSavedLayoutParams, UpdateSavedLayoutBody>, res: Response) {
-    const { name, entityType, columns, actions } = req.body;
+    const { name, entityType, columns, actions, pinTarget } = req.body;
 
     const savedLayout = await requireSavedLayout(req.params.savedLayoutId);
 
@@ -79,6 +81,9 @@ class SavedLayoutController {
     }
     if (actions) {
       savedLayout.actions = actions;
+    }
+    if (pinTarget) {
+      savedLayout.pinTarget = pinTarget;
     }
 
     await savedLayout.save();

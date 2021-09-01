@@ -6,6 +6,7 @@ export type SavedLayoutData = {
   entityType: EntityType;
   actions: ActionsConfig;
   columns: ColumnsConfig;
+  pinTarget?: PinTarget;
 };
 
 export type GetSavedLayoutsQuery = {
@@ -15,3 +16,9 @@ export type GetSavedLayoutsQuery = {
 export type AddSavedLayoutBody = SavedLayoutData;
 
 export type UpdateSavedLayoutBody = Partial<SavedLayoutData>;
+
+export enum PinTarget {
+  None = 'None',
+  Sidebar = 'Sidebar',
+  Home = 'Home'
+}
