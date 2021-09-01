@@ -1,3 +1,4 @@
+import { PinTargets } from "./api/saved-layout.api.types";
 import { EntityType } from "./entity.types";
 import { OrgSerialized } from "./org.types";
 
@@ -19,4 +20,5 @@ export type SavedLayoutSerialized = {
   entityType: EntityType;
   columns: ColumnsConfig;
   actions: ActionsConfig;
+  pinTarget: PinTargets;
 };

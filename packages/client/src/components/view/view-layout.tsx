@@ -25,6 +25,7 @@ import {
   ColumnsConfig,
   EntityType,
   friendlyColumnValue,
+  PinTargets,
   SavedLayoutSerialized,
   SortedQuery,
 } from '@covid19-reports/shared';
@@ -109,8 +110,8 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
       return;
     }
 
-    const { actions, columns, name } = currentLayout;
-    onChange(await SavedLayoutClient.updateSavedLayout(orgId, selectedLayout.id, { actions, columns, entityType, name }));
+    const { actions, columns, name, pinTarget } = currentLayout;
+    onChange(await SavedLayoutClient.updateSavedLayout(orgId, selectedLayout.id, { actions, columns, entityType, name, pinTarget }));
     await fetchSavedLayouts();
   }, [currentLayout, dispatch, entityType, fetchSavedLayouts, onChange, orgId, selectedLayout]);
 
@@ -140,10 +141,12 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
       && selectedLayout.name === currentLayout.name);
   }, [selectedLayout, currentLayout]);
 
-  const handleSaveNewLayoutConfirm = useCallback(async (name: string) => {
+  const handleSaveNewLayoutConfirm = useCallback(async (name: string, pinTarget: PinTargets) => {
     try {
       const { actions, columns } = currentLayout;
-      const savedLayout = await SavedLayoutClient.addSavedLayout(orgId, { actions, columns, entityType, name });
+      console.log('CURRENT LAYOUT');
+      console.dir(currentLayout);
+      const savedLayout = await SavedLayoutClient.addSavedLayout(orgId, { actions, columns, entityType, name, pinTarget });
       await fetchSavedLayouts();
       setSaveNewLayoutDialogOpen(false);
       onChange(savedLayout);
@@ -243,6 +246,7 @@ function makeDefaultLayout(entityType: EntityType, columns: ColumnInfo[], maxTab
     id: -1,
     name: 'Default',
     entityType,
+    pinTarget: PinTargets.Sidebar,
     columns: {},
     actions: {},
   };

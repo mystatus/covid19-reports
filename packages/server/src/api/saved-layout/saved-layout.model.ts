@@ -6,7 +6,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ActionsConfig, ColumnsConfig, EntityType, PinTarget } from '@covid19-reports/shared';
+import { ActionsConfig, ColumnsConfig, EntityType, PinTargets } from '@covid19-reports/shared';
 import { Org } from '../org/org.model';
 
 @Entity()
@@ -46,7 +46,7 @@ export class SavedLayout extends BaseEntity {
   @Column({
     nullable: true,
     type: 'enum',
-    enum: PinTarget
+    enum: PinTargets
   })
-  pinTarget?: PinTarget;
+  pinTarget?: PinTargets;
 }

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Badge,
   BadgeProps,
@@ -20,6 +20,7 @@ import HelpIcon from '@material-ui/icons/Help';
 import ViewWeekOutlinedIcon from '@material-ui/icons/ViewWeekOutlined';
 import DashboardOutlinedIcon from '@material-ui/icons/DashboardOutlined';
 import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
+import AcUnitIcon from '@material-ui/icons/AcUnit';
 import clsx from 'clsx';
 import { useLocation } from 'react-router-dom';
 import { OrphanedRecordSelector } from '../../selectors/orphaned-record.selector';
@@ -30,11 +31,15 @@ import {
   LinkProps,
 } from '../link/link';
 import useStyles from './app-sidenav.styles';
+import { SavedLayoutClient } from 'client/src/client/saved-layout.client';
 import { OrphanedRecordActions } from '../../slices/orphaned-record.slice';
 import { DataExportIcon } from '../icons/data-export-icon';
 import { AppFrameActions } from '../../slices/app-frame.slice';
 import { useAppDispatch } from '../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../hooks/use-app-selector';
+import { EntityType } from 'shared/src/entity.types';
+import { SavedLayoutSerialized } from 'shared/src/saved-layout.types';
+import { PinTargets } from 'shared/src/api/saved-layout.api.types';
 
 type SidenavLinkProps = {
   name: string;
@@ -84,6 +89,9 @@ export const AppSidenav = () => {
   const orgId = useAppSelector(UserSelector.orgId);
   const appFrame = useAppSelector(state => state.appFrame);
   const orphanedRecords = useAppSelector(OrphanedRecordSelector.root);
+  const [savedLayouts, setSavedLayouts] = useState<SavedLayoutSerialized[]>([]);
+
+  // let savedLayouts: SavedLayoutSerialized[] = [];
 
   const toggleSidenav = () => {
     dispatch(AppFrameActions.toggleSidenavExpanded());
@@ -94,6 +102,17 @@ export const AppSidenav = () => {
       void dispatch(OrphanedRecordActions.fetchCount({ orgId: orgId! }));
     } else {
       dispatch(OrphanedRecordActions.clear());
+    }
+    if (orgId) {
+      SavedLayoutClient.getSavedLayouts(orgId, { entityType: EntityType.Observation })
+        .then(layouts => {
+          setSavedLayouts(layouts);
+        })
+        .catch((error) => {
+          setSavedLayouts([]);
+          console.log('ERROR GETTING LAYOUTS');
+          console.error(error);
+        });
     }
   }, [orgId, dispatch, user]);
 
@@ -162,7 +181,14 @@ export const AppSidenav = () => {
             name="Observations"
             icon={(<AssignmentIndIcon />)}
           />
-          {/* )} */}
+          {savedLayouts.length > 0 && (savedLayouts.filter(layout => layout.pinTarget === 'Sidebar' && layout.entityType === 'Observation').map(layout => {
+            console.log('LAYOUT', layout);
+            return (<SidenavLink
+              to="/observations/ads"
+              name={layout.name}
+              icon={(<AcUnitIcon />)}
+            />)
+          }))}
           {user.activeRole?.role.canViewRoster && (
             <SidenavLink
               to="/roster"
