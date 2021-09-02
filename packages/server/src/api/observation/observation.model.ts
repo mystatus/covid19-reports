@@ -82,6 +82,7 @@ export class Observation extends BaseEntity {
     return [...baseObservationColumns, ...customColumns];
   }
 
+  // leave the async keyword or things break - ignore eslint complaining about this
   static async search(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     const queryBuilder = Observation.createQueryBuilder('observation').select([]);
     queryBuilder.leftJoin('observation.reportSchema', 'rs');
