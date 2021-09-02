@@ -267,21 +267,18 @@ export class EntityController<T = any> {
 
   constructor(protected entityConstructor: IEntityModel<T>) {
     this.service = new EntityService(entityConstructor);
-    this.getAllowedColumns = this.getAllowedColumns.bind(this);
-    this.getEntities = this.getEntities.bind(this);
-    this.registerEntityRoutes = this.registerEntityRoutes.bind(this);
   }
 
- getAllowedColumns = async (req: ApiRequest<AllowedColumnsParam>, res: Response<ColumnInfo[]>) => {
+  getAllowedColumns = async (req: ApiRequest<AllowedColumnsParam>, res: Response<ColumnInfo[]>) => {
     const columns = this.service.filterAllowedColumns(await this.entityConstructor.getColumns(req.appOrg!, req.params.version), req.appUserRole!.role);
     res.json(columns);
   };
 
-  async getEntities(req: ApiRequest<OrgParam, SearchBody | null, PaginationParams>, res: Response<Paginated<T>>) {
+  getEntities = async (req: ApiRequest<OrgParam, SearchBody | null, PaginationParams>, res: Response<Paginated<T>>) => {
     res.json(await this.service.search(req.query, req.appOrg!, req.appUserRole!, req.body ?? undefined));
-  }
+  };
 
-  registerEntityRoutes(router: any, { hasVersionedColumns }: EntityRouteOptions, ...middleware: any[]) {
+  registerEntityRoutes = (router: any, { hasVersionedColumns }: EntityRouteOptions, ...middleware: any[]) => {
     router.get(
       `/:orgId/allowed-column${hasVersionedColumns ? '/:version' : ''}`,
       requireOrgAccess,
@@ -303,6 +300,6 @@ export class EntityController<T = any> {
       bodyParser.json(),
       this.getEntities,
     );
-  }
+  };
 
 }
