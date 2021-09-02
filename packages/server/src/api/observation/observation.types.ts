@@ -7,3 +7,18 @@ export interface ObservationApiModel {
   reportingGroup?: string;
   phoneNumber: string;
 }
+
+export interface ObservationApiRawReportModel {
+  ID: string;
+  EDIPI: string;
+  Timestamp: number;
+  ReportingGroup?: string;
+  ReportType: string;
+  Client?: {
+    Application?: string;
+  };
+  Details?: {
+    PhoneNumber?: string;
+    Unit?: string;
+  };
+}
