@@ -30,6 +30,7 @@ import {
   SavedLayoutSerialized,
   SortedQuery,
 } from '@covid19-reports/shared';
+import { useHistory, useParams } from 'react-router-dom';
 import useEffectDebounced from '../../hooks/use-effect-debounced';
 import {
   TableRowOptions,
@@ -43,7 +44,6 @@ import { useAppDispatch } from '../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../hooks/use-app-selector';
 import { SavedLayoutClient } from '../../client/saved-layout.client';
 import { SaveNewLayoutDialog } from '../pages/roster-page/save-new-layout-dialog';
-import { useHistory, useParams } from 'react-router-dom';
 
 export type LayoutConfigParams = SortedQuery & {
   // actions: ActionInfo[];
@@ -281,7 +281,7 @@ export default function ViewLayout<E extends EntityType>({
   const { layoutId } = useParams<{ layoutId?: string }>();
   const history = useHistory();
   const { setSavedLayoutsApp } = restProps;
-  
+
   const fetchSavedLayouts = useCallback(async (columns = columnInfos) => {
     try {
       const layouts: SavedLayoutSerialized[] = [
@@ -292,8 +292,7 @@ export default function ViewLayout<E extends EntityType>({
       setSavedLayoutsApp(layouts);
       if (layoutId && layouts.find(l => l.id === +layoutId)) {
         setCurrentLayout(layouts.find(l => l.id === +layoutId)!);
-      }
-      else if (currentLayout.id !== -1 && !layouts.find(l => l.id === currentLayout.id)) {
+      } else if (currentLayout.id !== -1 && !layouts.find(l => l.id === currentLayout.id)) {
         setCurrentLayout({
           ...currentLayout,
           name: 'Default',
@@ -305,7 +304,7 @@ export default function ViewLayout<E extends EntityType>({
       void dispatch(Modal.alert('Get Saved Layouts', formatErrorMessage(error, 'Failed to get saved layouts')));
     }
     return [];
-  }, [currentLayout, columnInfos, dispatch, entityType, maxTableColumns, orgId, setCurrentLayout]);
+  }, [currentLayout, columnInfos, dispatch, entityType, maxTableColumns, orgId, setCurrentLayout, layoutId, setSavedLayoutsApp]);
 
   useEffect(() => {
     if (layoutId && savedLayouts.find(l => l.id === +layoutId)) {
@@ -345,7 +344,7 @@ export default function ViewLayout<E extends EntityType>({
     setSelectedLayout(layoutOrDefault);
     setCurrentLayout(layoutOrDefault);
     history.replace(`/observations/${layoutOrDefault.id}`);
-  }, [savedLayouts, setCurrentLayout, setSelectedLayout]);
+  }, [savedLayouts, setCurrentLayout, setSelectedLayout, history]);
 
   const visibleColumns = useMemo(() => {
     return Object.keys(currentLayout.columns)

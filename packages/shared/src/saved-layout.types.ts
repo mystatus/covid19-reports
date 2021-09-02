@@ -1,6 +1,6 @@
-import { PinTargets } from "./api/saved-layout.api.types";
-import { EntityType } from "./entity.types";
-import { OrgSerialized } from "./org.types";
+import { PinTargets } from './api/saved-layout.api.types';
+import { EntityType } from './entity.types';
+import { OrgSerialized } from './org.types';
 
 export type ColumnConfig = {
   order: number;

@@ -13,6 +13,7 @@ import {
   TextField,
 } from '@material-ui/core';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
+
 export interface SaveNewLayoutDialogProps {
   open: boolean;
   onSave: (name: string) => Promise<void>;

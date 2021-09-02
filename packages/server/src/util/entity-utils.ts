@@ -272,7 +272,7 @@ export class EntityController<T = any> {
     this.registerEntityRoutes = this.registerEntityRoutes.bind(this);
   }
 
- getAllowedColumns = async (req: ApiRequest<AllowedColumnsParam>, res: Response<ColumnInfo[]>) => {
+  getAllowedColumns = async (req: ApiRequest<AllowedColumnsParam>, res: Response<ColumnInfo[]>) => {
     const columns = this.service.filterAllowedColumns(await this.entityConstructor.getColumns(req.appOrg!, req.params.version), req.appUserRole!.role);
     res.json(columns);
   };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from 'react';
 import {
   Badge,
   BadgeProps,
@@ -9,46 +9,46 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-} from "@material-ui/core";
-import BarChartIcon from "@material-ui/icons/BarChart";
-import HomeIcon from "@material-ui/icons/Home";
-import AssignmentIndIcon from "@material-ui/icons/AssignmentInd";
-import SupervisorAccountIcon from "@material-ui/icons/SupervisorAccount";
-import GroupWorkIcon from "@material-ui/icons/GroupWork";
-import SecurityIcon from "@material-ui/icons/Security";
-import HelpIcon from "@material-ui/icons/Help";
-import ViewWeekOutlinedIcon from "@material-ui/icons/ViewWeekOutlined";
-import DashboardOutlinedIcon from "@material-ui/icons/DashboardOutlined";
-import NavigateBeforeIcon from "@material-ui/icons/NavigateBefore";
-import clsx from "clsx";
-import { useLocation } from "react-router-dom";
-import { OrphanedRecordSelector } from "../../selectors/orphaned-record.selector";
-import { UserSelector } from "../../selectors/user.selector";
-import { PersonCheckIcon } from "../icons/person-check-icon";
-import { Link, LinkProps } from "../link/link";
-import useStyles from "./app-sidenav.styles";
-import { OrphanedRecordActions } from "../../slices/orphaned-record.slice";
-import { DataExportIcon } from "../icons/data-export-icon";
-import { AppFrameActions } from "../../slices/app-frame.slice";
-import { useAppDispatch } from "../../hooks/use-app-dispatch";
-import { useAppSelector } from "../../hooks/use-app-selector";
-import { SavedLayoutSerialized } from "shared/src/saved-layout.types";
+} from '@material-ui/core';
+import BarChartIcon from '@material-ui/icons/BarChart';
+import HomeIcon from '@material-ui/icons/Home';
+import AssignmentIndIcon from '@material-ui/icons/AssignmentInd';
+import SupervisorAccountIcon from '@material-ui/icons/SupervisorAccount';
+import GroupWorkIcon from '@material-ui/icons/GroupWork';
+import SecurityIcon from '@material-ui/icons/Security';
+import HelpIcon from '@material-ui/icons/Help';
+import ViewWeekOutlinedIcon from '@material-ui/icons/ViewWeekOutlined';
+import DashboardOutlinedIcon from '@material-ui/icons/DashboardOutlined';
+import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
+import clsx from 'clsx';
+import { useLocation } from 'react-router-dom';
+import { SavedLayoutSerialized } from 'shared/src/saved-layout.types';
+import { OrphanedRecordSelector } from '../../selectors/orphaned-record.selector';
+import { UserSelector } from '../../selectors/user.selector';
+import { PersonCheckIcon } from '../icons/person-check-icon';
+import { Link, LinkProps } from '../link/link';
+import useStyles from './app-sidenav.styles';
+import { OrphanedRecordActions } from '../../slices/orphaned-record.slice';
+import { DataExportIcon } from '../icons/data-export-icon';
+import { AppFrameActions } from '../../slices/app-frame.slice';
+import { useAppDispatch } from '../../hooks/use-app-dispatch';
+import { useAppSelector } from '../../hooks/use-app-selector';
 
 type SidenavLinkProps = {
   name: string;
   icon?: any;
-  badgeColor?: BadgeProps["color"];
+  badgeColor?: BadgeProps['color'];
   badgeContent?: React.ReactNode;
 } & LinkProps;
 
 const SidenavLink = (props: SidenavLinkProps) => {
-  const { name, icon, badgeColor = "error", badgeContent = 0, ...rest } = props;
+  const { name, icon, badgeColor = 'error', badgeContent = 0, ...rest } = props;
   const classes = useStyles();
   const location = useLocation();
 
   const isActive = () => {
     // Only internal links can be active.
-    if ("to" in props) {
+    if ('to' in props) {
       return location.pathname.endsWith(props.to as string);
     }
 
@@ -69,9 +69,9 @@ const SidenavLink = (props: SidenavLinkProps) => {
 export const AppSidenav = (props: { savedLayouts: SavedLayoutSerialized[] }) => {
   const classes = useStyles();
   const dispatch = useAppDispatch();
-  const user = useAppSelector((state) => state.user);
+  const user = useAppSelector(state => state.user);
   const orgId = useAppSelector(UserSelector.orgId);
-  const appFrame = useAppSelector((state) => state.appFrame);
+  const appFrame = useAppSelector(state => state.appFrame);
   const orphanedRecords = useAppSelector(OrphanedRecordSelector.root);
   const { savedLayouts } = props;
   const toggleSidenav = () => {
@@ -127,9 +127,9 @@ export const AppSidenav = (props: { savedLayouts: SavedLayoutSerialized[] }) => 
           {/* {user.activeRole?.role.canViewObservations && ( */}
           <SidenavLink to="/observations" name="Observations" icon={<AssignmentIndIcon />} />
           {savedLayouts
-            .filter((layout) => layout.pinTarget === "Sidebar" && layout.entityType === "Observation")
-            .map((layout) => (
-              <SidenavLink to={ `/observations/${layout.id}` } name={layout.name} />
+            .filter(layout => (layout.pinTarget === 'Sidebar' && layout.entityType === 'Observation' && layout.id !== -1))
+            .map(layout => (
+              <SidenavLink to={`/observations/${layout.id}`} name={layout.name} />
             ))}
           {user.activeRole?.role.canViewRoster && (
             <SidenavLink to="/roster" name="Roster" icon={<AssignmentIndIcon />} badgeContent={orphanedRecords.count} />

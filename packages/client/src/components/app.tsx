@@ -6,6 +6,8 @@ import {
   Switch,
 } from 'react-router-dom';
 import { CircularProgress } from '@material-ui/core';
+import { EntityType } from 'shared/src/entity.types';
+import { SavedLayoutSerialized } from 'shared/src/saved-layout.types';
 import { UserActions } from '../slices/user.slice';
 import { AppSidenav } from './app-sidenav/app-sidenav';
 import { AppToolbar } from './app-toolbar/app-toolbar';
@@ -26,8 +28,6 @@ import { SettingsPage } from './pages/settings-page/settings-page';
 import { UnitsPage } from './pages/units-page/units-page';
 import { useAppDispatch } from '../hooks/use-app-dispatch';
 import { useAppSelector } from '../hooks/use-app-selector';
-import { EntityType } from 'shared/src/entity.types';
-import { SavedLayoutSerialized } from 'shared/src/saved-layout.types';
 import { SavedLayoutClient } from '../client/saved-layout.client';
 import { UserSelector } from '../selectors/user.selector';
 
@@ -44,16 +44,17 @@ export const App = () => {
   }, [dispatch]);
 
   useEffect(() => {
+    async function loadSavedLayouts(organizationId: number) {
+      const layouts = await SavedLayoutClient.getSavedLayouts(organizationId, { entityType: EntityType.Observation }).catch(error => {
+        console.error(error);
+        return [];
+      });
+      setSavedLayouts(layouts);
+    }
+
     if (orgId) {
-      SavedLayoutClient.getSavedLayouts(orgId, { entityType: EntityType.Observation })
-        .then(layouts => {
-          setSavedLayouts(layouts);
-        })
-        .catch((error) => {
-          setSavedLayouts([]);
-          console.log('ERROR GETTING LAYOUTS');
-          console.error(error);
-        });
+      // tagged as void to indicate intentionally not awaited
+      void loadSavedLayouts(orgId);
     }
   }, [orgId]);
 

@@ -37,7 +37,7 @@ class SavedLayoutController {
       'entityType',
       'columns',
       'actions',
-      'pinTarget'
+      'pinTarget',
     ]);
 
     const existingSavedLayout = await SavedLayout.findOne({

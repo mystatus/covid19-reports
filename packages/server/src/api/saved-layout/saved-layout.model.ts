@@ -46,7 +46,8 @@ export class SavedLayout extends BaseEntity {
   @Column({
     nullable: true,
     type: 'enum',
-    enum: PinTargets
+    enum: PinTargets,
   })
   pinTarget?: PinTargets;
+
 }
