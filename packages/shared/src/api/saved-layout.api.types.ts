@@ -18,7 +18,7 @@ export type AddSavedLayoutBody = SavedLayoutData;
 export type UpdateSavedLayoutBody = Partial<SavedLayoutData>;
 
 export enum PinTargets {
-  None = 'None',
+  None = 'Do not pin',
   Sidebar = 'Sidebar',
   Home = 'Home'
 }
