@@ -1,5 +1,6 @@
 import React, {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -42,6 +43,7 @@ import { useAppDispatch } from '../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../hooks/use-app-selector';
 import { SavedLayoutClient } from '../../client/saved-layout.client';
 import { SaveNewLayoutDialog } from '../pages/roster-page/save-new-layout-dialog';
+import { useHistory, useParams } from 'react-router-dom';
 
 export type LayoutConfigParams = SortedQuery & {
   // actions: ActionInfo[];
@@ -110,7 +112,8 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
       return;
     }
 
-    const { actions, columns, name, pinTarget } = currentLayout;
+    const { actions, columns, name } = currentLayout;
+    const pinTarget = PinTargets.Sidebar;
     onChange(await SavedLayoutClient.updateSavedLayout(orgId, selectedLayout.id, { actions, columns, entityType, name, pinTarget }));
     await fetchSavedLayouts();
   }, [currentLayout, dispatch, entityType, fetchSavedLayouts, onChange, orgId, selectedLayout]);
@@ -141,11 +144,10 @@ export function LayoutSelector({ currentLayout, entityType, fetchSavedLayouts, o
       && selectedLayout.name === currentLayout.name);
   }, [selectedLayout, currentLayout]);
 
-  const handleSaveNewLayoutConfirm = useCallback(async (name: string, pinTarget: PinTargets) => {
+  const handleSaveNewLayoutConfirm = useCallback(async (name: string) => {
     try {
       const { actions, columns } = currentLayout;
-      console.log('CURRENT LAYOUT');
-      console.dir(currentLayout);
+      const pinTarget = PinTargets.Sidebar;
       const savedLayout = await SavedLayoutClient.addSavedLayout(orgId, { actions, columns, entityType, name, pinTarget });
       await fetchSavedLayouts();
       setSaveNewLayoutDialogOpen(false);
@@ -275,7 +277,9 @@ export default function ViewLayout<E extends EntityType>({
   const [currentLayout, setCurrentLayout] = usePersistedState<SavedLayoutSerialized>(`${entityType}CurrentLayout`, makeDefaultLayout(entityType, columnInfos, maxTableColumns));
   const [selectedLayout, setSelectedLayout] = useState<SavedLayoutSerialized>(makeDefaultLayout(entityType, columnInfos, maxTableColumns));
   const [savedLayouts, setSavedLayouts] = useState<SavedLayoutSerialized[]>([]);
-
+  const { layoutId } = useParams<{ layoutId?: string }>();
+  const history = useHistory();
+  
   const fetchSavedLayouts = useCallback(async (columns = columnInfos) => {
     try {
       const layouts: SavedLayoutSerialized[] = [
@@ -284,7 +288,10 @@ export default function ViewLayout<E extends EntityType>({
       ];
       setSavedLayouts(layouts);
 
-      if (currentLayout.id !== -1 && !layouts.find(l => l.id === currentLayout.id)) {
+      if (layoutId && layouts.find(l => l.id === +layoutId)) {
+        setCurrentLayout(layouts.find(l => l.id === +layoutId)!);
+      }
+      else if (currentLayout.id !== -1 && !layouts.find(l => l.id === currentLayout.id)) {
         setCurrentLayout({
           ...currentLayout,
           name: 'Default',
@@ -297,6 +304,13 @@ export default function ViewLayout<E extends EntityType>({
     }
     return [];
   }, [currentLayout, columnInfos, dispatch, entityType, maxTableColumns, orgId, setCurrentLayout]);
+
+  useEffect(() => {
+    if (layoutId && savedLayouts.find(l => l.id === +layoutId)) {
+      setCurrentLayout(savedLayouts.find(l => l.id === +layoutId)!);
+      setSelectedLayout(savedLayouts.find(l => l.id === +layoutId)!);
+    }
+  }, [savedLayouts, setCurrentLayout, layoutId]);
 
   useEffectDebounced(() => {
     // Loads columnInfos and savedLayouts, then handles setting of current and selected layout
@@ -328,6 +342,7 @@ export default function ViewLayout<E extends EntityType>({
     const layoutOrDefault = layout ?? savedLayouts[0];
     setSelectedLayout(layoutOrDefault);
     setCurrentLayout(layoutOrDefault);
+    history.replace(`/observations/${layoutOrDefault.id}`);
   }, [savedLayouts, setCurrentLayout, setSelectedLayout]);
 
   const visibleColumns = useMemo(() => {

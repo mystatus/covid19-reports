@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Redirect,
   Route,
@@ -26,16 +26,36 @@ import { SettingsPage } from './pages/settings-page/settings-page';
 import { UnitsPage } from './pages/units-page/units-page';
 import { useAppDispatch } from '../hooks/use-app-dispatch';
 import { useAppSelector } from '../hooks/use-app-selector';
+import { EntityType } from 'shared/src/entity.types';
+import { SavedLayoutSerialized } from 'shared/src/saved-layout.types';
+import { SavedLayoutClient } from '../client/saved-layout.client';
+import { UserSelector } from '../selectors/user.selector';
 
 export const App = () => {
   const user = useAppSelector(state => state.user);
   const appFrame = useAppSelector(state => state.appFrame);
   const dispatch = useAppDispatch();
   const classes = useStyles();
+  const [savedLayouts, setSavedLayouts] = useState<SavedLayoutSerialized[]>([]);
+  const orgId = useAppSelector(UserSelector.orgId);
 
   useEffect(() => {
     void dispatch(UserActions.refresh());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (orgId) {
+      SavedLayoutClient.getSavedLayouts(orgId, { entityType: EntityType.Observation })
+        .then(layouts => {
+          setSavedLayouts(layouts);
+        })
+        .catch((error) => {
+          setSavedLayouts([]);
+          console.log('ERROR GETTING LAYOUTS');
+          console.error(error);
+        });
+    }
+  }, [orgId]);
 
   function routes() {
     if (!user.isLoggedIn) {
@@ -72,7 +92,7 @@ export const App = () => {
     return (
       <>
         <AppToolbar />
-        <AppSidenav />
+        <AppSidenav savedLayouts={savedLayouts} />
 
         <div
           className={clsx(classes.content, {
@@ -92,7 +112,7 @@ export const App = () => {
               <Route path="/units">
                 <UnitsPage />
               </Route>
-              <Route path="/observations">
+              <Route path="/observations/:layoutId?">
                 <ObservationsPage />
               </Route>
               <Route path="/roster">
