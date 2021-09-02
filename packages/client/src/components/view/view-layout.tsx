@@ -66,6 +66,7 @@ export type ViewLayoutProps<K extends keyof typeof EntityType> = {
   maxTableColumns?: number;
   name?: string;
   rowOptions?: TableRowOptions;
+  setSavedLayoutsApp: React.Dispatch<React.SetStateAction<SavedLayoutSerialized[]>>;
 };
 
 export const defaultRowOptions: TableRowOptions = {
@@ -279,6 +280,7 @@ export default function ViewLayout<E extends EntityType>({
   const [savedLayouts, setSavedLayouts] = useState<SavedLayoutSerialized[]>([]);
   const { layoutId } = useParams<{ layoutId?: string }>();
   const history = useHistory();
+  const { setSavedLayoutsApp } = restProps;
   
   const fetchSavedLayouts = useCallback(async (columns = columnInfos) => {
     try {
@@ -287,7 +289,7 @@ export default function ViewLayout<E extends EntityType>({
         ...await SavedLayoutClient.getSavedLayouts(orgId, { entityType }),
       ];
       setSavedLayouts(layouts);
-
+      setSavedLayoutsApp(layouts);
       if (layoutId && layouts.find(l => l.id === +layoutId)) {
         setCurrentLayout(layouts.find(l => l.id === +layoutId)!);
       }

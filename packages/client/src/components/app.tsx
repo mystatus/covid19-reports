@@ -113,7 +113,7 @@ export const App = () => {
                 <UnitsPage />
               </Route>
               <Route path="/observations/:layoutId?">
-                <ObservationsPage />
+                <ObservationsPage setSavedLayoutsApp={setSavedLayouts} />
               </Route>
               <Route path="/roster">
                 <RosterPage />
