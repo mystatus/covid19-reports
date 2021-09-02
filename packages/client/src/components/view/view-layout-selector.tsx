@@ -26,6 +26,8 @@ import CloseIcon from '@material-ui/icons/Close';
 import useStyles from './view-layout-selector.styles';
 import { ViewLayoutId } from './view-layout-utils';
 import { useSticky } from '../../hooks/use-sticky';
+import { Modal } from '../../actions/modal.actions';
+import { useAppDispatch } from '../../hooks/use-app-dispatch';
 
 export type ViewLayoutSelectorProps = {
   columns: ColumnInfo[];
@@ -55,6 +57,7 @@ export function ViewLayoutSelector(props: ViewLayoutSelectorProps) {
     onSelectionChange,
   } = props;
   const classes = useStyles();
+  const dispatch = useAppDispatch();
 
   const [stickyRef, shouldBeSticky] = useSticky<HTMLDivElement>(-70, 40);
   const [noticeClosed, setNoticeClosed] = useState(false);
@@ -69,10 +72,19 @@ export function ViewLayoutSelector(props: ViewLayoutSelectorProps) {
     setNoticeClosed(false);
   }, [selectedLayoutId]);
 
-  const handleUndoChanges = useCallback(() => {
+  const handleRevertChanges = useCallback(async () => {
+    const result = await dispatch(Modal.confirm('Revert Changes', 'Are you sure?', {
+      destructive: true,
+      confirmText: 'Revert',
+    }));
+
+    if (!result?.button?.value) {
+      return;
+    }
+
     const selectedLayout = layouts.find(x => x.id === selectedLayoutId);
     onSelectionChange(selectedLayout!);
-  }, [layouts, onSelectionChange, selectedLayoutId]);
+  }, [dispatch, layouts, onSelectionChange, selectedLayoutId]);
 
   const handleCloseNotice = useCallback(() => {
     setNoticeClosed(true);
@@ -144,62 +156,54 @@ export function ViewLayoutSelector(props: ViewLayoutSelectorProps) {
       )}
 
       {hasChanges && (
-        <>
-          <Box display="flex" alignItems="center">
-            <Button
-              aria-label="Save"
-              className={classes.button}
-              onClick={onSaveClick}
-              size="small"
-              startIcon={<SaveIcon />}
-              variant="outlined"
-              disabled={!hasChanges}
-            >
-              Save Layout
-            </Button>
-          </Box>
+        <div
+          className={classes.stickyDiv}
+          ref={stickyRef}
+        >
+          <Paper
+            elevation={isSticky ? 6 : 0}
+            className={isSticky ? classes.saveNoticeSticky : classes.saveNoticeStatic}
+          >
+            <>
+              <Button
+                aria-label="Save"
+                className={classes.button}
+                onClick={onSaveClick}
+                size="small"
+                startIcon={<SaveIcon />}
+                variant="outlined"
+              >
+                Save Layout
+              </Button>
 
-          <div ref={stickyRef} style={{ position: 'relative' }}>
-            <Paper
-              elevation={isSticky ? 6 : 0}
-              className={isSticky ? classes.saveNoticeSticky : classes.saveNoticeStatic}
-            >
-              <>
-                <Button
-                  aria-label="Save"
-                  className={classes.button}
-                  onClick={onSaveClick}
+              <Button
+                className={classes.revertButton}
+                onClick={handleRevertChanges}
+                size="small"
+                variant="outlined"
+              >
+                Revert Changes
+              </Button>
+
+              {isSticky && (
+                <Box display="inline-block" marginRight={2}>
+                  Changes were made to this layout.
+                </Box>
+              )}
+
+              {isSticky && (
+                <IconButton
                   size="small"
-                  startIcon={<SaveIcon />}
-                  variant="outlined"
+                  aria-label="close"
+                  color="inherit"
+                  onClick={handleCloseNotice}
                 >
-                  Save Layout
-                </Button>
-
-                {isSticky && 'Changes were made to this layout.'}
-
-                <Button
-                  size="small"
-                  className={classes.undoButton}
-                  onClick={handleUndoChanges}
-                >
-                  Undo
-                </Button>
-
-                {isSticky && (
-                  <IconButton
-                    size="small"
-                    aria-label="close"
-                    color="inherit"
-                    onClick={handleCloseNotice}
-                  >
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
-                )}
-              </>
-            </Paper>
-          </div>
-        </>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              )}
+            </>
+          </Paper>
+        </div>
       )}
     </Box>
   );

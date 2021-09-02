@@ -26,20 +26,18 @@ export default makeStyles((theme: Theme) => createStyles({
   iconButton: {
     padding: theme.spacing(1),
   },
+  revertButton: {
+    borderColor: 'transparent',
+    color: '#E41D3D',
+    marginRight: theme.spacing(2),
+    '&:hover': {
+      borderColor: '#E41D3D',
+    },
+  },
   deleteButton: {
     color: '#E41D3D',
     padding: theme.spacing(1),
     marginRight: -theme.spacing(1),
-  },
-  undoButton: {
-    backgroundColor: 'transparent',
-    border: '1px solid transparent',
-    color: '#777',
-    '&:hover': {
-      backgroundColor: '#f8f8f8',
-      borderColor: '#ddd',
-      color: '#666',
-    },
   },
   saveNoticeStatic: {
     position: 'relative',
@@ -50,12 +48,15 @@ export default makeStyles((theme: Theme) => createStyles({
     top: 48,
     zIndex: 1202,
     minWidth: 'min-content',
-
     backgroundColor: '#fff',
     padding: 2,
 
     '& $undoButton': {
       marginLeft: theme.spacing(2),
     },
+  },
+  stickyDiv: {
+    position: 'relative',
+    marginLeft: theme.spacing(2),
   },
 }));
