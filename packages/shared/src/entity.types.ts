@@ -75,7 +75,8 @@ export type QueryValueScalarType = string | number | boolean;
 
 export type QueryValueType = QueryValueScalarType | QueryValueScalarType[];
 
-export enum EntityType {
-  Observation = 'Observation',
-  RosterEntry = 'RosterEntry',
-}
+export const entityTypes = [
+  'observation',
+  'roster',
+] as const;
+export type EntityType = typeof entityTypes[number];

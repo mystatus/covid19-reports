@@ -4,6 +4,7 @@ import _ from 'lodash';
 import {
   baseRosterColumns,
   ColumnType,
+  GetEntitiesQuery,
 } from '@covid19-reports/shared';
 import { expectNoErrors } from '../../util/test-utils/expect';
 import {
@@ -263,9 +264,7 @@ describe(`Roster Controller`, () => {
       const dataIds = res.data.rows.map((x: Roster) => x.id);
       expect(dataIds).to.include.members(rosterEntries.map(x => x.id));
     });
-  });
 
-  describe(`${basePath}/:orgId/search : post`, () => {
     it(`returns the matching roster entries`, async () => {
       const units = [
         await seedUnit(org),
@@ -277,11 +276,21 @@ describe(`Roster Controller`, () => {
         await seedRosterEntry(units[1]),
       ];
 
-      const res = await req.post(`/${org.id}/search`, {
-        firstName: {
-          op: '=',
-          value: rosterEntries[1].firstName,
+      const query: GetEntitiesQuery = {
+        page: '0',
+        limit: '10',
+        filterConfig: {
+          firstName: {
+            op: '=',
+            value: rosterEntries[1].firstName,
+            expression: '',
+            expressionEnabled: false,
+          },
         },
+      };
+
+      const res = await req.get(`/${org.id}`, {
+        params: query,
       });
 
       expectNoErrors(res);

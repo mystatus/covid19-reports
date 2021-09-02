@@ -6,7 +6,12 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ActionsConfig, ColumnsConfig, EntityType } from '@covid19-reports/shared';
+import {
+  ActionsConfig,
+  ColumnsConfig,
+  EntityType,
+  entityTypes,
+} from '@covid19-reports/shared';
 import { Org } from '../org/org.model';
 
 @Entity()
@@ -27,7 +32,7 @@ export class SavedLayout extends BaseEntity {
 
   @Column({
     type: 'enum',
-    enum: EntityType,
+    enum: entityTypes,
   })
   entityType!: EntityType;
 

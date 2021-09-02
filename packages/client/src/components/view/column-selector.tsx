@@ -20,13 +20,7 @@ import {
 } from 'react-beautiful-dnd';
 import { ColumnInfo } from '@covid19-reports/shared';
 import { Box, Button, Menu } from '@material-ui/core';
-import useStyles from './view-layout.styles';
-
-type ColumnSelectorProps = {
-  columnInfos: ColumnInfo[];
-  setVisibleColumns: (columns: ColumnInfo[]) => void;
-  visibleColumns: ColumnInfo[];
-};
+import useStyles from './column-selector.styles';
 
 const reorder = (list: any[], startIndex: number, endIndex: number): any[] => {
   const result = Array.from(list);
@@ -153,7 +147,13 @@ const columnSectionNames: Record<string, string> = {
   available: 'Available Columns',
 };
 
-export default function ColumnSelector({ columnInfos, setVisibleColumns, visibleColumns }: ColumnSelectorProps) {
+export type ColumnSelectorProps = {
+  columns: ColumnInfo[];
+  onVisibleColumnsChange: (columns: ColumnInfo[]) => void;
+  visibleColumns: ColumnInfo[];
+};
+
+export const ColumnSelector = ({ columns, onVisibleColumnsChange, visibleColumns }: ColumnSelectorProps) => {
   const classes = useStyles();
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
   const visibleColumnsButtonRef = useRef<HTMLSpanElement>(null);
@@ -172,8 +172,8 @@ export default function ColumnSelector({ columnInfos, setVisibleColumns, visible
 
   const columnInfoMap = useMemo((): Record<string, ColumnInfo[]> => ({
     visible: visibleColumns,
-    available: columnInfos.filter(t => visibleColumns.every(v => v.name !== t.name)).sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' })),
-  }), [columnInfos, visibleColumns]);
+    available: columns.filter(t => visibleColumns.every(v => v.name !== t.name)).sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' })),
+  }), [columns, visibleColumns]);
 
   const handleDragEnd = useCallback((result: DropResult) => {
     setIsDropDisabled(false);
@@ -185,9 +185,8 @@ export default function ColumnSelector({ columnInfos, setVisibleColumns, visible
       source: result.source,
       destination: result.destination,
     });
-    setVisibleColumns(columnMap.visible);
-  }, [columnInfoMap, setVisibleColumns]);
-
+    onVisibleColumnsChange(columnMap.visible);
+  }, [columnInfoMap, onVisibleColumnsChange]);
 
   return (
     <>
@@ -281,4 +280,4 @@ export default function ColumnSelector({ columnInfos, setVisibleColumns, visible
       </Menu>
     </>
   );
-}
+};

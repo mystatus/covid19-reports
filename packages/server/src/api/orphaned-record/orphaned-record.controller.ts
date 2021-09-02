@@ -57,8 +57,8 @@ class OrphanedRecordController {
       'page',
       'limit',
     ]);
-    const page = parseInt(req.query.page);
-    const limit = parseInt(req.query.limit);
+    const page = parseInt(req.query.page ?? '0');
+    const limit = parseInt(req.query.limit ?? '10');
     const unit = req.query.unit;
     const offset = page * limit;
 

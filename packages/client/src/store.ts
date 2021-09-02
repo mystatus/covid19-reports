@@ -13,6 +13,7 @@ import {
   REGISTER,
   REHYDRATE,
 } from 'redux-persist/es/constants';
+import { setupListeners } from '@reduxjs/toolkit/query';
 import {
   modalInitialState,
   modalReducer,
@@ -26,10 +27,6 @@ import {
   roleInitialState,
   roleReducer,
 } from './reducers/role.reducer';
-import {
-  rosterInitialState,
-  rosterReducer,
-} from './reducers/roster.reducer';
 import {
   reportSchemaInitialState,
   reportSchemaReducer,
@@ -59,6 +56,9 @@ import {
   localStorageSlice,
 } from './slices/local-storage.slice';
 import { Modal } from './actions/modal.actions';
+import { savedLayoutApi } from './api/saved-layout.api';
+import { rosterApi } from './api/roster.api';
+import { observationApi } from './api/observation.api';
 
 const initialState = {
   appFrame: appFrameInitialState,
@@ -68,7 +68,6 @@ const initialState = {
   unit: unitInitialState,
   reportSchema: reportSchemaInitialState,
   orphanedRecord: orphanedRecordInitialState,
-  roster: rosterInitialState,
   user: userInitialState,
   workspace: workspaceInitialState,
   localStorage: localStorageInitialState,
@@ -82,12 +81,14 @@ const reducers = combineReducers({
   modal: modalReducer,
   role: roleReducer,
   unit: unitReducer,
-  roster: rosterReducer,
   reportSchema: reportSchemaReducer,
   orphanedRecord: orphanedRecordSlice.reducer,
   user: userSlice.reducer,
   workspace: workspaceReducer,
   localStorage: localStorageSlice.reducer,
+  [savedLayoutApi.reducerPath]: savedLayoutApi.reducer,
+  [rosterApi.reducerPath]: rosterApi.reducer,
+  [observationApi.reducerPath]: observationApi.reducer,
 });
 
 const persistedReducer = persistReducer({
@@ -100,6 +101,9 @@ const persistActions = [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER, 'PERS
 
 const middleware = [
   modalResolverHandler,
+  savedLayoutApi.middleware,
+  rosterApi.middleware,
+  observationApi.middleware,
 ];
 
 export const store = configureStore({
@@ -118,5 +122,7 @@ export const store = configureStore({
 });
 
 export const persistor = persistStore(store);
+
+setupListeners(store.dispatch);
 
 export type AppDispatch = typeof store.dispatch;

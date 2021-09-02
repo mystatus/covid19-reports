@@ -3,6 +3,7 @@ import axios, {
   AxiosRequestConfig,
   AxiosResponse,
 } from 'axios';
+import qs from 'qs';
 import { User } from '../../api/user/user.model';
 
 export class TestRequest {
@@ -15,6 +16,7 @@ export class TestRequest {
   constructor(basePath: string) {
     this.client = axios.create({
       baseURL: `${this.host}${basePath}`,
+      paramsSerializer: qs.stringify, // Allow nested objects in querystrings.
     });
   }
 

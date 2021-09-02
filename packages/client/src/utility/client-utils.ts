@@ -6,6 +6,7 @@ import axios, {
   Method,
 } from 'axios';
 import axiosRetry from 'axios-retry';
+import qs from 'qs';
 
 export type PossiblyAbortable = { abort?: () => void };
 
@@ -26,6 +27,7 @@ export function createApiClient(basePath: string): AxiosClient {
     headers: {
       Accept: 'application/json',
     },
+    paramsSerializer: qs.stringify, // Allow nested objects in querystrings.
   });
 
   client.interceptors.response.use(

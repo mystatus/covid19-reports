@@ -3,22 +3,24 @@ import multer from 'multer';
 import path from 'path';
 import bodyParser from 'body-parser';
 import controller from './roster.controller';
-import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth/auth-middleware';
+import {
+  requireInternalUser,
+  requireOrgAccess,
+  requireRolePermission,
+} from '../../auth/auth-middleware';
 
+/* eslint-disable promise/prefer-await-to-callbacks */
 const rosterUpload = multer({
   storage: multer.diskStorage({
-    // eslint-disable-next-line promise/prefer-await-to-callbacks
     destination: (req: any, file: any, cb: any) => {
-      // eslint-disable-next-line promise/prefer-await-to-callbacks
       cb(null, path.join(__dirname, 'uploads'));
     },
-    // eslint-disable-next-line promise/prefer-await-to-callbacks
     filename: (req: any, file: any, cb: any) => {
-      // eslint-disable-next-line promise/prefer-await-to-callbacks
       cb(null, `${file.fieldname}-${Date.now()}-${file.originalname}`);
     },
   }),
 });
+/* eslint-enable promise/prefer-await-to-callbacks */
 
 const router = express.Router() as any;
 
@@ -76,15 +78,8 @@ router.get(
   '/:orgId',
   requireOrgAccess,
   requireRolePermission(role => role.canViewRoster),
+  bodyParser.urlencoded({ extended: true }),
   controller.getRoster,
-);
-
-router.post(
-  '/:orgId/search',
-  requireOrgAccess,
-  requireRolePermission(role => role.canViewRoster),
-  bodyParser.json(),
-  controller.searchRoster,
 );
 
 router.post(
@@ -92,7 +87,6 @@ router.post(
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),
   bodyParser.json(),
-  // eslint-disable-next-line import/no-named-as-default-member
   controller.addRosterEntry,
 );
 

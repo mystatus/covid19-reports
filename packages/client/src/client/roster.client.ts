@@ -2,8 +2,7 @@ import {
   AddCustomColumnBody,
   AddRosterEntryBody,
   ColumnInfo,
-  PaginationParams,
-  SearchBody,
+  GetEntitiesQuery,
   UpdateCustomColumnBody,
   UpdateRosterEntryBody,
 } from '@covid19-reports/shared';
@@ -44,14 +43,8 @@ export class RosterClient {
     });
   }
 
-  static getRoster(orgId: number, query: PaginationParams): Promise<ApiRosterPaginated> {
+  static getRoster(orgId: number, query: GetEntitiesQuery): Promise<ApiRosterPaginated> {
     return client.get(`${orgId}`, {
-      params: query,
-    });
-  }
-
-  static searchRoster(orgId: number, body: SearchBody, query: PaginationParams): Promise<ApiRosterPaginated> {
-    return client.post(`${orgId}/search`, body, {
       params: query,
     });
   }

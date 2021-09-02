@@ -7,9 +7,16 @@ import { HelpButton } from '../help/help-button/help-button';
 import { HelpCard } from '../help/help-card/help-card';
 import useStyles from './page-header.styles';
 
+export type PageHeaderHelpProps = {
+  contentComponent: ElementType;
+  cardId: string;
+  variant?: 'plain' | 'info';
+};
+
 export interface PageHeaderProps {
   title: string;
-  adjacentComponent?: React.ReactElement;
+  leftComponent?: React.ReactElement;
+  rightComponent?: React.ReactElement;
   help?: {
     contentComponent: ElementType;
     cardId: string;
@@ -18,24 +25,28 @@ export interface PageHeaderProps {
 }
 
 const PageHeader = (props: PageHeaderProps) => {
-  const { adjacentComponent, help, title } = props;
+  const { leftComponent, rightComponent, help, title } = props;
   const HelpContent = help?.contentComponent;
   const classes = useStyles();
 
   return (
     <header className={classes.header}>
-      <Box display="flex" alignItems="center">
-        <Typography className={classes.title}>
-          {title}
-        </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box display="flex" alignItems="center">
+          <Typography className={classes.title}>
+            {title}
+          </Typography>
 
-        <Box display="flex" alignItems="center" width="100%">
-          {adjacentComponent}
+          {leftComponent}
+        </Box>
 
-          {help && (
+        <Box display="flex" alignItems="center">
+          {rightComponent}
+
+          {(help && HelpContent) && (
             <HelpButton
               title={title}
-              contentComponent={help.contentComponent}
+              contentComponent={HelpContent}
               variant={help.variant}
             />
           )}

@@ -24,13 +24,13 @@ import {
 } from '../../../utility/permission-set';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
-import { RosterSelector } from '../../../selectors/roster.selector';
 import { NotificationSelector } from '../../../selectors/notification.selector';
 import { WorkspaceSelector } from '../../../selectors/workspace.selector';
 import { formatErrorMessage } from '../../../utility/errors';
 import { RoleClient } from '../../../client/role.client';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 import { Dialog } from '../../dialog/dialog';
+import { rosterApi } from '../../../api/roster.api';
 
 export interface EditRoleDialogProps {
   open: boolean;
@@ -41,15 +41,14 @@ export interface EditRoleDialogProps {
 }
 
 export const EditRoleDialog = (props: EditRoleDialogProps) => {
+  const { open, orgId, role, onClose, onError } = props;
   const classes = useStyles();
+
   const notifications = useAppSelector(NotificationSelector.all);
-  const rosterColumns = useAppSelector(RosterSelector.columns);
+  const { data: rosterColumns } = rosterApi.useGetAllowedColumnsInfoQuery({ orgId: orgId! });
   const workspaces = useAppSelector(WorkspaceSelector.all);
 
   const [formDisabled, setFormDisabled] = useState(false);
-  const {
-    open, orgId, role, onClose, onError,
-  } = props;
 
   const existingRole: boolean = !!role;
   const [name, setName] = useState(role?.name || '');

@@ -1,10 +1,26 @@
-import { ColumnInfo, ColumnType, ColumnValue, edipiColumnDisplayName, Paginated, PaginationParams, QueryOp, SearchBody, SearchBodyEntry } from '@covid19-reports/shared';
+import {
+  ColumnInfo,
+  ColumnType,
+  ColumnValue,
+  edipiColumnDisplayName,
+  GetEntitiesQuery,
+  FilterConfig,
+  FilterConfigItem,
+  Paginated,
+  QueryOp,
+} from '@covid19-reports/shared';
 import bodyParser from 'body-parser';
 import { Response } from 'express';
 import { snakeCase } from 'lodash';
 import moment from 'moment';
-import { OrderByCondition, SelectQueryBuilder } from 'typeorm';
-import { ApiRequest, OrgParam } from '../api/api.router';
+import {
+  OrderByCondition,
+  SelectQueryBuilder,
+} from 'typeorm';
+import {
+  ApiRequest,
+  OrgParam,
+} from '../api/api.router';
 import { Org } from '../api/org/org.model';
 import { Role } from '../api/role/role.model';
 import { UserRole } from '../api/user/user-role.model';
@@ -20,9 +36,8 @@ export interface IEntityModel<T extends IEntity> {
   new(): T;
   getColumnSelect(column: ColumnInfo): string;
   filterAllowedColumns?(columns: ColumnInfo[], role: Role): ColumnInfo[];
-
   getColumns(org: Org, version?: string): Promise<ColumnInfo[]>;
-  search(org: Org, userRole: UserRole, columns: ColumnInfo[]): Promise<SelectQueryBuilder<T>>;
+  buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]): Promise<SelectQueryBuilder<T>>;
 }
 
 export function MakeEntity<T, S extends IEntityModel<T>>() {
@@ -138,21 +153,20 @@ export class EntityService<T extends IEntity> {
     return filterAllowedColumns(columns, role);
   }
 
-  async search<R = T>(query: PaginationParams, org: Org, userRole: UserRole, searchParams?: SearchBody): Promise<Paginated<R>> {
-    const limit = parseInt(query.limit ?? '100');
+  async getEntities<R = T>(query: GetEntitiesQuery, org: Org, userRole: UserRole): Promise<Paginated<R>> {
+    const limit = parseInt(query.limit ?? '10');
     const page = parseInt(query.page ?? '0');
     const orderBy = query.orderBy || 'edipi';
     const sortDirection = query.sortDirection || 'ASC';
+    const filterConfig = query.filterConfig || {};
     const columns = await this.entity.getColumns(org, 'es6ddssymptomobs');
     const allowedColumns = this.filterAllowedColumns(columns, userRole.role);
-    let queryBuilder = await this.entity.search(org, userRole, allowedColumns);
+    let queryBuilder = await this.entity.buildSearchQuery(org, userRole, allowedColumns);
 
-    if (searchParams) {
-      Object.keys(searchParams)
-        .forEach(columnName => {
-          queryBuilder = this.applyWhere(queryBuilder, findColumnByName(columnName, allowedColumns), searchParams[columnName]);
-        });
-    }
+    Object.keys(filterConfig)
+      .forEach(columnName => {
+        queryBuilder = this.applyWhere(queryBuilder, findColumnByName(columnName, allowedColumns), filterConfig[columnName]);
+      });
 
     const pagedQuery = queryBuilder
       .clone()
@@ -178,15 +192,15 @@ export class EntityService<T extends IEntity> {
     };
   }
 
-  private applyWhere(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, body: SearchBodyEntry) {
-    const method = this.where[body.op];
+  private applyWhere(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterItem: FilterConfigItem) {
+    const method = this.where[filterItem.op];
     if (method) {
-      return method.call(this, queryBuilder, column, body);
+      return method.call(this, queryBuilder, column, filterItem);
     }
-    throw new BadRequestError(`Malformed search query. Received unexpected parameters for '${column.name}', op: ${body.op}`);
+    throw new BadRequestError(`Malformed search query. Received unexpected parameters for '${column.name}', op: ${filterItem.op}`);
   }
 
-  where: Record<QueryOp, (queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, body: SearchBodyEntry) => SelectQueryBuilder<T>> = {
+  where: Record<QueryOp, (queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) => SelectQueryBuilder<T>> = {
     in: this.whereIn,
     between: this.whereBetween,
     '~': this.whereLike,
@@ -198,8 +212,9 @@ export class EntityService<T extends IEntity> {
     '<': this.whereCompare,
   };
 
-  whereIn(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, searchBody: SearchBodyEntry) {
-    const { op, value } = searchBody;
+  whereIn(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) {
+    const { op, value } = filterConfigItem;
+
     if (!Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected array value for ${column.name}.`);
     }
@@ -209,8 +224,9 @@ export class EntityService<T extends IEntity> {
     });
   }
 
-  whereBetween(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, searchBody: SearchBodyEntry) {
-    const { value } = searchBody;
+  whereBetween(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) {
+    const { value } = filterConfigItem;
+
     const maxKey = `${column.name}Max`;
     const minKey = `${column.name}Min`;
     if (!Array.isArray(value)) {
@@ -223,11 +239,12 @@ export class EntityService<T extends IEntity> {
     });
   }
 
-  whereLike(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, searchBody: SearchBodyEntry) {
+  whereLike(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) {
+    const { op, value } = filterConfigItem;
+
     if (column.type !== ColumnType.String) {
       throw new BadRequestError('Malformed search query. Expected string value.');
     }
-    const { op, value } = searchBody;
     const prefix = op !== 'startsWith' ? '%' : '';
     const suffix = op !== 'endsWith' ? '%' : '';
     const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
@@ -236,8 +253,9 @@ export class EntityService<T extends IEntity> {
     });
   }
 
-  whereCompare(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, searchBody: SearchBodyEntry) {
-    const { op, value } = searchBody;
+  whereCompare(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) {
+    const { op, value } = filterConfigItem;
+
     if (Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected scalar value for ${column.name}.`);
     }
@@ -274,8 +292,8 @@ export class EntityController<T = any> {
     res.json(columns);
   };
 
-  getEntities = async (req: ApiRequest<OrgParam, SearchBody | null, PaginationParams>, res: Response<Paginated<T>>) => {
-    res.json(await this.service.search(req.query, req.appOrg!, req.appUserRole!, req.body ?? undefined));
+  getEntities = async (req: ApiRequest<OrgParam, FilterConfig | null, GetEntitiesQuery>, res: Response<Paginated<T>>) => {
+    res.json(await this.service.getEntities(req.query, req.appOrg!, req.appUserRole!));
   };
 
   registerEntityRoutes = (router: any, { hasVersionedColumns }: EntityRouteOptions, ...middleware: any[]) => {

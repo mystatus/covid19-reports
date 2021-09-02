@@ -1,4 +1,7 @@
-import React, { useEffect } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+} from 'react';
 import {
   Box,
   Typography,
@@ -10,12 +13,12 @@ import useStyles, { ScrollHeightParam } from './role-info-panel.styles';
 import { parsePermissions } from '../../utility/permission-set';
 import { Notification } from '../../actions/notification.actions';
 import { Roster } from '../../actions/roster.actions';
-import { RosterSelector } from '../../selectors/roster.selector';
 import { NotificationSelector } from '../../selectors/notification.selector';
 import { UserSelector } from '../../selectors/user.selector';
 import { RoleDataTable } from './role-table';
 import { useAppDispatch } from '../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../hooks/use-app-selector';
+import { entityApi } from '../../api/entity.api';
 
 const Header = ({ text }: { text: string }) => <Typography className={useStyles().roleHeader}>{text}:</Typography>;
 
@@ -59,12 +62,14 @@ export type RoleInfoPanelProps = {
 };
 
 const RoleInfoPanel = (props: RoleInfoPanelProps) => {
+  const { role } = props;
   const classes = useStyles();
   const dispatch = useAppDispatch();
-  const orgId = useAppSelector(UserSelector.orgId);
+
+  const orgId = useAppSelector(UserSelector.org)!.id;
   const availableNotifications = useAppSelector(NotificationSelector.all);
-  const rosterColumns = useAppSelector(RosterSelector.columns);
-  const { role } = props;
+
+  const { data: rosterColumns } = entityApi.roster.useGetAllowedColumnsInfoQuery({ orgId });
 
   const initializeTable = React.useCallback(() => {
     if (orgId) {
@@ -79,7 +84,9 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
     return null;
   }
 
-  const permissions = parsePermissions(rosterColumns, role.allowedRosterColumns);
+  const permissions = useMemo(() => {
+    return parsePermissions(rosterColumns ?? [], role.allowedRosterColumns);
+  }, [rosterColumns, role.allowedRosterColumns]);
 
   const columnAllowed = (column: ColumnInfo) => {
     return permissions[column.name]
@@ -133,7 +140,7 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
           <Section title="Viewable Roster Columns">
             <RoleDataTable
               aria-label="Roster Columns"
-              data={rosterColumns}
+              data={rosterColumns ?? []}
               extractLabel="displayName"
               extractValue={column => columnAllowed(column) && <CheckIcon />}
             />

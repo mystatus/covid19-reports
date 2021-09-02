@@ -8,7 +8,6 @@ import {
 } from 'typeorm';
 import {
   AddCustomColumnBody,
-  PaginationParams,
   Paginated,
   ReportDateQuery,
   ColumnInfo,
@@ -17,10 +16,10 @@ import {
   RosterEntryData,
   RosterFileRow,
   RosterInfo,
-  SearchBody,
   edipiColumnDisplayName,
   unitColumnDisplayName,
   CustomColumnData,
+  GetEntitiesQuery,
 } from '@covid19-reports/shared';
 import { EntityService } from '../../util/entity-utils';
 import {
@@ -149,16 +148,10 @@ class RosterController {
     res.send(csvContents);
   }
 
-  async getRoster(req: ApiRequest<OrgParam, any, PaginationParams>, res: Response<Paginated<RosterEntryData>>) {
+  async getRoster(req: ApiRequest<OrgParam, null, GetEntitiesQuery>, res: Response<Paginated<RosterEntryData>>) {
     const service = new EntityService(Roster);
-    res.json(await service.search<RosterEntryData>(req.query, req.appOrg!, req.appUserRole!));
+    res.json(await service.getEntities<RosterEntryData>(req.query, req.appOrg!, req.appUserRole!));
   }
-
-  async searchRoster(req: ApiRequest<OrgParam, SearchBody, PaginationParams>, res: Response<Paginated<RosterEntryData>>) {
-    const service = new EntityService(Roster);
-    res.json(await service.search<RosterEntryData>(req.query, req.appOrg!, req.appUserRole!, req.body));
-  }
-
 
   async uploadRosterEntries(req: ApiRequest<OrgParam>, res: Response) {
     if (!req.file || !req.file.path) {
@@ -285,7 +278,7 @@ class RosterController {
     const rosterId = req.params.rosterId;
 
     const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!), req.appUserRole!.role);
-    const queryBuilder = await Roster.search(req.appOrg!, req.appUserRole!, columns);
+    const queryBuilder = await Roster.buildSearchQuery(req.appOrg!, req.appUserRole!, columns);
     const rosterEntry = await queryBuilder
       .andWhere('roster.id = :rosterId', { rosterId })
       .getRawOne<RosterEntryData>();

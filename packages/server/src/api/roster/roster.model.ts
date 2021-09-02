@@ -2,7 +2,6 @@ import _ from 'lodash';
 import {
   Entity,
   EntityTarget,
-  SelectQueryBuilder,
   Unique,
 } from 'typeorm';
 import {
@@ -39,7 +38,7 @@ export class Roster extends RosterEntity {
     return getColumnSelect(column, 'custom_columns', 'roster');
   }
 
-  static async search(org: Org, userRole: UserRole, columns: ColumnInfo[]): Promise<SelectQueryBuilder<Roster>> {
+  static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     //
     // Query the roster, returning only columns and rows that are allowed for the role of the requester.
     //

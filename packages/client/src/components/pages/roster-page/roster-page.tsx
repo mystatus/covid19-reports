@@ -33,13 +33,11 @@ import React, {
 import _ from 'lodash';
 import moment from 'moment';
 import {
-  EntityType,
   OrphanedRecordActionType,
   ColumnType,
   SavedFilterSerialized,
-  SearchBody,
-  PaginationParams,
   ColumnInfo,
+  GetEntitiesQuery,
 } from '@covid19-reports/shared';
 import deepEquals from 'fast-deep-equal';
 import { Roster } from '../../../actions/roster.actions';
@@ -208,13 +206,13 @@ export const RosterPage = () => {
     const fetchRosterInvocation = fetchRosterInvokeCount.current;
 
     try {
-      const params: PaginationParams = {
+      const query: GetEntitiesQuery = {
         limit: `${rowsPerPage}`,
         page: `${page}`,
       };
       if (sortState) {
-        params.orderBy = sortState.column;
-        params.sortDirection = sortState.sortDirection;
+        query.orderBy = sortState.column;
+        query.sortDirection = sortState.sortDirection;
       }
       if (filterQueryRows?.length) {
         if (fetchRosterInvokeCount.current === fetchRosterInvocation) {
@@ -222,8 +220,8 @@ export const RosterPage = () => {
           setTotalRowsCount(0);
         }
 
-        const filterConfig = queryRowsToFilterConfig(filterQueryRows);
-        const data = await RosterClient.searchRoster(orgId, filterConfig, params);
+        query.filterConfig = queryRowsToFilterConfig(filterQueryRows);
+        const data = await RosterClient.getRoster(orgId, query);
 
         setApplyingFilters(false);
         if (fetchRosterInvokeCount.current === fetchRosterInvocation) {
@@ -231,7 +229,7 @@ export const RosterPage = () => {
           setTotalRowsCount(data.totalRowsCount);
         }
       } else {
-        const data = await RosterClient.getRoster(orgId, params);
+        const data = await RosterClient.getRoster(orgId, query);
         if (fetchRosterInvokeCount.current === fetchRosterInvocation) {
           setRows(data.rows);
           setTotalRowsCount(data.totalRowsCount);
@@ -244,17 +242,19 @@ export const RosterPage = () => {
 
   const fetchRosterEntry = useCallback(async (orphanedRecord: ApiOrphanedRecord) => {
     try {
-      const query: PaginationParams = {
+      const query: GetEntitiesQuery = {
         limit: '1',
         page: '0',
+        filterConfig: {
+          edipi: { op: '=', value: orphanedRecord.edipi, expression: '', expressionEnabled: false },
+          ...(
+            orphanedRecord.unitId && {
+              unit: { op: '=', value: orphanedRecord.unitId, expression: '', expressionEnabled: false },
+            }
+          ),
+        },
       };
-      const body: SearchBody = {
-        edipi: { op: '=', value: orphanedRecord.edipi, expression: '', expressionEnabled: false },
-      };
-      if (orphanedRecord.unitId) {
-        body.unit = { op: '=', value: orphanedRecord.unitId, expression: '', expressionEnabled: false };
-      }
-      const data = await RosterClient.searchRoster(orgId, body, query);
+      const data = await RosterClient.getRoster(orgId, query);
       return data.rows.length ? data.rows[0] : null;
     } catch (e) {
       void dispatch(Modal.alert('Error', formatErrorMessage(e, 'Error Getting Roster Entry for Orphan')));
@@ -279,7 +279,7 @@ export const RosterPage = () => {
   const fetchSavedFilters = useCallback(async () => {
     try {
       const filters = await SavedFilterClient.getSavedFilters(orgId, {
-        entityType: EntityType.RosterEntry,
+        entityType: 'roster',
       });
       setSavedFilters(filters);
 
@@ -760,7 +760,7 @@ export const RosterPage = () => {
     try {
       savedFilter = await SavedFilterClient.addSavedFilter(orgId, {
         name,
-        entityType: EntityType.RosterEntry,
+        entityType: 'roster',
         config: queryRowsToFilterConfig(filterQueryRows),
       });
     } catch (err) {

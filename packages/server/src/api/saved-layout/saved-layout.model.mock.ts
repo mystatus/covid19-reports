@@ -1,4 +1,3 @@
-import { EntityType } from '@covid19-reports/shared';
 import { uniqueString } from '../../util/test-utils/unique';
 import { Org } from '../org/org.model';
 import { SavedLayout } from './saved-layout.model';
@@ -7,7 +6,7 @@ export function mockSavedLayout(org: Org, customData?: Partial<SavedLayout>) {
   return SavedLayout.create({
     org,
     name: uniqueString(),
-    entityType: EntityType.RosterEntry,
+    entityType: 'roster',
     columns: {},
     actions: {},
     ...customData,
