@@ -9,7 +9,6 @@ import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import {
   DragDropContext,
   Draggable,
-  DraggableLocation,
   DraggableProvided,
   DraggableRubric,
   DraggableStateSnapshot,
@@ -22,54 +21,39 @@ import { ColumnInfo } from '@covid19-reports/shared';
 import { Box, Button, Menu } from '@material-ui/core';
 import useStyles from './column-selector.styles';
 
-const reorder = (list: any[], startIndex: number, endIndex: number): any[] => {
+function reorder<T>(list: T[], startIndex: number, endIndex: number) {
   const result = Array.from(list);
   const [removed] = result.splice(startIndex, 1);
   result.splice(endIndex, 0, removed);
   return result;
 };
 
-export const reorderColumnMap = ({
-  columnMap,
-  source,
-  destination,
-}: {
-  columnMap: Record<string, ColumnInfo[]>;
-  source: DraggableLocation;
-  destination: DraggableLocation;
-}): { columnMap: Record<string, ColumnInfo[]> } => {
-  const destDroppableId = destination.droppableId === 'removed' ? 'available' : destination.droppableId;
+const reorderColumnMap = (columnMap: Record<string, ColumnInfo[]>, dropResult: DropResult) => {
+  const { source, destination } = dropResult;
+  const destDroppableId = destination?.droppableId ?? 'available';
+  const destIndex = destination?.index ?? 0;
   const current = [...columnMap[source.droppableId]];
   const next = [...columnMap[destDroppableId]];
   const target = current[source.index];
 
+
   // moving to same list
-  if (source.droppableId === destination.droppableId) {
-    const reordered: ColumnInfo[] = reorder(
-      current,
-      source.index,
-      destination.index,
-    );
-    const result: Record<string, ColumnInfo[]> = {
+  if (source.droppableId === destDroppableId) {
+    const reordered: ColumnInfo[] = reorder(current, source.index, destIndex);
+    return {
       ...columnMap,
       [source.droppableId]: reordered,
     };
-    return {
-      columnMap: result,
-    };
   }
 
-  // moving to different list
-  // remove from original
+  // moving to another list
   current.splice(source.index, 1);
-  next.splice(destination.index, 0, target);
+  next.splice(destIndex, 0, target);
 
   return {
-    columnMap: {
-      ...columnMap,
-      [source.droppableId]: current,
-      [destDroppableId]: next,
-    },
+    ...columnMap,
+    [source.droppableId]: current,
+    [destDroppableId]: next,
   };
 };
 
@@ -151,13 +135,14 @@ export type ColumnSelectorProps = {
   columns: ColumnInfo[];
   onVisibleColumnsChange: (columns: ColumnInfo[]) => void;
   visibleColumns: ColumnInfo[];
-};
+}
 
-export const ColumnSelector = ({ columns, onVisibleColumnsChange, visibleColumns }: ColumnSelectorProps) => {
+export function ColumnSelector(props: ColumnSelectorProps) {
   const classes = useStyles();
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
   const visibleColumnsButtonRef = useRef<HTMLSpanElement>(null);
   const [isDropDisabled, setIsDropDisabled] = useState(false);
+  const { columns, onVisibleColumnsChange, visibleColumns } = props;
 
   const handleDragUpdate = useCallback((update: DragUpdate) => {
     const { destination, source } = update;
@@ -180,11 +165,7 @@ export const ColumnSelector = ({ columns, onVisibleColumnsChange, visibleColumns
     if (!result.destination) {
       return;
     }
-    const { columnMap } = reorderColumnMap({
-      columnMap: columnInfoMap,
-      source: result.source,
-      destination: result.destination,
-    });
+    const columnMap = reorderColumnMap(columnInfoMap, result);
     onVisibleColumnsChange(columnMap.visible);
   }, [columnInfoMap, onVisibleColumnsChange]);
 

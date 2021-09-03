@@ -40,7 +40,6 @@ import { useEffectError } from '../../hooks/use-effect-error';
 import { ColumnSelector } from './column-selector';
 
 export type LayoutConfigParams = SortedQuery & {
-  // actions: ActionInfo[];
   columns: ColumnInfo[];
   entityType: EntityType;
   maxTableColumns?: number;
