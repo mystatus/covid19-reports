@@ -19,6 +19,7 @@ import {
 } from '../../util/entity-utils';
 import { Org } from '../org/org.model';
 import { UserRole } from '../user/user-role.model';
+import { RosterHistory } from '../roster/roster-history.model';
 
 /**
  * Observation are created when users self-report COVID-19 symptoms via https://mystatus.mil/
@@ -112,7 +113,22 @@ export class Observation extends BaseEntity {
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     const queryBuilder = Observation.createQueryBuilder('observation').select([]);
     queryBuilder.leftJoin('observation.reportSchema', 'rs');
-    queryBuilder.leftJoin(Roster, 'roster', `observation.edipi = roster.edipi`);
+
+    const units = `rh.unit_id IN (${(await userRole.getUnits()).map(unit => unit.id).join(',')})`;
+
+    queryBuilder.leftJoin(
+      qb =>
+        qb
+        .select([])
+        .from(RosterHistory, 'rh')
+        .distinctOn(['rh.edipi'])
+        .where(units)
+        .orderBy('rh.edipi', 'DESC')
+        .addOrderBy('rh.timestamp', 'DESC')
+      ,
+      'roster',
+      `observation.edipi = roster.edipi and roster.change_type <> 'deleted'`
+    )
 
     // Always select the id column
     queryBuilder.addSelect('observation.id', 'id');
@@ -120,7 +136,11 @@ export class Observation extends BaseEntity {
 
     // Add all columns that are allowed by the user's role
     columns.forEach(column => {
-      queryBuilder.addSelect(Observation.getColumnSelect(column), column.name);
+      if (column.table === 'roster') {
+        queryBuilder.addSelect(Roster.getColumnSelect(column), column.name);
+      } else {
+        queryBuilder.addSelect(Observation.getColumnSelect(column), column.name);
+      }
     });
 
     queryBuilder.where('rs.org_id = :orgId', { orgId: org.id });

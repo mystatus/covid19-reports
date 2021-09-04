@@ -257,7 +257,10 @@ export const ColumnSelector = ({ columns, onVisibleColumnsChange, visibleColumns
                               )}
                             >
                               <Box display="flex" width="100%" justifyContent="space-between" alignItems="center">
-                                <span>{item.displayName}</span>
+                                <span>
+                                  {item.displayName}
+                                  {item.table && <span className={classes.tableName}>({item.table})</span>}
+                                </span>
                                 <span className={classes.phipii}>
                                   {[
                                     item.pii ? 'PII' : '',
