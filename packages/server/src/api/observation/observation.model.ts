@@ -119,7 +119,22 @@ export class Observation extends BaseEntity {
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     const queryBuilder = Observation.createQueryBuilder('observation').select([]);
     queryBuilder.leftJoin('observation.reportSchema', 'rs');
-    queryBuilder.leftJoin(Roster, 'roster', `observation.edipi = roster.edipi`);
+
+    const units = `rh.unit_id IN (${(await userRole.getUnits()).map(unit => unit.id).join(',')})`;
+
+    queryBuilder.leftJoin(
+      qb =>
+        qb
+        .select([])
+        .from(RosterHistory, 'rh')
+        .distinctOn(['rh.edipi'])
+        .where(units)
+        .orderBy('rh.edipi', 'DESC')
+        .addOrderBy('rh.timestamp', 'DESC')
+      ,
+      'roster',
+      `observation.edipi = roster.edipi and roster.change_type <> 'deleted'`
+    )
 
     const units = `rh.unit_id IN (${(await userRole.getUnits()).map(unit => unit.id).join(',')})`;
     queryBuilder.leftJoin(
