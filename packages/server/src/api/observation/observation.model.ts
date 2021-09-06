@@ -10,6 +10,7 @@ import {
 import { startCase } from 'lodash';
 import { baseObservationColumns, ColumnInfo, ColumnType, CustomColumns } from '@covid19-reports/shared';
 import { ReportSchema } from '../report-schema/report-schema.model';
+import { RosterHistory } from '../roster/roster-history.model';
 import { Roster } from '../roster/roster.model';
 import { timestampColumnTransformer } from '../../util/util';
 import {
@@ -95,7 +96,7 @@ export class Observation extends BaseEntity {
       updatable: false,
     }));
 
-    const service = new EntityService(Roster);
+    const service = new EntityService(RosterHistory);
     if (version) {
       const joinColumns = (await service.getColumns(org, version)).map((columnInfo: ColumnInfo) => {
         return {
@@ -112,11 +113,20 @@ export class Observation extends BaseEntity {
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     const queryBuilder = Observation.createQueryBuilder('observation').select([]);
     queryBuilder.leftJoin('observation.reportSchema', 'rs');
-    queryBuilder.leftJoin(Roster, 'roster', `observation.edipi = roster.edipi`);
 
+    const unitIds = userRole.units.map(unit => unit.id);
+    const rosterHistoryQuery = RosterHistory.createQueryBuilder('rh')
+      .select('DISTINCT ON(rh.edipi) rh.*')
+      .where(`rh.unit_id in (1,2,3,4,5)`)
+      .orderBy('rh.edipi', 'DESC')
+      .addOrderBy('rh.timestamp', 'DESC');
+    queryBuilder.leftJoin(`(${rosterHistoryQuery.getQuery()})`, 'rhistory', `observation.edipi = rhistory.edipi and rhistory.change_type != 'deleted'`);
+
+    console.log(rosterHistoryQuery.getQuery());
     // Always select the id column
     queryBuilder.addSelect('observation.id', 'id');
     queryBuilder.addSelect('rs.id', 'reportSchema');
+    queryBuilder.addSelect('rhistory.*');
 
     // Add all columns that are allowed by the user's role
     columns.forEach(column => {
@@ -124,7 +134,6 @@ export class Observation extends BaseEntity {
     });
 
     queryBuilder.where('rs.org_id = :orgId', { orgId: org.id });
-
     return queryBuilder;
   }
 
