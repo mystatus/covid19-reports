@@ -49,7 +49,7 @@ export function MakeEntity<T, S extends IEntityModel<T>>() {
 export function getColumnSelect(column: ColumnInfo, customColumn: string, alias: string) {
   // Make sure custom columns are converted to appropriate types
   if (column.custom) {
-    const select = `${join(alias, customColumn)} ->> '${column.name}'`;
+    const select = `${join(column?.table ?? alias, customColumn)} ->> '${column.name}'`;
 
     switch (column.type) {
       case ColumnType.Boolean:
@@ -60,7 +60,7 @@ export function getColumnSelect(column: ColumnInfo, customColumn: string, alias:
         return select;
     }
   }
-  return join(column?.table ? column.table : alias, snakeCase(column.name));
+  return join(column?.table ?? alias, snakeCase(column.name));
 }
 
 export const isColumnAllowed = (column: ColumnInfo, role: Role) => {
