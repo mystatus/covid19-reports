@@ -8,7 +8,13 @@ import {
   Unique,
 } from 'typeorm';
 import { startCase } from 'lodash';
-import { baseObservationColumns, ColumnInfo, ColumnType, CustomColumns } from '@covid19-reports/shared';
+import {
+  baseObservationColumns,
+  getFullyQualifiedColumnName,
+  ColumnInfo,
+  ColumnType,
+  CustomColumns,
+} from '@covid19-reports/shared';
 import { Roster } from '../roster/roster.model';
 import { timestampColumnTransformer } from '../../util/util';
 import {
@@ -98,7 +104,7 @@ export class Observation extends BaseEntity {
 
     const service = new EntityService(RosterHistory);
     if (version) {
-      const joinColumns = (await service.getColumns(org, version)).map((columnInfo: ColumnInfo) => {
+      const joinColumns = (await service.getColumns(org, version)).filter((c: ColumnInfo) => { return c.name !== 'id'; }).map((columnInfo: ColumnInfo) => {
         return {
           ...columnInfo,
           table: 'roster',
@@ -128,24 +134,19 @@ export class Observation extends BaseEntity {
         .addOrderBy('rh.timestamp', 'DESC')
       ,
       'roster',
-      `observation.edipi = roster.edipi and roster.change_type <> 'deleted'`
+      `observation.edipi = roster.edipi and roster.change_type <> 'deleted' and observation.timestamp > roster.timestamp`
     )
 
     // Always select the id column
     queryBuilder.addSelect('observation.id', 'id');
     queryBuilder.addSelect('rs.id', 'reportSchema');
-    queryBuilder.addSelect('roster.*');
-    queryBuilder.groupBy('observation.id');
-    queryBuilder.addGroupBy('rs.id');
-    queryBuilder.addGroupBy('roster.id');
-    queryBuilder.addGroupBy('roster.edipi');
 
     // Add all columns that are allowed by the user's role
     columns.forEach(column => {
       if (column.table === 'roster') {
-        queryBuilder.addSelect(Roster.getColumnSelect(column), column.name);
+        queryBuilder.addSelect(Roster.getColumnSelect(column), getFullyQualifiedColumnName(column));
       } else {
-        queryBuilder.addSelect(Observation.getColumnSelect(column), column.name);
+        queryBuilder.addSelect(Observation.getColumnSelect(column), getFullyQualifiedColumnName(column));
       }
     });
 

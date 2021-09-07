@@ -35,6 +35,10 @@ export const friendlyColumnValue = <T>(entity: T & Record<string, unknown>, colu
   }
 };
 
+export const getFullyQualifiedColumnName = (column: ColumnInfo) => {
+  return column.table ? `${column.table}.${column.name}` : column.name;
+};
+
 export type NarrowTypeForColumnType<T extends ColumnType> = ColumnTypeMapping[T];
 
 export type CustomColumnConfig = {};

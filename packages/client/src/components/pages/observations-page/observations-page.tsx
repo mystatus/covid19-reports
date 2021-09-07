@@ -19,6 +19,7 @@ export const ObservationsPage = () => {
               cardId: 'observationsPage',
             },
           }}
+          idColumn={(row: any) => row.edipi + row.timestamp}
         />
       </Container>
     </main>

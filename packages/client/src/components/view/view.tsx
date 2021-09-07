@@ -29,6 +29,7 @@ import {
 import useEffectDebounced from '../../hooks/use-effect-debounced';
 import { getNewPageIndex } from '../../utility/table';
 import {
+  ColumnInfoToTableColumns,
   SortDirection,
   TableColumn,
   TableCustomColumnsContent,
@@ -52,6 +53,7 @@ import { Layout } from './view-layout';
 import { entityApi } from '../../api/entity.api';
 
 type ViewProps = {
+  idColumn: string | ((row: any) => string);
   layout: Layout;
 };
 
@@ -59,7 +61,7 @@ type FilterId = SavedFilterSerialized['id'];
 const customFilterId = -1;
 const noFilterId = -2;
 
-export default function View({ layout }: ViewProps) {
+export default function View({ layout, idColumn }: ViewProps) {
   const { columns, entityType, orderBy, rowOptions, sortDirection, visibleColumns } = layout;
   const classes = useStyles();
   const dispatch = useAppDispatch();
@@ -378,11 +380,11 @@ export default function View({ layout }: ViewProps) {
       <div className={classes.tableWrapper}>
         <TableCustomColumnsContent
           rows={entities?.rows ?? []}
-          columns={visibleColumns}
+          columns={ColumnInfoToTableColumns(visibleColumns)}
           sortable
           defaultSort={orderBy && sortDirection ? { column: orderBy, direction: sortDirection ?? 'ASC' } : undefined}
           onSortChange={handleSortChanged}
-          idColumn="id"
+          idColumn={idColumn ?? 'id'}
           noDataText={entitiesFetching ? 'Searching...' : 'No Data'}
           rowOptions={rowOptions}
         />

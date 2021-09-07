@@ -7,6 +7,7 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import clsx from 'clsx';
+import { getFullyQualifiedColumnName, ColumnInfo } from '@covid19-reports/shared';
 import { OverrideType } from '../../utility/typescript-utils';
 import useStyles from './table-custom-columns-content.styles';
 
@@ -27,13 +28,25 @@ export type SortDirection = 'ASC' | 'DESC';
 export interface TableColumn {
   name: string;
   displayName: string;
+  fullyQualifiedName: string;
 }
+
+export const ColumnInfoToTableColumns = (visibleColumns: ColumnInfo[]): TableColumn[] => {
+  return visibleColumns.map((c: ColumnInfo) => {
+    return {
+      name: c.name,
+      displayName: c.displayName,
+      fullyQualifiedName: getFullyQualifiedColumnName(c),
+    };
+  });
+};
 
 export type TableRowOptions = {
   menuItems?: TableCustomColumnsMenuItem[] | ((row: any) => TableCustomColumnsMenuItem[]);
   renderCell?: (row: any, column: any) => void;
   rowProps?: Partial<TableRowProps> | ((row: any) => Partial<TableRowProps> | void | null | undefined);
 };
+
 type TableCustomColumnsContentProps = OverrideType<TableProps, {
   rows: TableCustomColumnsRow[];
   columns: TableColumn[];
@@ -114,7 +127,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
     callback(row);
   };
 
-  const getRowId = (row: any) => (typeof idColumn === 'function' ? idColumn(row) : row[idColumn] as string);
+  const getRowId = (row: any) => { return (typeof idColumn === 'function' ? idColumn(row) : row[idColumn] as string); };
   const getRowProps = (row: any) => (typeof rowOptions?.rowProps === 'function' ? rowOptions?.rowProps?.(row) : rowOptions?.rowProps);
   const getRowActions = (row: any) => (typeof rowOptions?.menuItems === 'function' ? rowOptions?.menuItems?.(row) : rowOptions?.menuItems) || [];
   const showRowActions = (row: any) => Boolean(getRowActions(row)?.length);
@@ -140,13 +153,13 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
             {columns.map(column => (
               <TableCell
                 onClick={columnClicked(column)}
-                key={column.name}
+                key={column.fullyQualifiedName}
                 className={clsx({
                   [classes.sortableHeader]: sortable,
                 })}
               >
                 <div>
-                  <div>{column.displayName}</div>
+                  <div>{column.fullyQualifiedName}</div>
                   <div>
                     {sortColumn === column && (
                       sortDirection === 'ASC' ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />
@@ -169,8 +182,8 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
                 )}
               </TableCell>
               {columns.map(column => (
-                <TableCell key={`${column.name}-${getRowId(row)}`}>
-                  {rowOptions?.renderCell?.(row, column) || row[column.name]}
+                <TableCell key={`${column.fullyQualifiedName}-${getRowId(row)}`}>
+                  {row[column.fullyQualifiedName]}
                 </TableCell>
               ))}
 
