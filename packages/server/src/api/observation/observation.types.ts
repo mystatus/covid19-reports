@@ -8,17 +8,33 @@ export interface ObservationApiModel {
   phoneNumber: string;
 }
 
-export interface ObservationApiRawReportModel {
+export interface Report {
   ID: string;
   EDIPI: string;
   Timestamp: number;
   ReportingGroup?: string;
   ReportType: string;
+  API: {
+    ID: string;
+    Resource: string;
+    Stage: string;
+  };
+  Browser: {
+    Locale: string;
+    Timestamp: number;
+    TimeZone: string;
+    UserAgent: string;
+  };
   Client?: {
-    Application?: string;
+    Application: string;
+    Environment: string;
+    GitCommit: string;
+    Origin: string;
   };
-  Details?: {
-    PhoneNumber?: string;
-    Unit?: string;
+  Model: {
+    Version: string;
   };
+  Details: {
+    [key: string]: number | string | boolean | null;
+  }
 }
