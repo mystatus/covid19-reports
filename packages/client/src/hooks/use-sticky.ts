@@ -24,7 +24,6 @@ export function useSticky<RefType extends HTMLElement = HTMLElement>(bufferTop =
         const refPageOffset = stickyRef.current.getBoundingClientRect().top - (sticky ? smoothing : 0);
         const stickyOffset = parseInt(computedTop, 10) - (bufferTop + smoothing) - (sticky ? 0 : smoothing);
         const stickyActive = refPageOffset <= stickyOffset;
-        console.log({ refPageOffset, stickyOffset, stickyActive });
 
         if (stickyActive && !sticky) {
           setSticky(true);
