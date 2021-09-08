@@ -31,4 +31,7 @@ export default makeStyles((theme: Theme) => createStyles({
   pickListSelect: {
     minWidth: '193px',
   },
+  tooltipMultiline: {
+    whiteSpace: 'pre-line',
+  },
 }));
