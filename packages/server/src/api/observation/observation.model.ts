@@ -79,7 +79,7 @@ export class Observation extends BaseEntity {
     return getColumnSelect(column, 'custom_columns', 'observation');
   }
 
-  static async getColumns(org: Org, version?: string) {
+  static async getColumns(org: Org, version?: string, directOnly?: boolean) {
     const reportSchema = await ReportSchema.findOne({
       where: {
         org: org.id,
@@ -103,8 +103,8 @@ export class Observation extends BaseEntity {
     }));
 
     const service = new EntityService(RosterHistory);
-    if (version) {
-      const joinColumns = (await service.getColumns(org, version)).map((columnInfo: ColumnInfo) => {
+    if (!directOnly) {
+      const joinColumns = (await service.getColumns(org, version, true)).map((columnInfo: ColumnInfo) => {
         return {
           ...columnInfo,
           table: 'roster',
@@ -119,22 +119,6 @@ export class Observation extends BaseEntity {
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     const queryBuilder = Observation.createQueryBuilder('observation').select([]);
     queryBuilder.leftJoin('observation.reportSchema', 'rs');
-
-    const units = `rh.unit_id IN (${(await userRole.getUnits()).map(unit => unit.id).join(',')})`;
-
-    queryBuilder.leftJoin(
-      qb =>
-        qb
-        .select([])
-        .from(RosterHistory, 'rh')
-        .distinctOn(['rh.edipi'])
-        .where(units)
-        .orderBy('rh.edipi', 'DESC')
-        .addOrderBy('rh.timestamp', 'DESC')
-      ,
-      'roster',
-      `observation.edipi = roster.edipi and roster.change_type <> 'deleted'`
-    )
 
     const units = `rh.unit_id IN (${(await userRole.getUnits()).map(unit => unit.id).join(',')})`;
     queryBuilder.leftJoin(

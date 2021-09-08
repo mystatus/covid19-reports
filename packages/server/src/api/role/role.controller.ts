@@ -190,7 +190,7 @@ async function setRoleFromBody(org: Org, role: Role, body: UpdateRoleBody) {
   }
   if (body.allowedRosterColumns != null) {
     if (!(body.allowedRosterColumns.length === 1 && body.allowedRosterColumns[0] === '*')) {
-      const orgRosterColumns = await Roster.getColumns(org);
+      const orgRosterColumns = await Roster.getColumns(org, undefined, true);
       for (const column of body.allowedRosterColumns) {
         if (!orgRosterColumns.some(rosterColumn => rosterColumn.name === column)) {
           throw new BadRequestError(`Unknown roster column: ${column}`);

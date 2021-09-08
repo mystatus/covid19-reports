@@ -111,7 +111,7 @@ class RosterController {
   }
 
   async getRosterTemplate(req: ApiRequest, res: Response) {
-    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!), req.appUserRole!.role);
+    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!, undefined, true), req.appUserRole!.role);
     const headers: string[] = ['Unit'];
     const example: string[] = ['unit1'];
     columns.forEach(column => {
@@ -177,7 +177,7 @@ class RosterController {
       throw new BadRequestError('No units found.');
     }
 
-    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!), req.appUserRole!.role);
+    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!, undefined, true), req.appUserRole!.role);
 
     const requiredColumns = columns
       .filter(x => x.required)

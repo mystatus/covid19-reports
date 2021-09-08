@@ -13,7 +13,8 @@ import { Role } from '../role/role.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { RosterEntity } from './roster-entity';
 import { UserRole } from '../user/user-role.model';
-import { getColumnSelect, isColumnAllowed, MakeEntity } from '../../util/entity-utils';
+import { EntityService, getColumnSelect, isColumnAllowed, MakeEntity } from '../../util/entity-utils';
+import { Observation } from '../observation/observation.model';
 
 @MakeEntity()
 @Entity()
@@ -75,7 +76,7 @@ export class Roster extends RosterEntity {
     });
   }
 
-  static async getColumns(org: Org) {
+  static async getColumns(org: Org, version?: string, directOnly?: boolean): Promise<ColumnInfo[]> {
     const customColumns: ColumnInfo[] = (await CustomRosterColumn.find({
       where: {
         org: org.id,
@@ -86,6 +87,45 @@ export class Roster extends RosterEntity {
       custom: true,
       updatable: true,
     }));
+
+    if (!directOnly) {
+      const aggregateConfig = [
+        {
+          aggregate: 'count',
+          columns: [
+            { name: 'observationCount' },   // COUNT(edipi)
+          ],
+        },
+        {
+          aggregate: 'json_array_length',
+          columns: [
+            { key: 'Details.Symptoms', as: 'observationCount' },   // json_array_length(custom_columns->
+          ],
+        },
+        { aggregate: 'max', columns: [
+
+        ] },
+        { aggregate: 'min', columns: [] },
+        { aggregate: 'sum', columns: [] },
+      ]
+
+      const observationAggregateColumns = (await Observation.getColumns(org, 'es6ddssymptomobs', true))
+        .flatMap((columnInfo: ColumnInfo) => {
+          return aggregateConfig
+            .filter(config => config.columns.some(c => c.key === columnInfo.name))
+            .map(config => {
+              return {
+                ...columnInfo,
+                name: `observation.${columnInfo.name}`,
+                displayName: `observation.${columnInfo.name}`,
+                table: 'observation',
+                aggregate: config.aggregate,
+                as: config.as,
+              } as ColumnInfo;
+            })
+        });
+      return [...baseRosterColumns, ...customColumns, ...observationAggregateColumns];
+    }
     return [...baseRosterColumns, ...customColumns];
   }
 

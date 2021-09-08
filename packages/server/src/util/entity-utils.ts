@@ -36,7 +36,7 @@ export interface IEntityModel<T extends IEntity> {
   new(): T;
   getColumnSelect(column: ColumnInfo): string;
   filterAllowedColumns?(columns: ColumnInfo[], role: Role): ColumnInfo[];
-  getColumns(org: Org, version?: string): Promise<ColumnInfo[]>;
+  getColumns(org: Org, version?: string, directOnly?: boolean): Promise<ColumnInfo[]>;
   buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]): Promise<SelectQueryBuilder<T>>;
 }
 
@@ -148,8 +148,8 @@ export class EntityService<T extends IEntity> {
     return this.entity.getColumnSelect(column);
   }
 
-  getColumns(org: Org, version: string): Promise<ColumnInfo[]> {
-    return this.entity.getColumns(org, version);
+  getColumns(org: Org, version: string, directOnly: boolean): Promise<ColumnInfo[]> {
+    return this.entity.getColumns(org, version, directOnly);
   }
 
   filterAllowedColumns(columns: ColumnInfo[], role: Role) {
@@ -165,7 +165,7 @@ export class EntityService<T extends IEntity> {
     const orderBy = query.orderBy || 'edipi';
     const sortDirection = query.sortDirection || 'ASC';
     const filterConfig = query.filterConfig || {};
-    const columns = await this.getColumns(org, 'es6ddssymptomobs');
+    const columns = await this.getColumns(org, 'es6ddssymptomobs', false);
     const allowedColumns = this.filterAllowedColumns(columns, userRole.role);
 
     let queryBuilder = await this.entity.buildSearchQuery(org, userRole, allowedColumns);
@@ -304,7 +304,7 @@ export class EntityController<T = any> {
   }
 
   getAllowedColumns = async (req: ApiRequest<AllowedColumnsParam>, res: Response<ColumnInfo[]>) => {
-    const columns = this.service.filterAllowedColumns(await this.entityConstructor.getColumns(req.appOrg!, req.params.version), req.appUserRole!.role);
+    const columns = this.service.filterAllowedColumns(await this.entityConstructor.getColumns(req.appOrg!, req.params.version, false), req.appUserRole!.role);
     res.json(columns);
   };
 

@@ -58,6 +58,7 @@ export type ColumnInfo = {
   updatable: boolean;
   config?: CustomColumnConfig;
   table?: string;
+  aggregate?: string;
 };
 
 export type ColumnInfoWithValue = ColumnInfo & {

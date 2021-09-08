@@ -102,7 +102,7 @@ class ExportElasticsearchController {
   async exportRosterToCsv(req: ApiRequest, res: Response) {
     const orgId = req.appOrg!.id;
 
-    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!), req.appUserRole!.role);
+    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!, undefined, true), req.appUserRole!.role);
     const queryBuilder = await Roster.buildSearchQuery(req.appOrg!, req.appUserRole!, columns);
     const rosterData = await queryBuilder
       .orderBy({
