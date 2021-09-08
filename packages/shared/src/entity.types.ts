@@ -35,7 +35,7 @@ export const friendlyColumnValue = <T>(entity: T & Record<string, unknown>, colu
   }
 };
 
-export const getFullyQualifiedColumnName = (column: ColumnInfo) => {
+export const getFullyQualifiedColumnName = (column: { name: string; table?: string }) => {
   return column.table ? `${column.table}.${column.name}` : column.name;
 };
 

@@ -1,4 +1,5 @@
 import {
+  getFullyQualifiedColumnName,
   QueryOp,
   QueryValueScalarType,
   QueryValueType,
@@ -19,6 +20,7 @@ export type QueryField = {
   type: ColumnType;
   enumItems?: QueryFieldEnumItem[];
 };
+
 
 export type QueryRow = {
   field: QueryField;
@@ -141,9 +143,9 @@ export function queryRowsToFilterConfig(queryRows: QueryRow[]): FilterConfig {
  */
 export function filterConfigToQueryRows(filterConfig: FilterConfig, fields: QueryField[]): QueryRow[] {
   return fields
-    .filter(field => !!filterConfig[field.name])
+    .filter(field => !!filterConfig[getFullyQualifiedColumnName(field)])
     .map((field): QueryRow => ({
-      ...filterConfig[field.name],
+      ...filterConfig[getFullyQualifiedColumnName(field)],
       field,
     }));
 }
