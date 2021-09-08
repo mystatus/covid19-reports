@@ -1,4 +1,5 @@
 import React, {
+  ReactElement,
   useEffect,
   useMemo,
 } from 'react';
@@ -32,15 +33,15 @@ import {
 const expressionFieldPlaceholder = 'Expression';
 const expressionCheckboxTooltip = 'Use Expression';
 
-export interface QueryBuilderRowValueProps {
+export type QueryBuilderValueEditorProps = {
   onChange: (row: QueryRow) => void;
   row: QueryRow;
-}
+};
 
-export const QueryBuilderValueEditor = (props: QueryBuilderRowValueProps) => {
+export const QueryBuilderValueEditor = (props: QueryBuilderValueEditorProps) => {
   const { row } = props;
 
-  let editor: React.ReactElement<QueryBuilderRowValueProps>;
+  let editor: React.ReactElement<QueryBuilderValueEditorProps>;
 
   switch (row.field.type) {
     case ColumnType.Date:
@@ -66,7 +67,7 @@ export const QueryBuilderValueEditor = (props: QueryBuilderRowValueProps) => {
   return editor;
 };
 
-const QueryBuilderStringEditor = ({ onChange, row }: QueryBuilderRowValueProps) => {
+const QueryBuilderStringEditor = ({ onChange, row }: QueryBuilderValueEditorProps) => {
   const classes = useStyles();
 
   const isExpressionValid = useMemo(() => {
@@ -140,7 +141,7 @@ const QueryBuilderStringEditor = ({ onChange, row }: QueryBuilderRowValueProps) 
   );
 };
 
-const QueryBuilderBooleanEditor = ({ onChange, row }: QueryBuilderRowValueProps) => {
+const QueryBuilderBooleanEditor = ({ onChange, row }: QueryBuilderValueEditorProps) => {
   return (
     <Switch
       checked={Boolean(row.value)}
@@ -156,11 +157,11 @@ const QueryBuilderBooleanEditor = ({ onChange, row }: QueryBuilderRowValueProps)
   );
 };
 
-interface DateTimeValueEditorProps extends QueryBuilderRowValueProps {
+type QueryBuilderDateTimeEditorProps = QueryBuilderValueEditorProps & {
   hasTime: boolean;
-}
+};
 
-const QueryBuilderDateTimeEditor = ({ hasTime, onChange, row }: DateTimeValueEditorProps) => {
+const QueryBuilderDateTimeEditor = ({ hasTime, onChange, row }: QueryBuilderDateTimeEditorProps) => {
   const classes = useStyles();
 
   const isExpressionValid = useMemo(() => {
@@ -259,9 +260,9 @@ const QueryBuilderDateTimeEditor = ({ hasTime, onChange, row }: DateTimeValueEdi
   );
 };
 
-interface QueryBuilderValueRangeEditorProps extends QueryBuilderRowValueProps {
-  editorComponent: React.ReactElement<QueryBuilderRowValueProps>;
-}
+type QueryBuilderValueRangeEditorProps = QueryBuilderValueEditorProps & {
+  editorComponent: ReactElement<QueryBuilderValueEditorProps>;
+};
 
 const QueryBuilderValueRangeEditor = ({ editorComponent, onChange, row }: QueryBuilderValueRangeEditorProps) => {
   const range = useMemo(() => {
@@ -304,7 +305,7 @@ const QueryBuilderValueRangeEditor = ({ editorComponent, onChange, row }: QueryB
   );
 };
 
-const QueryBuilderEnumEditor = (props: QueryBuilderRowValueProps) => {
+const QueryBuilderEnumEditor = (props: QueryBuilderValueEditorProps) => {
   const classes = useStyles();
 
   const { onChange, row } = props;
