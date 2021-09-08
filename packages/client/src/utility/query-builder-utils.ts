@@ -146,3 +146,51 @@ export function filterConfigToQueryRows(filterConfig: FilterConfig, fields: Quer
       field,
     }));
 }
+
+export function isValidMathExpression(expression: string) {
+  const regex = /^([-+/*]\d+(\.\d+)?)*/;
+  return regex.test(expression);
+}
+
+export function evalMathExpression(expression: string) {
+  if (!isValidMathExpression(expression)) {
+    return {
+      isValid: false,
+      value: NaN,
+    };
+  }
+
+  let isValid: boolean;
+  let value: number;
+  try {
+    // eslint-disable-next-line no-eval
+    value = eval(expression);
+    isValid = true;
+  } catch (err) {
+    value = NaN;
+    isValid = false;
+  }
+
+  return { isValid, value };
+}
+
+export function evalDateExpression(expression: string) {
+  let isValid: boolean;
+  let value: string;
+  try {
+    const jsonValue = JSON.parse(expression);
+    value = moment().startOf('day').add(jsonValue).toISOString();
+    isValid = true;
+  } catch (e) {
+    value = '';
+    isValid = false;
+  }
+
+  return { isValid, value };
+}
+
+export function getExpressionHelperText(row: QueryRow, isExpressionValid: boolean) {
+  return (row.expression && !isExpressionValid)
+    ? 'Invalid expression'
+    : row.value;
+}
