@@ -8,12 +8,24 @@ import {
   Unique,
 } from 'typeorm';
 import { startCase } from 'lodash';
-import { baseObservationColumns, ColumnInfo, ColumnType, CustomColumns } from '@covid19-reports/shared';
-import { ReportSchema } from '../report-schema/report-schema.model';
+import {
+  baseObservationColumns,
+  getFullyQualifiedColumnName,
+  ColumnInfo,
+  ColumnType,
+  CustomColumns,
+} from '@covid19-reports/shared';
+import { Roster } from '../roster/roster.model';
 import { timestampColumnTransformer } from '../../util/util';
-import { getColumnSelect, MakeEntity } from '../../util/entity-utils';
+import {
+  getColumnSelect,
+  EntityService,
+  MakeEntity,
+} from '../../util/entity-utils';
 import { Org } from '../org/org.model';
 import { UserRole } from '../user/user-role.model';
+import { ReportSchema } from '../report-schema/report-schema.model';
+import { RosterHistory } from '../roster/roster-history.model';
 
 /**
  * Observation are created when users self-report COVID-19 symptoms via https://mystatus.mil/
@@ -90,6 +102,17 @@ export class Observation extends BaseEntity {
       updatable: false,
     }));
 
+    const service = new EntityService(RosterHistory);
+    if (version) {
+      const joinColumns = (await service.getColumns(org, version)).filter((c: ColumnInfo) => { return c.name !== 'id'; }).map((columnInfo: ColumnInfo) => {
+        return {
+          ...columnInfo,
+          table: 'roster',
+        };
+      });
+
+      return [...baseObservationColumns, ...customColumns, ...joinColumns];
+    }
     return [...baseObservationColumns, ...customColumns];
   }
 
@@ -98,18 +121,36 @@ export class Observation extends BaseEntity {
     const queryBuilder = Observation.createQueryBuilder('observation').select([]);
     queryBuilder.leftJoin('observation.reportSchema', 'rs');
 
+    const units = `rh.unit_id IN (${(await userRole.getUnits()).map(unit => unit.id).join(',')})`;
+    const unitIds = userRole.units.map(unit => unit.id);
+    queryBuilder.leftJoin(
+      qb =>
+        qb
+        .select([])
+        .from(RosterHistory, 'rh')
+        .distinctOn(['rh.edipi'])
+        .where(units)
+        .orderBy('rh.edipi', 'DESC')
+        .addOrderBy('rh.timestamp', 'DESC')
+      ,
+      'roster',
+      `observation.edipi = roster.edipi and roster.change_type <> 'deleted' and observation.timestamp > roster.timestamp`
+    )
+
     // Always select the id column
     queryBuilder.addSelect('observation.id', 'id');
     queryBuilder.addSelect('rs.id', 'reportSchema');
 
     // Add all columns that are allowed by the user's role
     columns.forEach(column => {
-      queryBuilder.addSelect(Observation.getColumnSelect(column), column.name);
+      if (column.table === 'roster') {
+        queryBuilder.addSelect(Roster.getColumnSelect(column), getFullyQualifiedColumnName(column));
+      } else {
+        queryBuilder.addSelect(Observation.getColumnSelect(column), getFullyQualifiedColumnName(column));
+      }
     });
 
-    queryBuilder
-      .where('rs.org_id = :orgId', { orgId: org.id });
-
+    queryBuilder.where('rs.org_id = :orgId', { orgId: org.id });
     return queryBuilder;
   }
 

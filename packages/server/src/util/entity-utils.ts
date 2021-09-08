@@ -49,7 +49,7 @@ export function MakeEntity<T, S extends IEntityModel<T>>() {
 export function getColumnSelect(column: ColumnInfo, customColumn: string, alias: string) {
   // Make sure custom columns are converted to appropriate types
   if (column.custom) {
-    const select = `${join(alias, customColumn)} ->> '${column.name}'`;
+    const select = `${join(column?.table ?? alias, customColumn)} ->> '${column.name}'`;
 
     switch (column.type) {
       case ColumnType.Boolean:
@@ -60,7 +60,7 @@ export function getColumnSelect(column: ColumnInfo, customColumn: string, alias:
         return select;
     }
   }
-  return join(alias, snakeCase(column.name));
+  return join(column?.table ?? alias, snakeCase(column.name));
 }
 
 export const isColumnAllowed = (column: ColumnInfo, role: Role) => {
@@ -127,7 +127,13 @@ function findColumnByName(name: string, columns: ColumnInfo[]): ColumnInfo {
       required: false,
     };
   }
-  const column = columns.find(col => col.name === name);
+
+  // the name may be in the format table.columnName if there is join information
+  // the code below handles the name regardless if it is from joined-entity or this one.
+  const nameToks = name.split('.');
+  const column = columns.find(col => {
+    return nameToks.length > 1 ? (col.name === nameToks[1] && col.table === nameToks[0]) : (col.name === nameToks[0]);
+  });
   if (!column) {
     throw new BadRequestError(`Malformed search query. Unknown column name: '${name}'.`);
   }
@@ -159,8 +165,9 @@ export class EntityService<T extends IEntity> {
     const orderBy = query.orderBy || 'edipi';
     const sortDirection = query.sortDirection || 'ASC';
     const filterConfig = query.filterConfig || {};
-    const columns = await this.entity.getColumns(org, 'es6ddssymptomobs');
+    const columns = await this.getColumns(org, 'es6ddssymptomobs');
     const allowedColumns = this.filterAllowedColumns(columns, userRole.role);
+
     let queryBuilder = await this.entity.buildSearchQuery(org, userRole, allowedColumns);
 
     Object.keys(filterConfig)

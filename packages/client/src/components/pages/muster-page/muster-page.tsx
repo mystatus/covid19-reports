@@ -23,7 +23,10 @@ import React, {
 } from 'react';
 import _ from 'lodash';
 import moment from 'moment';
-import { ColumnInfo, ColumnType } from '@covid19-reports/shared';
+import {
+  ColumnInfo,
+  ColumnType,
+} from '@covid19-reports/shared';
 import { downloadFile } from '../../../utility/download';
 import {
   getMaxPageIndex,
@@ -31,7 +34,7 @@ import {
   columnInfosOrdered,
 } from '../../../utility/table';
 import PageHeader from '../../page-header/page-header';
-import { TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
+import { ColumnInfoToTableColumns, TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
 import { MusterPageHelp } from './muster-page-help';
 import useStyles from './muster-page.styles';
@@ -450,7 +453,7 @@ export const MusterPage = () => {
 
                   <TableCustomColumnsContent
                     rows={rosterData.rows}
-                    columns={getVisibleColumns()}
+                    columns={ColumnInfoToTableColumns(getVisibleColumns())}
                     idColumn="edipi"
                     noDataText={isPageLoading ? 'Loading...' : 'No Data'}
                     rowOptions={{

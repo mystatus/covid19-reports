@@ -18,7 +18,7 @@ import {
   DroppableStateSnapshot,
   DropResult,
 } from 'react-beautiful-dnd';
-import { ColumnInfo } from '@covid19-reports/shared';
+import { getFullyQualifiedColumnName, ColumnInfo } from '@covid19-reports/shared';
 import { Box, Button, Menu } from '@material-ui/core';
 import useStyles from './column-selector.styles';
 
@@ -84,7 +84,7 @@ const getItemStyle = (
   const isItemInRemoveTarget = (
     droppableId === 'available'
     && droppableSnapshot.isDraggingOver
-    && visibleColumns.some(v => v.name === droppableSnapshot.draggingOverWith)
+    && visibleColumns.some(v => getFullyQualifiedColumnName(v) === droppableSnapshot.draggingOverWith)
   );
 
   const style: CSSProperties = {
@@ -126,7 +126,7 @@ const getListStyle = (
   const isRemoveTarget = (
     droppableId === 'available'
     && droppableSnapshot.isDraggingOver
-    && visibleColumns.some(v => v.name === droppableSnapshot.draggingOverWith)
+    && visibleColumns.some(v => getFullyQualifiedColumnName(v) === droppableSnapshot.draggingOverWith)
   );
 
   return {
@@ -172,7 +172,7 @@ export const ColumnSelector = ({ columns, onVisibleColumnsChange, visibleColumns
 
   const columnInfoMap = useMemo((): Record<string, ColumnInfo[]> => ({
     visible: visibleColumns,
-    available: columns.filter(t => visibleColumns.every(v => v.name !== t.name)).sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' })),
+    available: columns.filter(t => visibleColumns.every(v => getFullyQualifiedColumnName(v) !== getFullyQualifiedColumnName(t))).sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' })),
   }), [columns, visibleColumns]);
 
   const handleDragEnd = useCallback((result: DropResult) => {
@@ -236,8 +236,8 @@ export const ColumnSelector = ({ columns, onVisibleColumnsChange, visibleColumns
                     >
                       {columnInfoMap[key].map((item, index) => (
                         <Draggable
-                          key={item.name}
-                          draggableId={item.name}
+                          key={getFullyQualifiedColumnName(item)}
+                          draggableId={getFullyQualifiedColumnName(item)}
                           index={index}
                           disableInteractiveElementBlocking
                         >
@@ -257,7 +257,10 @@ export const ColumnSelector = ({ columns, onVisibleColumnsChange, visibleColumns
                               )}
                             >
                               <Box display="flex" width="100%" justifyContent="space-between" alignItems="center">
-                                <span>{item.displayName}</span>
+                                <span>
+                                  {item.displayName}
+                                  {item.table && <span className={classes.tableName}>({item.table})</span>}
+                                </span>
                                 <span className={classes.phipii}>
                                   {[
                                     item.pii ? 'PII' : '',

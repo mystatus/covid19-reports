@@ -8,6 +8,7 @@ import SaveIcon from '@material-ui/icons/Save';
 import FileCopyIcon from '@material-ui/icons/FileCopy';
 import React, { useEffect } from 'react';
 import DeleteIcon from '@material-ui/icons/Delete';
+import { getFullyQualifiedColumnName } from '@covid19-reports/shared';
 import useStyles from './query-builder.styles';
 import {
   getFieldDefaultQueryOp,
@@ -43,7 +44,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
   const classes = useStyles();
 
   // Don't allow duplicate fields.
-  const availableFields = queryFields.filter(field => !queryRows.some(row => row.field.name === field.name));
+  const availableFields = queryFields.filter(field => !queryRows.some(row => getFullyQualifiedColumnName(row.field) === getFullyQualifiedColumnName(field)));
 
   const addRow = () => {
     if (availableFields.length <= 0) {
@@ -96,7 +97,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
       {(queryRows.length > 0) && (
         <Box className={classes.rowsContainer}>
           {queryRows.map((row, index) => (
-            <Grid container spacing={2} key={row.field.name}>
+            <Grid container spacing={2} key={getFullyQualifiedColumnName(row.field)}>
               <QueryBuilderRow
                 availableFields={availableFields}
                 onChange={onRowChange(index)}

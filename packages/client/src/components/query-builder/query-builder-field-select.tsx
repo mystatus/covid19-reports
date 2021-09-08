@@ -1,5 +1,6 @@
 import { Select } from '@material-ui/core';
 import React from 'react';
+import { getFullyQualifiedColumnName } from '@covid19-reports/shared';
 import { QueryField } from '../../utility/query-builder-utils';
 
 type QueryBuilderFieldSelectProps = {
@@ -19,8 +20,8 @@ export const QueryBuilderFieldSelect = (props: QueryBuilderFieldSelectProps) => 
       }}
     >
       {fields.map((field, index) => (
-        <option key={field.name} value={index}>
-          {field.displayName}
+        <option key={getFullyQualifiedColumnName(field)} value={index}>
+          {field.table ? `${field.displayName}(${field.table})` : field.displayName}
         </option>
       ))}
     </Select>

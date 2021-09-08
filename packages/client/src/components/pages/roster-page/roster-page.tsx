@@ -48,6 +48,7 @@ import { downloadFile } from '../../../utility/download';
 import { getNewPageIndex } from '../../../utility/table';
 import PageHeader from '../../page-header/page-header';
 import {
+  ColumnInfoToTableColumns,
   SortDirection,
   TableColumn,
   TableCustomColumnsContent,
@@ -809,12 +810,12 @@ export const RosterPage = () => {
           <TableCustomColumnsContent
             rows={orphanedRecords.rows}
             columns={[
-              { name: 'edipi', displayName: 'DoD ID' },
-              { name: 'unit', displayName: 'Unit' },
-              { name: 'phone', displayName: 'Phone' },
-              { name: 'count', displayName: 'Count' },
-              { name: 'earliestReportDate', displayName: 'First Report' },
-              { name: 'latestReportDate', displayName: 'Latest Report' },
+              { name: 'edipi', displayName: 'DoD ID', fullyQualifiedName: 'orphanedRecord.edipi' },
+              { name: 'unit', displayName: 'Unit', fullyQualifiedName: 'orphanedRecord.unit' },
+              { name: 'phone', displayName: 'Phone', fullyQualifiedName: 'orphanedRecord.phone' },
+              { name: 'count', displayName: 'Count', fullyQualifiedName: 'orphanedRecord.count' },
+              { name: 'earliestReportDate', displayName: 'First Report', fullyQualifiedName: 'orphanedRecord.earliestReportDate' },
+              { name: 'latestReportDate', displayName: 'Latest Report', fullyQualifiedName: 'orphanedRecord.latestReportDate' },
             ]}
             idColumn={row => row.id + row.unitId}
             rowOptions={{
@@ -1051,7 +1052,7 @@ export const RosterPage = () => {
           <div className={classes.tableWrapper}>
             <TableCustomColumnsContent
               rows={rows}
-              columns={visibleColumns}
+              columns={ColumnInfoToTableColumns(visibleColumns)}
               sortable
               defaultSort={sortState ? { column: sortState.column, direction: sortState.sortDirection } : undefined}
               onSortChange={handleSortChanged}

@@ -5,6 +5,7 @@ import React, {
   useState,
 } from 'react';
 import {
+  getFullyQualifiedColumnName,
   ColumnInfo,
   ColumnsConfig,
   EntityType,
@@ -58,6 +59,7 @@ export const defaultRowOptions: TableRowOptions = {
 
 export type ViewLayoutProps = {
   entityType: EntityType;
+  idColumn: string | ((row: any) => string);
   header: {
     title: string;
     help?: PageHeaderHelpProps;
@@ -73,6 +75,7 @@ export type ViewLayoutProps = {
 export default function ViewLayout(props: ViewLayoutProps) {
   const {
     entityType,
+    idColumn,
     header,
     buttonSetComponent: ButtonSetComponent,
     maxTableColumns = viewLayoutDefaults.maxTableColumns,
@@ -139,7 +142,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
   // Visible Columns
   //
   const columnsMap = useMemo(() => {
-    return _.keyBy(columns, x => x.name);
+    return _.keyBy(columns, x => getFullyQualifiedColumnName(x));
   }, [columns]);
 
   const visibleColumns = useMemo(() => {
@@ -147,8 +150,8 @@ export default function ViewLayout(props: ViewLayoutProps) {
       .map(key => columnsMap[key])
       .filter(column => !!column)
       .sort((a, b) => {
-        const orderA = currentLayout.columns[a!.name].order;
-        const orderB = currentLayout.columns[b!.name].order;
+        const orderA = currentLayout.columns[getFullyQualifiedColumnName(a!)].order;
+        const orderB = currentLayout.columns[getFullyQualifiedColumnName(b!)].order;
         return orderA - orderB;
       }) as ColumnInfo[];
   }, [columnsMap, currentLayout.columns]);
@@ -156,7 +159,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
   const setVisibleColumns = useCallback((visibleColumnsNew: ColumnInfo[]) => {
     const columnsNew: ColumnsConfig = {};
     visibleColumnsNew.forEach((column, index) => {
-      columnsNew[column.name] = { order: index };
+      columnsNew[getFullyQualifiedColumnName(column)] = { order: index };
     });
 
     if (!deepEquals(currentLayout.columns, columnsNew)) {
@@ -342,6 +345,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
           rowOptions,
           visibleColumns,
         }}
+        idColumn={idColumn}
       />
 
       <SaveNewLayoutDialog
@@ -349,6 +353,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
         onSave={handleSaveNewLayoutConfirm}
         onCancel={() => setSaveNewLayoutDialogOpen(false)}
       />
+
     </>
   );
 }

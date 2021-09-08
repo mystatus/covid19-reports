@@ -66,4 +66,10 @@ export default makeStyles((theme: Theme) => createStyles({
     fontWeight: 300,
     opacity: 0.9,
   },
+  tableName: {
+    fontSize: '0.8rem',
+    fontWeight: 300,
+    marginLeft: 2,
+    opacity: 0.9,
+  },
 }));
