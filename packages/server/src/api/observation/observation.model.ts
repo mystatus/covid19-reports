@@ -79,7 +79,7 @@ export class Observation extends BaseEntity {
     return getColumnSelect(column, 'custom_columns', 'observation');
   }
 
-  static async getColumns(org: Org, version?: string, directOnly?: boolean) {
+  static async getColumns(org: Org, includeRelationships?: boolean, version?: string) {
     const reportSchema = await ReportSchema.findOne({
       where: {
         org: org.id,
@@ -102,15 +102,13 @@ export class Observation extends BaseEntity {
       updatable: false,
     }));
 
-    const service = new EntityService(RosterHistory);
-    if (!directOnly) {
-      const joinColumns = (await service.getColumns(org, version, true)).map((columnInfo: ColumnInfo) => {
-        return {
-          ...columnInfo,
-          table: 'roster',
-        };
+    if (includeRelationships) {
+      const service = new EntityService(RosterHistory);
+      const rosterHistoryColumns = await service.getColumns(org);
+      rosterHistoryColumns.forEach(columnInfo => {
+        columnInfo.table = 'roster'
       });
-      return [...baseObservationColumns, ...customColumns, ...joinColumns];
+      return [...baseObservationColumns, ...customColumns, ...rosterHistoryColumns];
     }
     return [...baseObservationColumns, ...customColumns];
   }

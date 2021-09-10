@@ -79,7 +79,7 @@ export class RosterHistory extends RosterEntity {
     return queryBuilder;
   }
 
-  static async getColumns(org: Org) {
+  static async getColumns(org: Org, includeRelationships?: boolean, version?: string) {
     const customColumns: ColumnInfo[] = (await CustomRosterColumn.find({
       where: {
         org: org.id,

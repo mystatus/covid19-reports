@@ -15,6 +15,7 @@ import { RosterEntity } from './roster-entity';
 import { UserRole } from '../user/user-role.model';
 import { EntityService, getColumnSelect, isColumnAllowed, MakeEntity } from '../../util/entity-utils';
 import { Observation } from '../observation/observation.model';
+import { getFullyQualifiedColumnName } from '../../../../shared/src/entity.types';
 
 @MakeEntity()
 @Entity()
@@ -76,7 +77,7 @@ export class Roster extends RosterEntity {
     });
   }
 
-  static async getColumns(org: Org, version?: string, directOnly?: boolean): Promise<ColumnInfo[]> {
+  static async getColumns(org: Org, includeRelationships?: boolean, version?: string): Promise<ColumnInfo[]> {
     const customColumns: ColumnInfo[] = (await CustomRosterColumn.find({
       where: {
         org: org.id,
@@ -88,7 +89,7 @@ export class Roster extends RosterEntity {
       updatable: true,
     }));
 
-    if (!directOnly) {
+    if (includeRelationships) {
       const aggregateConfig = [
         {
           aggregate: 'count',
@@ -96,23 +97,23 @@ export class Roster extends RosterEntity {
             { name: 'observationCount' },   // COUNT(edipi)
           ],
         },
-        {
-          aggregate: 'json_array_length',
-          columns: [
-            { key: 'Details.Symptoms', as: 'observationCount' },   // json_array_length(custom_columns->
-          ],
-        },
-        { aggregate: 'max', columns: [
+        // {
+        //   aggregate: 'json_array_length',
+        //   columns: [
+        //     { key: 'Details.Symptoms', as: 'observationCount' },   // json_array_length(custom_columns->
+        //   ],
+        // },
+        // { aggregate: 'max', columns: [
 
-        ] },
-        { aggregate: 'min', columns: [] },
-        { aggregate: 'sum', columns: [] },
+        // ] },
+        // { aggregate: 'min', columns: [] },
+        // { aggregate: 'sum', columns: [] },
       ]
 
-      const observationAggregateColumns = (await Observation.getColumns(org, 'es6ddssymptomobs', true))
+      const observationAggregateColumns = (await Observation.getColumns(org, false, 'es6ddssymptomobs'))
         .flatMap((columnInfo: ColumnInfo) => {
           return aggregateConfig
-            .filter(config => config.columns.some(c => c.key === columnInfo.name))
+            // .filter(config => config.columns.some(c => c.name === columnInfo.name))
             .map(config => {
               return {
                 ...columnInfo,
@@ -120,10 +121,13 @@ export class Roster extends RosterEntity {
                 displayName: `observation.${columnInfo.name}`,
                 table: 'observation',
                 aggregate: config.aggregate,
-                as: config.as,
+                // as: config.as,
               } as ColumnInfo;
             })
         });
+
+      console.log({ aggregateConfig, observationAggregateColumns })
+
       return [...baseRosterColumns, ...customColumns, ...observationAggregateColumns];
     }
     return [...baseRosterColumns, ...customColumns];
