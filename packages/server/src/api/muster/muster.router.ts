@@ -12,7 +12,43 @@ router.get(
 );
 
 router.get(
-  '/:orgId/:unitId/nearest',
+  '/:orgId',
+  requireOrgAccess,
+  controller.getMusterConfigurations,
+);
+
+router.post(
+  '/:orgId',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageGroup),
+  bodyParser.json(),
+  controller.addMusterConfiguration,
+);
+
+router.get(
+  '/:orgId/unit-trends',
+  requireOrgAccess,
+  requireRolePermission(role => role.canViewMuster),
+  controller.getMusterUnitTrends,
+);
+
+router.put(
+  '/:orgId/:musterConfigurationId',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageGroup),
+  bodyParser.json(),
+  controller.updateMusterConfiguration,
+);
+
+router.delete(
+  '/:orgId/:musterConfigurationId',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageGroup),
+  controller.deleteMusterConfiguration,
+);
+
+router.get(
+  '/:orgId/:edipi/nearest',
   requireInternalUser,
   requireOrgAccess,
   controller.getNearestMusterWindow,
@@ -26,16 +62,9 @@ router.get(
 );
 
 router.get(
-  '/:orgId/unit-trends',
-  requireOrgAccess,
-  requireRolePermission(role => role.canViewMuster),
-  controller.getMusterUnitTrends,
-);
-
-router.get(
-  '/:orgId/:unitName/complianceByDateRange',
+  '/:orgId/:filterId/complianceByDateRange',
   bodyParser.json(),
-  controller.getUnitMusterComplianceByDateRange,
+  controller.getFilterMusterComplianceByDateRange,
 );
 
 export default router;

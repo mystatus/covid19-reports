@@ -9,8 +9,7 @@ export const UnitsPageHelp = () => {
       `}
       bullets={[
         'Add or remove units',
-        'Edit each unit’s muster requirement(s)',
-        'Create group default muster requirement(s)',
+        'Edit each unit’s name',
       ]}
     />
   );

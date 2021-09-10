@@ -9,7 +9,6 @@ export function mockOrg(contact: User) {
     description: uniqueString(),
     contact,
     indexPrefix: uniqueString(),
-    defaultMusterConfiguration: [],
   });
 }
 

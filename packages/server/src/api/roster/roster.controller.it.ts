@@ -186,13 +186,10 @@ describe(`Roster Controller`, () => {
       ]);
       expect(res.data.rosters[0].unit).to.have.keys([
         'id',
-        'includeDefaultConfig',
         'name',
-        'musterConfiguration',
         'org',
       ]);
       expect(res.data.rosters[0].unit.org).to.have.keys([
-        'defaultMusterConfiguration',
         'id',
         'name',
         'description',

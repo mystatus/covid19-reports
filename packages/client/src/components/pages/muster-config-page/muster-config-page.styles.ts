@@ -30,12 +30,26 @@ export default makeStyles((theme: Theme) => createStyles({
       },
     },
   },
+  musterConfiguration: {
+    width: '60%',
+  },
+  subtle: {
+    color: '#A9AEB1',
+  },
   iconCell: {
     width: '81px',
     '& > svg': {
       position: 'relative',
       top: '3px',
       color: theme.palette.primary.light,
+    },
+  },
+  '@keyframes fadeOut': {
+    '90%': {
+      opacity: 1,
+    },
+    '100%': {
+      opacity: 0,
     },
   },
 }));

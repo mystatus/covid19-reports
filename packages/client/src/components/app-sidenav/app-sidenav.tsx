@@ -190,6 +190,11 @@ export const AppSidenav = () => {
                 icon={(<GroupWorkIcon />)}
               />
               <SidenavLink
+                to="/muster-config"
+                name="Muster Configuration"
+                icon={(<PersonCheckIcon />)}
+              />
+              <SidenavLink
                 to="/users"
                 name="Users"
                 icon={(<SupervisorAccountIcon />)}

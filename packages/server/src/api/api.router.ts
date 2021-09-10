@@ -69,6 +69,10 @@ export type EdipiParam = {
   edipi: string;
 };
 
+export type MusterConfigurationParam = {
+  musterConfigurationId: string;
+};
+
 export type RosterParam = {
   rosterId: string;
 };
@@ -117,6 +121,7 @@ export type OrgRoleParams = OrgParam & RoleParam;
 export type OrgReportParams = OrgParam & ReportParam;
 export type OrgEdipiParams = OrgParam & EdipiParam;
 export type OrgRosterParams = OrgParam & RosterParam;
+export type OrgMusterConfigurationParams = OrgParam & MusterConfigurationParam;
 export type OrgWorkspaceParams = OrgParam & WorkspaceParam;
 export type OrgUnitParams = OrgParam & UnitParam;
 export type OrgSavedFilterParams = OrgParam & SavedFilterParam;

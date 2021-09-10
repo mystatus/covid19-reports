@@ -68,7 +68,7 @@ export function daysToString(days: DaysOfTheWeek) {
  *
  * @param days The binary form of days
  */
-export function binaryDaysToDateArray(days: number | undefined): number[] {
+export function binaryDaysToDateArray(days: number | null): number[] {
   if (!days) {
     return [];
   }

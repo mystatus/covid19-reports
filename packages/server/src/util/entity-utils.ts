@@ -125,7 +125,7 @@ function formatColumnSelect(columnSelect: string, column: ColumnInfo) {
   }
 }
 
-function findColumnByName(name: string, columns: ColumnInfo[]): ColumnInfo {
+export function findColumnByName(name: string, columns: ColumnInfo[]): ColumnInfo {
   if (name === 'unit') {
     return {
       name: 'unit',
@@ -235,7 +235,7 @@ export class EntityService<T extends IEntity> {
     };
   }
 
-  private applyWhere(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterItem: FilterConfigItem) {
+  applyWhere(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterItem: FilterConfigItem) {
     const method = this.where[filterItem.op];
     if (method) {
       return method.call(this, queryBuilder, column, filterItem);

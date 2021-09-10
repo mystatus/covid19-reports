@@ -1,4 +1,3 @@
-import { MusterConfiguration } from './unit.types';
 import { UserSerialized } from './user.types';
 
 export type OrgSerialized = {
@@ -8,5 +7,4 @@ export type OrgSerialized = {
   indexPrefix: string;
   reportingGroup?: string;
   contact?: UserSerialized;
-  defaultMusterConfiguration: MusterConfiguration[];
 };

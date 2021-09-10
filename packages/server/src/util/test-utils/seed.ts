@@ -25,6 +25,9 @@ import { observationTestData } from './data/observation-generator';
 import { orgTestData } from './data/org-generator';
 import { adminUserTestData } from './data/user-generator';
 import { reportSchemaTestData } from './data/report-schema-generator';
+import { SavedFilter } from '../../api/saved-filter/saved-filter.model';
+import { MusterConfiguration } from '../../api/muster/muster-config.model';
+import { MusterFilter } from '../../api/muster/muster-filter.model';
 
 require('dotenv').config();
 
@@ -161,6 +164,55 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
   const groupUserRole = createGroupUserRole(org);
   groupUserRole.allowedRosterColumns.push(customColumn.name);
   await groupUserRole.save();
+
+  // Add saved filters
+  const filters = [];
+  for (const unit of units) {
+    const filter = SavedFilter.create({
+      org,
+      name: unit.name,
+      entityType: 'roster',
+      config: {
+        unit: { op: '=', value: unit.id, expression: '', expressionEnabled: false },
+      },
+    });
+    filters.push(await filter.save());
+  }
+
+  // Add muster configurations
+  const recurringMusterConfig = await MusterConfiguration.create({
+    org,
+    days: 62,
+    startTime: '00:00',
+    timezone: 'America/Los_Angeles',
+    durationMinutes: 120,
+    reportSchema: reportSchemas[0],
+  }).save();
+  // Add some units to the muster config
+  for (let i = 0; i < numUnits; i += 2) {
+    await MusterFilter.create({
+      musterConfig: recurringMusterConfig,
+      filter: filters[i],
+      filterParams: {},
+    }).save();
+  }
+
+  const oneTimeMusterConfig = await MusterConfiguration.create({
+    org,
+    days: null,
+    startTime: '2020-01-02T02:00:00.000',
+    timezone: 'America/Los_Angeles',
+    durationMinutes: 120,
+    reportSchema: reportSchemas[1],
+  }).save();
+  // Add some units to the muster config
+  for (let i = 1; i < numUnits; i += 2) {
+    await MusterFilter.create({
+      musterConfig: oneTimeMusterConfig,
+      filter: filters[i],
+      filterParams: {},
+    }).save();
+  }
 
   // Create users
   for (let i = 0; i < numUsers; i++) {

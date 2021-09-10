@@ -7,7 +7,6 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { MusterConfiguration } from '@covid19-reports/shared';
 import { Org } from '../org/org.model';
 
 @Entity()
@@ -28,27 +27,6 @@ export class Unit extends BaseEntity {
 
   @Column()
   name!: string;
-
-  @Column({
-    default: true,
-  })
-  includeDefaultConfig!: boolean;
-
-  @Column('json', {
-    nullable: false,
-    default: '[]',
-  })
-  musterConfiguration: MusterConfiguration[] = [];
-
-  combinedConfiguration() {
-    if (this.includeDefaultConfig) {
-      if (!this.org || !Array.isArray(this.org?.defaultMusterConfiguration)) {
-        throw new Error('Unit needs the complete org entity to access the defaultMusterConfig');
-      }
-      return [...this.org?.defaultMusterConfiguration, ...this.musterConfiguration];
-    }
-    return this.musterConfiguration;
-  }
 
 }
 

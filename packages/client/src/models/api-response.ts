@@ -3,7 +3,7 @@ import {
   OrphanedRecordActionType,
   ColumnType,
   CustomColumns,
-  CustomColumnConfig,
+  CustomColumnConfig, SavedFilterSerialized,
 } from '@covid19-reports/shared';
 
 export interface ApiPaginated<TData> {
@@ -17,7 +17,6 @@ export interface ApiOrg {
   description: string;
   indexPrefix: string;
   contact?: ApiUser;
-  defaultMusterConfiguration: MusterConfiguration[];
 }
 
 export interface ApiRole {
@@ -227,12 +226,21 @@ export interface ApiMusterTrends {
   monthly: ApiUnitStatsByDate;
 }
 
-export interface MusterConfiguration {
-  days?: DaysOfTheWeek;
+export interface ApiMusterConfiguration {
+  id: number;
+  days: DaysOfTheWeek | null;
+  reportSchema: ApiReportSchema;
+  filters: MusterFilter[];
   startTime: string;
   timezone: string;
   durationMinutes: number;
-  reportId: string;
+}
+
+export interface MusterFilter {
+  filter: SavedFilterSerialized;
+  filterParams: {
+    [key: string]: string;
+  };
 }
 
 export interface ApiReportSchema {
@@ -244,8 +252,6 @@ export interface ApiUnit {
   id: number;
   name: string;
   org?: ApiOrg;
-  musterConfiguration: MusterConfiguration[];
-  includeDefaultConfig: boolean;
 }
 
 export interface ApiError {

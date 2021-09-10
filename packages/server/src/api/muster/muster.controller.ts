@@ -1,59 +1,139 @@
 import { Response } from 'express';
-import { Brackets, In } from 'typeorm';
+import { Connection, getManager, In, SelectQueryBuilder } from 'typeorm';
 import _ from 'lodash';
 import moment from 'moment-timezone';
 import {
+  AddMusterConfigurationBody,
+  ColumnInfo,
+  GetClosedMusterWindowsQuery,
   getDayBitFromMomentDay,
   GetMusterComplianceByDateRangeQuery,
-  GetClosedMusterWindowsQuery,
+  GetMusterComplianceByDateRangeResponse,
   GetMusterRosterQuery,
   GetMusterUnitTrendsQuery,
-  GetNearestMusterWindowQuery,
-  GetMusterComplianceByDateRangeResponse,
-  MusterConfiguration,
-  Paginated,
+  GetNearestMusterWindowQuery, MusterConfigurationData,
+  Paginated, UpdateMusterConfigurationBody,
 } from '@covid19-reports/shared';
-import { assertRequestQuery } from '../../util/api-utils';
-import {
-  BadRequestError,
-  NotFoundError,
-} from '../../util/error-types';
+import database from '../../sqldb/sqldb';
+import { assertRequestBody, assertRequestQuery } from '../../util/api-utils';
+import { BadRequestError, NotFoundError } from '../../util/error-types';
 import {
   buildMusterWindow,
   calcMusterPercent,
+  getCompliantUserObserverationCount,
   getDistanceToWindow,
   getEarliestMusterWindowTime,
   getMusterRosterStats,
   getMusterUnitTrends,
   getOneTimeMusterWindowTime,
-  MusterWindow,
-  getCompliantUserObserverationCount,
   getUnitRequiredMusterCount,
   MusterCompliance,
+  MusterWindow,
 } from '../../util/muster-utils';
-import {
-  dateFromString,
-  dayIsIn,
-  DaysOfTheWeek,
-  nextDay,
-  oneDaySeconds,
-} from '../../util/util';
+import { dateFromString, dayIsIn, DaysOfTheWeek, nextDay, oneDaySeconds } from '../../util/util';
 import {
   ApiRequest,
+  OrgEdipiParams,
+  OrgMusterConfigurationParams,
+  OrgParam,
   OrgRoleParams,
-  OrgUnitParams,
 } from '../api.router';
 import { Observation } from '../observation/observation.model';
 import { Roster } from '../roster/roster.model';
-import {
-  ChangeType,
-  RosterHistory,
-} from '../roster/roster-history.model';
+import { ChangeType, RosterHistory } from '../roster/roster-history.model';
 import { ReportSchema } from '../report-schema/report-schema.model';
 import { Unit } from '../unit/unit.model';
+import { MusterConfiguration } from './muster-config.model';
+import { SavedFilter } from '../saved-filter/saved-filter.model';
+import { EntityService, findColumnByName } from '../../util/entity-utils';
+import { MusterFilter } from './muster-filter.model';
+import { Org } from '../org/org.model';
 
 
 class MusterController {
+
+  async getMusterConfigurations(req: ApiRequest<OrgParam>, res: Response) {
+    if (!req.appOrg || !req.appUserRole) {
+      throw new NotFoundError('Organization was not found.');
+    }
+
+    const musterConfigs = await MusterConfiguration.find({
+      relations: ['reportSchema', 'filters', 'filters.filter'],
+      where: {
+        org: req.appOrg.id,
+      },
+      order: {
+        id: 'ASC',
+      },
+    });
+
+    res.json(musterConfigs);
+  }
+
+  async addMusterConfiguration(req: ApiRequest<OrgParam, AddMusterConfigurationBody>, res: Response) {
+    const musterConfig = new MusterConfiguration();
+    musterConfig.org = req.appOrg;
+    musterConfig.filters = [];
+    const newMusterConfig = await upsertMusterConfiguration(
+      req.appOrg!,
+      assertRequestBody(req, [
+        'days',
+        'reportId',
+        'startTime',
+        'timezone',
+        'durationMinutes',
+        'filters',
+      ]),
+      musterConfig,
+    );
+
+    res.status(201).json(newMusterConfig);
+  }
+
+  async updateMusterConfiguration(req: ApiRequest<OrgMusterConfigurationParams, UpdateMusterConfigurationBody>, res: Response) {
+    const existingMusterConfig = await MusterConfiguration.findOne({
+      relations: ['reportSchema', 'filters', 'filters.filter'],
+      where: {
+        org: req.appOrg!.id,
+        id: parseInt(req.params.musterConfigurationId),
+      },
+    });
+    if (!existingMusterConfig) {
+      throw new NotFoundError('The muster configuration could not be found.');
+    }
+    existingMusterConfig.org = req.appOrg!;
+
+    const updatedMusterConfig = await upsertMusterConfiguration(
+      req.appOrg!,
+      assertRequestBody(req, [
+        'days',
+        'reportId',
+        'startTime',
+        'timezone',
+        'durationMinutes',
+        'filters',
+      ]),
+      existingMusterConfig,
+    );
+
+    res.json(updatedMusterConfig);
+  }
+
+  async deleteMusterConfiguration(req: ApiRequest<OrgMusterConfigurationParams>, res: Response) {
+    const existingMusterConfig = await MusterConfiguration.findOne({
+      relations: ['reportSchema', 'filters', 'filters.filter'],
+      where: {
+        org: req.appOrg!.id,
+        id: parseInt(req.params.musterConfigurationId),
+      },
+    });
+    if (!existingMusterConfig) {
+      throw new NotFoundError('The muster configuration could not be found.');
+    }
+
+    const deletedMusterConfig = await existingMusterConfig.remove();
+    res.json(deletedMusterConfig);
+  }
 
   async getMusterRoster(req: ApiRequest<OrgRoleParams, null, GetMusterRosterQuery>, res: Response<Paginated<Partial<Roster>>>) {
     assertRequestQuery(req, [
@@ -109,48 +189,42 @@ class MusterController {
   async getClosedMusterWindows(req: ApiRequest<null, null, GetClosedMusterWindowsQuery>, res: Response) {
     const since = parseInt(req.query.since);
     const until = parseInt(req.query.until);
-    // Get all units with muster configurations
-    const unitsWithMusterConfigs = await Unit
-      .createQueryBuilder('unit')
-      .leftJoinAndSelect('unit.org', 'org')
-      .where('json_array_length(unit.muster_configuration) > 0')
-      .orWhere(new Brackets(sqb => {
-        sqb.where('unit.include_default_config');
-        sqb.andWhere('json_array_length(org.default_muster_configuration) > 0');
-      }))
+
+    // Get all muster configurations
+    const musterConfig = await MusterConfiguration
+      .createQueryBuilder('muster')
+      .leftJoinAndSelect('muster.reportSchema', 'reportSchema')
+      .leftJoinAndSelect('muster.org', 'org')
       .getMany();
 
     const musterWindows: MusterWindow[] = [];
 
-    for (const unit of unitsWithMusterConfigs) {
-      const musterConfig = unit.combinedConfiguration();
-      for (const muster of musterConfig) {
-        const durationSeconds = muster.durationMinutes * 60;
+    for (const muster of musterConfig) {
+      const durationSeconds = muster.durationMinutes * 60;
 
-        if (!muster.days) {
-          // This is a one-time muster configuration so we just need to see if
-          // the single expiration is in the range.
-          const current = getOneTimeMusterWindowTime(muster);
-          const end = current + durationSeconds;
+      if (!muster.days) {
+        // This is a one-time muster configuration so we just need to see if
+        // the single expiration is in the range.
+        const current = getOneTimeMusterWindowTime(muster);
+        const end = current + durationSeconds;
 
-          if (end > since && end <= until) {
-            musterWindows.push(buildMusterWindow(unit, current, end, muster));
-          }
-        } else {
-          // Get the unix timestamp of the earliest possible muster window, it could be in the previous week if the
-          // muster window spans the week boundary.
-          // Loop through each week
-          let current = getEarliestMusterWindowTime(muster, since - durationSeconds);
-          while (current < until) {
-            // Loop through each day of week to see if any of the windows ended in the query window
-            for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday && current < until; day = nextDay(day)) {
-              const end = current + durationSeconds;
-              // If the window ended in the query window, add it to the list
-              if (end > since && end <= until && dayIsIn(day, muster.days)) {
-                musterWindows.push(buildMusterWindow(unit, current, end, muster));
-              }
-              current += oneDaySeconds;
+        if (end > since && end <= until) {
+          musterWindows.push(buildMusterWindow(current, end, muster, muster.org!));
+        }
+      } else {
+        // Get the unix timestamp of the earliest possible muster window, it could be in the previous week if the
+        // muster window spans the week boundary.
+        // Loop through each week
+        let current = getEarliestMusterWindowTime(muster, since - durationSeconds);
+        while (current < until) {
+          // Loop through each day of week to see if any of the windows ended in the query window
+          for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday && current < until; day = nextDay(day)) {
+            const end = current + durationSeconds;
+            // If the window ended in the query window, add it to the list
+            if (end > since && end <= until && dayIsIn(day, muster.days)) {
+              musterWindows.push(buildMusterWindow(current, end, muster, muster.org!));
             }
+            current += oneDaySeconds;
           }
         }
       }
@@ -158,29 +232,27 @@ class MusterController {
     res.json(musterWindows);
   }
 
-  async getNearestMusterWindow(req: ApiRequest<OrgUnitParams, null, GetNearestMusterWindowQuery>, res: Response) {
+  async getNearestMusterWindow(req: ApiRequest<OrgEdipiParams, null, GetNearestMusterWindowQuery>, res: Response) {
     const timestamp = parseInt(req.query.timestamp);
+    const connection = await database;
 
-    const unit = await Unit.findOne({
-      relations: ['org'],
-      where: {
-        id: req.params.unitId,
-        org: req.appOrg!.id,
-      },
-    });
+    const columns = await Roster.getColumns(req.appOrg!);
 
-    if (!unit) {
-      throw new NotFoundError('The unit could not be found.');
-    }
+    const musterConfig = (await MusterConfiguration
+      .createQueryBuilder('muster')
+      .leftJoinAndSelect('muster.reportSchema', 'reportSchema')
+      .leftJoinAndSelect('muster.filters', 'filters')
+      .where('muster.org_id = :orgId', { orgId: req.appOrg!.id })
+      .andWhere('muster.report_schema_id = :reportId', { reportId: req.query.reportId })
+      .getMany());
 
-    const musterConfig = unit.combinedConfiguration();
     let minDistance: number | null = null;
     let closestMuster: MusterConfiguration | undefined;
     let closestStart = 0;
     let closestEnd = 0;
 
     for (const muster of musterConfig) {
-      if (muster.reportId !== req.query.reportId) {
+      if (!(await rosterInMusterGroup(connection, req.appOrg!.id, muster, columns, req.params.edipi, timestamp))) {
         continue;
       }
       const durationSeconds = muster.durationMinutes * 60;
@@ -234,7 +306,11 @@ class MusterController {
       }
     }
 
-    res.json(closestMuster ? buildMusterWindow(unit, closestStart, closestEnd, closestMuster) : null);
+    if (closestMuster == null) {
+      throw new NotFoundError('No muster window could be found for the given EDIPI.');
+    }
+
+    res.json(closestMuster ? buildMusterWindow(closestStart, closestEnd, closestMuster, req.appOrg!) : null);
   }
 
   /**
@@ -270,8 +346,8 @@ class MusterController {
    * This method returns the normalized rate (0 - 1.0) of compliance on a given
    * date range for a given unit, against all of the unit's muster configs.
    */
-  async getUnitMusterComplianceByDateRange(
-    req: ApiRequest<{ orgId: number; unitName: string }, null, GetMusterComplianceByDateRangeQuery>,
+  async getFilterMusterComplianceByDateRange(
+    req: ApiRequest<{ orgId: number; filterId: number }, null, GetMusterComplianceByDateRangeQuery>,
     res: Response<GetMusterComplianceByDateRangeResponse>,
   ) {
     const out: GetMusterComplianceByDateRangeResponse = { musterComplianceRates: [] };
@@ -282,7 +358,7 @@ class MusterController {
       throw new BadRequestError('Invalid ISO date range.');
     } else {
       while (fromDate <= toDate) {
-        const compliance = await getMusterComplianceByDate(req.params.orgId, req.params.unitName, fromDate.toISOString());
+        const compliance = await getMusterComplianceByDate(req.params.orgId, req.params.filterId, fromDate.toISOString());
         out.musterComplianceRates.push({ musterComplianceRate: compliance, isoDate: fromDate.toISOString() });
         fromDate = fromDate.add(1, 'day');
       }
@@ -290,6 +366,106 @@ class MusterController {
     res.json(out);
   }
 
+}
+
+async function upsertMusterConfiguration(org: Org, data: MusterConfigurationData, musterConfiguration: MusterConfiguration) {
+  let updatedMusterConfig: MusterConfiguration | null = null;
+  await getManager().transaction(async manager => {
+    const reportSchema = await ReportSchema.findOne({
+      where: {
+        org: org.id,
+        id: data.reportId,
+      },
+    });
+
+    if (!reportSchema) {
+      throw new NotFoundError('A report schema with the given report ID could not be found.');
+    }
+
+    reportSchema.org = org;
+
+    const savedFilters: MusterFilter[] = [];
+    for (const musterFilter of musterConfiguration.filters!) {
+      if (!data.filters.find(f => f.id === musterFilter.filter.id)) {
+        await manager.remove(musterFilter);
+      }
+    }
+    for (const filter of data.filters) {
+      let musterFilter = musterConfiguration.filters!.find(f => f.filter.id === filter.id);
+      if (!musterFilter) {
+        const savedFilter = await SavedFilter.findOne({
+          where: {
+            org: org.id,
+            id: filter.id,
+          },
+        });
+        if (!savedFilter) {
+          throw new NotFoundError(`A saved filter with ID ${filter.id} could not be found.`);
+        }
+        musterFilter = new MusterFilter();
+        musterFilter.filter = savedFilter;
+      }
+      musterFilter.filterParams = filter.params;
+      savedFilters.push(musterFilter);
+    }
+
+    musterConfiguration.days = data.days;
+    musterConfiguration.reportSchema = reportSchema;
+    musterConfiguration.startTime = data.startTime;
+    musterConfiguration.timezone = data.timezone;
+    musterConfiguration.durationMinutes = data.durationMinutes;
+    // HACK: TypeORM seems to be trying to cascade update these filters which causes an error.  The workaround is to
+    // delete them from the object prior to save and then manually save them after.
+    // See https://github.com/typeorm/typeorm/issues/2859
+    delete musterConfiguration.filters;
+    updatedMusterConfig = await manager.save(musterConfiguration);
+    for (const filter of savedFilters) {
+      filter.musterConfig = updatedMusterConfig;
+      await manager.save(filter);
+    }
+  });
+  return updatedMusterConfig;
+}
+
+async function rosterInMusterGroup(connection: Connection, orgId: number, muster: MusterConfiguration, columns: ColumnInfo[], edipi: string, timestamp: number) {
+  if (muster.filters == null || muster.filters.length === 0) {
+    // Just see if the edipi was in the roster at the time
+    return await filterMatchesRoster(null, connection, columns, orgId, edipi, timestamp);
+  }
+  for (const filter of muster.filters) {
+    if (await filterMatchesRoster(filter.filter, connection, columns, orgId, edipi, timestamp)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function filterMatchesRoster(filter: SavedFilter | null, connection: Connection, columns: ColumnInfo[], orgId: number, edipi: string, timestamp: number) {
+  const service = new EntityService(RosterHistory);
+  let rosterQuery = connection
+    .createQueryBuilder()
+    .select('roster.*')
+    .from(q => {
+      return q
+        .select('roster_history.*')
+        .addSelect('roster_history.unit_id', 'unit')
+        .distinctOn(['roster_history.unit_id'])
+        .from(RosterHistory, 'roster_history')
+        .leftJoinAndSelect('roster_history.unit', 'unit')
+        .where('roster_history.edipi = :edipi', { edipi })
+        .andWhere(`roster_history.timestamp <= to_timestamp(:timestamp) AT TIME ZONE '+0'`, { timestamp })
+        .andWhere('unit.org_id = :orgId', { orgId })
+        .orderBy('roster_history.unit_id')
+        .addOrderBy('roster_history.timestamp', 'DESC')
+        .addOrderBy('roster_history.change_type', 'DESC');
+    }, 'roster')
+    .where('roster.change_type <> :changeType', { changeType: ChangeType.Deleted }) as SelectQueryBuilder<RosterHistory>;
+  if (filter != null) {
+    Object.keys(filter.config).forEach(columnName => {
+      rosterQuery = service.applyWhere(rosterQuery, findColumnByName(columnName, columns), filter.config[columnName]);
+    });
+  }
+  return (await rosterQuery.getRawOne()) != null;
 }
 
 function toRosterCompliancePageWithRowLimit(musterInfo: MusterCompliance[], page: number, limit: number): MusterCompliance[] {
@@ -301,10 +477,10 @@ function toRosterCompliancePageWithRowLimit(musterInfo: MusterCompliance[], page
  * This helper method returns the normalized rate (0 - 1.0) of compliance on a given
  * date for a given unit, against all of the unit's muster configs.
  * @param orgId - the organization id
- * @param unitName - the roster the users belong to
+ * @param filterId - the roster filter
  * @param isoDate - the date in format YYYY-MM-DD
  */
-async function getMusterComplianceByDate(orgId: number, unitName: string, isoDate: string) {
+async function getMusterComplianceByDate(orgId: number, filterId: number, isoDate: string) {
   let outValue: number = 0;
   let reportDate: Date | undefined;
   try {
@@ -317,7 +493,7 @@ async function getMusterComplianceByDate(orgId: number, unitName: string, isoDat
     // eslint-disable-next-line no-bitwise
     const dayBit = getDayBitFromMomentDay(reportDate.getDay());
 
-    const usersOnRoster = await getUsersOnRosterByDate(orgId, unitName, isoDate);
+    const usersOnRoster = await getUsersOnRosterByDate(orgId, filterId, isoDate);
     const users = usersOnRoster.users;
     const userCount = users.length;
     let musterAvg: number = 0;
@@ -336,7 +512,7 @@ async function getMusterComplianceByDate(orgId: number, unitName: string, isoDat
           const musterTime = `${reportDate.toISOString().split('T')[0]} ${musterConfig.startTime}`;
           const musterStart = moment.tz(musterTime, musterConfig.timezone);
           const musterEnd = moment.tz(musterTime, musterConfig.timezone).add({ minutes: musterConfig.durationMinutes });
-          const observationCount: number = await getObservationComplianceCount(orgId, unitName, users, musterConfig.reportId, musterStart, musterEnd);
+          const observationCount: number = await getObservationComplianceCount(orgId, users, musterConfig.reportId, musterStart, musterEnd);
           musterAvg += observationCount / userCount;
           numActiveConfigs += 1;
         }
@@ -347,7 +523,7 @@ async function getMusterComplianceByDate(orgId: number, unitName: string, isoDat
         const musterEnd = moment.tz(musterTime, musterConfig.timezone).add({ minutes: musterConfig.durationMinutes });
         // early out if the query date is not on the same day as the one-time muster
         if (moment(isoDate).format('YYYY-MM-DD') === musterStart.format('YYYY-MM-DD')) {
-          const observationCount: number = await getObservationComplianceCount(orgId, unitName, users, musterConfig.reportId, musterStart, musterEnd);
+          const observationCount: number = await getObservationComplianceCount(orgId, users, musterConfig.reportId, musterStart, musterEnd);
           musterAvg += observationCount / userCount;
           numActiveConfigs += 1;
         }
@@ -361,32 +537,29 @@ async function getMusterComplianceByDate(orgId: number, unitName: string, isoDat
 /**
  * This "helper" method returns the number of observations found for a given muster config
  * @param orgId - the organization id
- * @param unitName - the roster the users belong to
  * @param edipis - the users that are on roster
  * @param reportId - the report schema to find observations for
  * @param musterStart - the start of the muster window the observations must fall within
  * @param musterEnd - the end of the muster window the observations must fall within
  */
-async function getObservationComplianceCount(orgId: number, unitName: string, edipis: string[], reportId: string, musterStart: moment.Moment, musterEnd: moment.Moment) {
-  const observationCount = await Observation.createQueryBuilder('observation')
+async function getObservationComplianceCount(orgId: number, edipis: string[], reportId: string, musterStart: moment.Moment, musterEnd: moment.Moment) {
+  return await Observation.createQueryBuilder('observation')
     .select()
     .where(`observation.edipi in (:...edipis)`, { edipis })
-    .andWhere(`observation.unit = :unit`, { unit: unitName })
     .andWhere(`observation.report_schema_id = :reportId`, { reportId })
     .andWhere(`observation.report_schema_org = :orgId`, { orgId })
     .andWhere(`observation.timestamp between :musterStart and :musterEnd`, { musterStart, musterEnd })
     .orderBy('observation.edipi', 'DESC')
     .getCount();
-  return observationCount;
 }
 
 /**
  * This "helper" method returns the list of unique users on roster on the specified date/time
  * @param orgId - the organization id
- * @param unitName - the roster the users belong to
+ * @param filterId - the roster filter
  * @param date - the date to get the list of users on roster
  */
-async function getUsersOnRosterByDate(orgId: number, unitName: string, date: string) {
+async function getUsersOnRosterByDate(orgId: number, filterId: number, date: string) {
   const reportDate = dateFromString(date);
   if (!reportDate) {
     throw new BadRequestError('Missing reportDate.');
@@ -396,7 +569,6 @@ async function getUsersOnRosterByDate(orgId: number, unitName: string, date: str
     .leftJoinAndSelect('roster.unit', 'unit')
     .select('DISTINCT ON(roster.edipi) roster.edipi, roster.change_type, unit.muster_configuration')
     .where(`roster.timestamp <= to_timestamp(:timestamp) AT TIME ZONE '+0'`, { timestamp })
-    .andWhere('unit.name = :unitName', { unitName })
     .andWhere('unit.org_id = :orgId', { orgId })
     .orderBy('roster.edipi', 'DESC')
     .addOrderBy(`EXTRACT (EPOCH FROM (to_timestamp(${timestamp}) at Time Zone '+0' - roster.timestamp))`, 'ASC')
@@ -408,12 +580,11 @@ async function getUsersOnRosterByDate(orgId: number, unitName: string, date: str
         onRoster.push(entry.edipi);
       }
     });
-    const out = {
+    return {
       org: orgId,
       users: onRoster,
       musterConfig: rows[0].muster_configuration,
     };
-    return out;
   }
   return {
     org: null,
@@ -424,8 +595,8 @@ async function getUsersOnRosterByDate(orgId: number, unitName: string, date: str
 
 /**
  * Returns the compliance per individual for each member of the roster
- * @param schemaOrgId the organization that the observation must belong under to be compliant
- * @param units the units of the org to calculate the compliance for, these should all be from the same org.
+ * @param orgId the organization that the observation must belong under to be compliant
+ * @param unitId the units of the org to calculate the compliance for, these should all be from the same org.
  * @param fromDate the start of the date range to calc compliance for.
  * @param toDate the end of the date range to calc compliance for.
  */
@@ -449,7 +620,7 @@ export async function getRosterMusterComplianceRecordsByDateRange(
   requestedUnits.forEach(unit => {
     unitIds.push(unit.id);
     unitNames.push(unit.name);
-    configsByUnitId.set(unit.id, unit.musterConfiguration);
+    // configsByUnitId.set(unit.id, unit.musterConfiguration);
   });
 
   // get the roster entries based on the unit IDs for the org
