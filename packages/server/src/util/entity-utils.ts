@@ -217,6 +217,8 @@ export class EntityService<T extends IEntity> {
     '<>': this.whereCompare,
     '>': this.whereCompare,
     '<': this.whereCompare,
+    'null': this.whereNull,
+    'notnull': this.whereNull,
   };
 
   whereIn(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) {
@@ -270,6 +272,13 @@ export class EntityService<T extends IEntity> {
     return queryBuilder.andWhere(`${columnSelect} ${op} :${column.name}`, {
       [column.name]: formatValue(value, column),
     });
+  }
+
+  whereNull(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) {
+    const { op } = filterConfigItem;
+    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
+    const nullOrNot = op === 'null' ? 'NULL' : 'NOT NULL'
+    return queryBuilder.andWhere(`${columnSelect} IS ${nullOrNot}`);
   }
 
 }

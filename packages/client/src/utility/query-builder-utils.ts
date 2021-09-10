@@ -67,12 +67,16 @@ export function getFieldQueryOpDesc(field: QueryField): QueryOpsDesc {
       return {
         '=': 'is',
         '<>': 'is not',
+        null: 'is null',
+        notnull: 'is not null',
       };
     case ColumnType.String:
       return {
         '=': 'is',
-        in: 'in',
         '<>': 'is not',
+        null: 'is null',
+        notnull: 'is not null',
+        in: 'in',
         '~': 'contains',
         startsWith: 'starts with',
         endsWith: 'ends with',
@@ -84,6 +88,8 @@ export function getFieldQueryOpDesc(field: QueryField): QueryOpsDesc {
         '<>': 'is not',
         '>': 'after',
         '<': 'before',
+        null: 'is null',
+        notnull: 'is not null',
         between: 'between',
       };
     case ColumnType.Number:
@@ -92,6 +98,8 @@ export function getFieldQueryOpDesc(field: QueryField): QueryOpsDesc {
         '<>': 'is not',
         '>': 'greater than',
         '<': 'less than',
+        null: 'is null',
+        notnull: 'is not null',
         between: 'between',
       };
     default:
@@ -104,12 +112,16 @@ export function getFieldDefaultQueryOp(field: QueryField): QueryOp {
   return Object.keys(opDesc)[0] as QueryOp;
 }
 
+export function opRequiresValue(op: QueryOp) {
+  return op !== 'null' && op !== 'notnull';
+}
+
 /**
  * Converts an array of QueryRows into a FilterConfig object.
  */
 export function queryRowsToFilterConfig(queryRows: QueryRow[]): FilterConfig {
   const config: FilterConfig = {};
-  const validQueryRows = queryRows.filter(row => row.field && row.value);
+  const validQueryRows = queryRows.filter(row => row.field && !opRequiresValue(row.op) || (row.value !== null && row.value !== undefined));
 
   for (const row of validQueryRows) {
     let value = row.value;
