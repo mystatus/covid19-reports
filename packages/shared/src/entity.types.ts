@@ -73,7 +73,9 @@ export type QueryOp =
   | 'startsWith'
   | 'endsWith'
   | 'in'
-  | 'between';
+  | 'between'
+  | 'null'
+  | 'notnull';
 
 
 export type QueryValueScalarType = string | number | boolean;

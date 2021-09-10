@@ -43,6 +43,10 @@ export const QueryBuilderValueEditor = (props: QueryBuilderValueEditorProps) => 
 
   let editor: React.ReactElement<QueryBuilderValueEditorProps>;
 
+  if (row.op === 'null' || row.op === 'notnull') {
+    return null;
+  }
+
   switch (row.field.type) {
     case ColumnType.Date:
       editor = <QueryBuilderDateTimeEditor hasTime={false} {...props} />;
