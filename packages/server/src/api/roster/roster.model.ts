@@ -13,7 +13,7 @@ import { Role } from '../role/role.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { RosterEntity } from './roster-entity';
 import { UserRole } from '../user/user-role.model';
-import { getColumnSelect, isColumnAllowed, MakeEntity } from '../../util/entity-utils';
+import { getColumnSelect, getColumnWhere, isColumnAllowed, MakeEntity } from '../../util/entity-utils';
 import { Observation } from '../observation/observation.model';
 import { ColumnType } from '@covid19-reports/shared';
 
@@ -47,7 +47,7 @@ export class Roster extends RosterEntity {
     name: 'detailsSymptomsCount',
     table: 'observation',
     displayName: 'Reports with Symptoms',
-    type: ColumnType.Date,
+    type: ColumnType.Number,
     pii: true,
     phi: false,
     custom: false,
@@ -87,6 +87,10 @@ export class Roster extends RosterEntity {
       return raw.sql;
     }
     return getColumnSelect(column, 'custom_columns', 'roster');
+  }
+
+  static getColumnWhere(column: ColumnInfo) {
+    return getColumnWhere(column, 'custom_columns', 'roster');
   }
 
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {

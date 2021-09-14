@@ -20,6 +20,7 @@ import { Roster } from '../roster/roster.model';
 import { timestampColumnTransformer } from '../../util/util';
 import {
   getColumnSelect,
+  getColumnWhere,
   EntityService,
   MakeEntity,
 } from '../../util/entity-utils';
@@ -77,6 +78,10 @@ export class Observation extends BaseEntity {
 
   static getColumnSelect(column: ColumnInfo) {
     return getColumnSelect(column, 'custom_columns', 'observation');
+  }
+
+  static getColumnWhere(column: ColumnInfo) {
+    return getColumnWhere(column, 'custom_columns', 'observation');
   }
 
   static async getColumns(org: Org, includeRelationships?: boolean, version?: string) {
