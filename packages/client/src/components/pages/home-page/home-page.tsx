@@ -3,7 +3,6 @@ import React, {
   useState,
 } from 'react';
 import {
-  Box,
   Card,
   CardContent,
   Container,
@@ -16,7 +15,6 @@ import {
 } from '@material-ui/core';
 import InfoOutlinedIcon from '@material-ui/icons/InfoOutlined';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
-import FavoriteIcon from '@material-ui/icons/Favorite';
 import clsx from 'clsx';
 import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
 import { UserSelector } from '../../../selectors/user.selector';
@@ -28,8 +26,6 @@ import welcomeImage from '../../../media/images/welcome-image.png';
 import PageHeader from '../../page-header/page-header';
 import {
   ApiAccessRequest,
-  ApiDashboard,
-  ApiWorkspace,
 } from '../../../models/api-response';
 import { Workspace } from '../../../actions/workspace.actions';
 import { formatErrorMessage } from '../../../utility/errors';
@@ -148,13 +144,6 @@ export const HomePage = () => {
     })();
   }, [dispatch, orgId, workspaces]);
 
-  const isDashboardFavorited = (workspace: ApiWorkspace, dashboard: ApiDashboard) => {
-    if (favoriteDashboards[workspace.id]) {
-      return Boolean(favoriteDashboards[workspace.id][dashboard.uuid]);
-    }
-    return false;
-  };
-
   const initializeTable = React.useCallback(async () => {
     if (orgId) {
       try {
@@ -185,9 +174,6 @@ export const HomePage = () => {
   const complianceDelta = musterComplianceLastTwoWeeks[0] < 0 ? 0 : musterComplianceLastTwoWeeks[1] - musterComplianceLastTwoWeeks[0];
   const trendingUp = complianceDelta > 0;
   const trendingDown = complianceDelta < 0;
-
-  const workspacesWithFavorites = workspaces
-    .filter(workspace => (dashboards[workspace.id] ?? []).some(dashboard => isDashboardFavorited(workspace, dashboard)));
 
   return (
     <main className={classes.root}>
@@ -275,44 +261,6 @@ export const HomePage = () => {
                   <Link to="/users">View Now &rarr;</Link>
                 </CardContent>
               </Card>
-            </Grid>
-          )}
-          {user.activeRole?.role.workspaces && (
-            <Grid item xs={12}>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box display="flex" alignItems="center" className={classes.favoritesContainer}>
-                  <FavoriteIcon color="secondary" />
-                  <Typography variant="subtitle1">
-                    My Favorited Dashboards
-                  </Typography>
-                </Box>
-                <Link to="/spaces">View All Dashboards</Link>
-              </Box>
-              {workspacesWithFavorites
-                .map(workspace => (
-                  <Card key={workspace.id} className={classes.favoritesCard}>
-                    <Box fontSize="1rem" fontWeight={500}>
-                      {workspace.name}
-                    </Box>
-                    {dashboards[workspace.id].filter(dashboard => isDashboardFavorited(workspace, dashboard)).map(dashboard => (
-                      <Grid container key={dashboard.uuid}>
-                        <Grid item xs={3}>
-                          <Link href={getDashboardUrl(orgId, workspace.id, dashboard.uuid)}>
-                            {dashboard.title}
-                          </Link>
-                        </Grid>
-                        <Grid item xs={9} className={classes.subtle}>
-                          {dashboard.description}
-                        </Grid>
-                      </Grid>
-                    ))}
-                  </Card>
-                ))}
-                {workspacesWithFavorites.length === 0 && (
-                  <Grid item xs={12} className={classes.subtle}>
-                    You have no favorite dashboards.
-                  </Grid>
-                )}
             </Grid>
           )}
         </Grid>
