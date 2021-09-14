@@ -90,10 +90,10 @@ export default function View({ layout, idColumn }: ViewProps) {
     isFetching: entitiesFetching,
   } = entityApi[entityType].useGetEntitiesQuery({
     orgId,
-    query: {
+    query: useMemo(() => ({
       ...entitiesQuery,
       filterConfig: queryRowsToFilterConfig(filterQueryRows),
-    },
+    }), [entitiesQuery, filterQueryRows]),
   });
 
   const queryBuilderFields = useMemo((): QueryField[] => {
