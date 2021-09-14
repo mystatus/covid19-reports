@@ -50,10 +50,6 @@ export default makeStyles((theme: Theme) => createStyles({
     minWidth: 'min-content',
     backgroundColor: '#fff',
     padding: 2,
-
-    '& $undoButton': {
-      marginLeft: theme.spacing(2),
-    },
   },
   stickyDiv: {
     position: 'relative',

@@ -23,6 +23,12 @@ export default makeStyles((theme: Theme) => createStyles({
       textTransform: 'none',
     },
   },
+  tableName: {
+    fontSize: '0.8rem',
+    fontWeight: 300,
+    marginLeft: 2,
+    opacity: 0.9,
+  },
   sortableHeader: {
     cursor: 'pointer',
     '& > div': {

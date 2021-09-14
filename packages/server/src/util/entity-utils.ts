@@ -49,7 +49,12 @@ export function MakeEntity<T, S extends IEntityModel<T>>() {
 export function getColumnSelect(column: ColumnInfo, customColumn: string, alias: string) {
   // Make sure custom columns are converted to appropriate types
   if (column.custom) {
-    const select = `${join(column?.table ?? alias, customColumn)} ->> '${column.name}'`;
+    const path = column.name.split('_')
+    const jsonSelects = path.slice(0, -1).map(k => `'${k}'`)
+    const leafSelect = path.slice(-1)
+    const jsonNodes = jsonSelects.length ? ['', jsonSelects].join('->') : ''
+
+    const select = `${join(column?.table ?? alias, customColumn)} ${jsonNodes} ->> '${leafSelect}'`;
 
     switch (column.type) {
       case ColumnType.Boolean:
@@ -167,7 +172,6 @@ export class EntityService<T extends IEntity> {
     const filterConfig = query.filterConfig || {};
     const columns = await this.getColumns(org, true, 'es6ddssymptomobs');
     const allowedColumns = this.filterAllowedColumns(columns, userRole.role);
-
     let queryBuilder = await this.entity.buildSearchQuery(org, userRole, allowedColumns);
 
     Object.keys(filterConfig)
@@ -183,7 +187,11 @@ export class EntityService<T extends IEntity> {
     const sortColumn = allowedColumns.find(column => column.name === orderBy);
     if (sortColumn) {
       const order: OrderByCondition = {};
-      order[this.entity.getColumnSelect(sortColumn)] = sortDirection;
+      if (sortColumn.table && sortColumn.hasOwnProperty('sql')) {
+        order[`"${sortColumn.table}"."${sortColumn.name}"`] = sortDirection;
+      } else {
+        order[this.entity.getColumnSelect(sortColumn)] = sortDirection;
+      }
       pagedQuery.orderBy(order);
     } else if (orderBy === 'unit') {
       const order: OrderByCondition = {};
@@ -304,7 +312,7 @@ export class EntityController<T = any> {
   }
 
   getAllowedColumns = async (req: ApiRequest<AllowedColumnsParam>, res: Response<ColumnInfo[]>) => {
-    const columns = this.service.filterAllowedColumns(await this.entityConstructor.getColumns(req.appOrg!, false, req.params.version), req.appUserRole!.role);
+    const columns = this.service.filterAllowedColumns(await this.entityConstructor.getColumns(req.appOrg!, true, req.params.version), req.appUserRole!.role);
     res.json(columns);
   };
 

@@ -257,7 +257,7 @@ class RosterController {
   }
 
   async getAllowedRosterColumnsInfo(req: ApiRequest<OrgParam>, res: Response) {
-    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!), req.appUserRole!.role);
+    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!, true), req.appUserRole!.role);
     res.json(columns);
   }
 

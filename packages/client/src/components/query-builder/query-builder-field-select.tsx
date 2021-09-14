@@ -21,7 +21,7 @@ export const QueryBuilderFieldSelect = (props: QueryBuilderFieldSelectProps) => 
     >
       {fields.map((field, index) => (
         <option key={getFullyQualifiedColumnName(field)} value={index}>
-          {field.table ? `${field.displayName}(${field.table})` : field.displayName}
+          {field.table ? `${field.displayName} (${field.table})` : field.displayName}
         </option>
       ))}
     </Select>

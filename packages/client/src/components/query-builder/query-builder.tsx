@@ -8,7 +8,7 @@ import SaveIcon from '@material-ui/icons/Save';
 import FileCopyIcon from '@material-ui/icons/FileCopy';
 import React, { useEffect } from 'react';
 import DeleteIcon from '@material-ui/icons/Delete';
-import { getFullyQualifiedColumnName, QueryOp } from '@covid19-reports/shared';
+import { getFullyQualifiedColumnName } from '@covid19-reports/shared';
 import useStyles from './query-builder.styles';
 import {
   getFieldDefaultQueryOp,

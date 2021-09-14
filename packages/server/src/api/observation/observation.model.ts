@@ -92,7 +92,7 @@ export class Observation extends BaseEntity {
     }
 
     const customColumns: ColumnInfo[] = reportSchema.columns.map(column => ({
-      name: column.keyPath.join(''),
+      name: column.keyPath.join('_'),
       displayName: startCase(column.keyPath[column.keyPath.length - 1]),
       type: ['long', 'float'].includes(column.type) ? ColumnType.Number : ColumnType.String,
       pii: column.pii,
@@ -105,10 +105,14 @@ export class Observation extends BaseEntity {
     if (includeRelationships) {
       const service = new EntityService(RosterHistory);
       const rosterHistoryColumns = await service.getColumns(org);
-      rosterHistoryColumns.forEach(columnInfo => {
-        columnInfo.table = 'roster'
-      });
-      return [...baseObservationColumns, ...customColumns, ...rosterHistoryColumns];
+      return [
+        ...baseObservationColumns,
+        ...customColumns,
+        ...rosterHistoryColumns.map(columnInfo => ({
+          ...columnInfo,
+          table: 'roster'
+        }))
+      ];
     }
     return [...baseObservationColumns, ...customColumns];
   }
@@ -120,15 +124,17 @@ export class Observation extends BaseEntity {
 
     const units = `rh.unit_id IN (${(await userRole.getUnits()).map(unit => unit.id).join(',')})`;
     queryBuilder.leftJoin(
-      qb =>
-        qb
-        .select([])
-        .from(RosterHistory, 'rh')
-        .distinctOn(['rh.edipi'])
-        .where(units)
-        .orderBy('rh.edipi', 'DESC')
-        .addOrderBy('rh.timestamp', 'DESC')
-      ,
+      qb => {
+        if (!userRole.allUnits) {
+          qb.where(units)
+        }
+        return qb
+          .select([])
+          .from(RosterHistory, 'rh')
+          .distinctOn(['rh.edipi'])
+          .orderBy('rh.edipi', 'DESC')
+          .addOrderBy('rh.timestamp', 'DESC')
+      },
       'roster',
       `observation.edipi = roster.edipi and roster.change_type <> 'deleted' and observation.timestamp > roster.timestamp`
     )
@@ -141,7 +147,7 @@ export class Observation extends BaseEntity {
     columns.forEach(column => {
       if (column.table === 'roster') {
         queryBuilder.addSelect(Roster.getColumnSelect(column), getFullyQualifiedColumnName(column));
-      } else {
+      } else if (!column.table) {
         queryBuilder.addSelect(Observation.getColumnSelect(column), getFullyQualifiedColumnName(column));
       }
     });

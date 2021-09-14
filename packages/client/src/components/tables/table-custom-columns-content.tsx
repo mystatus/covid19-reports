@@ -29,6 +29,7 @@ export interface TableColumn {
   name: string;
   displayName: string;
   fullyQualifiedName: string;
+  table?: string;
 }
 
 export const ColumnInfoToTableColumns = (visibleColumns: ColumnInfo[]): TableColumn[] => {
@@ -36,7 +37,8 @@ export const ColumnInfoToTableColumns = (visibleColumns: ColumnInfo[]): TableCol
     return {
       name: c.name,
       displayName: c.displayName,
-      fullyQualifiedName: getFullyQualifiedColumnName(c),
+      fullyQualifiedName: c?.table !== 'observation' ? getFullyQualifiedColumnName(c) : c.name,
+      table: c.table,
     };
   });
 };
@@ -92,7 +94,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
       return;
     }
     let newSortDirection: SortDirection = 'ASC';
-    if (sortColumn === column) {
+    if (sortColumn?.fullyQualifiedName === column.fullyQualifiedName) {
       newSortDirection = sortDirection === 'ASC' ? 'DESC' : 'ASC';
     } else {
       setSortColumn(column);
@@ -159,7 +161,9 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
                 })}
               >
                 <div>
-                  <div>{column.fullyQualifiedName}</div>
+                  <div>
+                    {column.displayName}
+                  </div>
                   <div>
                     {sortColumn === column && (
                       sortDirection === 'ASC' ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />

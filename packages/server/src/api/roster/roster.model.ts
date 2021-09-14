@@ -13,14 +13,59 @@ import { Role } from '../role/role.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { RosterEntity } from './roster-entity';
 import { UserRole } from '../user/user-role.model';
-import { EntityService, getColumnSelect, isColumnAllowed, MakeEntity } from '../../util/entity-utils';
+import { getColumnSelect, isColumnAllowed, MakeEntity } from '../../util/entity-utils';
 import { Observation } from '../observation/observation.model';
-import { getFullyQualifiedColumnName } from '../../../../shared/src/entity.types';
+import { ColumnType } from '@covid19-reports/shared';
 
 @MakeEntity()
 @Entity()
 @Unique(['edipi', 'unit'])
 export class Roster extends RosterEntity {
+  static sqlRawColumns: Array<ColumnInfo & { sql: string }> = [{
+    name: 'reportCount',
+    table: 'observation',
+    displayName: 'Report Count',
+    type: ColumnType.Number,
+    pii: true,
+    phi: false,
+    custom: false,
+    required: false,
+    updatable: false,
+    sql: 'COUNT("observation"."edipi")',
+  }, {
+    name: 'latestReportDate',
+    table: 'observation',
+    displayName: 'Latest Report Date',
+    type: ColumnType.Date,
+    pii: true,
+    phi: false,
+    custom: false,
+    required: false,
+    updatable: false,
+    sql: 'MAX("observation"."timestamp")',
+  }, {
+    name: 'detailsSymptomsCount',
+    table: 'observation',
+    displayName: 'Reports with Symptoms',
+    type: ColumnType.Date,
+    pii: true,
+    phi: false,
+    custom: false,
+    required: false,
+    updatable: false,
+    sql: `COUNT(json_array_length("observation"."custom_columns"->'Details'->'Symptoms') > 0)`,
+  }, {
+    name: 'lastReportWithSymptoms',
+    table: 'observation',
+    displayName: 'Last Reported Symptoms',
+    type: ColumnType.Date,
+    pii: true,
+    phi: false,
+    custom: false,
+    required: false,
+    updatable: false,
+    sql: `MAX(case when json_array_length("observation"."custom_columns"->'Details'->'Symptoms') > 0 then "observation"."timestamp" end)`,
+  }]
 
   getEntityTarget(): EntityTarget<any> {
     return Roster;
@@ -37,6 +82,10 @@ export class Roster extends RosterEntity {
   }
 
   static getColumnSelect(column: ColumnInfo) {
+    const raw = Roster.sqlRawColumns.find(c => c.name === column.name);
+    if (raw) {
+      return raw.sql;
+    }
     return getColumnSelect(column, 'custom_columns', 'roster');
   }
 
@@ -52,12 +101,35 @@ export class Roster extends RosterEntity {
 
     // Add all columns that are allowed by the user's role
     columns.forEach(column => {
-      queryBuilder.addSelect(Roster.getColumnSelect(column), column.name);
+      if (!column.table || column.table === 'roster') {
+        queryBuilder.addSelect(Roster.getColumnSelect(column), column.name);
+      } else {
+        queryBuilder.addSelect(`"${column.table}"."${column.name}"`, column.name);
+      }
     });
 
     // Filter out roster entries that are not on the active roster or are not allowed by the role's index prefix.
     queryBuilder
       .where('u.org_id = :orgId', { orgId: org.id });
+
+    queryBuilder.leftJoin(
+      qb => {
+        qb.select(['edipi'])
+          .from(Observation, 'observation')
+          .groupBy('observation.edipi')
+
+        columns.forEach(column => {
+          if (column.table && column.table !== 'roster') {
+            // Ugh, hijacking Roster to keep the aggregate logic local - this isn't final
+            qb.addSelect(Roster.getColumnSelect(column), column.name);
+          }
+        });
+
+        return qb
+      },
+      'observation',
+      `"roster"."edipi" = "observation"."edipi"`
+    )
 
     if (!userRole.allUnits) {
       queryBuilder
@@ -90,46 +162,9 @@ export class Roster extends RosterEntity {
     }));
 
     if (includeRelationships) {
-      const aggregateConfig = [
-        {
-          aggregate: 'count',
-          columns: [
-            { name: 'observationCount' },   // COUNT(edipi)
-          ],
-        },
-        // {
-        //   aggregate: 'json_array_length',
-        //   columns: [
-        //     { key: 'Details.Symptoms', as: 'observationCount' },   // json_array_length(custom_columns->
-        //   ],
-        // },
-        // { aggregate: 'max', columns: [
-
-        // ] },
-        // { aggregate: 'min', columns: [] },
-        // { aggregate: 'sum', columns: [] },
-      ]
-
-      const observationAggregateColumns = (await Observation.getColumns(org, false, 'es6ddssymptomobs'))
-        .flatMap((columnInfo: ColumnInfo) => {
-          return aggregateConfig
-            // .filter(config => config.columns.some(c => c.name === columnInfo.name))
-            .map(config => {
-              return {
-                ...columnInfo,
-                name: `observation.${columnInfo.name}`,
-                displayName: `observation.${columnInfo.name}`,
-                table: 'observation',
-                aggregate: config.aggregate,
-                // as: config.as,
-              } as ColumnInfo;
-            })
-        });
-
-      console.log({ aggregateConfig, observationAggregateColumns })
-
-      return [...baseRosterColumns, ...customColumns, ...observationAggregateColumns];
+      return [...baseRosterColumns, ...customColumns, ...Roster.sqlRawColumns];
     }
+
     return [...baseRosterColumns, ...customColumns];
   }
 
