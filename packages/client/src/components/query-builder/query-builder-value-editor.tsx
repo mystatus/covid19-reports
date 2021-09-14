@@ -18,7 +18,11 @@ import {
   MuiPickersUtilsProvider,
 } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
-import { ColumnType } from '@covid19-reports/shared';
+import {
+  ColumnType,
+  QueryValueScalarType,
+  QueryValueType,
+} from '@covid19-reports/shared';
 import _ from 'lodash';
 import useStyles from './query-builder.styles';
 import {
@@ -254,12 +258,14 @@ const QueryBuilderDateTimeEditor = ({ hasTime, onChange, row }: QueryBuilderDate
   return (
     <div>
       {row.expressionEnabled ? expressionField() : dateField()}
-      <Tooltip title={expressionCheckboxTooltip}>
-        <Checkbox
-          checked={row.expressionEnabled}
-          onChange={event => handleUseExpressionChange(event.target.checked)}
-        />
-      </Tooltip>
+      {row.op !== 'between' && (
+        <Tooltip title={expressionCheckboxTooltip}>
+          <Checkbox
+            checked={row.expressionEnabled}
+            onChange={event => handleUseExpressionChange(event.target.checked)}
+          />
+        </Tooltip>
+      )}
     </div>
   );
 };
@@ -269,38 +275,45 @@ type QueryBuilderValueRangeEditorProps = QueryBuilderValueEditorProps & {
 };
 
 const QueryBuilderValueRangeEditor = ({ editorComponent, onChange, row }: QueryBuilderValueRangeEditorProps) => {
-  const range = useMemo(() => {
-    return {
-      min: _.isArray(row.value) ? row.value[0] : undefined,
-      max: _.isArray(row.value) ? row.value[1] : undefined,
-    };
-  }, [row]);
+  // Convert the row value to a two-element array if necessary.
+  useEffect(() => {
+    let value = row.value;
+    if (!_.isArray(row.value)) {
+      value = [row.value, row.value];
+    } else if (row.value.length !== 2) {
+      value = [row.value[0], row.value[0]];
+    }
 
-  const rangeKeys = _.keys(range) as Array<keyof typeof range>;
+    if (row.value !== value) {
+      onChange({
+        ...row,
+        value,
+      });
+    }
+  }, [row, onChange]);
 
-  if (row.expressionEnabled) {
-    return (
-      <Grid item container spacing={2}>
-        {rangeKeys.map(key => (
-          <Grid item key={key}>
-            {React.cloneElement(editorComponent)}
-          </Grid>
-        ))}x
-      </Grid>
-    );
+  const handleValueChange = (value: QueryValueType, valueIndex: number) => {
+    const rowValues = [...row.value as QueryValueScalarType[]];
+    rowValues[valueIndex] = value as QueryValueScalarType;
+    onChange({
+      ...row,
+      value: rowValues,
+    });
+  };
+
+  if (!_.isArray(row.value)) {
+    return null;
   }
 
   return (
     <Grid item container spacing={2}>
-      {rangeKeys.map(key => (
-        <Grid item key={key}>
+      {_.range(2).map((__, index) => (
+        <Grid item key={index}>
           {React.cloneElement(editorComponent, {
-            onChange: (queryRow: QueryRow) => {
-              onChange({ ...queryRow });
-            },
+            onChange: (queryRow: QueryRow) => handleValueChange(queryRow.value, index),
             row: {
               ...row,
-              value: range[key]!,
+              value: (row.value as QueryValueScalarType[])[index],
             },
           })}
         </Grid>
