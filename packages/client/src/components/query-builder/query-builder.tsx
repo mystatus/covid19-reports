@@ -80,7 +80,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
 
   const hasValuesSet = () => {
     for (const queryRow of queryRows) {
-      if (!opRequiresValue(queryRow.op) || (queryRow.value !== null && queryRow.value !== undefined)) {
+      if (!opRequiresValue(queryRow.op) || (queryRow.value !== null && queryRow.value !== undefined && queryRow.value !== '')) {
         return true;
       }
     }
