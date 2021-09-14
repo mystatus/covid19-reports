@@ -209,11 +209,6 @@ export const AppSidenav = () => {
                 name="Roster Columns"
                 icon={(<ViewWeekOutlinedIcon />)}
               />
-              <SidenavLink
-                to="/edit-spaces"
-                name="Edit Spaces"
-                icon={(<DashboardOutlinedIcon />)}
-              />
             </List>
           </>
         )}

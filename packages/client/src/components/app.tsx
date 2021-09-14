@@ -20,7 +20,6 @@ import { RosterPage } from './pages/roster-page/roster-page-2';
 import { UserRegistrationPage } from './pages/user-registration-page/user-registration-page';
 import { UsersPage } from './pages/users-page/users-page';
 import { RoleManagementPage } from './pages/role-management-page/role-management-page';
-import { EditSpacesPage } from './pages/edit-spaces-page/edit-spaces-page';
 import { RosterColumnsPage } from './pages/roster-columns-page/roster-columns-page';
 import { SettingsPage } from './pages/settings-page/settings-page';
 import { UnitsPage } from './pages/units-page/units-page';
@@ -105,9 +104,6 @@ export const App = () => {
               </Route>
               <Route path="/roster-columns">
                 <RosterColumnsPage />
-              </Route>
-              <Route path="/edit-spaces">
-                <EditSpacesPage />
               </Route>
               <Route path="/roles">
                 <RoleManagementPage />
