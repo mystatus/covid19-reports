@@ -39,6 +39,13 @@ export const getFullyQualifiedColumnName = (column: { name: string; table?: stri
   return column.table ? `${column.table}.${column.name}` : column.name;
 };
 
+export const getFullyQualifiedColumnDisplayName = (column: { displayName?: string; table?: string }) => {
+  if (!column.displayName) {
+    return '';
+  }
+  return column.table ? `${column.displayName} (${column.table})` : column.displayName;
+};
+
 export type NarrowTypeForColumnType<T extends ColumnType> = ColumnTypeMapping[T];
 
 export type CustomColumnConfig = {};

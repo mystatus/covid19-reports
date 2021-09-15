@@ -15,6 +15,7 @@ export * from './api/user.api.types';
 export * from './api/workspace.api.types';
 
 export * from './utils/days';
+export * from './utils/expression-utils';
 export * from './utils/string-utils';
 
 export * from './entity.types';

@@ -22,8 +22,12 @@ import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import deepEquals from 'fast-deep-equal';
 import {
+  getFullyQualifiedColumnName,
+  getFullyQualifiedColumnDisplayName,
+  ColumnInfo,
   ColumnType,
   GetEntitiesQuery,
+  QueryValueType,
   SavedFilterSerialized,
 } from '@covid19-reports/shared';
 import useEffectDebounced from '../../hooks/use-effect-debounced';
@@ -46,7 +50,13 @@ import usePersistedState from '../../hooks/use-persisted-state';
 import { useAppDispatch } from '../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../hooks/use-app-selector';
 import { Unit } from '../../actions/unit.actions';
-import { filterConfigToQueryRows, QueryField, QueryFieldEnumItem, QueryRow, queryRowsToFilterConfig } from '../../utility/query-builder-utils';
+import {
+  filterConfigToQueryRows,
+  ExpressionReference,
+  QueryField,
+  QueryFieldEnumItem,
+  QueryRow,
+  queryRowsToFilterConfig } from '../../utility/query-builder-utils';
 import { SavedFilterClient } from '../../client/saved-filter.client';
 import { SaveNewFilterDialog } from '../pages/roster-page/save-new-filter-dialog';
 import { Layout } from './view-layout';
@@ -80,6 +90,7 @@ export default function View({ layout, idColumn }: ViewProps) {
   const [selectFilterMenuOpen, setSelectFilterMenuOpen] = useState(false);
   const [filterEditorOpen, setFilterEditorOpen] = usePersistedState(`${layout.name}FilterEditorOpen`, false);
   const [filterQueryRows, setFilterQueryRows] = usePersistedState<QueryRow[]>(`${layout.name}FilterQueryRows`, []);
+  const [expressionRefsByType, setExpressionRefsByType] = useState<Map<QueryValueType, ExpressionReference[]>>();
   const [saveNewFilterDialogOpen, setSaveNewFilterDialogOpen] = useState(false);
   const selectFilterButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -168,6 +179,23 @@ export default function View({ layout, idColumn }: ViewProps) {
   //   }
   //   setUnitNameMap(unitNames);
   // }, [units]);
+  // This method creates references for the expressions for a given column types (currently just time)
+  // it allows a column to use an expression that references another column.
+  const getExpressionRefsForColumns = useCallback(() => {
+    const expressionRefs = new Map<QueryValueType, ExpressionReference[]>();
+    columns.forEach((col: ColumnInfo) => {
+      if (!expressionRefs.get(col.type)) {
+        const entries: ExpressionReference[] = [];
+        expressionRefs.set(col.type, entries);
+      }
+      const ref: ExpressionReference = {
+        displayName: getFullyQualifiedColumnDisplayName(col),
+        reference: getFullyQualifiedColumnName(col),
+      };
+      expressionRefs.get(col.type)?.push(ref);
+    });
+    return expressionRefs;
+  }, [columns]);
 
   const getSelectedSavedFilter = useCallback(() => {
     return savedFilters.find(x => x.id === selectedFilterId);
@@ -175,17 +203,20 @@ export default function View({ layout, idColumn }: ViewProps) {
 
   const handleChangeFilterQueryRows = useCallback((queryRows: QueryRow[]) => {
     setFilterQueryRows(queryRows);
-  }, [setFilterQueryRows]);
+    setExpressionRefsByType(getExpressionRefsForColumns());
+  }, [setFilterQueryRows, setExpressionRefsByType, getExpressionRefsForColumns]);
 
   useEffect(() => {
     const savedFilter = getSelectedSavedFilter();
     if (savedFilter) {
       const queryRowsNew = filterConfigToQueryRows(savedFilter.config, queryBuilderFields);
       setFilterQueryRows(queryRowsNew);
+      setExpressionRefsByType(getExpressionRefsForColumns());
     } else if (selectedFilterId === noFilterId) {
       setFilterQueryRows([]);
+      setExpressionRefsByType(getExpressionRefsForColumns());
     }
-  }, [queryBuilderFields, getSelectedSavedFilter, selectedFilterId, setFilterQueryRows]);
+  }, [queryBuilderFields, getSelectedSavedFilter, getExpressionRefsForColumns, selectedFilterId, setFilterQueryRows, setExpressionRefsByType]);
 
   const handleSortChanged = useCallback((column: TableColumn, direction: SortDirection) => {
     setEntitiesQuery({
@@ -369,6 +400,7 @@ export default function View({ layout, idColumn }: ViewProps) {
         <QueryBuilder
           queryFields={queryBuilderFields}
           queryRows={filterQueryRows}
+          expressionRefsByType={expressionRefsByType}
           onChangeQueryRows={handleChangeFilterQueryRows}
           onSaveClick={handleFilterSaveClick}
           onSaveAsClick={() => setSaveNewFilterDialogOpen(true)}

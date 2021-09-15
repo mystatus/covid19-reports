@@ -7,7 +7,7 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import clsx from 'clsx';
-import { getFullyQualifiedColumnName, ColumnInfo } from '@covid19-reports/shared';
+import { getFullyQualifiedColumnName, getFullyQualifiedColumnDisplayName, ColumnInfo } from '@covid19-reports/shared';
 import { OverrideType } from '../../utility/typescript-utils';
 import useStyles from './table-custom-columns-content.styles';
 
@@ -35,7 +35,7 @@ export const ColumnInfoToTableColumns = (visibleColumns: ColumnInfo[]): TableCol
   return visibleColumns.map((c: ColumnInfo) => {
     return {
       name: c.name,
-      displayName: c.displayName,
+      displayName: getFullyQualifiedColumnDisplayName(c),
       fullyQualifiedName: getFullyQualifiedColumnName(c),
     };
   });
@@ -159,7 +159,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
                 })}
               >
                 <div>
-                  <div>{column.fullyQualifiedName}</div>
+                  <div>{column.displayName}</div>
                   <div>
                     {sortColumn === column && (
                       sortDirection === 'ASC' ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />

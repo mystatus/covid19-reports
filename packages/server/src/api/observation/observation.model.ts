@@ -122,20 +122,17 @@ export class Observation extends BaseEntity {
     queryBuilder.leftJoin('observation.reportSchema', 'rs');
 
     const units = `rh.unit_id IN (${(await userRole.getUnits()).map(unit => unit.id).join(',')})`;
-    const unitIds = userRole.units.map(unit => unit.id);
     queryBuilder.leftJoin(
-      qb =>
-        qb
+      qb => qb
         .select([])
         .from(RosterHistory, 'rh')
         .distinctOn(['rh.edipi'])
         .where(units)
         .orderBy('rh.edipi', 'DESC')
-        .addOrderBy('rh.timestamp', 'DESC')
-      ,
+        .addOrderBy('rh.timestamp', 'DESC'),
       'roster',
-      `observation.edipi = roster.edipi and roster.change_type <> 'deleted' and observation.timestamp > roster.timestamp`
-    )
+      `observation.edipi = roster.edipi and roster.change_type <> 'deleted' and observation.timestamp > roster.timestamp`,
+    );
 
     // Always select the id column
     queryBuilder.addSelect('observation.id', 'id');
