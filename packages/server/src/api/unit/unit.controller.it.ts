@@ -4,7 +4,7 @@ import { In } from 'typeorm';
 import moment from 'moment';
 import { UnitData } from '@covid19-reports/shared';
 import { elasticsearch } from '../../elasticsearch/elasticsearch';
-import { expectError, expectNoErrors } from '../../util/test-utils/expect';
+import { expectNoErrors } from '../../util/test-utils/expect';
 import {
   seedOrgContact,
   seedOrgContactRoles,
@@ -12,8 +12,6 @@ import {
 import { Stub } from '../../util/test-utils/stub';
 import { TestRequest } from '../../util/test-utils/test-request';
 import {
-  uniqueDate,
-  uniqueInt,
   uniqueString,
 } from '../../util/test-utils/unique';
 import { Org } from '../org/org.model';
@@ -63,19 +61,6 @@ describe(`Unit Controller`, () => {
 
       const body: UnitData = {
         name: uniqueString(),
-        musterConfiguration: [{
-          days: uniqueInt(),
-          startTime: uniqueDate().toISOString(),
-          timezone: uniqueString(),
-          durationMinutes: uniqueInt(),
-          reportId: 'es6ddssymptomobs',
-        }, {
-          days: uniqueInt(),
-          startTime: uniqueDate().toISOString(),
-          timezone: uniqueString(),
-          durationMinutes: uniqueInt(),
-          reportId: 'es6ddssymptomobs',
-        }],
       };
 
       const res = await req.post(`/${org.id}`, body);
@@ -85,7 +70,6 @@ describe(`Unit Controller`, () => {
         'id',
         'name',
         'org',
-        'musterConfiguration',
       ]);
       const unitId = res.data.id;
 
@@ -96,7 +80,6 @@ describe(`Unit Controller`, () => {
       expect(unitAfter.name).to.eql(body.name);
       expect(unitAfter.org).to.exist;
       expect(unitAfter.org!.id).to.eql(org.id);
-      expect(unitAfter.musterConfiguration).to.eql(body.musterConfiguration);
 
       expect(await Unit.count()).to.eql(unitCountBefore + 1);
       const orgUnitCountAfter = await Unit.count({
@@ -122,19 +105,6 @@ describe(`Unit Controller`, () => {
 
       const body: UnitData = {
         name: uniqueString(),
-        musterConfiguration: [{
-          days: uniqueInt(),
-          startTime: uniqueDate().toISOString(),
-          timezone: uniqueString(),
-          durationMinutes: uniqueInt(),
-          reportId: 'es6ddssymptomobs',
-        }, {
-          days: uniqueInt(),
-          startTime: uniqueDate().toISOString(),
-          timezone: uniqueString(),
-          durationMinutes: uniqueInt(),
-          reportId: 'es6ddssymptomobs',
-        }],
       };
 
       const res = await req.put(`/${org.id}/${unit.id}`, body);
@@ -144,39 +114,13 @@ describe(`Unit Controller`, () => {
         'id',
         'name',
         'org',
-        'musterConfiguration',
       ]);
       expect(res.data.id).to.eql(unit.id);
 
       const unitAfter = (await Unit.findOne(unit.id))!;
       expect(unitAfter.name).to.eql(body.name);
-      expect(unitAfter.musterConfiguration).to.eql(body.musterConfiguration);
 
       expect(elasticsearchUpdateByQueryStub.callCount).to.eql(1);
-    });
-
-    it(`throws an error if the muster configuration is missing a report ID`, async () => {
-      const unit = await seedUnit(org);
-
-      const body = {
-        name: uniqueString(),
-        musterConfiguration: [{
-          days: uniqueInt(),
-          startTime: uniqueDate().toISOString(),
-          timezone: uniqueString(),
-          durationMinutes: uniqueInt(),
-        }, {
-          days: uniqueInt(),
-          startTime: uniqueDate().toISOString(),
-          timezone: uniqueString(),
-          durationMinutes: uniqueInt(),
-          reportId: 'es6ddssymptomobs',
-        }],
-      } as UnitData;
-
-      const res = await req.put(`/${org.id}/${unit.id}`, body);
-
-      expectError(res, 'Unrecognized report type');
     });
   });
 
@@ -195,7 +139,6 @@ describe(`Unit Controller`, () => {
       expect(res.data).to.include.keys([
         'name',
         'org',
-        'musterConfiguration',
       ]);
 
       expect(await Unit.count()).to.eql(unitCountBefore - 1);

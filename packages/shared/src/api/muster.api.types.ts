@@ -1,5 +1,23 @@
 import { PaginatedQuery } from './api.types';
 
+export type MusterConfigurationData = {
+  days: number | null;
+  reportId: string;
+  startTime: string;
+  timezone: string;
+  durationMinutes: number;
+  filters: {
+    id: number;
+    params: {
+      [key: string]: string;
+    };
+  }[];
+};
+
+export type AddMusterConfigurationBody = MusterConfigurationData;
+
+export type UpdateMusterConfigurationBody = MusterConfigurationData;
+
 export type GetMusterRosterQuery = {
   fromDate: string;
   toDate: string;

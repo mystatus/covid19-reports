@@ -18,22 +18,6 @@ export function unitsTestData(numUnits: number, unitsNameStartIndex: number, org
     const unit = Unit.create({
       org,
       name: `Unit ${unitsNameStartIndex}`,
-      musterConfiguration: [
-        {
-          days: 62,
-          startTime: '00:00',
-          timezone: 'America/Los_Angeles',
-          durationMinutes: 120,
-          reportId: reportSchemas[0].id,
-        },
-        {
-          startTime: '2020-01-02T02:00:00.000',
-          timezone: 'America/Los_Angeles',
-          durationMinutes: 120,
-          reportId: reportSchemas[1].id,
-        },
-      ],
-      includeDefaultConfig: true,
     });
     units.push(unit);
     unitsNameStartIndex += 1;

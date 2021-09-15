@@ -7,7 +7,6 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { MusterConfiguration } from '@covid19-reports/shared';
 import { User } from '../user/user.model';
 
 @Entity()
@@ -47,12 +46,6 @@ export class Org extends BaseEntity {
     name: 'contact_id',
   })
   contact?: User;
-
-  @Column('json', {
-    nullable: false,
-    default: '[]',
-  })
-  defaultMusterConfiguration: MusterConfiguration[] = [];
 
   getUsers() {
     return User.createQueryBuilder('user')

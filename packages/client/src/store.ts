@@ -59,6 +59,14 @@ import { Modal } from './actions/modal.actions';
 import { savedLayoutApi } from './api/saved-layout.api';
 import { rosterApi } from './api/roster.api';
 import { observationApi } from './api/observation.api';
+import {
+  musterInitialState,
+  musterReducer,
+} from './reducers/muster.reducer';
+import {
+  savedFilterInitialState,
+  savedFilterReducer,
+} from './reducers/saved-filter.reducer';
 
 const initialState = {
   appFrame: appFrameInitialState,
@@ -66,6 +74,8 @@ const initialState = {
   modal: modalInitialState,
   role: roleInitialState,
   unit: unitInitialState,
+  muster: musterInitialState,
+  filters: savedFilterInitialState,
   reportSchema: reportSchemaInitialState,
   orphanedRecord: orphanedRecordInitialState,
   user: userInitialState,
@@ -81,6 +91,8 @@ const reducers = combineReducers({
   modal: modalReducer,
   role: roleReducer,
   unit: unitReducer,
+  muster: musterReducer,
+  filters: savedFilterReducer,
   reportSchema: reportSchemaReducer,
   orphanedRecord: orphanedRecordSlice.reducer,
   user: userSlice.reducer,

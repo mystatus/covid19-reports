@@ -8,7 +8,6 @@ export function orgTestData(admin: User, orgCount: number) {
     contact: admin,
     indexPrefix: `testgroup${orgCount}`,
     reportingGroup: `test${orgCount}`,
-    defaultMusterConfiguration: [],
   });
   return org;
 }

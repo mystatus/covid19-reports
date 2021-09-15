@@ -6,7 +6,6 @@ import {
 import {
   AddOrgBody,
   OrgBody,
-  UpdateOrgDefaultMusterBody,
 } from '@covid19-reports/shared';
 import {
   ApiRequest,
@@ -119,16 +118,6 @@ class OrgController {
     }
 
     const updatedOrg = await req.appOrg.save();
-
-    res.json(updatedOrg);
-  }
-
-  async updateOrgDefaultMuster(req: ApiRequest<OrgParam, UpdateOrgDefaultMusterBody>, res: Response) {
-    const defaultMusterConfiguration = req.body.defaultMusterConfiguration;
-
-    req.appOrg!.defaultMusterConfiguration = defaultMusterConfiguration ?? [];
-
-    const updatedOrg = await req.appOrg!.save();
 
     res.json(updatedOrg);
   }

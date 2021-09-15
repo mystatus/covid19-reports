@@ -24,7 +24,6 @@ import {
   ChangeType,
   RosterHistory,
 } from '../roster/roster-history.model';
-import { ReportSchema } from '../report-schema/report-schema.model';
 
 class UnitController {
 
@@ -134,28 +133,9 @@ class UnitController {
 
 }
 
-async function setUnitFromBody(orgId: number, unit: Unit, body: UnitData) {
+function setUnitFromBody(orgId: number, unit: Unit, body: UnitData) {
   if (body.name) {
     unit.name = body.name;
-  }
-  if (body.musterConfiguration !== undefined) {
-    if (body.musterConfiguration !== null) {
-      const reports = await ReportSchema.find({
-        where: {
-          org: orgId,
-        },
-      });
-      for (const muster of body.musterConfiguration) {
-        if (!reports.some(report => report.id === muster.reportId)) {
-          throw new BadRequestError(`Unrecognized report type: ${muster.reportId}`);
-        }
-      }
-    }
-
-    unit.musterConfiguration = body.musterConfiguration;
-  }
-  if (body.includeDefaultConfig !== undefined) {
-    unit.includeDefaultConfig = body.includeDefaultConfig;
   }
 }
 

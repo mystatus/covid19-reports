@@ -20,6 +20,8 @@ import { Notification } from './api/notification/notification.model';
 import { Observation } from './api/observation/observation.model';
 import { SavedFilter } from './api/saved-filter/saved-filter.model';
 import { SavedLayout } from './api/saved-layout/saved-layout.model';
+import { MusterConfiguration } from './api/muster/muster-config.model';
+import { MusterFilter } from './api/muster/muster-filter.model';
 
 export const ormConfig: PostgresConnectionOptions = {
   type: 'postgres',
@@ -32,6 +34,8 @@ export const ormConfig: PostgresConnectionOptions = {
     AccessRequest,
     CustomRosterColumn,
     Notification,
+    MusterConfiguration,
+    MusterFilter,
     Observation,
     Org,
     OrphanedRecord,

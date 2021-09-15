@@ -6,7 +6,7 @@ import {
   nextDay,
   oneDaySeconds,
 } from '@covid19-reports/shared';
-import { ApiReportSchema, MusterConfiguration } from '../models/api-response';
+import { ApiMusterConfiguration } from '../models/api-response';
 
 
 export type MusterWindow = {
@@ -20,35 +20,22 @@ export type MusterWindowTyped = MusterWindow & {
   oneTime: boolean;
 };
 
-export const mustersConfigurationsAreEqual = (left?: MusterConfiguration[], right?: MusterConfiguration[]) => {
-  return left && right
-    && left.length === right.length
-    && left.every((l, index) => {
-      const r = right[index];
-      return l.days === r.days
-        && l.startTime === r.startTime
-        && l.timezone === r.timezone
-        && l.durationMinutes === r.durationMinutes
-        && l.reportId === r.reportId;
-    });
-};
-
 export const musterConfigurationPartsToString = (dateOrDays: string, duration: number, time: string, report: string) => {
   return `[${report}] ${dateOrDays} at ${time} for ${duration} hours`;
 };
 
-export const musterConfigurationToString = (muster: MusterConfiguration, reports: ApiReportSchema[]) => {
-  const { dateOrDays, duration, time, report } = musterConfigurationParts(muster, reports);
+export const musterConfigurationToString = (muster: ApiMusterConfiguration) => {
+  const { dateOrDays, duration, time, report } = musterConfigurationParts(muster);
   return musterConfigurationPartsToString(dateOrDays, duration, time, report);
 };
 
-export const musterConfigurationParts = (muster: MusterConfiguration, reports: ApiReportSchema[]) => {
+export const musterConfigurationParts = (muster: ApiMusterConfiguration) => {
   const duration = muster.durationMinutes / 60;
   let time: string;
   let dateOrDays: string;
   let when: Moment;
 
-  if (muster.days !== undefined) {
+  if (muster.days != null) {
     const today = moment().format('Y-M-D');
     when = moment.tz(`${today} ${muster.startTime}`, 'Y-M-D HH:mm', muster.timezone);
     time = when.format('h:mm A z');
@@ -58,7 +45,7 @@ export const musterConfigurationParts = (muster: MusterConfiguration, reports: A
     time = when.format('h:mm A z');
     dateOrDays = when.format('MMM D, YYYY');
   }
-  const report = reports.find(r => r.id === muster.reportId)?.name ?? 'Unknown Report';
+  const report = muster.reportSchema.name;
 
   return {
     dateOrDays,
@@ -69,7 +56,7 @@ export const musterConfigurationParts = (muster: MusterConfiguration, reports: A
   };
 };
 
-export const musterConfigurationsToStrings = (musterConfig: MusterConfiguration[], reports: ApiReportSchema[]) => {
+export const musterConfigurationsToStrings = (musterConfig: ApiMusterConfiguration[]) => {
   const validation = validateMusterConfiguration(musterConfig);
 
   if (validation) {
@@ -78,10 +65,10 @@ export const musterConfigurationsToStrings = (musterConfig: MusterConfiguration[
   if (!musterConfig || musterConfig.length === 0) {
     return ['Units are not required to muster.'];
   }
-  return musterConfig.map(muster => musterConfigurationToString(muster, reports));
+  return musterConfig.map(muster => musterConfigurationToString(muster));
 };
 
-export const validateMusterConfiguration = (musterConfig: MusterConfiguration[]) => {
+export const validateMusterConfiguration = (musterConfig: ApiMusterConfiguration[]) => {
   if (!musterConfig || !musterConfig.length) {
     return '';
   }
@@ -95,8 +82,8 @@ export const validateMusterConfiguration = (musterConfig: MusterConfiguration[])
 
   // Go through each configuration and add the time ranges for muster windows over a test week
   musterConfig.forEach(muster => {
-    if (windows[muster.reportId] == null) {
-      windows[muster.reportId] = [];
+    if (windows[muster.reportSchema.id] == null) {
+      windows[muster.reportSchema.id] = [];
     }
 
     const oneTime = !muster.days;
@@ -109,11 +96,11 @@ export const validateMusterConfiguration = (musterConfig: MusterConfiguration[])
       musterTime = moment(muster.startTime);
       // eslint-disable-next-line no-bitwise
       musterDays = (1 << musterTime.day()) as DaysOfTheWeek;
-      if (oneTimeWindows[muster.reportId] == null) {
-        oneTimeWindows[muster.reportId] = [];
+      if (oneTimeWindows[muster.reportSchema.id] == null) {
+        oneTimeWindows[muster.reportSchema.id] = [];
       }
       const start = musterTime.unix();
-      oneTimeWindows[muster.reportId].push({
+      oneTimeWindows[muster.reportSchema.id].push({
         start,
         end: start + muster.durationMinutes * 60,
       });
@@ -130,11 +117,11 @@ export const validateMusterConfiguration = (musterConfig: MusterConfiguration[])
       .add(musterTime.minutes(), 'minutes')
       .unix();
 
-    const firstWindowIndex = windows[muster.reportId].length;
+    const firstWindowIndex = windows[muster.reportSchema.id].length;
     // Loop through each day and add any that are set in this muster configuration
     for (let day = DaysOfTheWeek.Sunday; day <= DaysOfTheWeek.Saturday; day = nextDay(day)) {
       if (musterDays !== undefined && dayIsIn(day, musterDays)) {
-        windows[muster.reportId].push({
+        windows[muster.reportSchema.id].push({
           start: current,
           end: current + muster.durationMinutes * 60,
           oneTime,
@@ -144,9 +131,9 @@ export const validateMusterConfiguration = (musterConfig: MusterConfiguration[])
     }
 
     // Add the first window of next week to make sure we don't overlap over the week boundary
-    windows[muster.reportId].push({
-      start: windows[muster.reportId][firstWindowIndex].start + oneDaySeconds * 7,
-      end: windows[muster.reportId][firstWindowIndex].end + oneDaySeconds * 7,
+    windows[muster.reportSchema.id].push({
+      start: windows[muster.reportSchema.id][firstWindowIndex].start + oneDaySeconds * 7,
+      end: windows[muster.reportSchema.id][firstWindowIndex].end + oneDaySeconds * 7,
       oneTime,
     });
   });

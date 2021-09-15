@@ -10,24 +10,6 @@ export default makeStyles((theme: Theme) => createStyles({
       width: '100%',
     },
   },
-  atAGlance: {
-    maxHeight: '200px',
-    overflowY: 'auto',
-  },
-  noUnits: {
-    color: '#A9AEB1',
-  },
-  unitsContainer: {
-    columns: '150px auto',
-    overflow: 'hidden',
-    '& > div': {
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-    },
-  },
-  unitError: {
-    color: '#E41D3D',
-  },
   textField: {
     width: '100%',
     margin: 0,
@@ -43,11 +25,8 @@ export default makeStyles((theme: Theme) => createStyles({
     width: '70%',
     backgroundColor: '#F0F1F1',
   },
-  noMusterConfiguration: {
-    marginTop: theme.spacing(2),
-  },
   addMusterButton: {
-    margin: '10px 0px 20px 0px',
+    margin: '10px 0px 20px 10px',
     fontSize: '16px',
     textTransform: 'none',
     '& svg': {
@@ -96,12 +75,18 @@ export default makeStyles((theme: Theme) => createStyles({
       margin: '2px',
       paddingTop: '1px',
       fontSize: '14px',
+      cursor: 'pointer',
     },
   },
   dayButtonOn: {
     border: `1px solid ${theme.palette.primary.main}`,
     color: 'white',
     backgroundColor: theme.palette.primary.main,
+    '&$dayButtonDisabled': {
+      backgroundColor: '#ddd',
+      borderColor: '#ddd',
+      color: theme.palette.text.primary,
+    },
   },
   dayButtonOff: {
     border: '1px solid #DCDEE0',
@@ -112,6 +97,10 @@ export default makeStyles((theme: Theme) => createStyles({
     border: '1px solid #E41D3D',
     color: theme.palette.text.primary,
     backgroundColor: 'white',
+  },
+  dayButtonDisabled: {
+    opacity: 0.7,
+    cursor: 'not-allowed',
   },
   reportCell: {
     width: '20%',
@@ -127,6 +116,9 @@ export default makeStyles((theme: Theme) => createStyles({
         padding: '0 !important',
       },
     },
+  },
+  filterSelect: {
+    width: '100%',
   },
   iconCell: {
     width: '24px',
@@ -150,9 +142,12 @@ export default makeStyles((theme: Theme) => createStyles({
     fontWeight: 500,
     fontSize: '16px',
     margin: '20px 15px',
+    textAlign: 'center',
     padding: '20px !important',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
+  },
+  noDefaultConfig: {
+    color: '#A9AEB1',
+    marginLeft: '32px',
+    marginTop: '-10px',
   },
 }));

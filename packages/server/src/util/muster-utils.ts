@@ -5,14 +5,11 @@ import moment, { Moment } from 'moment-timezone';
 import {
   binaryDaysToDateArray,
   formatPhoneNumber,
-  MusterConfiguration,
 } from '@covid19-reports/shared';
 import { Org } from '../api/org/org.model';
 import { UserRole } from '../api/user/user-role.model';
 import { Roster } from '../api/roster/roster.model';
-import {
-  Unit,
-} from '../api/unit/unit.model';
+import { MusterConfiguration } from '../api/muster/muster-config.model';
 import { elasticsearch } from '../elasticsearch/elasticsearch';
 import { buildEsIndexPatternsForMuster } from './elasticsearch-utils';
 import { InternalServerError } from './error-types';
@@ -308,19 +305,17 @@ export function getEarliestMusterWindowTime(muster: MusterConfiguration, referen
     .unix();
 }
 
-export function buildMusterWindow(unit: Unit, startTimestamp: number, endTimestamp: number, muster: MusterConfiguration): MusterWindow {
+export function buildMusterWindow(startTimestamp: number, endTimestamp: number, muster: MusterConfiguration, org: Org): MusterWindow {
   return {
-    id: `${unit.org!.id}-${unit.id}-${moment.unix(startTimestamp).utc().format('Y-M-D-HH-mm')}-${muster.reportId}`,
-    orgId: unit.org!.id,
-    unitId: unit.id,
-    unitName: unit.name,
-    reportingGroup: unit.org!.reportingGroup,
+    id: `${org.id}-${muster.id}-${moment.unix(startTimestamp).utc().format('Y-M-D-HH-mm')}-${muster.reportSchema!.id}`,
+    orgId: org.id,
+    reportingGroup: org.reportingGroup,
     startTimestamp,
     endTimestamp,
     startTime: muster.startTime,
     timezone: muster.timezone,
     durationMinutes: muster.durationMinutes,
-    reportId: muster.reportId,
+    reportId: muster.reportSchema!.id,
   };
 }
 
@@ -659,7 +654,7 @@ export function getCompliantUserObserverationCount(
   if (userObservations) {
     userObservations.forEach(userObs => {
       // for each observation find out which config it should be related to
-      const config: MusterConfiguration | undefined = unitConfigs?.find((c: MusterConfiguration) => c.reportId === userObs.report_schema_id);
+      const config: MusterConfiguration | undefined = unitConfigs?.find((c: MusterConfiguration) => c.reportSchema!.id === userObs.report_schema_id);
 
       // if a matching configuration is found then generate the schedule for it and see if the
       // observation timestamp is valid
@@ -729,8 +724,6 @@ type MusterUnitAggregation = {
 
 export interface MusterWindow {
   id: string;
-  unitId: number;
-  unitName: string;
   reportingGroup?: string;
   orgId: number;
   startTimestamp: number;

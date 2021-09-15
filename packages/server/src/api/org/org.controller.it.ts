@@ -1,12 +1,10 @@
 import { expect } from 'chai';
 import { expectNoErrors } from '../../util/test-utils/expect';
 import {
-  seedOrgContactRoles,
   seedOrgContact,
 } from '../../util/test-utils/seed';
 import { TestRequest } from '../../util/test-utils/test-request';
 import { uniqueString } from '../../util/test-utils/unique';
-import { seedUserRole } from '../user/user-role.model.mock';
 import { seedUser } from '../user/user.model.mock';
 import { Org } from './org.model';
 
@@ -49,7 +47,6 @@ describe(`Org Controller`, () => {
         name: org.name,
         description: org.description,
         indexPrefix: org.indexPrefix,
-        defaultMusterConfiguration: org.defaultMusterConfiguration,
       });
     });
   });
@@ -133,28 +130,6 @@ describe(`Org Controller`, () => {
       });
 
       expect(await Org.count()).to.equal(orgsCountBefore + 1);
-    });
-  });
-
-  describe(`${basePath}/:orgId/default-muster : put`, () => {
-    it(`updates the org's default muster configuration`, async () => {
-      const { org, roleAdmin } = await seedOrgContactRoles();
-      const user = await seedUser();
-      await seedUserRole(user, roleAdmin);
-
-      const orgBefore = (await Org.findOne(org.id))!;
-      expect(orgBefore.defaultMusterConfiguration).to.eql(org.defaultMusterConfiguration);
-
-      req.setUser(user);
-      const body = {
-        defaultMusterConfiguration: [uniqueString(), uniqueString()],
-      };
-      const res = await req.put(`/${org.id}/default-muster`, body);
-
-      expectNoErrors(res);
-
-      const orgAfter = (await Org.findOne(org.id))!;
-      expect(orgAfter.defaultMusterConfiguration).to.eql(body.defaultMusterConfiguration);
     });
   });
 });

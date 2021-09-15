@@ -1,5 +1,3 @@
-import { MusterConfiguration } from '../unit.types';
-
 export type OrgBody = {
   name?: string;
   description?: string;
@@ -8,8 +6,4 @@ export type OrgBody = {
 
 export type AddOrgBody = OrgBody & {
   contactEdipi: string;
-};
-
-export type UpdateOrgDefaultMusterBody = {
-  defaultMusterConfiguration: MusterConfiguration[];
 };
