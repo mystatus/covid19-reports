@@ -1,7 +1,7 @@
 import {
   Entity,
   BaseEntity,
-  Column, ManyToOne, JoinColumn, PrimaryGeneratedColumn, OneToMany,
+  Column, ManyToOne, PrimaryGeneratedColumn, OneToMany,
 } from 'typeorm';
 import { ReportSchema } from '../report-schema/report-schema.model';
 import { Org } from '../org/org.model';
@@ -16,9 +16,6 @@ export class MusterConfiguration extends BaseEntity {
   @ManyToOne(() => Org, {
     onDelete: 'CASCADE',
     nullable: false,
-  })
-  @JoinColumn({
-    name: 'org_id',
   })
   org?: Org;
 
@@ -43,9 +40,7 @@ export class MusterConfiguration extends BaseEntity {
   @Column()
   durationMinutes!: number;
 
-  @OneToMany(() => MusterFilter, musterFilter => musterFilter.musterConfig, {
-    cascade: false,
-  })
+  @OneToMany(() => MusterFilter, musterFilter => musterFilter.musterConfig)
   filters?: MusterFilter[];
 
 }

@@ -63,9 +63,11 @@ export const MusterConfigPage = () => {
 
   const initializeTable = React.useCallback(async () => {
     if (orgId) {
-      await dispatch(Muster.fetch(orgId));
-      await dispatch(ReportSchema.fetch(orgId));
-      await dispatch(SavedFilter.fetch(orgId, 'roster'));
+      await Promise.all([
+        dispatch(Muster.fetch(orgId)),
+        dispatch(ReportSchema.fetch(orgId)),
+        dispatch(SavedFilter.fetch(orgId, 'roster')),
+      ]);
     }
   }, [orgId, dispatch]);
 

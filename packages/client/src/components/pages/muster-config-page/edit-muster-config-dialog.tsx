@@ -56,35 +56,40 @@ export const EditMusterConfigDialog = (props: EditMusterConfigDialogProps) => {
   const { open, orgId, musterConfig, onClose, onError } = props;
   const classes = useStyles();
   const reports = useAppSelector(ReportSchemaSelector.all);
-  const availableFilters = _.sortBy(useAppSelector(SavedFilterSelector.rosterEntry), 'name');
+  const availableFilters = _.sortBy(useAppSelector(SavedFilterSelector.rosterEntry), f => f.name);
   const [formDisabled, setFormDisabled] = useState(false);
   const existingMusterConfig: boolean = !!musterConfig;
   const [errorMessage, setErrorMessage] = React.useState<null | string>(null);
   const today = moment().format('Y-M-D');
   const start = moment(`${today} 00:00`, 'Y-M-D HH:mm');
-  let initialStartTime = start.toISOString();
-  let initialStartTimeDate = start.toDate();
-  if (musterConfig) {
-    if (musterConfig.days != null) {
-      initialStartTime = musterConfig.startTime;
-      initialStartTimeDate = moment(`${today} ${musterConfig.startTime}`, 'Y-M-D HH:mm').toDate();
-    } else {
-      // Timestamp is in UTC, convert it to the correct timezone, then to local (without changing time) since
-      // date/time pickers are always in local time
-      initialStartTimeDate = moment(musterConfig.startTime).tz(musterConfig.timezone).tz(moment.tz.guess(), true).toDate();
-      initialStartTime = initialStartTimeDate.toISOString();
+
+  const computeInitialStartDate = () => {
+    let initialStartTime = start.toISOString();
+    let initialStartTimeDate = start.toDate();
+    if (musterConfig) {
+      if (musterConfig.days != null) {
+        initialStartTime = musterConfig.startTime;
+        initialStartTimeDate = moment(`${today} ${musterConfig.startTime}`, 'Y-M-D HH:mm').toDate();
+      } else {
+        // Timestamp is in UTC, convert it to the correct timezone, then to local (without changing time) since
+        // date/time pickers are always in local time
+        initialStartTimeDate = moment(musterConfig.startTime).tz(musterConfig.timezone).tz(moment.tz.guess(), true).toDate();
+        initialStartTime = initialStartTimeDate.toISOString();
+      }
     }
-  }
+    return { startTime: initialStartTime, startTimeDate: initialStartTimeDate };
+  };
+
   const [days, setDays] = useState(musterConfig ? musterConfig.days : DaysOfTheWeek.None);
-  const [startTime, setStartTime] = useState(initialStartTime);
-  const [startTimeDate, setStartTimeDate] = useState(initialStartTimeDate);
-  const [timezone, setTimezone] = useState(musterConfig ? musterConfig.timezone : moment.tz.guess());
-  const [durationHours, setDurationHours] = useState(musterConfig ? musterConfig.durationMinutes / 60 : 2);
-  const [reportId, setReportId] = useState(musterConfig ? musterConfig.reportSchema.id : reports[0].id);
-  const [isOneTime, setIsOneTime] = useState(musterConfig ? !musterConfig.days : false);
-  const [filters, setFilters] = useState<MusterFilterConfig[]>(musterConfig ? _.sortBy(musterConfig.filters.map(f => {
+  const [startTime, setStartTime] = useState(() => computeInitialStartDate().startTime);
+  const [startTimeDate, setStartTimeDate] = useState(() => computeInitialStartDate().startTimeDate);
+  const [timezone, setTimezone] = useState(() => (musterConfig ? musterConfig.timezone : moment.tz.guess()));
+  const [durationHours, setDurationHours] = useState(() => (musterConfig ? musterConfig.durationMinutes / 60 : 2));
+  const [reportId, setReportId] = useState(() => (musterConfig ? musterConfig.reportSchema.id : reports[0].id));
+  const [isOneTime, setIsOneTime] = useState(() => (musterConfig ? !musterConfig.days : false));
+  const [filters, setFilters] = useState<MusterFilterConfig[]>(() => (musterConfig ? _.sortBy(musterConfig.filters.map(f => {
     return { id: f.filter.id, name: f.filter.name, params: f.filterParams };
-  }), 'name') : []);
+  }), f => f.name) : []));
   const [selectedFilterID, setSelectedFilterID] = useState(-1);
   const [filtersChanged, setFiltersChanged] = useState(false);
 
@@ -218,7 +223,7 @@ export const EditMusterConfigDialog = (props: EditMusterConfigDialogProps) => {
         id: filterToAdd.id,
         name: filterToAdd.name,
         params: {},
-      }], 'name');
+      }], f => f.name);
     });
     setSelectedFilterID(-1);
     setFiltersChanged(true);
@@ -229,7 +234,7 @@ export const EditMusterConfigDialog = (props: EditMusterConfigDialogProps) => {
     setFilters(prevState => {
       return _.chain(prevState)
         .filter(f => f.id !== id)
-        .sortBy('name')
+        .sortBy(f => f.name)
         .value();
     });
     setSelectedFilterID(-1);

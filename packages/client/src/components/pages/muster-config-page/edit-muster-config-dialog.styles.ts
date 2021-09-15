@@ -118,7 +118,7 @@ export default makeStyles((theme: Theme) => createStyles({
     },
   },
   filterSelect: {
-
+    width: '100%',
   },
   iconCell: {
     width: '24px',

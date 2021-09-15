@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { Connection, getManager, In, SelectQueryBuilder } from 'typeorm';
+import { getConnection, getManager, In, SelectQueryBuilder } from 'typeorm';
 import _ from 'lodash';
 import moment from 'moment-timezone';
 import {
@@ -14,7 +14,6 @@ import {
   GetNearestMusterWindowQuery, MusterConfigurationData,
   Paginated, UpdateMusterConfigurationBody,
 } from '@covid19-reports/shared';
-import database from '../../sqldb/sqldb';
 import { assertRequestBody, assertRequestQuery } from '../../util/api-utils';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
 import {
@@ -53,14 +52,10 @@ import { Org } from '../org/org.model';
 class MusterController {
 
   async getMusterConfigurations(req: ApiRequest<OrgParam>, res: Response) {
-    if (!req.appOrg || !req.appUserRole) {
-      throw new NotFoundError('Organization was not found.');
-    }
-
     const musterConfigs = await MusterConfiguration.find({
       relations: ['reportSchema', 'filters', 'filters.filter'],
       where: {
-        org: req.appOrg.id,
+        org: req.appOrg!.id,
       },
       order: {
         id: 'ASC',
@@ -72,7 +67,7 @@ class MusterController {
 
   async addMusterConfiguration(req: ApiRequest<OrgParam, AddMusterConfigurationBody>, res: Response) {
     const musterConfig = new MusterConfiguration();
-    musterConfig.org = req.appOrg;
+    musterConfig.org = req.appOrg!;
     musterConfig.filters = [];
     const newMusterConfig = await upsertMusterConfiguration(
       req.appOrg!,
@@ -234,7 +229,6 @@ class MusterController {
 
   async getNearestMusterWindow(req: ApiRequest<OrgEdipiParams, null, GetNearestMusterWindowQuery>, res: Response) {
     const timestamp = parseInt(req.query.timestamp);
-    const connection = await database;
 
     const columns = await Roster.getColumns(req.appOrg!);
 
@@ -252,7 +246,7 @@ class MusterController {
     let closestEnd = 0;
 
     for (const muster of musterConfig) {
-      if (!(await rosterInMusterGroup(connection, req.appOrg!.id, muster, columns, req.params.edipi, timestamp))) {
+      if (!(await rosterInMusterGroup(req.appOrg!.id, muster, columns, req.params.edipi, timestamp))) {
         continue;
       }
       const durationSeconds = muster.durationMinutes * 60;
@@ -427,22 +421,22 @@ async function upsertMusterConfiguration(org: Org, data: MusterConfigurationData
   return updatedMusterConfig;
 }
 
-async function rosterInMusterGroup(connection: Connection, orgId: number, muster: MusterConfiguration, columns: ColumnInfo[], edipi: string, timestamp: number) {
+async function rosterInMusterGroup(orgId: number, muster: MusterConfiguration, columns: ColumnInfo[], edipi: string, timestamp: number) {
   if (muster.filters == null || muster.filters.length === 0) {
     // Just see if the edipi was in the roster at the time
-    return await filterMatchesRoster(null, connection, columns, orgId, edipi, timestamp);
+    return await filterMatchesRoster(null, columns, orgId, edipi, timestamp);
   }
   for (const filter of muster.filters) {
-    if (await filterMatchesRoster(filter.filter, connection, columns, orgId, edipi, timestamp)) {
+    if (await filterMatchesRoster(filter.filter, columns, orgId, edipi, timestamp)) {
       return true;
     }
   }
   return false;
 }
 
-async function filterMatchesRoster(filter: SavedFilter | null, connection: Connection, columns: ColumnInfo[], orgId: number, edipi: string, timestamp: number) {
+async function filterMatchesRoster(filter: SavedFilter | null, columns: ColumnInfo[], orgId: number, edipi: string, timestamp: number) {
   const service = new EntityService(RosterHistory);
-  let rosterQuery = connection
+  let rosterQuery = getConnection()
     .createQueryBuilder()
     .select('roster.*')
     .from(q => {
@@ -620,7 +614,6 @@ export async function getRosterMusterComplianceRecordsByDateRange(
   requestedUnits.forEach(unit => {
     unitIds.push(unit.id);
     unitNames.push(unit.name);
-    // configsByUnitId.set(unit.id, unit.musterConfiguration);
   });
 
   // get the roster entries based on the unit IDs for the org
