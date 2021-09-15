@@ -8,7 +8,7 @@ import SaveIcon from '@material-ui/icons/Save';
 import FileCopyIcon from '@material-ui/icons/FileCopy';
 import React, { useEffect } from 'react';
 import DeleteIcon from '@material-ui/icons/Delete';
-import { getFullyQualifiedColumnName, QueryOp, QueryValueType } from '@covid19-reports/shared';
+import { getFullyQualifiedColumnName, QueryValueType } from '@covid19-reports/shared';
 import useStyles from './query-builder.styles';
 import {
   getFieldDefaultQueryOp,
@@ -85,7 +85,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
 
   const hasValuesSet = () => {
     for (const queryRow of queryRows) {
-      if (!opRequiresValue(queryRow.op) || (queryRow.value !== null && queryRow.value !== undefined)) {
+      if (!opRequiresValue(queryRow.op) || (queryRow.value !== null && queryRow.value !== undefined && queryRow.value !== '')) {
         return true;
       }
     }
