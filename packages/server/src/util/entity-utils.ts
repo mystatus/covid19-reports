@@ -35,8 +35,9 @@ export interface IEntity {
 export interface IEntityModel<T extends IEntity> {
   new(): T;
   getColumnSelect(column: ColumnInfo): string;
+  getColumnWhere(column: ColumnInfo): string;
   filterAllowedColumns?(columns: ColumnInfo[], role: Role): ColumnInfo[];
-  getColumns(org: Org, version?: string): Promise<ColumnInfo[]>;
+  getColumns(org: Org, includeRelationships?: boolean, version?: string): Promise<ColumnInfo[]>;
   buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]): Promise<SelectQueryBuilder<T>>;
 }
 
@@ -49,7 +50,12 @@ export function MakeEntity<T, S extends IEntityModel<T>>() {
 export function getColumnSelect(column: ColumnInfo, customColumn: string, alias: string) {
   // Make sure custom columns are converted to appropriate types
   if (column.custom) {
-    const select = `${join(column?.table ?? alias, customColumn)} ->> '${column.name}'`;
+    const path = column.name.split('_');
+    const jsonSelects = path.slice(0, -1).map(k => `'${k}'`);
+    const leafSelect = path.slice(-1);
+    const jsonNodes = jsonSelects.length ? ['', jsonSelects].join('->') : '';
+
+    const select = `${join(column?.table ?? alias, customColumn)} ${jsonNodes} ->> '${leafSelect}'`;
 
     switch (column.type) {
       case ColumnType.Boolean:
@@ -61,6 +67,10 @@ export function getColumnSelect(column: ColumnInfo, customColumn: string, alias:
     }
   }
   return join(column?.table ?? alias, snakeCase(column.name));
+}
+
+export function getColumnWhere(column: ColumnInfo, customColumn: string, alias: string) {
+  return join(`"${column?.table ?? alias}"`, `"${column.name}"`);
 }
 
 export const isColumnAllowed = (column: ColumnInfo, role: Role) => {
@@ -148,8 +158,12 @@ export class EntityService<T extends IEntity> {
     return this.entity.getColumnSelect(column);
   }
 
-  getColumns(org: Org, version: string): Promise<ColumnInfo[]> {
-    return this.entity.getColumns(org, version);
+  getColumnWhere(column: ColumnInfo) {
+    return this.entity.getColumnWhere(column);
+  }
+
+  getColumns(org: Org, includeRelationships?: boolean, version?: string): Promise<ColumnInfo[]> {
+    return this.entity.getColumns(org, includeRelationships, version);
   }
 
   filterAllowedColumns(columns: ColumnInfo[], role: Role) {
@@ -165,9 +179,8 @@ export class EntityService<T extends IEntity> {
     const orderBy = query.orderBy || 'edipi';
     const sortDirection = query.sortDirection || 'ASC';
     const filterConfig = query.filterConfig || {};
-    const columns = await this.getColumns(org, 'es6ddssymptomobs');
+    const columns = await this.getColumns(org, true, 'es6ddssymptomobs');
     const allowedColumns = this.filterAllowedColumns(columns, userRole.role);
-
     let queryBuilder = await this.entity.buildSearchQuery(org, userRole, allowedColumns);
 
     Object.keys(filterConfig)
@@ -183,7 +196,11 @@ export class EntityService<T extends IEntity> {
     const sortColumn = allowedColumns.find(column => column.name === orderBy);
     if (sortColumn) {
       const order: OrderByCondition = {};
-      order[this.entity.getColumnSelect(sortColumn)] = sortDirection;
+      if (sortColumn.table && sortColumn.hasOwnProperty('sql')) {
+        order[`"${sortColumn.table}"."${sortColumn.name}"`] = sortDirection;
+      } else {
+        order[this.entity.getColumnSelect(sortColumn)] = sortDirection;
+      }
       pagedQuery.orderBy(order);
     } else if (orderBy === 'unit') {
       const order: OrderByCondition = {};
@@ -217,8 +234,8 @@ export class EntityService<T extends IEntity> {
     '<>': this.whereCompare,
     '>': this.whereCompare,
     '<': this.whereCompare,
-    'null': this.whereNull,
-    'notnull': this.whereNull,
+    null: this.whereNull,
+    notnull: this.whereNull,
   };
 
   whereIn(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) {
@@ -227,7 +244,7 @@ export class EntityService<T extends IEntity> {
     if (!Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected array value for ${column.name}.`);
     }
-    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
     return queryBuilder.andWhere(`${columnSelect} ${op} (:...${column.name})`, {
       [column.name]: value.map(v => formatValue(v, column)),
     });
@@ -241,7 +258,7 @@ export class EntityService<T extends IEntity> {
     if (!Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected array value for ${column.name}.`);
     }
-    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
     return queryBuilder.andWhere(`${columnSelect} BETWEEN (:${minKey}) AND (:${maxKey})`, {
       [minKey]: formatValue(value[0], column),
       [maxKey]: formatValue(value[1], column),
@@ -256,7 +273,7 @@ export class EntityService<T extends IEntity> {
     }
     const prefix = op !== 'startsWith' ? '%' : '';
     const suffix = op !== 'endsWith' ? '%' : '';
-    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
     return queryBuilder.andWhere(`${columnSelect} LIKE :${column.name}`, {
       [column.name]: `${prefix}${value}${suffix}`.toLowerCase(),
     });
@@ -268,7 +285,7 @@ export class EntityService<T extends IEntity> {
     if (Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected scalar value for ${column.name}.`);
     }
-    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
     return queryBuilder.andWhere(`${columnSelect} ${op} :${column.name}`, {
       [column.name]: formatValue(value, column),
     });
@@ -276,8 +293,8 @@ export class EntityService<T extends IEntity> {
 
   whereNull(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) {
     const { op } = filterConfigItem;
-    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
-    const nullOrNot = op === 'null' ? 'NULL' : 'NOT NULL'
+    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
+    const nullOrNot = op === 'null' ? 'NULL' : 'NOT NULL';
     return queryBuilder.andWhere(`${columnSelect} IS ${nullOrNot}`);
   }
 
@@ -304,7 +321,7 @@ export class EntityController<T = any> {
   }
 
   getAllowedColumns = async (req: ApiRequest<AllowedColumnsParam>, res: Response<ColumnInfo[]>) => {
-    const columns = this.service.filterAllowedColumns(await this.entityConstructor.getColumns(req.appOrg!, req.params.version), req.appUserRole!.role);
+    const columns = this.service.filterAllowedColumns(await this.entityConstructor.getColumns(req.appOrg!, true, req.params.version), req.appUserRole!.role);
     res.json(columns);
   };
 

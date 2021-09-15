@@ -121,7 +121,7 @@ export function opRequiresValue(op: QueryOp) {
  */
 export function queryRowsToFilterConfig(queryRows: QueryRow[]): FilterConfig {
   const config: FilterConfig = {};
-  const validQueryRows = queryRows.filter(row => row.field && !opRequiresValue(row.op) || (row.value !== null && row.value !== undefined));
+  const validQueryRows = queryRows.filter(row => row.field && (!opRequiresValue(row.op) || (row.value !== null && row.value !== undefined && row.value !== '')));
 
   for (const row of validQueryRows) {
     let value = row.value;

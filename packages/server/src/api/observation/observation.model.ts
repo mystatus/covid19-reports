@@ -15,16 +15,17 @@ import {
   ColumnType,
   CustomColumns,
 } from '@covid19-reports/shared';
+import { ReportSchema } from '../report-schema/report-schema.model';
 import { Roster } from '../roster/roster.model';
 import { timestampColumnTransformer } from '../../util/util';
 import {
   getColumnSelect,
+  getColumnWhere,
   EntityService,
   MakeEntity,
 } from '../../util/entity-utils';
 import { Org } from '../org/org.model';
 import { UserRole } from '../user/user-role.model';
-import { ReportSchema } from '../report-schema/report-schema.model';
 import { RosterHistory } from '../roster/roster-history.model';
 
 /**
@@ -79,7 +80,11 @@ export class Observation extends BaseEntity {
     return getColumnSelect(column, 'custom_columns', 'observation');
   }
 
-  static async getColumns(org: Org, version?: string) {
+  static getColumnWhere(column: ColumnInfo) {
+    return getColumnWhere(column, 'custom_columns', 'observation');
+  }
+
+  static async getColumns(org: Org, includeRelationships?: boolean, version?: string) {
     const reportSchema = await ReportSchema.findOne({
       where: {
         org: org.id,
@@ -92,7 +97,7 @@ export class Observation extends BaseEntity {
     }
 
     const customColumns: ColumnInfo[] = reportSchema.columns.map(column => ({
-      name: column.keyPath.join(''),
+      name: column.keyPath.join('_'),
       displayName: startCase(column.keyPath[column.keyPath.length - 1]),
       type: ['long', 'float'].includes(column.type) ? ColumnType.Number : ColumnType.String,
       pii: column.pii,
@@ -102,16 +107,17 @@ export class Observation extends BaseEntity {
       updatable: false,
     }));
 
-    const service = new EntityService(RosterHistory);
-    if (version) {
-      const joinColumns = (await service.getColumns(org, version)).filter((c: ColumnInfo) => { return c.name !== 'id'; }).map((columnInfo: ColumnInfo) => {
-        return {
+    if (includeRelationships) {
+      const service = new EntityService(RosterHistory);
+      const rosterHistoryColumns = await service.getColumns(org);
+      return [
+        ...baseObservationColumns,
+        ...customColumns,
+        ...rosterHistoryColumns.map(columnInfo => ({
           ...columnInfo,
           table: 'roster',
-        };
-      });
-
-      return [...baseObservationColumns, ...customColumns, ...joinColumns];
+        })),
+      ];
     }
     return [...baseObservationColumns, ...customColumns];
   }
@@ -122,20 +128,21 @@ export class Observation extends BaseEntity {
     queryBuilder.leftJoin('observation.reportSchema', 'rs');
 
     const units = `rh.unit_id IN (${(await userRole.getUnits()).map(unit => unit.id).join(',')})`;
-    const unitIds = userRole.units.map(unit => unit.id);
     queryBuilder.leftJoin(
-      qb =>
-        qb
-        .select([])
-        .from(RosterHistory, 'rh')
-        .distinctOn(['rh.edipi'])
-        .where(units)
-        .orderBy('rh.edipi', 'DESC')
-        .addOrderBy('rh.timestamp', 'DESC')
-      ,
+      qb => {
+        if (!userRole.allUnits) {
+          qb.where(units);
+        }
+        return qb
+          .select([])
+          .from(RosterHistory, 'rh')
+          .distinctOn(['rh.edipi'])
+          .orderBy('rh.edipi', 'DESC')
+          .addOrderBy('rh.timestamp', 'DESC');
+      },
       'roster',
-      `observation.edipi = roster.edipi and roster.change_type <> 'deleted' and observation.timestamp > roster.timestamp`
-    )
+      `observation.edipi = roster.edipi and roster.change_type <> 'deleted' and observation.timestamp > roster.timestamp`,
+    );
 
     // Always select the id column
     queryBuilder.addSelect('observation.id', 'id');
@@ -145,7 +152,7 @@ export class Observation extends BaseEntity {
     columns.forEach(column => {
       if (column.table === 'roster') {
         queryBuilder.addSelect(Roster.getColumnSelect(column), getFullyQualifiedColumnName(column));
-      } else {
+      } else if (!column.table) {
         queryBuilder.addSelect(Observation.getColumnSelect(column), getFullyQualifiedColumnName(column));
       }
     });

@@ -14,7 +14,7 @@ import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { UserRole } from '../user/user-role.model';
-import { getColumnSelect, isColumnAllowed, MakeEntity } from '../../util/entity-utils';
+import { getColumnSelect, getColumnWhere, isColumnAllowed, MakeEntity } from '../../util/entity-utils';
 import { timestampColumnTransformer } from '../../util/util';
 
 
@@ -52,6 +52,10 @@ export class RosterHistory extends RosterEntity {
     return getColumnSelect(column, 'custom_columns', 'roster');
   }
 
+  static getColumnWhere(column: ColumnInfo) {
+    return getColumnWhere(column, 'custom_columns', 'roster');
+  }
+
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     //
     // Query the roster, returning only columns and rows that are allowed for the role of the requester.
@@ -79,7 +83,8 @@ export class RosterHistory extends RosterEntity {
     return queryBuilder;
   }
 
-  static async getColumns(org: Org) {
+  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+  static async getColumns(org: Org, includeRelationships?: boolean, version?: string) {
     const customColumns: ColumnInfo[] = (await CustomRosterColumn.find({
       where: {
         org: org.id,

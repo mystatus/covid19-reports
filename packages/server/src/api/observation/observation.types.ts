@@ -36,5 +36,5 @@ export interface Report {
   };
   Details: {
     [key: string]: number | string | boolean | null;
-  }
+  };
 }

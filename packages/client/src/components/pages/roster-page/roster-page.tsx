@@ -810,12 +810,12 @@ export const RosterPage = () => {
           <TableCustomColumnsContent
             rows={orphanedRecords.rows}
             columns={[
-              { name: 'edipi', displayName: 'DoD ID', fullyQualifiedName: 'orphanedRecord.edipi' },
-              { name: 'unit', displayName: 'Unit', fullyQualifiedName: 'orphanedRecord.unit' },
-              { name: 'phone', displayName: 'Phone', fullyQualifiedName: 'orphanedRecord.phone' },
-              { name: 'count', displayName: 'Count', fullyQualifiedName: 'orphanedRecord.count' },
-              { name: 'earliestReportDate', displayName: 'First Report', fullyQualifiedName: 'orphanedRecord.earliestReportDate' },
-              { name: 'latestReportDate', displayName: 'Latest Report', fullyQualifiedName: 'orphanedRecord.latestReportDate' },
+              { name: 'edipi', displayName: 'DoD ID', fullyQualifiedName: 'orphanedRecord.edipi', type: ColumnType.String },
+              { name: 'unit', displayName: 'Unit', fullyQualifiedName: 'orphanedRecord.unit', type: ColumnType.String },
+              { name: 'phone', displayName: 'Phone', fullyQualifiedName: 'orphanedRecord.phone', type: ColumnType.String },
+              { name: 'count', displayName: 'Count', fullyQualifiedName: 'orphanedRecord.count', type: ColumnType.Number },
+              { name: 'earliestReportDate', displayName: 'First Report', fullyQualifiedName: 'orphanedRecord.earliestReportDate', type: ColumnType.DateTime },
+              { name: 'latestReportDate', displayName: 'Latest Report', fullyQualifiedName: 'orphanedRecord.latestReportDate', type: ColumnType.DateTime },
             ]}
             idColumn={row => row.id + row.unitId}
             rowOptions={{
