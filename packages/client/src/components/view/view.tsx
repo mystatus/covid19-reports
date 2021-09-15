@@ -82,6 +82,7 @@ export default function View({ layout, idColumn }: ViewProps) {
   const [filterQueryRows, setFilterQueryRows] = usePersistedState<QueryRow[]>(`${layout.name}FilterQueryRows`, []);
   const [saveNewFilterDialogOpen, setSaveNewFilterDialogOpen] = useState(false);
   const selectFilterButtonRef = useRef<HTMLButtonElement>(null);
+  const [currentSortDirection, setCurrentSortDirection] = useState(('ASC' as SortDirection));
 
   const {
     data: entities,
@@ -187,12 +188,20 @@ export default function View({ layout, idColumn }: ViewProps) {
     }
   }, [queryBuilderFields, getSelectedSavedFilter, selectedFilterId, setFilterQueryRows]);
 
-  const handleSortChanged = useCallback((column: TableColumn, direction: SortDirection) => {
+  const handleSortChanged = useCallback((column: TableColumn) => {
+    if (currentSortDirection === undefined) {
+      setCurrentSortDirection('ASC');
+    }
     setEntitiesQuery({
       ...entitiesQuery,
       orderBy: column.name,
-      sortDirection: direction,
+      sortDirection: currentSortDirection,
     });
+    if (currentSortDirection === 'ASC') {
+      setCurrentSortDirection('DESC' as SortDirection);
+    } else {
+      setCurrentSortDirection('ASC' as SortDirection);
+    }
   }, [setEntitiesQuery, entitiesQuery]);
 
   const handleChangePage = useCallback((event: MouseEvent<HTMLButtonElement> | null, page: number) => {
