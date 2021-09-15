@@ -6,6 +6,7 @@ import React, {
   useState,
 } from 'react';
 import ViewWeekIcon from '@material-ui/icons/ViewWeek';
+import FlashOnOutlinedIcon from '@material-ui/icons/FlashOnOutlined';
 import {
   DragDropContext,
   Draggable,
@@ -17,9 +18,10 @@ import {
   DroppableStateSnapshot,
   DropResult,
 } from 'react-beautiful-dnd';
-import { getFullyQualifiedColumnName, ColumnInfo } from '@covid19-reports/shared';
+import { getFullyQualifiedColumnName, ColumnInfo, EntityType } from '@covid19-reports/shared';
 import { Box, Button, Menu } from '@material-ui/core';
 import useStyles from './column-selector.styles';
+import { isAction } from '../../entity-actions/actions';
 
 function reorder<T>(list: T[], startIndex: number, endIndex: number) {
   const result = Array.from(list);
@@ -133,6 +135,7 @@ const columnSectionNames: Record<string, string> = {
 
 export type ColumnSelectorProps = {
   columns: ColumnInfo[];
+  entityType: EntityType;
   onVisibleColumnsChange: (columns: ColumnInfo[]) => void;
   visibleColumns: ColumnInfo[];
 };
@@ -142,7 +145,7 @@ export function ColumnSelector(props: ColumnSelectorProps) {
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
   const visibleColumnsButtonRef = useRef<HTMLSpanElement>(null);
   const [isDropDisabled, setIsDropDisabled] = useState(false);
-  const { columns, onVisibleColumnsChange, visibleColumns } = props;
+  const { columns, entityType, onVisibleColumnsChange, visibleColumns } = props;
 
   const handleDragUpdate = useCallback((update: DragUpdate) => {
     const { destination, source } = update;
@@ -157,7 +160,9 @@ export function ColumnSelector(props: ColumnSelectorProps) {
 
   const columnInfoMap = useMemo((): Record<string, ColumnInfo[]> => ({
     visible: visibleColumns,
-    available: columns.filter(t => visibleColumns.every(v => getFullyQualifiedColumnName(v) !== getFullyQualifiedColumnName(t))).sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' })),
+    available: columns
+      .filter(t => visibleColumns.every(v => getFullyQualifiedColumnName(v) !== getFullyQualifiedColumnName(t)))
+      .sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' })),
   }), [columns, visibleColumns]);
 
   const handleDragEnd = useCallback((result: DropResult) => {
@@ -166,7 +171,7 @@ export function ColumnSelector(props: ColumnSelectorProps) {
       return;
     }
     const columnMap = reorderColumnMap(columnInfoMap, result);
-    onVisibleColumnsChange(columnMap.visible);
+    onVisibleColumnsChange([...columnMap.visible]);
   }, [columnInfoMap, onVisibleColumnsChange]);
 
   return (
@@ -242,12 +247,15 @@ export function ColumnSelector(props: ColumnSelectorProps) {
                                   {item.displayName}
                                   {item.table && <span className={classes.tableName}>({item.table})</span>}
                                 </span>
-                                <span className={classes.phipii}>
-                                  {[
-                                    item.pii ? 'PII' : '',
-                                    item.phi ? 'PHI' : '',
-                                  ].filter(Boolean).join(' ')}
-                                </span>
+                                <Box display="flex" alignItems="center">
+                                  {item.pii && <span className={classes.phipii}>PII</span>}
+                                  {item.phi && <span className={classes.phipii}>PHI</span>}
+                                  {isAction(entityType, item.name) && (
+                                    <span className={classes.phipii}>
+                                      <FlashOnOutlinedIcon fontSize="small" opacity="0.8" color="action" />
+                                    </span>
+                                  )}
+                                </Box>
                               </Box>
                             </div>
                           )}

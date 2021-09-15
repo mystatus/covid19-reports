@@ -75,7 +75,6 @@ export default function View({ layout, idColumn }: ViewProps) {
   const { columns, entityType, orderBy, rowOptions, sortDirection, visibleColumns } = layout;
   const classes = useStyles();
   const dispatch = useAppDispatch();
-
   const units = useAppSelector(UnitSelector.all);
   const orgId = useAppSelector(UserSelector.orgId)!;
 

@@ -3,5 +3,18 @@
     ".",
     "server"
   ],
-  "git.ignoreLimitWarning": true
+  "git.ignoreLimitWarning": true,
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "postgres",
+      "group": "postgres",
+      "database": "dds",
+      "username": "postgres",
+      "password": "postgres"
+    }
+  ]
 }

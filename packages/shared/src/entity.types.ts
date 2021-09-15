@@ -1,3 +1,5 @@
+import moment from 'moment-timezone';
+
 export type ColumnValue = string | boolean | number | null;
 
 export enum ColumnType {
@@ -25,9 +27,9 @@ export const friendlyColumnValue = <T>(entity: T & Record<string, unknown>, colu
   }
   switch (column.type) {
     case ColumnType.Date:
-      return new Date(value as string).toLocaleDateString();
+      return moment(value as string).format('l');
     case ColumnType.DateTime:
-      return new Date(value as string).toUTCString();
+      return moment(value as string).format('lll');
     case ColumnType.Boolean:
       return value ? 'Yes' : 'No';
     default:
@@ -65,6 +67,7 @@ export type ColumnInfo = {
   updatable: boolean;
   config?: CustomColumnConfig;
   table?: string;
+  aggregate?: string;
 };
 
 export type ColumnInfoWithValue = ColumnInfo & {

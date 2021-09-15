@@ -39,6 +39,9 @@ import {
 import { SaveNewLayoutDialog } from '../pages/roster-page/save-new-layout-dialog';
 import { useEffectError } from '../../hooks/use-effect-error';
 import { ColumnSelector } from './column-selector';
+import { ActionSelector } from './action-selector';
+import { getActionColumnInfos, getColumnAction } from '../../entity-actions/actions';
+import { registerDataActions } from '../../entity-actions/roster';
 
 export type LayoutConfigParams = SortedQuery & {
   columns: ColumnInfo[];
@@ -52,9 +55,7 @@ export type Layout = LayoutConfigParams & {
   rowOptions?: TableRowOptions;
 };
 
-export const defaultRowOptions: TableRowOptions = {
-  renderCell: friendlyColumnValue,
-};
+export const defaultRowOptions: TableRowOptions = {};
 
 export type ViewLayoutProps = {
   entityType: EntityType;
@@ -78,7 +79,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
     header,
     buttonSetComponent: ButtonSetComponent,
     maxTableColumns = viewLayoutDefaults.maxTableColumns,
-    rowOptions = defaultRowOptions,
+    rowOptions = {},
   } = props;
   const { name = entityType } = props;
   const dispatch = useAppDispatch();
@@ -89,12 +90,21 @@ export default function ViewLayout(props: ViewLayoutProps) {
   const [selectedLayoutId, setSelectedLayoutId] = usePersistedState<ViewLayoutId>(`${entityType}SelectedLayoutId`, currentLayout.id);
   const [layoutSelectorOpen, setLayoutSelectorOpen] = useState(false);
   const [saveNewLayoutDialogOpen, setSaveNewLayoutDialogOpen] = useState(false);
+  // const [menuItemCount, setMenuItemCount] = useState(0);
 
   const {
-    data: columns = [],
+    data: allowedColumns = [],
     error: columnsError,
     isLoading: columnsIsLoading,
   } = entityApi[entityType].useGetAllowedColumnsInfoQuery({ orgId });
+
+  useEffect(() => {
+    registerDataActions(allowedColumns);
+  }, [allowedColumns]);
+
+  const columns = useMemo(() => {
+    return [...allowedColumns, ...getActionColumnInfos(entityType)];
+  }, [allowedColumns, entityType]);
 
   const {
     data: savedLayouts = [],
@@ -146,6 +156,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
 
   const visibleColumns = useMemo(() => {
     return Object.keys(currentLayout.columns)
+      .filter(key => currentLayout.columns[key].order >= 0)
       .map(key => columnsMap[key])
       .filter(column => !!column)
       .sort((a, b) => {
@@ -155,10 +166,17 @@ export default function ViewLayout(props: ViewLayoutProps) {
       }) as ColumnInfo[];
   }, [columnsMap, currentLayout.columns]);
 
+  const menuItems = useMemo(() => {
+    const availableActions = getActionColumnInfos(entityType).filter(t => t.canMenu);
+    const excluded = Object.keys(currentLayout.columns)
+      .filter(key => currentLayout.columns[key].order < 0);
+    return availableActions.filter(candidate => !excluded.includes(candidate.name));
+  }, [currentLayout.columns, entityType]);
+
   const setVisibleColumns = useCallback((visibleColumnsNew: ColumnInfo[]) => {
     const columnsNew: ColumnsConfig = {};
-    visibleColumnsNew.forEach((column, index) => {
-      columnsNew[getFullyQualifiedColumnName(column)] = { order: index };
+    visibleColumnsNew.forEach((column, order) => {
+      columnsNew[getFullyQualifiedColumnName(column)] = { order };
     });
 
     if (!deepEquals(currentLayout.columns, columnsNew)) {
@@ -265,6 +283,10 @@ export default function ViewLayout(props: ViewLayoutProps) {
     }
   }, [selectedLayoutId, dispatch, deleteSavedLayout, orgId]);
 
+  const handleActionPinned = useCallback(() => {
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [currentLayout, setCurrentLayout]);
+
   //
   // Effects
   //
@@ -324,11 +346,15 @@ export default function ViewLayout(props: ViewLayoutProps) {
           </>
         )}
         rightComponent={(
-          <ColumnSelector
-            columns={columns}
-            visibleColumns={visibleColumns}
-            onVisibleColumnsChange={setVisibleColumns}
-          />
+          <>
+            <ColumnSelector
+              columns={columns}
+              entityType={entityType}
+              visibleColumns={visibleColumns}
+              onVisibleColumnsChange={setVisibleColumns}
+            />
+            <ActionSelector entityType={entityType} onActionPinned={handleActionPinned} />
+          </>
         )}
       />
 
@@ -341,7 +367,26 @@ export default function ViewLayout(props: ViewLayoutProps) {
           entityType,
           columns,
           name,
-          rowOptions,
+          rowOptions: {
+            menuItems: row => {
+              return menuItems.map(item => ({
+                name: item.displayName,
+                callback: () => {
+                  const action = getColumnAction(entityType, item.name);
+                  void action.execute(row);
+                },
+              }));
+            },
+            renderCell: (row: any, column: any) => {
+              const action = getColumnAction(entityType, column.fullyQualifiedName);
+              if (action) {
+                return action.render(row);
+              }
+              const value = friendlyColumnValue(row, column);
+              return value;
+            },
+            ...(rowOptions ?? {}),
+          },
           visibleColumns,
         }}
         idColumn={idColumn}
@@ -352,7 +397,6 @@ export default function ViewLayout(props: ViewLayoutProps) {
         onSave={handleSaveNewLayoutConfirm}
         onCancel={() => setSaveNewLayoutDialogOpen(false)}
       />
-
     </>
   );
 }

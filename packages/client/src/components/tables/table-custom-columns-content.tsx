@@ -7,7 +7,12 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import clsx from 'clsx';
-import { getFullyQualifiedColumnName, getFullyQualifiedColumnDisplayName, ColumnInfo } from '@covid19-reports/shared';
+import {
+  getFullyQualifiedColumnName,
+  getFullyQualifiedColumnDisplayName,
+  ColumnInfo,
+  ColumnType,
+} from '@covid19-reports/shared';
 import { OverrideType } from '../../utility/typescript-utils';
 import useStyles from './table-custom-columns-content.styles';
 
@@ -29,6 +34,8 @@ export interface TableColumn {
   name: string;
   displayName: string;
   fullyQualifiedName: string;
+  table?: string;
+  type?: ColumnType;
 }
 
 export const ColumnInfoToTableColumns = (visibleColumns: ColumnInfo[]): TableColumn[] => {
@@ -36,7 +43,9 @@ export const ColumnInfoToTableColumns = (visibleColumns: ColumnInfo[]): TableCol
     return {
       name: c.name,
       displayName: getFullyQualifiedColumnDisplayName(c),
-      fullyQualifiedName: getFullyQualifiedColumnName(c),
+      fullyQualifiedName: c?.table !== 'observation' ? getFullyQualifiedColumnName(c) : c.name,
+      table: c.table,
+      type: c.type,
     };
   });
 };
@@ -92,7 +101,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
       return;
     }
     let newSortDirection: SortDirection = 'ASC';
-    if (sortColumn === column) {
+    if (sortColumn?.fullyQualifiedName === column.fullyQualifiedName) {
       newSortDirection = sortDirection === 'ASC' ? 'DESC' : 'ASC';
     } else {
       setSortColumn(column);
@@ -159,7 +168,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
                 })}
               >
                 <div>
-                  <div>{column.displayName}</div>
+                <div>{column.displayName}</div>
                   <div>
                     {sortColumn === column && (
                       sortDirection === 'ASC' ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />
@@ -183,7 +192,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
               </TableCell>
               {columns.map(column => (
                 <TableCell key={`${column.fullyQualifiedName}-${getRowId(row)}`}>
-                  {row[column.fullyQualifiedName]}
+                  {rowOptions?.renderCell ? rowOptions?.renderCell(row, column) : row[column.fullyQualifiedName]}
                 </TableCell>
               ))}
 
