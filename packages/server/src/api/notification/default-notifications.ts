@@ -7,7 +7,6 @@ export interface NotificationDefinition {
   smsTemplate: string;
   emailHtmlTemplate: string;
   emailTextTemplate: string;
-  dashboardUuid: string;
   defaultMaxDailyCount: number;
   defaultThreshold: number;
   defaultMinMinutesBetweenAlerts: number;
@@ -255,7 +254,6 @@ export const defaultNotifications: NotificationDefinition[] = [{
     + '</body>'
     + '</html>',
   emailTextTemplate: 'We have identified __VALUE__ new user access request(s) in your group. __LINK__',
-  dashboardUuid: '',
   defaultMaxDailyCount: 0,
   defaultThreshold: 1,
   defaultMinMinutesBetweenAlerts: 180,
@@ -501,7 +499,6 @@ export const defaultNotifications: NotificationDefinition[] = [{
     + '</body>'
     + '</html>',
   emailTextTemplate: 'We have identified __VALUE__ new orphaned record(s). __LINK__',
-  dashboardUuid: '',
   defaultMaxDailyCount: 0,
   defaultThreshold: 1,
   defaultMinMinutesBetweenAlerts: 180,
@@ -747,7 +744,6 @@ export const defaultNotifications: NotificationDefinition[] = [{
     + '</body>'
     + '</html>',
   emailTextTemplate: 'We have identified __VALUE__ new individual(s) that require attention from medical staff. __LINK__',
-  dashboardUuid: '',
   defaultMaxDailyCount: 0,
   defaultThreshold: 1,
   defaultMinMinutesBetweenAlerts: 60,
@@ -993,7 +989,6 @@ export const defaultNotifications: NotificationDefinition[] = [{
     + '</body>'
     + '</html>',
   emailTextTemplate: 'We have identified __VALUE__ individual(s) within your group that have requested to speak with someone. __LINK__',
-  dashboardUuid: '',
   defaultMaxDailyCount: 1,
   defaultThreshold: 1,
   defaultMinMinutesBetweenAlerts: 0,
@@ -1239,7 +1234,6 @@ export const defaultNotifications: NotificationDefinition[] = [{
     + '</body>'
     + '</html>',
   emailTextTemplate: 'We have identified __VALUE__ symptom(s) trending within your group. __LINK__',
-  dashboardUuid: '',
   defaultMaxDailyCount: -1,
   defaultThreshold: 1,
   defaultMinMinutesBetweenAlerts: -1,
@@ -1485,7 +1479,6 @@ export const defaultNotifications: NotificationDefinition[] = [{
     + '</body>'
     + '</html>',
   emailTextTemplate: 'We have identified that there is a unit with less than __VALUE__ percent muster compliance. __LINK__',
-  dashboardUuid: '',
   defaultMaxDailyCount: 1,
   defaultThreshold: 15,
   defaultMinMinutesBetweenAlerts: 0,
