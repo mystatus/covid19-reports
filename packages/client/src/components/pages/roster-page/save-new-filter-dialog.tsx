@@ -4,6 +4,7 @@ import React, {
 } from 'react';
 import {
   Button,
+  Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
@@ -11,39 +12,48 @@ import {
   FormGroup,
   TextField,
 } from '@material-ui/core';
+import { SavedFilterSerialized } from '@covid19-reports/shared';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
-import { Dialog } from '../../dialog/dialog';
+import { isCustomFilter } from '../../view/view-utils';
 
 export interface SaveNewFilterDialogProps {
   open: boolean;
-  onSave: (name: string) => Promise<void>;
+  filter: SavedFilterSerialized | undefined;
+  onSave: (newFilter: SavedFilterSerialized) => Promise<void>;
   onCancel: () => void;
 }
 
 export const SaveNewFilterDialog = (props: SaveNewFilterDialogProps) => {
-  const { open, onSave, onCancel } = props;
+  const { open, filter, onSave, onCancel } = props;
 
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSaveClick = async () => {
+    if (filter == null) {
+      throw new Error('Missing new filter data');
+    }
+
     setIsSaving(true);
 
     try {
-      await onSave(name);
+      await onSave({
+        ...filter,
+        name,
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const canSave = () => (name.length > 0);
-
+  // Reset when the dialog is closed.
   useEffect(() => {
-    // Reset when the dialog is closed.
     if (!open) {
       setName('');
     }
   }, [open, setName]);
+
+  const isDuplicating = filter != null && !isCustomFilter(filter.id);
 
   return (
     <Dialog
@@ -51,7 +61,7 @@ export const SaveNewFilterDialog = (props: SaveNewFilterDialogProps) => {
       onClose={onCancel}
     >
       <DialogTitle>
-        Save New Filter
+        {isDuplicating ? `Duplicate Filter "${filter?.name}"` : 'Save New Filter'}
       </DialogTitle>
 
       <DialogContent>
@@ -81,7 +91,7 @@ export const SaveNewFilterDialog = (props: SaveNewFilterDialogProps) => {
 
         <ButtonWithSpinner
           onClick={handleSaveClick}
-          disabled={!canSave()}
+          disabled={name.length === 0}
           loading={isSaving}
           color="primary"
         >

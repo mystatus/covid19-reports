@@ -12,38 +12,48 @@ import {
   FormGroup,
   TextField,
 } from '@material-ui/core';
+import { SavedLayoutSerialized } from '@covid19-reports/shared';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
+import { isDefaultLayout } from '../../view/view-utils';
 
 export interface SaveNewLayoutDialogProps {
   open: boolean;
-  onSave: (name: string) => Promise<void>;
+  layout: SavedLayoutSerialized | undefined;
+  onSave: (newLayout: SavedLayoutSerialized) => Promise<void>;
   onCancel: () => void;
 }
 
 export const SaveNewLayoutDialog = (props: SaveNewLayoutDialogProps) => {
-  const { open, onSave, onCancel } = props;
+  const { open, layout, onSave, onCancel } = props;
 
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSaveClick = async () => {
+    if (layout == null) {
+      throw new Error('Missing new layout data');
+    }
+
     setIsSaving(true);
 
     try {
-      await onSave(name);
+      await onSave({
+        ...layout,
+        name,
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const canSave = () => (name.length > 0);
-
+  // Reset when the dialog is closed.
   useEffect(() => {
-    // Reset when the dialog is closed.
     if (!open) {
       setName('');
     }
   }, [open, setName]);
+
+  const isDuplicating = layout != null && !isDefaultLayout(layout.id);
 
   return (
     <Dialog
@@ -51,7 +61,7 @@ export const SaveNewLayoutDialog = (props: SaveNewLayoutDialogProps) => {
       onClose={onCancel}
     >
       <DialogTitle>
-        Save New Layout
+        {isDuplicating ? `Duplicate Layout "${layout?.name}"` : 'Save New Layout'}
       </DialogTitle>
 
       <DialogContent>
@@ -81,7 +91,7 @@ export const SaveNewLayoutDialog = (props: SaveNewLayoutDialogProps) => {
 
         <ButtonWithSpinner
           onClick={handleSaveClick}
-          disabled={!canSave()}
+          disabled={name.length === 0}
           loading={isSaving}
           color="primary"
         >
