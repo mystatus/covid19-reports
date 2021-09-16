@@ -6,7 +6,6 @@ export function mockUnit(org: Org) {
   return Unit.create({
     org,
     name: uniqueString(),
-    musterConfiguration: [],
   });
 }
 

@@ -1,7 +1,7 @@
 import moment from 'moment-timezone';
 import { expect } from 'chai';
 import { binaryDaysToDateArray } from '@covid19-reports/shared';
-import { getCompliantUserObserverationCount, getUnitRequiredMusterCount, getMusterSchedule } from './muster-utils';
+import { getMusterSchedule } from './muster-utils';
 
 
 describe(`Muster Utils`, () => {
@@ -115,7 +115,6 @@ describe(`Muster Utils`, () => {
       expect(count).equal(0);
     });
   });
-   */
 
   describe(`getUnitRequiredMusterCount()`, () => {
     it(`should return correct count with recurring configs (case: weekdays)`, () => {
@@ -148,4 +147,5 @@ describe(`Muster Utils`, () => {
       expect(count).equal(0);
     });
   });
+   */
 });
