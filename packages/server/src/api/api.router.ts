@@ -108,7 +108,6 @@ export type OrgReportParams = OrgParam & ReportParam;
 export type OrgEdipiParams = OrgParam & EdipiParam;
 export type OrgRosterParams = OrgParam & RosterParam;
 export type OrgMusterConfigurationParams = OrgParam & MusterConfigurationParam;
-export type OrgWorkspaceParams = OrgParam & WorkspaceParam;
 export type OrgUnitParams = OrgParam & UnitParam;
 export type OrgSavedFilterParams = OrgParam & SavedFilterParam;
 export type OrgSavedLayoutParams = OrgParam & SavedLayoutParam;

@@ -6,8 +6,6 @@ import {
 } from '@covid19-reports/shared';
 import { getConnection, SelectQueryBuilder } from 'typeorm';
 import { Org } from '../api/org/org.model';
-import { UserRole } from '../api/user/user-role.model';
-import { Roster } from '../api/roster/roster.model';
 import { MusterConfiguration } from '../api/muster/muster-config.model';
 import { RosterEntry } from './roster-utils';
 import { SavedFilter } from '../api/saved-filter/saved-filter.model';
