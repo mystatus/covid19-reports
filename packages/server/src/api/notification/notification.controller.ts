@@ -59,7 +59,7 @@ class NotificationController {
 
   async addUserNotificationSetting(req: ApiRequest<OrgParam, AddUserNotificationSettingBody>, res: Response) {
     if (!req.body.notificationId) {
-      throw new BadRequestError('A notification id must be supplied when adding a workspace.');
+      throw new BadRequestError('A notification id must be supplied.');
     }
 
     const notification = await Notification.findOne({

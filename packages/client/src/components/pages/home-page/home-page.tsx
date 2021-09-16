@@ -18,7 +18,6 @@ import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 import clsx from 'clsx';
 import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
 import { UserSelector } from '../../../selectors/user.selector';
-import { WorkspaceSelector } from '../../../selectors/workspace.selector';
 import { Link } from '../../link/link';
 import { UserActions } from '../../../slices/user.slice';
 import useStyles from './home-page.styles';
@@ -27,9 +26,7 @@ import PageHeader from '../../page-header/page-header';
 import {
   ApiAccessRequest,
 } from '../../../models/api-response';
-import { Workspace } from '../../../actions/workspace.actions';
 import { formatErrorMessage } from '../../../utility/errors';
-import { getDashboardUrl } from '../../../utility/url-utils';
 import { Modal } from '../../../actions/modal.actions';
 import { AccessRequestClient } from '../../../client/access-request.client';
 import { MusterClient } from '../../../client/muster.client';
@@ -73,15 +70,6 @@ const HomePageHelp = () => {
               </Typography>
             </li>
           )}
-          {user.activeRole?.role.workspaces && (
-            <li>
-              <Typography>
-                <strong><Link to="/spaces">Customizable Dashboards</Link></strong><br />
-                Protect sensitive data by creating and assigning role-based permissions across the entire
-                organization.
-              </Typography>
-            </li>
-          )}
           <li>
             <Typography>
               <strong><Link to="/settings">Alerts &amp; Notifications</Link></strong><br />
@@ -115,26 +103,16 @@ export const HomePage = () => {
   const dispatch = useAppDispatch();
   const orgId = useAppSelector(UserSelector.orgId)!;
   const orphanedRecords = useAppSelector(OrphanedRecordSelector.root);
-  const user = useAppSelector(state => state.user);
-  const favoriteDashboards = useAppSelector(UserSelector.favoriteDashboards)!;
-  const workspaces = useAppSelector(UserSelector.workspaces)!;
-  const dashboards = useAppSelector(WorkspaceSelector.dashboards)!;
-
   const [accessRequests, setAccessRequests] = useState<ApiAccessRequest[]>([]);
   const [musterComplianceLastTwoWeeks, setMusterComplianceLastTwoWeek] = useState<number[]>([-1.0, -1.0]);
 
   useEffect(() => {
     dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
     void dispatch(UserActions.refresh());
-    void dispatch(Workspace.fetch(orgId));
   }, [dispatch, orgId]);
 
   useEffect(() => {
     void (async () => {
-      for (const workspace of workspaces) {
-        await dispatch(Workspace.fetchDashboards(orgId, workspace.id));
-      }
-
       try {
         await dispatch(OrphanedRecordActions.fetchCount({ orgId: orgId! }));
       } catch (error) {
@@ -142,7 +120,7 @@ export const HomePage = () => {
       }
       dispatch(AppFrameActions.setPageLoading({ isLoading: false }));
     })();
-  }, [dispatch, orgId, workspaces]);
+  }, [dispatch, orgId]);
 
   const initializeTable = React.useCallback(async () => {
     if (orgId) {

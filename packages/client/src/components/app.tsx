@@ -9,7 +9,6 @@ import { CircularProgress } from '@material-ui/core';
 import { UserActions } from '../slices/user.slice';
 import { AppSidenav } from './app-sidenav/app-sidenav';
 import { AppToolbar } from './app-toolbar/app-toolbar';
-import { SpacesPage } from './pages/spaces-page/spaces-page';
 import { DataExportPage } from './pages/data-export-page/data-export-page';
 import { HomePage } from './pages/home-page/home-page';
 import useStyles from './app.styles';
@@ -122,9 +121,6 @@ export const App = () => {
               </Route>
               <Route path="/data-export">
                 <DataExportPage />
-              </Route>
-              <Route path="/spaces">
-                <SpacesPage />
               </Route>
               <Route path="/*">
                 <Redirect to="/home" />

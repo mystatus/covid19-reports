@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import {
   ApiRequest,
   OrgParam,
-  WorkspaceParam,
 } from '../api/api.router';
 import { UserRole } from '../api/user/user-role.model';
 import { User } from '../api/user/user.model';
@@ -49,7 +48,6 @@ export async function requireUserAuth(req: AuthRequest, res: Response, next: Nex
         'userRoles',
         'userRoles.role',
         'userRoles.role.org',
-        'userRoles.role.workspaces',
         'userRoles.role.org.contact',
         'userRoles.units',
         'userRoles.units.org',
@@ -142,38 +140,6 @@ export async function requireOrgAccess(reqAny: any, res: Response, next: NextFun
 
   if (req.appOrg) {
     return next();
-  }
-
-  throw new ForbiddenError('User does not have sufficient privileges to perform this action.');
-}
-
-export function requireWorkspaceAccess(reqAny: any, res: Response, next: NextFunction) {
-  // HACK: For some reason express won't let us use ApiRequest here, so just cast it afterward for now. We should make
-  //       another pass on the core express types to get this working properly.
-  const req = reqAny as ApiRequest<WorkspaceParam, null, { workspaceId?: string }>;
-
-  let workspaceId: number | undefined;
-  if (req.params.workspaceId) {
-    workspaceId = parseInt(req.params.workspaceId);
-  } else if (req.query.workspaceId) {
-    workspaceId = parseInt(req.query.workspaceId);
-  } else if (req.cookies.workspaceId) {
-    workspaceId = parseInt(req.cookies.workspaceId);
-  }
-
-  if (workspaceId == null) {
-    throw new BadRequestError('Missing workspace id.');
-  }
-
-  if (Number.isNaN(workspaceId) || workspaceId < 0) {
-    throw new BadRequestError(`Invalid workspace id: ${workspaceId}`);
-  }
-
-  for (const userRole of req.appUser.userRoles) {
-    req.appWorkspace = userRole.role.workspaces!.find(x => x.id === workspaceId);
-    if (req.appWorkspace) {
-      return next();
-    }
   }
 
   throw new ForbiddenError('User does not have sufficient privileges to perform this action.');

@@ -9,14 +9,11 @@ import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import path from 'path';
 import apiRoutes from './api/api.router';
-import kibanaProxy from './kibana/kibana-proxy.router';
-import kibanaDashboard from './kibana/dashboard/kibana-dashboard.router';
 import database from './sqldb/sqldb';
 import config from './config';
 import {
   requireOrgAccess,
   requireUserAuth,
-  requireWorkspaceAccess,
 } from './auth/auth-middleware';
 import { env } from './util/env';
 import { errorHandler } from './util/error-handler';
@@ -70,8 +67,6 @@ const start = async () => {
   app.use(
     '/dashboard',
     requireOrgAccess,
-    requireWorkspaceAccess,
-    kibanaDashboard,
   );
 
   app.use(
@@ -79,11 +74,6 @@ const start = async () => {
     (req: Request, res: Response) => {
       res.redirect(`${config.links.onboarding}`);
     },
-  );
-
-  app.use(
-    config.kibana.basePath,
-    kibanaProxy,
   );
 
   app.get('/*', (req: Request, res: Response) => {

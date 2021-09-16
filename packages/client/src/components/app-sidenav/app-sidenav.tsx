@@ -97,11 +97,6 @@ export const AppSidenav = () => {
     }
   }, [orgId, dispatch, user]);
 
-  const userHasWorkspaces = () => {
-    const workspaces = user.activeRole?.role.workspaces;
-    return (workspaces && workspaces.length > 0);
-  };
-
   return (
     <div className={classes.root}>
       <div className={clsx(classes.expander, {
@@ -135,20 +130,6 @@ export const AppSidenav = () => {
             name="Home"
             icon={(<HomeIcon />)}
           />
-          {userHasWorkspaces() && (
-            <SidenavLink
-              to="/spaces"
-              name="Spaces"
-              icon={(<BarChartIcon />)}
-            />
-          )}
-          {userHasWorkspaces() && (
-            <SidenavLink
-              to="/data-export"
-              name="Data Export"
-              icon={(<DataExportIcon />)}
-            />
-          )}
           {user.activeRole?.role.canViewMuster && (
             <SidenavLink
               to="/muster"

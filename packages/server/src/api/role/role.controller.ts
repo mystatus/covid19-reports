@@ -15,7 +15,6 @@ import {
   BadRequestError,
   NotFoundError,
 } from '../../util/error-types';
-import { Workspace } from '../workspace/workspace.model';
 import { Notification } from '../notification/notification.model';
 import { UserRole } from '../user/user-role.model';
 import { Org } from '../org/org.model';
@@ -28,7 +27,6 @@ class RoleController {
     }
 
     const roles = await Role.find({
-      relations: ['workspaces'],
       where: {
         org: req.appOrg.id,
       },
@@ -70,7 +68,6 @@ class RoleController {
     const roleId = parseInt(req.params.roleId);
 
     const role = await Role.findOne({
-      relations: ['workspaces'],
       where: {
         id: roleId,
         org: req.appOrg.id,
@@ -149,32 +146,11 @@ async function setRoleFromBody(org: Org, role: Role, body: UpdateRoleBody) {
   if (body.description != null) {
     role.description = body.description;
   }
-  if (body.workspaceIds != null) {
-    let workspaces: Workspace[] = [];
-
-    if (body.workspaceIds.length) {
-      workspaces = await Workspace.find({
-        where: {
-          id: In(body.workspaceIds),
-          org: org.id,
-        },
-      });
-
-      if (workspaces.length !== body.workspaceIds.length) {
-        throw new NotFoundError('One or more workspaces could not be found.');
-      }
-    }
-
-    role.workspaces = workspaces;
-  }
   if (body.canManageGroup != null) {
     role.canManageGroup = body.canManageGroup;
   }
   if (body.canManageRoster != null) {
     role.canManageRoster = body.canManageRoster;
-  }
-  if (body.canManageWorkspace != null) {
-    role.canManageWorkspace = body.canManageWorkspace;
   }
   if (body.canViewRoster != null) {
     role.canViewRoster = body.canViewRoster;

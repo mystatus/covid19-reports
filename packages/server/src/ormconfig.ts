@@ -12,10 +12,8 @@ import { Role } from './api/role/role.model';
 import { OrphanedRecordAction } from './api/orphaned-record/orphaned-record-action.model';
 import { Roster } from './api/roster/roster.model';
 import { UserRole } from './api/user/user-role.model';
-import { WorkspaceTemplate } from './api/workspace/workspace-template.model';
 import { ReportSchema } from './api/report-schema/report-schema.model';
 import { CustomRosterColumn } from './api/roster/custom-roster-column.model';
-import { Workspace } from './api/workspace/workspace.model';
 import { Notification } from './api/notification/notification.model';
 import { Observation } from './api/observation/observation.model';
 import { SavedFilter } from './api/saved-filter/saved-filter.model';
@@ -50,8 +48,6 @@ export const ormConfig: PostgresConnectionOptions = {
     User,
     UserNotificationSetting,
     UserRole,
-    Workspace,
-    WorkspaceTemplate,
   ],
   namingStrategy: new SnakeNamingStrategy(),
   synchronize: (env.isDev && process.env.SYNC_DATABASE === 'true'),

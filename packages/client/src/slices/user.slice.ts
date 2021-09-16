@@ -3,7 +3,6 @@ import {
   createSlice,
   PayloadAction,
 } from '@reduxjs/toolkit';
-import { WritableDraft } from 'immer/dist/types/types-external';
 import {
   ApiUser,
   ApiUserRole,
@@ -42,39 +41,9 @@ export interface UserRegisterData {
   email: string;
 }
 
-export interface DashboardPayload {
-  orgId: number;
-  workspaceId: number;
-  dashboardUuid: string;
-}
-
 const name = 'user';
 
 const thunks = {
-  addFavoriteDashboard: createAsyncThunk<DashboardPayload, DashboardPayload, { rejectValue: DashboardPayload }>(
-    `${name}/addFavoriteDashboard`,
-    async (args: DashboardPayload, thunkAPI) => {
-      try {
-        await UserClient.addFavoriteDashboard(args.orgId, args.workspaceId, args.dashboardUuid);
-      } catch (error) {
-        return thunkAPI.rejectWithValue(args);
-      }
-      return args;
-    },
-  ),
-
-  removeFavoriteDashboard: createAsyncThunk<DashboardPayload, DashboardPayload, { rejectValue: DashboardPayload }>(
-    `${name}/removeFavoriteDashboard`,
-    async (args: DashboardPayload, thunkAPI) => {
-      try {
-        await UserClient.removeFavoriteDashboard(args.orgId, args.workspaceId, args.dashboardUuid);
-      } catch (error) {
-        return thunkAPI.rejectWithValue(args);
-      }
-      return args;
-    },
-  ),
-
   register: createAsyncThunk(
     `${name}/register`,
     async (arg: UserRegisterData, thunkAPI) => {
@@ -136,37 +105,6 @@ export const userSlice = createSlice({
       const loggedInState = getLoggedInState(userData, localStorage);
       assign(state, loggedInState);
     })
-    .addCase(thunks.addFavoriteDashboard.fulfilled, (state, { payload }) => {
-      const { workspaceId, dashboardUuid } = payload;
-      return addFavoriteDashboard(state, workspaceId, dashboardUuid);
-    })
-    .addCase(thunks.addFavoriteDashboard.rejected, (state, { payload }) => {
-      const { workspaceId, dashboardUuid } = payload!;
-      return removeFavoriteDashboard(state, workspaceId, dashboardUuid);
-    })
-    .addCase(thunks.removeFavoriteDashboard.fulfilled, (state, { payload }) => {
-      const { workspaceId, dashboardUuid } = payload;
-      return removeFavoriteDashboard(state, workspaceId, dashboardUuid);
-    })
-    .addCase(thunks.removeFavoriteDashboard.rejected, (state, { payload }) => {
-      const { workspaceId, dashboardUuid } = payload!;
-      return addFavoriteDashboard(state, workspaceId, dashboardUuid);
-    }),
 });
-
-function addFavoriteDashboard(state: WritableDraft<UserState>, workspaceId: number, dashboardUuid: string) {
-  const favoriteDashboards = state.activeRole!.favoriteDashboards;
-  if (!favoriteDashboards[workspaceId]) {
-    favoriteDashboards[workspaceId] = {};
-  }
-  favoriteDashboards[workspaceId][dashboardUuid] = true;
-}
-
-function removeFavoriteDashboard(state: WritableDraft<UserState>, workspaceId: number, dashboardUuid: string) {
-  const favoriteDashboards = state.activeRole!.favoriteDashboards;
-  if (favoriteDashboards[workspaceId]) {
-    delete favoriteDashboards[workspaceId][dashboardUuid];
-  }
-}
 
 export const UserActions = exportSlice(userSlice, thunks);

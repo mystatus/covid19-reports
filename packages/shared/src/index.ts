@@ -12,7 +12,6 @@ export * from './api/saved-filter.api.types';
 export * from './api/saved-layout.api.types';
 export * from './api/unit.api.types';
 export * from './api/user.api.types';
-export * from './api/workspace.api.types';
 
 export * from './utils/days';
 export * from './utils/expression-utils';
@@ -29,5 +28,3 @@ export * from './saved-layout.types';
 export * from './unit.types';
 export * from './user.types';
 export * from './user-role.types';
-export * from './workspace.types';
-export * from './workspace-template.types';
