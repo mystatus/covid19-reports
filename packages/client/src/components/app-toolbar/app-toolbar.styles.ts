@@ -51,7 +51,7 @@ export default makeStyles((theme: Theme) => createStyles({
       height: '32px',
       marginRight: '10px',
       top: '-1px',
-      backgroundColor: theme.palette.primary.light,
+      backgroundColor: '#3272a6',
       fontSize: '14px',
     },
   },

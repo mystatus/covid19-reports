@@ -27,7 +27,7 @@ export const HelpButton = (props: HelpButtonProps) => {
 
   return (
     <>
-      <IconButton onClick={() => setOpen(true)}>
+      <IconButton onClick={() => setOpen(true)} aria-label="More Information">
         {children}
         {!children && (
           <InfoOutlinedIcon />
