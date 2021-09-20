@@ -33,7 +33,7 @@ const PageHeader = (props: PageHeaderProps) => {
     <header className={classes.header}>
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Box display="flex" alignItems="center">
-          <Typography className={classes.title}>
+          <Typography className={classes.title} component="h1">
             {title}
           </Typography>
 
