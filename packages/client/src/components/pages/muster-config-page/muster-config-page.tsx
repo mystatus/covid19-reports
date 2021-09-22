@@ -24,7 +24,6 @@ import {
 import React, { useEffect, useState } from 'react';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
-import { EntityType } from '@covid19-reports/shared';
 import { MusterConfigPageHelp } from './muster-config-page-help';
 import useStyles from './muster-config-page.styles';
 import { EditMusterConfigDialog, EditMusterConfigDialogProps } from './edit-muster-config-dialog';

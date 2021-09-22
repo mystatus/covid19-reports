@@ -43,10 +43,13 @@ export function ActionSelector(props: ActionSelectorProps) {
         onClose={() => setMenuOpen(false)}
       >
         {actions.map(action => (
-          <MenuItem key={action.name} onClick={() => {
-            action.execute('');
-            setMenuOpen(false);
-          }}>
+          <MenuItem
+            key={action.name}
+            onClick={() => {
+              action.execute('');
+              setMenuOpen(false);
+            }}
+          >
             <Box display="flex" alignItems="center" justifyContent="space-between" width="300px">
               <span>{action.displayName}</span>
 
