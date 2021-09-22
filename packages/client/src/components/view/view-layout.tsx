@@ -2,6 +2,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -15,9 +16,9 @@ import {
 } from '@covid19-reports/shared';
 import _ from 'lodash';
 import deepEquals from 'fast-deep-equal';
-import {
-  TableRowOptions,
-} from '../tables/table-custom-columns-content';
+import { Button } from '@material-ui/core';
+import ChevronRightIcon from '@material-ui/icons/ChevronRight';
+import { TableRowOptions } from '../tables/table-custom-columns-content';
 import { UserSelector } from '../../selectors/user.selector';
 import usePersistedState from '../../hooks/use-persisted-state';
 import { useAppSelector } from '../../hooks/use-app-selector';
@@ -26,22 +27,24 @@ import PageHeader, {
 } from '../page-header/page-header';
 import { entityApi } from '../../api/entity.api';
 import View from './view';
-import { ViewLayoutSelector } from './view-layout-selector';
+import { SavedItemSelector } from './saved-item-selector';
 import { Modal } from '../../actions/modal.actions';
 import { savedLayoutApi } from '../../api/saved-layout.api';
 import { useAppDispatch } from '../../hooks/use-app-dispatch';
 import {
-  isExistingLayout,
+  isDefaultLayout,
   makeDefaultViewLayout,
   viewLayoutDefaults,
   ViewLayoutId,
-} from './view-layout-utils';
+} from './view-utils';
 import { SaveNewLayoutDialog } from '../pages/roster-page/save-new-layout-dialog';
 import { useEffectError } from '../../hooks/use-effect-error';
 import { ColumnSelector } from './column-selector';
 import { ActionSelector } from './action-selector';
 import { getActionColumnInfos, getColumnAction } from '../../entity-actions/actions';
 import { registerDataActions } from '../../entity-actions/roster';
+import { ViewLayoutButtons } from './view-layout-buttons';
+import useStyles from './view-layout.styles';
 
 export type LayoutConfigParams = SortedQuery & {
   columns: ColumnInfo[];
@@ -82,15 +85,18 @@ export default function ViewLayout(props: ViewLayoutProps) {
     rowOptions = {},
   } = props;
   const { name = entityType } = props;
+  const classes = useStyles();
   const dispatch = useAppDispatch();
 
   const orgId = useAppSelector(UserSelector.orgId)!;
 
   const [currentLayout, setCurrentLayout] = usePersistedState<SavedLayoutSerialized>(`${entityType}CurrentLayout`, makeDefaultViewLayout(entityType, [], maxTableColumns));
   const [selectedLayoutId, setSelectedLayoutId] = usePersistedState<ViewLayoutId>(`${entityType}SelectedLayoutId`, currentLayout.id);
-  const [layoutSelectorOpen, setLayoutSelectorOpen] = useState(false);
+  const [selectorOpen, setSelectorOpen] = useState(false);
   const [saveNewLayoutDialogOpen, setSaveNewLayoutDialogOpen] = useState(false);
-  // const [menuItemCount, setMenuItemCount] = useState(0);
+  const [newLayout, setNewLayout] = useState<SavedLayoutSerialized | undefined>();
+
+  const selectLayoutButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const {
     data: allowedColumns = [],
@@ -188,14 +194,42 @@ export default function ViewLayout(props: ViewLayoutProps) {
   }, [currentLayout, setCurrentLayout]);
 
   //
-  // Layout Selector
+  // Selector
   //
-  const changeSelection = useCallback((layout: SavedLayoutSerialized) => {
+  const selectLayout = useCallback((layout: SavedLayoutSerialized) => {
     setSelectedLayoutId(layout.id);
     setCurrentLayout({ ...layout });
-    setLayoutSelectorOpen(false);
+    setSelectorOpen(false);
   }, [setCurrentLayout, setSelectedLayoutId]);
 
+  const handleSaveNewLayout = useCallback((layout: SavedLayoutSerialized) => {
+    setNewLayout({ ...layout });
+    setSaveNewLayoutDialogOpen(true);
+  }, []);
+
+  const handleDeleteClick = useCallback(async (layout: SavedLayoutSerialized) => {
+    if (isDefaultLayout(layout.id)) {
+      throw new Error('Unable to delete default layout');
+    }
+
+    const result = await dispatch(Modal.confirm(`Delete Layout "${layout.name}"`, 'Are you sure?', {
+      destructive: true,
+      confirmText: 'Delete',
+    }));
+
+    if (!result?.button?.value) {
+      return;
+    }
+
+    await deleteSavedLayout({
+      orgId,
+      savedLayoutId: layout.id,
+    });
+  }, [dispatch, deleteSavedLayout, orgId]);
+
+  //
+  // Layout Buttons
+  //
   const hasChanges = useMemo(() => {
     const layout = layoutsById[currentLayout.id];
     if (!layout) {
@@ -214,21 +248,13 @@ export default function ViewLayout(props: ViewLayoutProps) {
     );
   }, [currentLayout.actions, currentLayout.columns, currentLayout.id, currentLayout.name, layoutsById]);
 
-  const handleLayoutSelectorClick = useCallback(() => {
-    setLayoutSelectorOpen(true);
-  }, [setLayoutSelectorOpen]);
-
-  const handleLayoutSelectorClose = useCallback(() => {
-    setLayoutSelectorOpen(false);
-  }, [setLayoutSelectorOpen]);
-
-  const handleLayoutSelectorSaveClick = useCallback(async () => {
-    if (!isExistingLayout(selectedLayoutId)) {
-      setSaveNewLayoutDialogOpen(true);
+  const handleSaveClick = useCallback(async () => {
+    if (isDefaultLayout(currentLayout.id)) {
+      handleSaveNewLayout(currentLayout);
       return;
     }
 
-    const result = await dispatch(Modal.confirm('Overwrite Saved Layout', 'Are you sure?', {
+    const result = await dispatch(Modal.confirm(`Overwrite Layout "${currentLayout.name}"`, 'Are you sure?', {
       confirmText: 'Overwrite',
     }));
 
@@ -241,47 +267,36 @@ export default function ViewLayout(props: ViewLayoutProps) {
       savedLayoutId: selectedLayoutId,
       body: currentLayout!,
     });
-  }, [currentLayout, dispatch, orgId, selectedLayoutId, updateSavedLayout]);
+  }, [currentLayout, dispatch, handleSaveNewLayout, orgId, selectedLayoutId, updateSavedLayout]);
 
-  const handleLayoutSelectorSaveAsClick = useCallback(() => {
-    setSaveNewLayoutDialogOpen(true);
-  }, [setSaveNewLayoutDialogOpen]);
-
-  const handleSaveNewLayoutConfirm = useCallback(async (layoutName: string) => {
-    let newLayout: SavedLayoutSerialized;
+  const handleSaveNewLayoutConfirm = useCallback(async (layout: SavedLayoutSerialized) => {
+    let layoutSaved: SavedLayoutSerialized;
     try {
-      newLayout = await addSavedLayout({
+      layoutSaved = await addSavedLayout({
         orgId,
-        body: {
-          ...currentLayout,
-          name: layoutName,
-        },
+        body: layout,
       }).unwrap();
     } catch (err) {
       return;
     }
 
-    changeSelection(newLayout);
+    selectLayout(layoutSaved);
     setSaveNewLayoutDialogOpen(false);
-  }, [addSavedLayout, changeSelection, currentLayout, orgId]);
+  }, [addSavedLayout, selectLayout, orgId]);
 
-  const handleLayoutSelectorDeleteClick = useCallback(async () => {
-    if (isExistingLayout(selectedLayoutId)) {
-      const result = await dispatch(Modal.confirm('Delete Saved Layout', 'Are you sure?', {
-        destructive: true,
-        confirmText: 'Delete',
-      }));
+  const handleRevertClick = useCallback(async () => {
+    const result = await dispatch(Modal.confirm('Revert Layout Changes', 'Are you sure?', {
+      destructive: true,
+      confirmText: 'Revert',
+    }));
 
-      if (!result?.button?.value) {
-        return;
-      }
-
-      await deleteSavedLayout({
-        orgId,
-        savedLayoutId: selectedLayoutId,
-      });
+    if (!result?.button?.value) {
+      return;
     }
-  }, [selectedLayoutId, dispatch, deleteSavedLayout, orgId]);
+
+    const selectedLayoutReverted = layouts.find(x => x.id === selectedLayoutId);
+    selectLayout({ ...selectedLayoutReverted! });
+  }, [selectLayout, dispatch, layouts, selectedLayoutId]);
 
   const handleActionPinned = useCallback(() => {
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
@@ -303,9 +318,9 @@ export default function ViewLayout(props: ViewLayoutProps) {
     }
 
     if (!layoutsById[currentLayout.id]) {
-      changeSelection(defaultLayout);
+      selectLayout(defaultLayout);
     }
-  }, [addSavedLayoutIsLoading, changeSelection, currentLayout.id, defaultLayout, layoutsById, savedLayouts, savedLayoutsIsFetching]);
+  }, [addSavedLayoutIsLoading, selectLayout, currentLayout.id, defaultLayout, layoutsById, savedLayouts, savedLayoutsIsFetching]);
 
   // If all columns are turned off, reset them all to enabled.
   useEffect(() => {
@@ -329,19 +344,39 @@ export default function ViewLayout(props: ViewLayoutProps) {
         leftComponent={(
           <>
             {!savedLayoutsLoading && (
-              <ViewLayoutSelector
-                columns={columns}
-                layouts={layouts}
-                selectedLayoutId={selectedLayoutId}
-                hasChanges={hasChanges}
-                open={layoutSelectorOpen}
-                onClick={handleLayoutSelectorClick}
-                onClose={handleLayoutSelectorClose}
-                onSaveClick={handleLayoutSelectorSaveClick}
-                onSaveAsClick={handleLayoutSelectorSaveAsClick}
-                onDeleteClick={handleLayoutSelectorDeleteClick}
-                onSelectionChange={changeSelection}
-              />
+              <>
+                <Button
+                  aria-label="Select Layout"
+                  onClick={() => setSelectorOpen(true)}
+                  size="large"
+                  startIcon={<ChevronRightIcon color="action" />}
+                  variant="text"
+                  ref={selectLayoutButtonRef}
+                >
+                  <span className={classes.filterButtonText}>
+                    {currentLayout?.name ?? ''}
+                  </span>
+                </Button>
+
+                <SavedItemSelector
+                  anchorEl={selectLayoutButtonRef.current}
+                  open={selectorOpen}
+                  onClose={() => setSelectorOpen(false)}
+                  items={layouts}
+                  onItemClick={selectLayout}
+                  onItemDuplicateClick={handleSaveNewLayout}
+                  onItemDeleteClick={handleDeleteClick}
+                  showItemDeleteButton={item => !isDefaultLayout(item.id)}
+                />
+
+                {hasChanges && (
+                  <ViewLayoutButtons
+                    selectedLayoutId={selectedLayoutId}
+                    onSaveClick={handleSaveClick}
+                    onRevertClick={handleRevertClick}
+                  />
+                )}
+              </>
             )}
           </>
         )}
@@ -394,6 +429,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
 
       <SaveNewLayoutDialog
         open={saveNewLayoutDialogOpen}
+        layout={newLayout}
         onSave={handleSaveNewLayoutConfirm}
         onCancel={() => setSaveNewLayoutDialogOpen(false)}
       />

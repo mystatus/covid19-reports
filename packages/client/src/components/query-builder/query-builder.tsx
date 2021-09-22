@@ -5,9 +5,7 @@ import {
 } from '@material-ui/core';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import SaveIcon from '@material-ui/icons/Save';
-import FileCopyIcon from '@material-ui/icons/FileCopy';
 import React, { useEffect } from 'react';
-import DeleteIcon from '@material-ui/icons/Delete';
 import { getFullyQualifiedColumnName, QueryValueType } from '@covid19-reports/shared';
 import useStyles from './query-builder.styles';
 import {
@@ -26,10 +24,9 @@ export interface QueryBuilderProps {
   expressionRefsByType?: Map<QueryValueType, ExpressionReference[]>;
   onChangeQueryRows: (queryRows: QueryRow[]) => void;
   onSaveClick: (queryRows: QueryRow[]) => void;
-  onSaveAsClick: (queryRows: QueryRow[]) => void;
-  onDeleteClick: () => void;
-  isSaved: boolean;
   hasChanges: boolean;
+  showAddCriteriaButton: boolean;
+  showSaveButton: boolean;
 }
 
 export const QueryBuilder = (props: QueryBuilderProps) => {
@@ -38,11 +35,10 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
     queryRows,
     onChangeQueryRows,
     onSaveClick,
-    onSaveAsClick,
-    onDeleteClick,
-    isSaved,
     hasChanges,
     expressionRefsByType,
+    showAddCriteriaButton,
+    showSaveButton,
   } = props;
 
   const classes = useStyles();
@@ -116,11 +112,12 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
         </Box>
       )}
 
-      {(availableFields.length > 0) && (
+      {showAddCriteriaButton && (
         <Button
           aria-label="Add Criteria"
           className={classes.button}
           onClick={addRow}
+          disabled={availableFields.length === 0}
           size="small"
           startIcon={<AddCircleIcon />}
           variant="outlined"
@@ -129,45 +126,17 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
         </Button>
       )}
 
-      {hasValuesSet() && (
-        <>
-          <Button
-            aria-label="Save"
-            className={classes.button}
-            onClick={() => onSaveClick(queryRows)}
-            disabled={!hasChanges}
-            size="small"
-            startIcon={<SaveIcon />}
-            variant="outlined"
-          >
-            Save
-          </Button>
-
-          {isSaved && (
-            <Button
-              aria-label="Save As"
-              className={classes.button}
-              onClick={() => onSaveAsClick(queryRows)}
-              size="small"
-              startIcon={<FileCopyIcon />}
-              variant="outlined"
-            >
-              Save As
-            </Button>
-          )}
-        </>
-      )}
-
-      {isSaved && (
+      {showSaveButton && (
         <Button
-          aria-label="Delete"
-          className={classes.deleteButton}
-          onClick={() => onDeleteClick()}
+          aria-label="Save"
+          className={classes.button}
+          onClick={() => onSaveClick(queryRows)}
+          disabled={!hasChanges || !hasValuesSet()}
           size="small"
-          startIcon={<DeleteIcon />}
+          startIcon={<SaveIcon />}
           variant="outlined"
         >
-          Delete
+          Save
         </Button>
       )}
     </Box>

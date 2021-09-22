@@ -1,6 +1,7 @@
 import {
   ColumnInfo,
   EntityType,
+  SavedFilterSerialized,
   SavedLayoutSerialized,
 } from '@covid19-reports/shared';
 
@@ -26,6 +27,33 @@ export function makeDefaultViewLayout(entityType: EntityType, columns: ColumnInf
   return initial;
 }
 
-export function isExistingLayout(id: ViewLayoutId) {
-  return id !== viewLayoutDefaults.id;
+export function isDefaultLayout(id: ViewLayoutId) {
+  return id === viewLayoutDefaults.id;
+}
+
+export type FilterId = SavedFilterSerialized['id'];
+
+export const customFilterId: FilterId = -1;
+export const noFilterId: FilterId = -2;
+
+export function isCustomFilter(id: FilterId) {
+  return id === customFilterId;
+}
+
+export function makeNoFilter(entityType: EntityType) {
+  return {
+    id: noFilterId,
+    name: 'No Filter',
+    entityType,
+    config: {},
+  };
+}
+
+export function makeCustomFilter(entityType: EntityType) {
+  return {
+    id: customFilterId,
+    name: 'Custom',
+    entityType,
+    config: {},
+  };
 }

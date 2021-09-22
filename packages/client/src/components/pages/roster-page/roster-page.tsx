@@ -754,24 +754,6 @@ export const RosterPage = () => {
     return !deepEquals(savedFilterQueryRows, filterQueryRows);
   }, [filterQueryRows, getSelectedSavedFilter, queryBuilderFields, selectedFilterId]);
 
-  const handleSaveNewFilterConfirm = async (name: string) => {
-    let savedFilter: SavedFilterSerialized;
-    try {
-      savedFilter = await SavedFilterClient.addSavedFilter(orgId, {
-        name,
-        entityType: 'roster',
-        config: queryRowsToFilterConfig(filterQueryRows),
-      });
-    } catch (err) {
-      void dispatch(Modal.alert('Save New Filter', `Unable to save filter: ${formatErrorMessage(err)}`));
-      return;
-    }
-
-    await fetchSavedFilters();
-    setSelectedFilterId(savedFilter.id);
-    setSaveNewFilterDialogOpen(false);
-  };
-
   //
   // Render
   //
@@ -1040,10 +1022,9 @@ export const RosterPage = () => {
               queryRows={filterQueryRows}
               onChangeQueryRows={handleChangeFilterQueryRows}
               onSaveClick={handleFilterSaveClick}
-              onSaveAsClick={() => setSaveNewFilterDialogOpen(true)}
-              onDeleteClick={handleFilterDeleteClick}
-              isSaved={isSelectedFilterSaved()}
               hasChanges={filterHasChanges}
+              showAddCriteriaButton
+              showSaveButton
             />
           </Collapse>
 
@@ -1084,12 +1065,6 @@ export const RosterPage = () => {
       {editRosterEntryDialogProps.open && (
         <EditRosterEntryDialog {...editRosterEntryDialogProps} />
       )}
-
-      <SaveNewFilterDialog
-        open={saveNewFilterDialogOpen}
-        onSave={handleSaveNewFilterConfirm}
-        onCancel={() => setSaveNewFilterDialogOpen(false)}
-      />
     </main>
   );
 };

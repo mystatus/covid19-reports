@@ -11,9 +11,6 @@ import {
   Box,
   Button,
   Collapse,
-  Divider,
-  Menu,
-  MenuItem,
   Paper,
   TableContainer,
 } from '@material-ui/core';
@@ -56,20 +53,27 @@ import {
   QueryField,
   QueryFieldEnumItem,
   QueryRow,
-  queryRowsToFilterConfig } from '../../utility/query-builder-utils';
+  queryRowsToFilterConfig,
+  getCleanedFilterConfig,
+} from '../../utility/query-builder-utils';
 import { SavedFilterClient } from '../../client/saved-filter.client';
 import { SaveNewFilterDialog } from '../pages/roster-page/save-new-filter-dialog';
 import { Layout } from './view-layout';
 import { entityApi } from '../../api/entity.api';
+import { SavedItemSelector } from './saved-item-selector';
+import {
+  customFilterId,
+  FilterId,
+  isCustomFilter,
+  makeCustomFilter,
+  makeNoFilter,
+  noFilterId,
+} from './view-utils';
 
-type ViewProps = {
+export type ViewProps = {
   idColumn: string | ((row: any) => string);
   layout: Layout;
 };
-
-type FilterId = SavedFilterSerialized['id'];
-const customFilterId = -1;
-const noFilterId = -2;
 
 export default function View({ layout, idColumn }: ViewProps) {
   const { columns, entityType, orderBy, rowOptions, sortDirection, visibleColumns } = layout;
@@ -85,12 +89,13 @@ export default function View({ layout, idColumn }: ViewProps) {
     sortDirection,
   });
   const [savedFilters, setSavedFilters] = useState<SavedFilterSerialized[]>([]);
-  const [selectedFilterId, setSelectedFilterId] = usePersistedState<FilterId>(`${layout.name}selectedFilterId`, noFilterId);
-  const [selectFilterMenuOpen, setSelectFilterMenuOpen] = useState(false);
+  const [savedFiltersIsLoaded, setSavedFiltersIsLoaded] = useState(false);
+  const [currentFilter, setCurrentFilter] = usePersistedState<SavedFilterSerialized>(`${layout.name}CurrentFilter`, makeNoFilter(entityType));
+  const [selectedFilterId, setSelectedFilterId] = usePersistedState<FilterId>(`${layout.name}SelectedFilterId`, currentFilter.id);
+  const [filterSelectorOpen, setFilterSelectorOpen] = useState(false);
   const [filterEditorOpen, setFilterEditorOpen] = usePersistedState(`${layout.name}FilterEditorOpen`, false);
-  const [filterQueryRows, setFilterQueryRows] = usePersistedState<QueryRow[]>(`${layout.name}FilterQueryRows`, []);
-  const [expressionRefsByType, setExpressionRefsByType] = useState<Map<QueryValueType, ExpressionReference[]>>();
   const [saveNewFilterDialogOpen, setSaveNewFilterDialogOpen] = useState(false);
+  const [newFilter, setNewFilter] = useState<SavedFilterSerialized | undefined>();
   const selectFilterButtonRef = useRef<HTMLButtonElement>(null);
 
   const {
@@ -102,9 +107,17 @@ export default function View({ layout, idColumn }: ViewProps) {
     orgId,
     query: useMemo(() => ({
       ...entitiesQuery,
-      filterConfig: queryRowsToFilterConfig(filterQueryRows),
-    }), [entitiesQuery, filterQueryRows]),
+      filterConfig: getCleanedFilterConfig(currentFilter.config),
+    }), [entitiesQuery, currentFilter.config]),
   });
+
+  const filters = useMemo<SavedFilterSerialized[]>(() => {
+    return [
+      makeNoFilter(entityType),
+      makeCustomFilter(entityType),
+      ...savedFilters,
+    ];
+  }, [entityType, savedFilters]);
 
   const queryBuilderFields = useMemo((): QueryField[] => {
     return columns.map(column => {
@@ -131,56 +144,25 @@ export default function View({ layout, idColumn }: ViewProps) {
   }, [columns, units]);
 
   const fetchSavedFilters = useCallback(async () => {
+    let savedFiltersNew: SavedFilterSerialized[];
     try {
-      const filters = await SavedFilterClient.getSavedFilters(orgId, { entityType });
-      setSavedFilters(filters);
-
-      const selectedFilterFound = (
-        selectedFilterId === noFilterId
-        || selectedFilterId === customFilterId
-        || filters.some(x => x.id === selectedFilterId)
-      );
-
-      if (!selectedFilterFound) {
-        setSelectedFilterId(noFilterId);
-      }
+      savedFiltersNew = await SavedFilterClient.getSavedFilters(orgId, { entityType });
     } catch (error) {
       void dispatch(Modal.alert('Get Saved Filters', formatErrorMessage(error, 'Failed to get saved filters')));
+      return;
     }
-  }, [dispatch, entityType, orgId, setSavedFilters, selectedFilterId, setSelectedFilterId]);
 
-  useEffectDebounced(() => {
-    void dispatch(Unit.fetch(orgId));
-  }, [dispatch, orgId]);
+    setSavedFilters(savedFiltersNew);
+    setSavedFiltersIsLoaded(true);
+  }, [dispatch, entityType, orgId, setSavedFilters]);
 
-  useEffectDebounced(() => {
-    void refetchEntities();
-  }, [refetchEntities, filterQueryRows]);
+  const isSavedFilter = useCallback((filter: SavedFilterSerialized) => {
+    return filter.id !== noFilterId && filter.id !== customFilterId;
+  }, []);
 
-  useEffect(() => {
-    if (entitiesError) {
-      void dispatch(Modal.alert('Error', formatErrorMessage(entitiesError, 'Error Applying Filters')));
-    }
-  }, [dispatch, entitiesError]);
-
-  useEffectDebounced(() => {
-    void fetchSavedFilters();
-  }, [fetchSavedFilters]);
-
-  // useEffectDebounced(() => {
-  //   setVisibleColumns(columns.filter(column => column.isVisible))
-  // }, [columns, setVisibleColumns]);
-
-  // useEffect(() => {
-  //   const unitNames: { [key: string]: string } = {};
-  //   for (const unit of units) {
-  //     unitNames[unit.id] = unit.name;
-  //   }
-  //   setUnitNameMap(unitNames);
-  // }, [units]);
-  // This method creates references for the expressions for a given column types (currently just time)
-  // it allows a column to use an expression that references another column.
-  const getExpressionRefsForColumns = useCallback(() => {
+  // Create references for the expressions for given column types (currently just time).
+  // This allows a column to use an expression that references another column.
+  const expressionRefsByType = useMemo(() => {
     const expressionRefs = new Map<QueryValueType, ExpressionReference[]>();
     columns.forEach((col: ColumnInfo) => {
       if (!expressionRefs.get(col.type)) {
@@ -196,26 +178,12 @@ export default function View({ layout, idColumn }: ViewProps) {
     return expressionRefs;
   }, [columns]);
 
-  const getSelectedSavedFilter = useCallback(() => {
-    return savedFilters.find(x => x.id === selectedFilterId);
-  }, [savedFilters, selectedFilterId]);
-
-  const handleChangeFilterQueryRows = useCallback((queryRows: QueryRow[]) => {
-    setFilterQueryRows(queryRows);
-    setExpressionRefsByType(getExpressionRefsForColumns());
-  }, [setFilterQueryRows, setExpressionRefsByType, getExpressionRefsForColumns]);
-
-  useEffect(() => {
-    const savedFilter = getSelectedSavedFilter();
-    if (savedFilter) {
-      const queryRowsNew = filterConfigToQueryRows(savedFilter.config, queryBuilderFields);
-      setFilterQueryRows(queryRowsNew);
-      setExpressionRefsByType(getExpressionRefsForColumns());
-    } else if (selectedFilterId === noFilterId) {
-      setFilterQueryRows([]);
-      setExpressionRefsByType(getExpressionRefsForColumns());
-    }
-  }, [queryBuilderFields, getSelectedSavedFilter, getExpressionRefsForColumns, selectedFilterId, setFilterQueryRows, setExpressionRefsByType]);
+  const handleChangeFilterQueryRows = useCallback((queryRowsNew: QueryRow[]) => {
+    setCurrentFilter({
+      ...currentFilter,
+      config: queryRowsToFilterConfig(queryRowsNew),
+    });
+  }, [setCurrentFilter, currentFilter]);
 
   const handleSortChanged = useCallback((column: TableColumn, direction: SortDirection) => {
     setEntitiesQuery({
@@ -240,29 +208,10 @@ export default function View({ layout, idColumn }: ViewProps) {
     });
   };
 
-  const getFilterButtonText = () => {
-    switch (selectedFilterId) {
-      case noFilterId:
-        return 'No Filter';
-      case customFilterId:
-        return 'Custom';
-      default:
-        return getSelectedSavedFilter()?.name;
-    }
-  };
-
-  const selectFilter = (filterId: FilterId) => {
-    setSelectedFilterId(filterId);
-    setSelectFilterMenuOpen(false);
-
-    if (filterId === customFilterId) {
-      setFilterEditorOpen(true);
-    }
-  };
-
-  const handleFilterSaveClick = async (queryRows: QueryRow[]) => {
-    const savedFilter = getSelectedSavedFilter();
-    if (!savedFilter) {
+  const handleFilterSaveClick = useCallback(async () => {
+    // If this is a custom filter then we need to create a new saved filter.
+    if (isCustomFilter(currentFilter.id)) {
+      setNewFilter({ ...currentFilter });
       setSaveNewFilterDialogOpen(true);
       return;
     }
@@ -275,15 +224,70 @@ export default function View({ layout, idColumn }: ViewProps) {
       return;
     }
 
-    await SavedFilterClient.updateSavedFilter(orgId, savedFilter.id, {
-      config: queryRowsToFilterConfig(queryRows),
+    await SavedFilterClient.updateSavedFilter(orgId, currentFilter.id, {
+      config: currentFilter.config,
     });
 
     await fetchSavedFilters();
+  }, [currentFilter, dispatch, fetchSavedFilters, orgId]);
+
+  const filterHasChanges = useMemo(() => {
+    if (selectedFilterId === noFilterId) {
+      return false;
+    }
+
+    if (selectedFilterId === customFilterId) {
+      return true;
+    }
+
+    const savedFilter = savedFilters.find(x => x.id === selectedFilterId);
+    if (!savedFilter) {
+      return false;
+    }
+
+    return !deepEquals(currentFilter.config, savedFilter.config);
+  }, [currentFilter.config, savedFilters, selectedFilterId]);
+
+  const handleSaveNewFilterConfirm = async (filter: SavedFilterSerialized) => {
+    let filterSaved: SavedFilterSerialized;
+    try {
+      filterSaved = await SavedFilterClient.addSavedFilter(orgId, {
+        name: filter.name,
+        entityType: filter.entityType,
+        config: filter.config,
+      });
+    } catch (err) {
+      void dispatch(Modal.alert('Save New Filter', `Unable to save filter: ${formatErrorMessage(err)}`));
+      return;
+    }
+
+    await fetchSavedFilters();
+
+    selectFilter(filterSaved);
+    setSaveNewFilterDialogOpen(false);
   };
 
-  const handleFilterDeleteClick = async () => {
-    const result = await dispatch(Modal.confirm('Delete Saved Filter', 'Are you sure?', {
+  const handleSaveNewFilterCancel = useCallback(() => {
+    setSaveNewFilterDialogOpen(false);
+  }, []);
+
+  const selectFilter = useCallback((filter: SavedFilterSerialized) => {
+    setSelectedFilterId(filter.id);
+    setCurrentFilter({ ...filter });
+    setFilterSelectorOpen(false);
+
+    if (filter.id === customFilterId) {
+      setFilterEditorOpen(true);
+    }
+  }, [setSelectedFilterId, setCurrentFilter, setFilterEditorOpen]);
+
+  const handleFilterDuplicateClick = useCallback((filter: SavedFilterSerialized) => {
+    setNewFilter({ ...filter });
+    setSaveNewFilterDialogOpen(true);
+  }, []);
+
+  const handleFilterDeleteClick = useCallback(async (filter: SavedFilterSerialized) => {
+    const result = await dispatch(Modal.confirm(`Delete Filter "${filter.name}"`, 'Are you sure?', {
       destructive: true,
       confirmText: 'Delete',
     }));
@@ -292,46 +296,60 @@ export default function View({ layout, idColumn }: ViewProps) {
       return;
     }
 
-    await SavedFilterClient.deleteSavedFilter(orgId, selectedFilterId);
+    await SavedFilterClient.deleteSavedFilter(orgId, filter.id);
 
     await fetchSavedFilters();
-  };
+  }, [dispatch, fetchSavedFilters, orgId]);
 
-  const isSelectedFilterSaved = () => {
-    return (selectedFilterId !== noFilterId && selectedFilterId !== customFilterId);
-  };
+  const queryRows = useMemo(() => {
+    return filterConfigToQueryRows(currentFilter.config, queryBuilderFields);
+  }, [currentFilter.config, queryBuilderFields]);
 
-  const filterHasChanges = useMemo(() => {
-    if (selectedFilterId === customFilterId) {
-      return true;
+  //
+  // Effects
+  //
+  useEffectDebounced(() => {
+    void dispatch(Unit.fetch(orgId));
+  }, [dispatch, orgId]);
+
+  useEffectDebounced(() => {
+    void refetchEntities();
+  }, [refetchEntities, currentFilter.config]);
+
+  useEffect(() => {
+    if (entitiesError) {
+      void dispatch(Modal.alert('Error', formatErrorMessage(entitiesError, 'Error Applying Filters')));
     }
+  }, [dispatch, entitiesError]);
 
-    const savedFilter = getSelectedSavedFilter();
-    if (!savedFilter) {
-      return false;
-    }
+  useEffectDebounced(() => {
+    void fetchSavedFilters();
+  }, [fetchSavedFilters]);
 
-    const savedFilterQueryRows = filterConfigToQueryRows(savedFilter.config, queryBuilderFields);
-    return !deepEquals(savedFilterQueryRows, filterQueryRows);
-  }, [filterQueryRows, getSelectedSavedFilter, queryBuilderFields, selectedFilterId]);
-
-  const handleSaveNewFilterConfirm = async (name: string) => {
-    let savedFilter: SavedFilterSerialized;
-    try {
-      savedFilter = await SavedFilterClient.addSavedFilter(orgId, {
-        name,
-        entityType,
-        config: queryRowsToFilterConfig(filterQueryRows),
-      });
-    } catch (err) {
-      void dispatch(Modal.alert('Save New Filter', `Unable to save filter: ${formatErrorMessage(err)}`));
+  // Reset to no filter if the selected filter wasn't found.
+  useEffect(() => {
+    if (!savedFiltersIsLoaded) {
       return;
     }
 
-    await fetchSavedFilters();
-    setSelectedFilterId(savedFilter.id);
-    setSaveNewFilterDialogOpen(false);
-  };
+    const selectedFilterFound = filters.some(x => x.id === selectedFilterId);
+    if (!selectedFilterFound) {
+      setSelectedFilterId(noFilterId);
+    }
+  }, [filters, savedFiltersIsLoaded, selectedFilterId, setSelectedFilterId]);
+
+  // Set the current filter if the selected filter id changes.
+  useEffect(() => {
+    const filter = filters.find(x => x.id === selectedFilterId);
+    if (!filter) {
+      setCurrentFilter({ ...makeNoFilter(entityType) });
+      return;
+    }
+
+    if (currentFilter.id !== filter.id) {
+      setCurrentFilter({ ...filter });
+    }
+  }, [currentFilter.id, entityType, filters, selectedFilterId, setCurrentFilter]);
 
   return (
     <TableContainer component={Paper}>
@@ -340,47 +358,29 @@ export default function View({ layout, idColumn }: ViewProps) {
           <Button
             aria-label="Select Filter"
             className={classes.tableHeaderButtonSelect}
-            onClick={() => setSelectFilterMenuOpen(!selectFilterMenuOpen)}
+            onClick={() => setFilterSelectorOpen(!filterSelectorOpen)}
             size="small"
             startIcon={<FilterListIcon />}
-            endIcon={selectFilterMenuOpen ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
+            endIcon={filterSelectorOpen ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
             variant="outlined"
             ref={selectFilterButtonRef}
           >
             <span className={classes.filterButtonText}>
-              {getFilterButtonText()}
+              {currentFilter.name}
             </span>
           </Button>
 
-          <Menu
+          <SavedItemSelector
             anchorEl={selectFilterButtonRef.current}
-            keepMounted
-            open={selectFilterMenuOpen}
-            onClose={() => setSelectFilterMenuOpen(false)}
-          >
-            <MenuItem onClick={() => selectFilter(noFilterId)}>
-              No Filter
-            </MenuItem>
-
-            <MenuItem onClick={() => selectFilter(customFilterId)}>
-              Custom
-            </MenuItem>
-
-            {(savedFilters.length > 0) && (
-              <Box marginY={1}>
-                <Divider />
-              </Box>
-            )}
-
-            {savedFilters.map(savedFilter => (
-              <MenuItem
-                key={savedFilter.id}
-                onClick={() => selectFilter(savedFilter.id)}
-              >
-                {savedFilter.name}
-              </MenuItem>
-            ))}
-          </Menu>
+            open={filterSelectorOpen}
+            onClose={() => setFilterSelectorOpen(false)}
+            items={filters}
+            onItemClick={selectFilter}
+            onItemDuplicateClick={handleFilterDuplicateClick}
+            onItemDeleteClick={handleFilterDeleteClick}
+            showItemDuplicateButton={isSavedFilter}
+            showItemDeleteButton={isSavedFilter}
+          />
 
           {selectedFilterId !== noFilterId && (
             <Button
@@ -395,19 +395,20 @@ export default function View({ layout, idColumn }: ViewProps) {
           )}
         </Box>
       </Box>
+
       <Collapse in={selectedFilterId !== noFilterId && filterEditorOpen}>
         <QueryBuilder
           queryFields={queryBuilderFields}
-          queryRows={filterQueryRows}
+          queryRows={queryRows}
           expressionRefsByType={expressionRefsByType}
           onChangeQueryRows={handleChangeFilterQueryRows}
           onSaveClick={handleFilterSaveClick}
-          onSaveAsClick={() => setSaveNewFilterDialogOpen(true)}
-          onDeleteClick={handleFilterDeleteClick}
-          isSaved={isSelectedFilterSaved()}
           hasChanges={filterHasChanges}
+          showAddCriteriaButton
+          showSaveButton
         />
       </Collapse>
+
       <div className={classes.tableWrapper}>
         <TableCustomColumnsContent
           rows={entities?.rows ?? []}
@@ -432,8 +433,9 @@ export default function View({ layout, idColumn }: ViewProps) {
 
       <SaveNewFilterDialog
         open={saveNewFilterDialogOpen}
+        filter={newFilter}
         onSave={handleSaveNewFilterConfirm}
-        onCancel={() => setSaveNewFilterDialogOpen(false)}
+        onCancel={handleSaveNewFilterCancel}
       />
     </TableContainer>
   );

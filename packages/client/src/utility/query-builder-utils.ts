@@ -1,4 +1,5 @@
 import moment from 'moment';
+import _ from 'lodash';
 import {
   getFullyQualifiedColumnName,
   QueryOp,
@@ -127,11 +128,8 @@ export function opRequiresValue(op: QueryOp) {
  */
 export function queryRowsToFilterConfig(queryRows: QueryRow[]): FilterConfig {
   const config: FilterConfig = {};
-  const validQueryRows = queryRows.filter(row => (
-    row.field && (!opRequiresValue(row.op) || (row.value !== null && row.value !== undefined && row.value !== ''))
-  ));
 
-  for (const row of validQueryRows) {
+  for (const row of queryRows) {
     let value = row.value;
 
     // Split list values into an array.
@@ -176,4 +174,14 @@ export function getExpressionHelperText(row: QueryRow, isExpressionValid: boolea
   return (row.expression && !isExpressionValid)
     ? 'Invalid expression'
     : row.value;
+}
+
+/**
+ * Clears out invalid rows of a filter config for a query.
+ */
+export function getCleanedFilterConfig(filterConfig: FilterConfig): FilterConfig {
+  return _.pickBy(filterConfig, row => {
+    const hasValue = (row.value !== null && row.value !== undefined && row.value !== '');
+    return !opRequiresValue(row.op) || hasValue;
+  });
 }
