@@ -113,6 +113,12 @@ const formatValue = (val: ColumnValue, column: ColumnInfo) => {
 };
 
 function formatColumnSelect(columnSelect: string, column: ColumnInfo) {
+  // Ensure no camel case columns make it to the query string.
+  const tableField = columnSelect.split('.');
+  const targetElement = tableField.length - 1;
+  tableField[targetElement] = snakeCase(tableField[targetElement]);
+  columnSelect = tableField.join('.');
+  // Perform formatting
   switch (column.type) {
     case ColumnType.String:
       return `LOWER(${columnSelect})`;
