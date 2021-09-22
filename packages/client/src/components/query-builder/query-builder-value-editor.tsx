@@ -190,8 +190,7 @@ const QueryBuilderDateTimeEditor = ({ expressionReferences, hasTime, onChange, r
         value: getFieldDefaultQueryValue(row.field),
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [onChange, row]);
 
   const Picker = hasTime ? DateTimePicker : DatePicker;
   const dateField = () => {

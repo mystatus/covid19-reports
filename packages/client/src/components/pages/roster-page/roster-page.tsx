@@ -348,8 +348,7 @@ export const RosterPage = () => {
         incrementInitialLoadStep();
       })();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialLoadStep]);
+  }, [initialLoadStep, fetchRosterColumnInfo, fetchUnits, fetchSavedFilters, incrementInitialLoadStep]);
 
   useEffect(() => {
     if (initialLoadStep === 1) {
@@ -361,8 +360,7 @@ export const RosterPage = () => {
         incrementInitialLoadStep(true);
       })();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialLoadStep]);
+  }, [initialLoadStep, fetchOrphanedRecords, fetchRoster, incrementInitialLoadStep]);
 
   // Orphaned records reload.
   useEffectDebounced(() => {

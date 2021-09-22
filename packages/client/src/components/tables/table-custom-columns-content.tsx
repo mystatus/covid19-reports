@@ -93,8 +93,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
     if (!sortColumn && defaultSort) {
       setSortColumn(defaultSort?.column ? columns.find(column => column.name === defaultSort?.column) : undefined);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [columns, defaultSort]);
+  }, [columns, defaultSort, sortColumn]);
 
   const columnClicked = (column: TableColumn) => () => {
     if (!sortable) {
@@ -168,7 +167,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
                 })}
               >
                 <div>
-                <div>{column.displayName}</div>
+                  <div>{column.displayName}</div>
                   <div>
                     {sortColumn === column && (
                       sortDirection === 'ASC' ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />
