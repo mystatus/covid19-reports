@@ -27,6 +27,7 @@ import { UnitsPage } from './pages/units-page/units-page';
 import { useAppDispatch } from '../hooks/use-app-dispatch';
 import { useAppSelector } from '../hooks/use-app-selector';
 import { MusterConfigPage } from './pages/muster-config-page/muster-config-page';
+import '../entity-actions/register';
 
 export const App = () => {
   const user = useAppSelector(state => state.user);
