@@ -14,7 +14,7 @@ export class BulkAction {
 
   constructor(
     public readonly actionInfo: ActionInfo,
-    public execute: (entity: any, data?: any) => Promise<any>,
+    public execute: () => Promise<any>,
   ) {
   }
 
@@ -103,3 +103,10 @@ export const getRegistry = (entityType: EntityType) => ({
     }
   },
 });
+
+export const executeAction = (action: BulkAction | ColumnAction, entity?: any, data?: any) => {
+  if (action instanceof BulkAction) {
+    return action.execute();
+  }
+  return action.execute(entity, data);
+}

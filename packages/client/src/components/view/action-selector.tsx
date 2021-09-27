@@ -7,7 +7,7 @@ import { EntityType } from '@covid19-reports/shared';
 import { Box, Button, IconButton, Menu, MenuItem } from '@material-ui/core';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import useStyles from './column-selector.styles';
-import { getBulkActions } from '../../entity-actions/actions';
+import { executeAction, getBulkActions } from '../../entity-actions/actions';
 
 export type ActionSelectorProps = {
   entityType: EntityType;
@@ -46,7 +46,7 @@ export function ActionSelector(props: ActionSelectorProps) {
           <MenuItem
             key={action.name}
             onClick={() => {
-              action.execute('');
+              executeAction(action);
               setMenuOpen(false);
             }}
           >
