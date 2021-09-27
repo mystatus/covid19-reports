@@ -124,7 +124,7 @@ export const HomePage = () => {
   const favoriteDashboards = useAppSelector(UserSelector.favoriteDashboards)!;
   const workspaces = useAppSelector(UserSelector.workspaces)!;
   const dashboards = useAppSelector(WorkspaceSelector.dashboards)!;
-  
+
   const [accessRequests, setAccessRequests] = useState<ApiAccessRequest[]>([]);
   const [musterComplianceLastTwoWeeks, setMusterComplianceLastTwoWeek] = useState<number[]>([1.0, 0.0]);
 

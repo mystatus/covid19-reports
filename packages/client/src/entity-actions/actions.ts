@@ -1,8 +1,4 @@
-import {
-  ColumnInfo,
-  ColumnType,
-  EntityType,
-} from '@covid19-reports/shared';
+import { ColumnInfo, ColumnType, EntityType } from '@covid19-reports/shared';
 
 type ActionInfo = Pick<ColumnInfo, 'name' | 'displayName' | 'pii' | 'phi'>;
 
@@ -109,4 +105,4 @@ export const executeAction = (action: BulkAction | ColumnAction, entity?: any, d
     return action.execute();
   }
   return action.execute(entity, data);
-}
+};
