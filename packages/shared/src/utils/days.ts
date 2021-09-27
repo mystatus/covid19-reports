@@ -99,4 +99,4 @@ export function binaryDaysToDateArray(days: number | null): number[] {
   return setDays;
 }
 
-export const oneDaySeconds = 24 * 60 * 60;
+export const oneDayMilliseconds = 24 * 60 * 60 * 1000;

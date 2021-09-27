@@ -6,5 +6,6 @@ export type ExportOrgQuery = {
 export type ExportMusterIndividualsQuery = {
   fromDate: string;
   toDate: string;
-  unitId?: string;
+  filterId?: string;
+  reportId: string;
 };

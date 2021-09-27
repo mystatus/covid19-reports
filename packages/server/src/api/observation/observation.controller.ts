@@ -1,17 +1,21 @@
 import { Request, Response } from 'express';
 import { EntityManager, getConnection } from 'typeorm';
-import { CustomColumns, RosterInfo } from '@covid19-reports/shared';
+import { ColumnType, CustomColumns, MusterStatus } from '@covid19-reports/shared';
 import { Report } from './observation.types';
+
 import { Observation } from './observation.model';
 import { ApiRequest, EdipiParam } from '../api.router';
 import { Log } from '../../util/log';
-import { ReportSchema } from '../report-schema/report-schema.model';
-import { getRosterInfosForIndividualOnDate } from '../roster/roster.controller';
-import { timestampColumnTransformer } from '../../util/util';
-import { BadRequestError } from '../../util/error-types';
+import { ReportSchema, SchemaColumn } from '../report-schema/report-schema.model';
+import { getRosterForIndividualOnDate } from '../roster/roster.controller';
+import { dateFromString, timestampColumnTransformer } from '../../util/util';
 import { assertRequestBody } from '../../util/api-utils';
 import { saveRosterPhoneNumber } from '../../util/roster-utils';
 import { EntityController } from '../../util/entity-utils';
+import { Org } from '../org/org.model';
+import { RosterHistory } from '../roster/roster-history.model';
+import { BadRequestError } from '../../util/error-types';
+import { getNearestMusterWindow, MusterWindow } from '../../util/muster-utils';
 
 export const applicationMapping: {[key: string]: string} = {
   dawn: 'trsg',
@@ -46,37 +50,49 @@ class ObservationController extends EntityController<Observation> {
     Log.info('Creating observation', req.body);
 
     const { EDIPI, ReportType, Timestamp } = assertRequestBody(req, ['EDIPI', 'Timestamp', 'ID']);
-    const rosters = await getRosterInfosForIndividualOnDate(EDIPI, `${Timestamp}`);
-
-    if (rosters?.length !== 1) {
-      Log.error(`Unable to save observation. Individual exists on ${rosters?.length} rosters. From:`, req.body);
-      throw new BadRequestError('Unable to save observation');
+    const reportingGroup = getReportingGroup(req);
+    let observation: Observation | null = null;
+    if (reportingGroup) {
+      const org = await Org.findOne({
+        where: {
+          reportingGroup,
+        },
+      });
+      if (org) {
+        const muster = await getNearestMusterWindow(org, EDIPI, Timestamp, ReportType);
+        const roster = await getRosterForIndividualOnDate(org.id, EDIPI, `${Timestamp}`);
+        const reportSchema = await findReportSchema(ReportType, org.id);
+        if (reportSchema) {
+          observation = await getConnection().transaction(async manager => {
+            await saveRosterPhoneNumber(EDIPI, `${req.body.Details?.PhoneNumber ?? ''}`, manager);
+            if (muster) {
+              // If they report for the same window twice, remove the previous one
+              const existingObservation = await manager.findOne(Observation, {
+                where: {
+                  edipi: EDIPI,
+                  musterWindowId: muster.id,
+                },
+              });
+              if (existingObservation) {
+                await manager.remove(existingObservation);
+              }
+            }
+            return saveObservationWithReportSchema(org, req, reportSchema, roster, muster, manager);
+          });
+        } else {
+          Log.error(`Unable to find report schema ('${ReportType}') from:`, req.body);
+          throw new BadRequestError('ReportType not found.');
+        }
+      } else {
+        throw new BadRequestError(`Unknown reporting group: ${reportingGroup}`);
+      }
+    } else {
+      Log.error('Unable to find reporting group from:', req.body);
+      throw new BadRequestError('Reporting group not found.');
     }
-
-    const observation = await getConnection().transaction(async manager => {
-      const roster = rosters[0];
-      if (!hasReportingGroup(roster, getReportingGroup(req))) {
-        Log.error('Unable to find reporting group from:', req.body);
-        throw new BadRequestError('Reporting group not found.');
-      }
-
-      const reportSchema = await findReportSchema(ReportType, roster.unit.org?.id);
-      if (!reportSchema) {
-        Log.error(`Unable to find report schema ('${ReportType}') from:`, req.body);
-        throw new BadRequestError('ReportType not found.');
-      }
-
-      await saveRosterPhoneNumber(EDIPI, `${req.body.Details?.PhoneNumber ?? ''}`, manager);
-      return saveObservationWithReportSchema(req, reportSchema, manager);
-    });
-
     res.json(observation);
   }
 
-}
-
-function hasReportingGroup(rosterInfo: RosterInfo, reportingGroup: string | undefined) {
-  return reportingGroup && rosterInfo.unit.org?.reportingGroup === reportingGroup;
 }
 
 function findReportSchema(reportSchemaId?: string, orgId?: number) {
@@ -93,18 +109,82 @@ function getReportingGroup(req: ApiRequest<EdipiParam, Report>) {
   return req.body.ReportingGroup || (req.body.Client?.Application && applicationMapping[req.body.Client?.Application]);
 }
 
-function saveObservationWithReportSchema(req: ApiRequest<EdipiParam, Report>, reportSchema: ReportSchema, manager: EntityManager) {
+function saveObservationWithReportSchema(
+  org: Org,
+  req: ApiRequest<EdipiParam, Report>,
+  reportSchema: ReportSchema,
+  roster: RosterHistory | undefined,
+  muster: MusterWindow | undefined,
+  manager: EntityManager,
+) {
+  const report = req.body;
   const observation = new Observation();
-  const { ID, EDIPI, ReportingGroup, ReportType, Timestamp, ...customColumns } = req.body;
-  observation.documentId = req.body.ID;
-  observation.edipi = req.body.EDIPI;
-  observation.timestamp = timestampColumnTransformer.to(req.body.Timestamp);
+  observation.documentId = report.ID;
+  observation.edipi = report.EDIPI;
+  observation.timestamp = timestampColumnTransformer.to(report.Timestamp);
   observation.reportSchema = reportSchema;
-  observation.unit = `${req.body.Details?.Unit ?? ''}`;
-  observation.reportingGroup = getReportingGroup(req);
-  observation.customColumns = customColumns as unknown as CustomColumns;
+  observation.unit = `${report.Details?.Unit ?? ''}`;
+  observation.reportingGroup = org.reportingGroup;
+  observation.rosterHistoryEntry = roster;
+  if (muster) {
+    observation.musterWindowId = muster.id;
+    observation.musterConfiguration = muster.configuration;
+    if (report.Timestamp < muster.startTimestamp) {
+      observation.musterStatus = MusterStatus.EARLY;
+    } else if (report.Timestamp > muster.endTimestamp) {
+      observation.musterStatus = MusterStatus.LATE;
+    } else {
+      observation.musterStatus = MusterStatus.ON_TIME;
+    }
+  }
+  const customColumns: CustomColumns = {};
+  for (const column of reportSchema.columns) {
+    let current: any = report;
+    let keyIndex = 0;
+    let key = column.keyPath[keyIndex];
+    while (keyIndex + 1 < column.keyPath.length) {
+      current = current[column.keyPath[keyIndex]];
+      if (!current) {
+        break;
+      }
+      keyIndex += 1;
+      key = column.keyPath[keyIndex];
+    }
+    if (current) {
+      let value = current[key];
+      if ((!value || value === '-') && column.otherField) {
+        value = current[`${key}Other`];
+      }
+      customColumns[column.name] = getColumnValue(column, value);
+    }
+  }
+  observation.customColumns = customColumns;
   Log.info(`Saving new observation for ${observation.documentId} documentId`);
   return manager.save(observation);
+}
+
+function getColumnValue(column: SchemaColumn, value: any) {
+  if (value == null) {
+    return null;
+  }
+  switch (column.type) {
+    case ColumnType.Enum:
+    case ColumnType.String:
+      if (Array.isArray(value)) {
+        return value.join(', ');
+      }
+      return `${value}`;
+    case ColumnType.Number:
+      return +value;
+    case ColumnType.Boolean:
+      return Boolean(value).valueOf();
+    case ColumnType.Date:
+    case ColumnType.DateTime:
+      return dateFromString(`${value}`, false)?.toISOString();
+    default:
+      break;
+  }
+  return value;
 }
 
 export default new ObservationController(Observation);

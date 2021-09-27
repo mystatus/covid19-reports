@@ -9,12 +9,12 @@ import {
   ApiRequest,
   OrgParam,
 } from '../api.router';
-import { getRosterMusterComplianceRecordsByDateRange } from '../muster/muster.controller';
 import { Observation } from '../observation/observation.model';
 import { Roster } from '../roster/roster.model';
 import { RosterHistory } from '../roster/roster-history.model';
 import { Unit } from '../unit/unit.model';
 import { BadRequestError } from '../../util/error-types';
+import { individualMusterComplianceByDateRange } from '../../util/muster-utils';
 
 class ExportSqlController {
 
@@ -54,13 +54,13 @@ class ExportSqlController {
     const unitIds: number[] = units.map(unit => unit.id);
     const history = await RosterHistory.createQueryBuilder('rosterHistory')
       .innerJoinAndSelect(Roster, 'roster', 'roster.edipi = rosterHistory.edipi')
-      .select(`rosterHistory.edipi, 
-        rosterHistory.first_name, 
-        rosterHistory.last_name, 
-        rosterHistory.phone_number, 
-        rosterHistory.timestamp, 
-        rosterHistory.change_type, 
-        roster.unit_id, 
+      .select(`rosterHistory.edipi,
+        rosterHistory.first_name,
+        rosterHistory.last_name,
+        rosterHistory.phone_number,
+        rosterHistory.timestamp,
+        rosterHistory.change_type,
+        roster.unit_id,
         roster.custom_columns`)
       .where('rosterHistory.unit_id in (:...unitIds)', { unitIds })
       .orderBy('roster.edipi', 'ASC')
@@ -76,19 +76,19 @@ class ExportSqlController {
   }
 
   async exportRosterMusterComplianceToCsv(req: ApiRequest<OrgParam, null, ExportMusterIndividualsQuery>, res: Response) {
-    const fromDate: moment.Moment = moment(req.query.fromDate, 'YYYY-MM-DD');
-    const toDate: moment.Moment = moment(req.query.toDate, 'YYYY-MM-DD');
+    const fromDate = moment(req.query.fromDate, 'YYYY-MM-DD').startOf('day');
+    const toDate = moment(req.query.toDate, 'YYYY-MM-DD').endOf('day');
 
     if (!fromDate.isValid() || !toDate.isValid() || fromDate > toDate) {
       throw new BadRequestError('Invalid ISO date range.');
     }
 
-    // When unit id is missing, then data for all units are requested in getRosterMusterComplianceCalcByDateRange()
-    const unitId = (req.query.unitId != null) ? parseInt(req.query.unitId) : undefined;
-    const orgId = req.appOrg!.id;
+    // When filter id is missing, then data for the full roster is requested in getRosterMusterComplianceCalcByDateRange()
+    const filterId = (req.query.filterId != null) ? parseInt(req.query.filterId) : undefined;
+    const reportId = req.query.reportId;
 
-    const complianceRecords = await getRosterMusterComplianceRecordsByDateRange(orgId, unitId, fromDate, toDate);
-    const csvChunk = await json2csvAsync(complianceRecords, {
+    const complianceRecords = await individualMusterComplianceByDateRange(req.appOrg!, req.appUserRole!, filterId, reportId, fromDate.valueOf(), toDate.valueOf());
+    const csvChunk = await json2csvAsync(complianceRecords.rows, {
       emptyFieldValue: '',
     });
 

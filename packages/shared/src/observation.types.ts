@@ -1,8 +1,8 @@
-import { ColumnInfo, ColumnType, CustomColumns } from './entity.types';
+import { ColumnInfo, ColumnType, CustomColumns, MusterStatus } from './entity.types';
 
 
 export type BaseObservationColumnInfo = ColumnInfo & {
-  name: 'edipi' | 'timestamp' | 'unit';
+  name: 'edipi' | 'timestamp' | 'unit' | 'muster_status';
 };
 
 export const baseObservationColumnLookup: Readonly<{
@@ -21,7 +21,7 @@ export const baseObservationColumnLookup: Readonly<{
   timestamp: {
     name: 'timestamp',
     displayName: 'Timestamp',
-    type: ColumnType.Date,
+    type: ColumnType.DateTime,
     pii: false,
     phi: false,
     custom: false,
@@ -37,6 +37,31 @@ export const baseObservationColumnLookup: Readonly<{
     custom: false,
     required: true,
     updatable: true,
+  },
+  muster_status: {
+    name: 'muster_status',
+    displayName: 'Muster Status',
+    type: ColumnType.Enum,
+    config: {
+      options: [{
+        id: MusterStatus.NON_REPORTING,
+        label: 'Did Not Report',
+      }, {
+        id: MusterStatus.ON_TIME,
+        label: 'On Time',
+      }, {
+        id: MusterStatus.EARLY,
+        label: 'Early',
+      }, {
+        id: MusterStatus.LATE,
+        label: 'Late',
+      }],
+    },
+    pii: false,
+    phi: false,
+    custom: false,
+    required: true,
+    updatable: false,
   },
 };
 

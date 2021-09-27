@@ -53,7 +53,7 @@ export class RosterHistory extends RosterEntity {
   }
 
   static getColumnWhere(column: ColumnInfo) {
-    return getColumnWhere(column, 'custom_columns', 'roster');
+    return getColumnWhere(column, 'custom_columns', 'roster', true);
   }
 
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {

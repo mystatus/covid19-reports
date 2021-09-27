@@ -4,7 +4,7 @@ import {
   DaysOfTheWeek,
   daysToString,
   nextDay,
-  oneDaySeconds,
+  oneDayMilliseconds,
 } from '@covid19-reports/shared';
 import { ApiMusterConfiguration } from '../models/api-response';
 
@@ -99,10 +99,10 @@ export const validateMusterConfiguration = (musterConfig: ApiMusterConfiguration
       if (oneTimeWindows[muster.reportSchema.id] == null) {
         oneTimeWindows[muster.reportSchema.id] = [];
       }
-      const start = musterTime.unix();
+      const start = musterTime.valueOf();
       oneTimeWindows[muster.reportSchema.id].push({
         start,
-        end: start + muster.durationMinutes * 60,
+        end: start + muster.durationMinutes * 60 * 1000,
       });
     } else {
       musterTime = moment(muster.startTime, 'HH:mm');
@@ -115,7 +115,7 @@ export const validateMusterConfiguration = (musterConfig: ApiMusterConfiguration
       .startOf('week')
       .add(musterTime.hours(), 'hours')
       .add(musterTime.minutes(), 'minutes')
-      .unix();
+      .valueOf();
 
     const firstWindowIndex = windows[muster.reportSchema.id].length;
     // Loop through each day and add any that are set in this muster configuration
@@ -123,17 +123,17 @@ export const validateMusterConfiguration = (musterConfig: ApiMusterConfiguration
       if (musterDays !== undefined && dayIsIn(day, musterDays)) {
         windows[muster.reportSchema.id].push({
           start: current,
-          end: current + muster.durationMinutes * 60,
+          end: current + muster.durationMinutes * 60 * 1000,
           oneTime,
         });
       }
-      current += oneDaySeconds;
+      current += oneDayMilliseconds;
     }
 
     // Add the first window of next week to make sure we don't overlap over the week boundary
     windows[muster.reportSchema.id].push({
-      start: windows[muster.reportSchema.id][firstWindowIndex].start + oneDaySeconds * 7,
-      end: windows[muster.reportSchema.id][firstWindowIndex].end + oneDaySeconds * 7,
+      start: windows[muster.reportSchema.id][firstWindowIndex].start + oneDayMilliseconds * 7,
+      end: windows[muster.reportSchema.id][firstWindowIndex].end + oneDayMilliseconds * 7,
       oneTime,
     });
   });

@@ -91,28 +91,6 @@ export type BaseType =
   | 'function'
   | 'undefined';
 
-export enum DaysOfTheWeek {
-  None = 0,
-  Sunday = 1,
-  Monday = 2,
-  Tuesday = 4,
-  Wednesday = 8,
-  Thursday = 16,
-  Friday = 32,
-  Saturday = 64,
-}
-
-export function nextDay(day: DaysOfTheWeek) {
-  // eslint-disable-next-line no-bitwise
-  return day << 1;
-}
-
-// Determine if an input day is in the given set
-export function dayIsIn(day: DaysOfTheWeek, set: DaysOfTheWeek) {
-  // eslint-disable-next-line no-bitwise
-  return (set & day) === day;
-}
-
 export const dateColumnTransformer: ValueTransformer = {
   from: value => {
     return value ? moment(value, 'Y-M-D').toDate() : value;
@@ -139,8 +117,6 @@ export const timestampColumnTransformer: ValueTransformer = {
     return value ? moment.utc(value).format('YYYY-MM-DD HH:mm:ss.SSS') : value;
   },
 };
-
-export const oneDaySeconds = 24 * 60 * 60;
 
 export type TimeInterval =
   | 'day'

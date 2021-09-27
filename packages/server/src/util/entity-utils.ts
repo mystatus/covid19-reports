@@ -70,8 +70,14 @@ export function getColumnSelect(column: ColumnInfo, customColumn: string, alias:
   return join(column?.table ?? alias, snakeCase(column.name));
 }
 
-export function getColumnWhere(column: ColumnInfo, customColumn: string, alias: string) {
-  return join(`"${column?.table ?? alias}"`, `"${column.name}"`);
+export function getColumnWhere(column: ColumnInfo, customColumn: string, alias: string, roster?: boolean) {
+  let columnName = column.name;
+  if (roster && (column.name === 'unit' && !column.custom)) {
+    // HACK: Unit filters use 'unit' as the column name, but should really be using 'unit_id'.
+    // Another ticket has been created to address this issue.
+    columnName = 'unit_id';
+  }
+  return join(`"${column?.table ?? alias}"`, `"${columnName}"`);
 }
 
 export const isColumnAllowed = (column: ColumnInfo, role: Role) => {

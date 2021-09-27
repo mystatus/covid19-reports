@@ -62,12 +62,6 @@ router.delete(
 );
 
 router.get(
-  '/info/:edipi',
-  requireInternalUser,
-  controller.getRosterInfosForIndividual,
-);
-
-router.get(
   '/:orgId/template',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),

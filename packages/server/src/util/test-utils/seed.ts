@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import moment from 'moment-timezone';
 import { getManager } from 'typeorm';
+import { MusterStatus } from '@covid19-reports/shared';
 import { Observation } from '../../api/observation/observation.model';
 import { Org } from '../../api/org/org.model';
 import { seedOrphanedRecords } from '../../api/orphaned-record/orphaned-record.model.mock';
@@ -21,13 +22,13 @@ import { resetUniqueEdipiGenerator, uniqueEdipi, uniquePhone } from './unique';
 import { rosterTestData } from './data/roster-generator';
 import { customRosterColumnTestData } from './data/custom-roster-column-generator';
 import { unitsTestData } from './data/unit-generator';
-import { observationTestData } from './data/observation-generator';
 import { orgTestData } from './data/org-generator';
 import { adminUserTestData } from './data/user-generator';
 import { reportSchemaTestData } from './data/report-schema-generator';
 import { SavedFilter } from '../../api/saved-filter/saved-filter.model';
 import { MusterConfiguration } from '../../api/muster/muster-config.model';
 import { MusterFilter } from '../../api/muster/muster-filter.model';
+import { getMusterWindows } from '../muster-utils';
 
 require('dotenv').config();
 
@@ -179,41 +180,6 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
     filters.push(await filter.save());
   }
 
-  // Add muster configurations
-  const recurringMusterConfig = await MusterConfiguration.create({
-    org,
-    days: 62,
-    startTime: '00:00',
-    timezone: 'America/Los_Angeles',
-    durationMinutes: 120,
-    reportSchema: reportSchemas[0],
-  }).save();
-  // Add some units to the muster config
-  for (let i = 0; i < numUnits; i += 2) {
-    await MusterFilter.create({
-      musterConfig: recurringMusterConfig,
-      filter: filters[i],
-      filterParams: {},
-    }).save();
-  }
-
-  const oneTimeMusterConfig = await MusterConfiguration.create({
-    org,
-    days: null,
-    startTime: '2020-01-02T02:00:00.000',
-    timezone: 'America/Los_Angeles',
-    durationMinutes: 120,
-    reportSchema: reportSchemas[1],
-  }).save();
-  // Add some units to the muster config
-  for (let i = 1; i < numUnits; i += 2) {
-    await MusterFilter.create({
-      musterConfig: oneTimeMusterConfig,
-      filter: filters[i],
-      filterParams: {},
-    }).save();
-  }
-
   // Create users
   for (let i = 0; i < numUsers; i++) {
     const edipi = uniqueEdipi();
@@ -232,45 +198,111 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
   }
 
   // Add roster entries
-  const rosterEntries = rosterTestData(numRosterEntries, customColumn, units, numUnits);
-  await Roster.save(rosterEntries);
+  const rosterEntries = await rosterTestData(numRosterEntries, customColumn, units, numUnits);
 
   // Insert observations per roster entry
-  let observations: Observation[] = [];
+  const observations: Observation[] = [];
   const rosterEntriesByUnit = _.groupBy(rosterEntries, entry => entry.unit.name);
-  // for each unit...
-  _.forOwn(rosterEntriesByUnit, (currUnitRosterEntries: Roster[]) => {
-    let count = 0;
-    // for each person on roster for the unit...
-    currUnitRosterEntries.forEach((rosterEntry: Roster) => {
-      // The intent of this logic is to limit the number of users submitting
-      // observations and ultimately gain more compliance based on higher unit numbers.
-      // It does this based on the unit "number" which is equal to
-      // parseInt(rosterEntry.unit.name.split(' ')[1]). We use this number because
-      // IDs (from the database) can't be trusted to be constant when running tests multiple times
-      if (count < parseInt(rosterEntry.unit.name.split(' ')[1])) {
-        observations = observations.concat(
-          observationTestData(rosterEntry.edipi,
-            rosterEntry.unit.name,
-            reportSchemas[0],
-            moment('2020-01-01T08:00:00Z'),
-            moment('2020-01-07T08:00:00Z')),
-        );
 
-        // these observations are for the single-muster config
-        // hence the same timestamp for start and end
-        observations = observations.concat(
-          observationTestData(rosterEntry.edipi,
-            rosterEntry.unit.name,
-            reportSchemas[1],
-            moment('2020-01-02T10:00:00Z'),
-            moment('2020-01-02T10:00:00Z')),
-        );
+  // Add muster configurations
+  const recurringMusterConfig = await MusterConfiguration.create({
+    org,
+    days: 62,
+    startTime: '00:00',
+    timezone: 'America/Los_Angeles',
+    durationMinutes: 120,
+    reportSchema: reportSchemas[0],
+  }).save();
+  // Add some units to the muster config
+  let musterWindows = getMusterWindows(
+    org,
+    recurringMusterConfig,
+    moment('2020-01-01T00:00:00Z').valueOf(),
+    moment('2020-01-07T12:00:00Z').valueOf(),
+  );
+  const nonReportRate = 4; // 1 out of 4 reports will be non-reporting
+  let reportCount = 0;
+  for (let i = 0; i < numUnits; i += 2) {
+    await MusterFilter.create({
+      musterConfig: recurringMusterConfig,
+      filter: filters[i],
+      filterParams: {},
+    }).save();
+
+    // Add observations for unit
+    const unitRoster = rosterEntriesByUnit[units[i].name];
+    for (const roster of unitRoster) {
+      const rosterHistoryEntry = await RosterHistory.findOne({
+        where: {
+          edipi: roster.edipi,
+        },
+      });
+      for (const window of musterWindows) {
+        observations.push(Observation.create({
+          unit: units[i].name,
+          reportSchema: reportSchemas[0],
+          timestamp: new Date(window.startTimestamp),
+          documentId: `DocumentId_${roster.edipi}_${window.id}`,
+          edipi: roster.edipi,
+          musterStatus: ((reportCount % nonReportRate) === 0) ? MusterStatus.NON_REPORTING : MusterStatus.ON_TIME,
+          musterConfiguration: recurringMusterConfig,
+          musterWindowId: window.id,
+          rosterHistoryEntry,
+        }));
+        reportCount += 1;
       }
-      count += 1;
-    });
-  });
-  await Observation.save(observations);
+      await Observation.save(observations);
+      observations.splice(0, observations.length);
+    }
+  }
+
+  const oneTimeMusterConfig = await MusterConfiguration.create({
+    org,
+    days: null,
+    startTime: '2020-01-02T02:00:00Z',
+    timezone: 'America/Los_Angeles',
+    durationMinutes: 120,
+    reportSchema: reportSchemas[1],
+  }).save();
+  musterWindows = getMusterWindows(
+    org,
+    oneTimeMusterConfig,
+    moment('2020-01-01T00:00:00Z').valueOf(),
+    moment('2020-01-07T12:00:00Z').valueOf(),
+  );
+  // Add some units to the muster config
+  for (let i = 1; i < numUnits; i += 2) {
+    await MusterFilter.create({
+      musterConfig: oneTimeMusterConfig,
+      filter: filters[i],
+      filterParams: {},
+    }).save();
+
+    // Add observations for unit
+    const unitRoster = rosterEntriesByUnit[units[i].name];
+    for (const roster of unitRoster) {
+      const rosterHistoryEntry = await RosterHistory.findOne({
+        where: {
+          edipi: roster.edipi,
+        },
+      });
+      for (const window of musterWindows) {
+        observations.push(Observation.create({
+          unit: units[i].name,
+          reportSchema: reportSchemas[1],
+          timestamp: new Date(window.startTimestamp),
+          documentId: `DocumentId_${roster.edipi}_${window.id}`,
+          edipi: roster.edipi,
+          musterStatus: MusterStatus.ON_TIME,
+          musterConfiguration: oneTimeMusterConfig,
+          musterWindowId: window.id,
+          rosterHistoryEntry,
+        }));
+      }
+      await Observation.save(observations);
+      observations.splice(0, observations.length);
+    }
+  }
 
   return { org, rosterEntries, units, observations };
 }

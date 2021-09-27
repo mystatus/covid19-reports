@@ -213,6 +213,11 @@ export interface ApiUnitStatsByDate {
   };
 }
 
+export interface ApiWeeklyMusterStats {
+  onTime: number;
+  total: number;
+}
+
 export type ApiMusterRosterEntry = ApiRosterEntry & {
   totalMusters: number;
   mustersReported: number;
@@ -222,8 +227,7 @@ export type ApiMusterRosterEntry = ApiRosterEntry & {
 export interface ApiMusterRosterEntriesPaginated extends ApiPaginated<ApiMusterRosterEntry> {}
 
 export interface ApiMusterTrends {
-  weekly: ApiUnitStatsByDate;
-  monthly: ApiUnitStatsByDate;
+  weekly: ApiWeeklyMusterStats[];
 }
 
 export interface ApiMusterConfiguration {

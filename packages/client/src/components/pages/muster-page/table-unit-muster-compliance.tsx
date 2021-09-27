@@ -17,6 +17,7 @@ import React, {
 } from 'react';
 import Plot from 'react-plotly.js';
 
+import { MusterComplianceByDate } from '@covid19-reports/shared';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
@@ -24,14 +25,15 @@ import { UserSelector } from '../../../selectors/user.selector';
 import { MusterClient } from '../../../client/muster.client';
 import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
+import useStyles from './muster-page.styles';
 
 export const UnitMusterComplianceTable = (props: any) => {
+  const classes = useStyles();
   const dispatch = useAppDispatch();
   const units = useAppSelector(UnitSelector.all);
   const orgId = useAppSelector(UserSelector.org)!.id;
   const complianceBarChart = {
     layout: {
-      height: 128,
       autosize: true,
       barmode: 'group',
       yaxis: {
@@ -61,7 +63,8 @@ export const UnitMusterComplianceTable = (props: any) => {
 
   const [rosterFromDateIso, setRosterFromDateIso] = useState(props.rosterFromDateIso);
   const [rosterToDateIso, setRosterToDateIso] = useState(props.rosterToDateIso);
-  const [rosterUnitId, setRosterUnitId] = useState(props.rosterUnitId);
+  const [filterId, setFilterId] = useState(props.filterId);
+  const [reportId, setReportId] = useState(props.reportId);
   const [unitComplianceStats, setUnitComplianceStats] = useState<Map<string, ComplianceStats>>(new Map());
   const [unitCompliancePlotData, setUnitCompliancePlotData] = useState<Map<string, Plotly.Data[]>>(new Map());
 
@@ -75,106 +78,90 @@ export const UnitMusterComplianceTable = (props: any) => {
 
   const reloadMusterComplianceData = useCallback(async () => {
     try {
-      // determine if we are displaying for all units or just a single unit
-      const unitsToDisplay = rosterUnitId === -1 ? units : [units.find(unit => unit.id === rosterUnitId)];
+      const unitComplianceData = await MusterClient.getMusterComplianceStatsByDateRange(orgId, {
+        fromDate: rosterFromDateIso,
+        toDate: rosterToDateIso,
+        reportId,
+        filterId,
+      });
+      const unitStats = new Map<number, MusterComplianceByDate[]>();
+      for (const data of unitComplianceData.musterComplianceRates) {
+        if (!unitStats.has(data.unit)) {
+          unitStats.set(data.unit, []);
+        }
+        unitStats.get(data.unit)!.push(data);
+      }
       const plotDataByUnit = new Map<string, Plotly.Data[]>();
       const complianceStatsByUnit = new Map<string, ComplianceStats>();
-      const unitCompliancePromises: Promise<ComplianceData>[] = [];
-      for (const unit of unitsToDisplay) {
-        if (unit) {
-          unitCompliancePromises.push(
-            getUnitComplianceData(orgId, unit.name, rosterFromDateIso, rosterToDateIso),
-          );
+      unitStats.forEach((stats, unitId) => {
+        if (stats.length === 0) {
+          return;
         }
-      }
-      const results = await Promise.all(unitCompliancePromises);
-      for (const result of results) {
-        complianceStatsByUnit.set(result.unitName, result.complianceStats);
-        plotDataByUnit.set(result.unitName, result.plotData);
-      }
-
+        const unitName = units.find(u => u.id === unitId)?.name;
+        if (!unitName) {
+          return;
+        }
+        const xRange: string[] = [];
+        const yRange: number[] = [];
+        const colors: string[] = [];
+        let minCompliance = 1.0;
+        let maxCompliance = 0.0;
+        let totalCompliance = 0.0;
+        for (let i = 0; i < stats.length; i++) {
+          if (stats[i].compliance < minCompliance) {
+            minCompliance = stats[i].compliance;
+          }
+          if (stats[i].compliance > maxCompliance) {
+            maxCompliance = stats[i].compliance;
+          }
+          totalCompliance += stats[i].compliance;
+          xRange.push(stats[i].isoDate);
+          yRange.push(stats[i].compliance * 100);
+          colors.push('#7776AF');
+        }
+        complianceStatsByUnit.set(unitName, {
+          minCompliance: minCompliance * 100,
+          maxCompliance: maxCompliance * 100,
+          avgCompliance: (totalCompliance / stats.length) * 100,
+        });
+        plotDataByUnit.set(unitName, [{
+          x: xRange,
+          y: yRange,
+          type: 'bar',
+          marker: {
+            color: colors,
+          },
+        }]);
+      });
       setUnitComplianceStats(complianceStatsByUnit);
       setUnitCompliancePlotData(plotDataByUnit);
+      // Sometimes the plot size is incorrect initially, trigger a resize event to update the sizes.
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 1000);
     } catch (error) {
       showErrorDialog('Muster Trends', error);
     }
-  }, [showErrorDialog, orgId, units, rosterUnitId, rosterFromDateIso, rosterToDateIso]);
+  }, [showErrorDialog, orgId, units, filterId, reportId, rosterFromDateIso, rosterToDateIso]);
 
   //
   // Effects
   //
 
   useEffect(() => {
-    setRosterUnitId(props.rosterUnitId);
+    setFilterId(props.filterId);
+    setReportId(props.reportId);
     setRosterFromDateIso(props.rosterFromDateIso);
     setRosterToDateIso(props.rosterToDateIso);
-  }, [props.rosterUnitId, props.rosterFromDateIso, props.rosterToDateIso]);
+  }, [props.filterId, props.reportId, props.rosterFromDateIso, props.rosterToDateIso]);
 
   useEffect(() => {
     void reloadMusterComplianceData();
   }, [reloadMusterComplianceData]);
 
-
-  //
-  // Functions
-  //
-
-  const getUnitComplianceData = async (organizationId: number, unitName: string, isoStartDate: string, isoEndDate: string): Promise<ComplianceData> => {
-    const xRange: string[] = [];
-    const yRange: number[] = [];
-    const colors: string[] = [];
-    let dayCount = 0;
-    let totalCompliance = 0;
-    const complianceStats: ComplianceStats = {
-      minCompliance: 100.0,
-      maxCompliance: 0,
-      avgCompliance: 0,
-    };
-    const unitComplianceByDateRange = await MusterClient.getUnitMusterComplianceByDateRange(organizationId, unitName, { isoStartDate, isoEndDate });
-    if (unitComplianceByDateRange.musterComplianceRates.length > 0) {
-      unitComplianceByDateRange.musterComplianceRates.forEach(rate => {
-        const compliancePerc = rate.musterComplianceRate * 100;
-        xRange.push(rate.isoDate);
-        if (rate.musterComplianceRate !== null) {
-          yRange.push(compliancePerc);
-          colors.push('#7776AF');
-          // update min compliance
-          if (compliancePerc < complianceStats.minCompliance) {
-            complianceStats.minCompliance = compliancePerc;
-          }
-          // update max compliance
-          if (compliancePerc > complianceStats.maxCompliance) {
-            complianceStats.maxCompliance = compliancePerc;
-          }
-          // update accumulators for setting compliance average
-          totalCompliance += compliancePerc;
-          dayCount += 1;
-        } else {
-          yRange.push(100);
-          colors.push('#DDDDDD');
-        }
-      });
-      complianceStats.avgCompliance = totalCompliance / dayCount;
-    }
-    return {
-      unitName,
-      complianceStats,
-      plotData: [{
-        x: xRange,
-        y: yRange,
-        type: 'bar',
-        marker: {
-          color: colors,
-        },
-      }],
-    };
-  };
-
   const renderUnitComplianceTableRows = () => {
     const rows: any[] = [];
     unitCompliancePlotData.forEach((value: Plotly.Data[], key: string) => {
       rows.push(
-        <TableRow key={key}>
+        <TableRow key={key} className={classes.complianceRow}>
           <TableCell>
             {key}
           </TableCell>
@@ -189,7 +176,8 @@ export const UnitMusterComplianceTable = (props: any) => {
           </TableCell>
           <TableCell align="right">
             <Plot
-              style={{ width: '100%' }}
+              useResizeHandler
+              style={{ width: '100%', height: '100%', maxHeight: '128px' }}
               data={value}
               layout={complianceBarChart.layout}
               config={complianceBarChart.config}
@@ -233,11 +221,5 @@ type ComplianceStats = {
   minCompliance: number;
   maxCompliance: number;
   avgCompliance: number;
-};
-
-type ComplianceData = {
-  unitName: string;
-  complianceStats: ComplianceStats;
-  plotData: Plotly.Data[];
 };
 

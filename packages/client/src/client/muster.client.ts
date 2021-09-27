@@ -3,7 +3,7 @@ import {
   GetMusterComplianceByDateRangeQuery,
   GetMusterComplianceByDateRangeResponse,
   GetMusterRosterQuery,
-  GetMusterUnitTrendsQuery, UpdateMusterConfigurationBody,
+  GetWeeklyMusterTrendsQuery, UpdateMusterConfigurationBody,
 } from '@covid19-reports/shared';
 import {
   ApiMusterConfiguration,
@@ -38,14 +38,14 @@ export class MusterClient {
     });
   }
 
-  static getMusterUnitTrends(orgId: number, query: GetMusterUnitTrendsQuery): Promise<ApiMusterTrends> {
-    return client.get(`${orgId}/unit-trends`, {
+  static getWeeklyMusterTrends(orgId: number, query: GetWeeklyMusterTrendsQuery): Promise<ApiMusterTrends> {
+    return client.get(`${orgId}/weekly-trends`, {
       params: query,
     });
   }
 
-  static getUnitMusterComplianceByDateRange(orgId: number, unitName: string, query: GetMusterComplianceByDateRangeQuery): Promise<GetMusterComplianceByDateRangeResponse> {
-    return client.get(`${orgId}/${unitName}/complianceByDateRange`, {
+  static getMusterComplianceStatsByDateRange(orgId: number, query: GetMusterComplianceByDateRangeQuery): Promise<GetMusterComplianceByDateRangeResponse> {
+    return client.get(`${orgId}/roster/complianceStatsByDateRange`, {
       params: query,
     });
   }
