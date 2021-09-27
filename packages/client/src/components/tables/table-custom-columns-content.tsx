@@ -10,6 +10,7 @@ import clsx from 'clsx';
 import {
   getFullyQualifiedColumnName,
   getFullyQualifiedColumnDisplayName,
+  CustomColumnConfig,
   ColumnInfo,
   ColumnType,
 } from '@covid19-reports/shared';
@@ -31,21 +32,23 @@ interface TableCustomColumnsRow {
 export type SortDirection = 'ASC' | 'DESC';
 
 export interface TableColumn {
+  type?: ColumnType;
+  table?: string;
   name: string;
   displayName: string;
   fullyQualifiedName: string;
-  table?: string;
-  type?: ColumnType;
+  config?: CustomColumnConfig;
 }
 
 export const ColumnInfoToTableColumns = (visibleColumns: ColumnInfo[]): TableColumn[] => {
   return visibleColumns.map((c: ColumnInfo) => {
     return {
+      type: c.type,
+      table: c.table,
       name: c.name,
       displayName: getFullyQualifiedColumnDisplayName(c),
       fullyQualifiedName: c?.table !== 'observation' ? getFullyQualifiedColumnName(c) : c.name,
-      table: c.table,
-      type: c.type,
+      config: c.config,
     };
   });
 };
@@ -134,6 +137,19 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
     // eslint-disable-next-line promise/prefer-await-to-callbacks
     callback(row);
   };
+  
+  const getEnumColumnValue = (c: TableColumn, uuid: string) => {
+    if(c.type === ColumnType.Enum) {
+      const enumConfig = c.config as { options: { id: string; label: string}[] };
+      const selectedOption = enumConfig.options.find(option => option.id == uuid); 
+      return selectedOption?.label;
+    }
+    return null;
+  }
+  
+  const renderCell = (row: any, column: TableColumn) => {
+    return (column.type === ColumnType.Enum ? getEnumColumnValue(column, row[column.fullyQualifiedName]) : row[column.fullyQualifiedName]);
+  }
 
   const getRowId = (row: any) => { return (typeof idColumn === 'function' ? idColumn(row) : row[idColumn] as string); };
   const getRowProps = (row: any) => (typeof rowOptions?.rowProps === 'function' ? rowOptions?.rowProps?.(row) : rowOptions?.rowProps);
@@ -191,10 +207,9 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
               </TableCell>
               {columns.map(column => (
                 <TableCell key={`${column.fullyQualifiedName}-${getRowId(row)}`}>
-                  {rowOptions?.renderCell ? rowOptions?.renderCell(row, column) : row[column.fullyQualifiedName]}
+                  {rowOptions?.renderCell ? rowOptions?.renderCell(row, column) : renderCell(row, column)}
                 </TableCell>
               ))}
-
 
               {showRowActions(row) ? (
                 <TableCell className={classes.iconCell}>

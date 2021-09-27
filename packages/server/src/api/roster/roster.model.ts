@@ -4,9 +4,11 @@ import {
   EntityTarget,
   Unique,
 } from 'typeorm';
-import { baseRosterColumns,
+import {
+  baseRosterColumns,
   ColumnInfo,
-  ColumnType } from '@covid19-reports/shared';
+  ColumnType,
+} from '@covid19-reports/shared';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
