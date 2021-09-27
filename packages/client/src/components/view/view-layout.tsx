@@ -42,7 +42,7 @@ import { useEffectError } from '../../hooks/use-effect-error';
 import { ColumnSelector } from './column-selector';
 import { ActionSelector } from './action-selector';
 import { getActionColumnInfos, getColumnAction } from '../../entity-actions/actions';
-import { registerDataActions } from '../../entity-actions/roster';
+import { registerActionsForUpdatableColumns } from '../../entity-actions/edit-column-action';
 import { ViewLayoutButtons } from './view-layout-buttons';
 import useStyles from './view-layout.styles';
 
@@ -105,7 +105,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
   } = entityApi[entityType].useGetAllowedColumnsInfoQuery({ orgId });
 
   useEffect(() => {
-    registerDataActions(allowedColumns);
+    registerActionsForUpdatableColumns(allowedColumns);
   }, [allowedColumns]);
 
   const columns = useMemo(() => {
