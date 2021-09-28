@@ -10,7 +10,6 @@ import { ReportSchema, SchemaColumn } from '../report-schema/report-schema.model
 import { getRosterForIndividualOnDate } from '../roster/roster.controller';
 import { dateFromString, timestampColumnTransformer } from '../../util/util';
 import { assertRequestBody } from '../../util/api-utils';
-import { saveRosterPhoneNumber } from '../../util/roster-utils';
 import { EntityController } from '../../util/entity-utils';
 import { Org } from '../org/org.model';
 import { RosterHistory } from '../roster/roster-history.model';
@@ -59,12 +58,11 @@ class ObservationController extends EntityController<Observation> {
         },
       });
       if (org) {
-        const muster = await getNearestMusterWindow(org, EDIPI, Timestamp, ReportType);
+        const muster = await getNearestMusterWindow(org, EDIPI, Timestamp, ReportType ?? 'es6ddssymptomobs');
         const roster = await getRosterForIndividualOnDate(org.id, EDIPI, `${Timestamp}`);
         const reportSchema = await findReportSchema(ReportType, org.id);
         if (reportSchema) {
           observation = await getConnection().transaction(async manager => {
-            await saveRosterPhoneNumber(EDIPI, `${req.body.Details?.PhoneNumber ?? ''}`, manager);
             if (muster) {
               // If they report for the same window twice, remove the previous one
               const existingObservation = await manager.findOne(Observation, {
