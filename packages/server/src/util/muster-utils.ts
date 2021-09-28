@@ -138,7 +138,7 @@ export async function musterComplianceStatsByDateRange(
   org: Org,
   role: UserRole,
   filterId: number | undefined,
-  reportId: string,
+  reportId: string | undefined,
   from: number,
   to: number,
 ) {
@@ -160,12 +160,14 @@ export async function musterComplianceStatsByDateRange(
     .addSelect('COUNT(*)', 'total')
     .innerJoin(RosterHistory, 'roster', 'o.roster_history_entry_id = roster.id')
     .where('o.timestamp BETWEEN to_timestamp(:from) and to_timestamp(:to)', { from: from / 1000, to: to / 1000 })
-    .andWhere('o.report_schema_id = :reportId', { reportId })
     .andWhere('o.report_schema_org = :orgId', { orgId: org.id })
     .groupBy('roster.unit_id')
     .addGroupBy('muster_day')
     .orderBy('roster.unit_id')
     .addOrderBy('muster_day') as unknown as SelectQueryBuilder<RosterHistory>;
+  if (reportId) {
+    query = query.andWhere('o.report_schema_id = :reportId', { reportId });
+  }
   if (filter != null) {
     Object.keys(filter.config).forEach(columnName => {
       query = service.applyWhere(query, findColumnByName(columnName, columns), filter!.config[columnName]);

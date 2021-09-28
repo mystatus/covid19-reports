@@ -137,13 +137,6 @@ class MusterController {
     const currentDate = moment().endOf('day');
     const weeksCount = parseInt(req.query.weeksCount ?? '6');
 
-    const reportSchemas = await MusterConfiguration
-      .createQueryBuilder()
-      .select('report_schema_id', 'id')
-      .distinctOn(['report_schema_id'])
-      .where('report_schema_org = :orgId', { orgId: req.appOrg!.id })
-      .getRawMany() as { id: string }[];
-
     const weeklyTrends: { onTime: number; total: number }[] = [];
     for (let i = 0; i < weeksCount; i++) {
       weeklyTrends.push({
@@ -153,14 +146,12 @@ class MusterController {
     }
 
     const startDate = currentDate.clone().subtract(weeksCount, 'weeks');
-    for (const reportSchema of reportSchemas) {
-      const complianceStats = await musterComplianceStatsByDateRange(req.appOrg!, req.appUserRole!, undefined, reportSchema.id, startDate.valueOf(), currentDate.valueOf());
-      for (const unitCompliance of complianceStats) {
-        const week = Math.floor(moment(unitCompliance.isoDate).diff(startDate, 'week'));
-        if (week >= 0 && week < weeklyTrends.length) {
-          weeklyTrends[week].onTime += unitCompliance.onTime;
-          weeklyTrends[week].total += unitCompliance.total;
-        }
+    const complianceStats = await musterComplianceStatsByDateRange(req.appOrg!, req.appUserRole!, undefined, undefined, startDate.valueOf(), currentDate.valueOf());
+    for (const unitCompliance of complianceStats) {
+      const week = Math.floor(moment(unitCompliance.isoDate).diff(startDate, 'week'));
+      if (week >= 0 && week < weeklyTrends.length) {
+        weeklyTrends[week].onTime += unitCompliance.onTime;
+        weeklyTrends[week].total += unitCompliance.total;
       }
     }
 

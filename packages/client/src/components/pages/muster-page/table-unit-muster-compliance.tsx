@@ -17,7 +17,8 @@ import React, {
 } from 'react';
 import Plot from 'react-plotly.js';
 
-import { MusterComplianceByDate } from '@covid19-reports/shared';
+import { MusterComplianceByDate, oneDayMilliseconds } from '@covid19-reports/shared';
+import moment from 'moment';
 import { UnitSelector } from '../../../selectors/unit.selector';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
@@ -93,6 +94,7 @@ export const UnitMusterComplianceTable = (props: any) => {
       }
       const plotDataByUnit = new Map<string, Plotly.Data[]>();
       const complianceStatsByUnit = new Map<string, ComplianceStats>();
+      const twoHoursMilliseconds = 2 * 60 * 60 * 1000;
       unitStats.forEach((stats, unitId) => {
         if (stats.length === 0) {
           return;
@@ -107,6 +109,9 @@ export const UnitMusterComplianceTable = (props: any) => {
         let minCompliance = 1.0;
         let maxCompliance = 0.0;
         let totalCompliance = 0.0;
+        let minDate = Number.MAX_VALUE;
+        let maxDate = Number.MIN_VALUE;
+        const datesAdded: number[] = [];
         for (let i = 0; i < stats.length; i++) {
           if (stats[i].compliance < minCompliance) {
             minCompliance = stats[i].compliance;
@@ -118,6 +123,22 @@ export const UnitMusterComplianceTable = (props: any) => {
           xRange.push(stats[i].isoDate);
           yRange.push(stats[i].compliance * 100);
           colors.push('#7776AF');
+          const date = moment(stats[i].isoDate).valueOf();
+          datesAdded.push(date);
+          if (minDate === null || date < minDate) {
+            minDate = date;
+          }
+          if (maxDate === null || date > maxDate) {
+            maxDate = date;
+          }
+        }
+        for (let i = minDate; i < maxDate; i += oneDayMilliseconds) {
+          // Using a two hour buffer on the milliseconds to account for any oddness with daylight savings time
+          if (datesAdded.find(value => Math.abs(value - i) < twoHoursMilliseconds) == null) {
+            xRange.push(moment(i).toISOString());
+            yRange.push(100);
+            colors.push('#DDDDDD');
+          }
         }
         complianceStatsByUnit.set(unitName, {
           minCompliance: minCompliance * 100,
