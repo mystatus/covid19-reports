@@ -46,7 +46,7 @@ export function ActionSelector(props: ActionSelectorProps) {
           <MenuItem
             key={action.name}
             onClick={() => {
-              executeAction(action);
+              void executeAction(entityType, action);
               setMenuOpen(false);
             }}
           >

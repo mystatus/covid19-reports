@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ColumnInfo, ColumnType, ColumnValue } from '@covid19-reports/shared';
+import { ColumnInfo, ColumnType, ColumnValue, EntityType } from '@covid19-reports/shared';
 import { ButtonAsyncSpinner } from '../components/buttons/button-async-spinner';
-import { ColumnAction, executeAction, getRegistry } from './actions';
+import { ColumnAction, defer, executeAction, getRegistry } from './actions';
 import { QueryBuilderValueEditor } from '../components/query-builder/query-builder-value-editor';
 import { QueryRow } from '../utility/query-builder-utils';
 
@@ -31,7 +31,7 @@ const dataActionsResponse: DataAction[] = [{
     { field: 'myCustomColumn1', value: 'now' },
   ],
 }, {
-  name: 'roster-remove-to-rom',
+  name: 'roster-remove-from-rom',
   displayName: 'Remove from ROM',
   renderType: 'button',
   operations: [
@@ -47,7 +47,7 @@ const dataActionsResponse: DataAction[] = [{
 }];
 
 
-const DataActionComponent = ({ columns, dataAction, row, columnAction }: { columns: ColumnInfo[]; dataAction: DataAction; row: any; columnAction: ColumnAction }) => {
+const DataActionComponent = ({ columns, dataAction, entityType, row, columnAction }: { columns: ColumnInfo[]; dataAction: DataAction; entityType: EntityType; row: any; columnAction: ColumnAction }) => {
   const [queryRows, setQueryRows] = useState<QueryRow[]>(
     dataAction.operations.map(({ field, value }) => {
       const column = columns.find(c => c.name === field);
@@ -68,7 +68,7 @@ const DataActionComponent = ({ columns, dataAction, row, columnAction }: { colum
 
   if (dataAction.renderType === 'button') {
     return (
-      <ButtonAsyncSpinner onClick={() => executeAction(columnAction, row)}>
+      <ButtonAsyncSpinner onClick={() => executeAction(entityType, columnAction, row)}>
         {dataAction.displayName ?? 'Execute'}
       </ButtonAsyncSpinner>
     );
@@ -85,7 +85,7 @@ const DataActionComponent = ({ columns, dataAction, row, columnAction }: { colum
             queryRows.forEach(queryRow => {
               data[queryRow.field.name] = queryRow.value;
             });
-            return executeAction(columnAction, row, data);
+            return executeAction(entityType, columnAction, row, data);
           }}
           >
             Save
@@ -109,7 +109,7 @@ const DataActionComponent = ({ columns, dataAction, row, columnAction }: { colum
 };
 
 
-export function registerActionsForUpdatableColumns(columns: ColumnInfo[]) {
+export function registerActionsForUpdatableColumns(columns: ColumnInfo[], entityType: EntityType) {
   dataActionsResponse.forEach(action => {
     // this is likely inadquate, needs fully qualified?
     const cols = columns.filter(c => action.operations.some(a => a.field === c.name)).filter(c => c.updatable);
@@ -120,8 +120,10 @@ export function registerActionsForUpdatableColumns(columns: ColumnInfo[]) {
       pii: cols.some(c => c.pii),
       phi: cols.some(c => c.phi),
       canMenu: action.renderType !== 'editor',
+      refetchEntities: true,
     },
-    (row: any, data?: any) => {
+    (async (row: any, data?: any) => {
+      const deferred = defer();
       const patchPayload: Record<string, ColumnValue> = {};
 
       action.operations.forEach(({ field, value }) => {
@@ -132,10 +134,13 @@ export function registerActionsForUpdatableColumns(columns: ColumnInfo[]) {
       // entityApi.patch(row.id, patchPayload)
       console.log({ patchPayload, row });
 
-      return Promise.resolve();
-    },
-    (row: any, self: ColumnAction) => (
-      <DataActionComponent columns={cols} dataAction={action} row={row} columnAction={self} />
-    )));
+      deferred.resolve(null);
+      return deferred;
+    }),
+    function render(this: ColumnAction, row: any) {
+      return (
+        <DataActionComponent columns={cols} dataAction={action} entityType={entityType} row={row} columnAction={this} />
+      );
+    }));
   });
 }

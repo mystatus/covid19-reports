@@ -27,6 +27,7 @@ import {
   QueryValueType,
   SavedFilterSerialized,
 } from '@covid19-reports/shared';
+import { RenderActiveAction } from 'client/src/entity-actions/actions';
 import useEffectDebounced from '../../hooks/use-effect-debounced';
 import { getNewPageIndex } from '../../utility/table';
 import {
@@ -353,6 +354,7 @@ export default function View({ layout, idColumn }: ViewProps) {
 
   return (
     <TableContainer component={Paper}>
+      <RenderActiveAction entityType={entityType} refetchEntities={refetchEntities} />
       <Box className={classes.tableHeader}>
         <Box>
           <Button

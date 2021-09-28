@@ -41,7 +41,7 @@ import { SaveNewLayoutDialog } from '../pages/roster-page/save-new-layout-dialog
 import { useEffectError } from '../../hooks/use-effect-error';
 import { ColumnSelector } from './column-selector';
 import { ActionSelector } from './action-selector';
-import { getActionColumnInfos, getColumnAction } from '../../entity-actions/actions';
+import { executeAction, getActionColumnInfos, getColumnAction } from '../../entity-actions/actions';
 import { registerActionsForUpdatableColumns } from '../../entity-actions/edit-column-action';
 import { ViewLayoutButtons } from './view-layout-buttons';
 import useStyles from './view-layout.styles';
@@ -105,8 +105,8 @@ export default function ViewLayout(props: ViewLayoutProps) {
   } = entityApi[entityType].useGetAllowedColumnsInfoQuery({ orgId });
 
   useEffect(() => {
-    registerActionsForUpdatableColumns(allowedColumns);
-  }, [allowedColumns]);
+    registerActionsForUpdatableColumns(allowedColumns, entityType);
+  }, [allowedColumns, entityType]);
 
   const columns = useMemo(() => {
     return [...allowedColumns, ...getActionColumnInfos(entityType)];
@@ -408,7 +408,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
                 name: item.displayName,
                 callback: () => {
                   const action = getColumnAction(entityType, item.name);
-                  void action.execute(row);
+                  void executeAction(entityType, action, row);
                 },
               }));
             },

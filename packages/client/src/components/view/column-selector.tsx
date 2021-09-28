@@ -123,7 +123,7 @@ const getListStyle = (
     padding: 0,
     margin: '6px 12px 8px',
     opacity: isRemoveTarget ? 0.4 : 1,
-    width: 250,
+    width: 300,
     zIndex: isRemoveTarget ? 1 : 3,
   };
 };
