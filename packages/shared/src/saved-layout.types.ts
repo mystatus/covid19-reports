@@ -19,4 +19,5 @@ export type SavedLayoutSerialized = {
   entityType: EntityType;
   columns: ColumnsConfig;
   actions: ActionsConfig;
+  savedFilter?: number;
 };

@@ -6,6 +6,7 @@ export type SavedLayoutData = {
   entityType: EntityType;
   actions: ActionsConfig;
   columns: ColumnsConfig;
+  savedFilter?: number;
 };
 
 export type GetSavedLayoutsQuery = {

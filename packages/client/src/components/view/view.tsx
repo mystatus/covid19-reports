@@ -71,11 +71,13 @@ import {
 } from './view-utils';
 
 export type ViewProps = {
+  selectedFilterId?: FilterId;
+  setSelectedFilterId: (filterId: FilterId) => void;
   idColumn: string | ((row: any) => string);
   layout: Layout;
 };
 
-export default function View({ layout, idColumn }: ViewProps) {
+export default function View({ layout, idColumn, selectedFilterId, setSelectedFilterId }: ViewProps) {
   const { columns, entityType, orderBy, rowOptions, sortDirection, visibleColumns } = layout;
   const classes = useStyles();
   const dispatch = useAppDispatch();
@@ -91,7 +93,6 @@ export default function View({ layout, idColumn }: ViewProps) {
   const [savedFilters, setSavedFilters] = useState<SavedFilterSerialized[]>([]);
   const [savedFiltersIsLoaded, setSavedFiltersIsLoaded] = useState(false);
   const [currentFilter, setCurrentFilter] = usePersistedState<SavedFilterSerialized>(`${layout.name}CurrentFilter`, makeNoFilter(entityType));
-  const [selectedFilterId, setSelectedFilterId] = usePersistedState<FilterId>(`${layout.name}SelectedFilterId`, currentFilter.id);
   const [filterSelectorOpen, setFilterSelectorOpen] = useState(false);
   const [filterEditorOpen, setFilterEditorOpen] = usePersistedState(`${layout.name}FilterEditorOpen`, false);
   const [saveNewFilterDialogOpen, setSaveNewFilterDialogOpen] = useState(false);

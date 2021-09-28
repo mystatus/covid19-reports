@@ -13,6 +13,7 @@ import {
   entityTypes,
 } from '@covid19-reports/shared';
 import { Org } from '../org/org.model';
+import { SavedFilter } from '../saved-filter/saved-filter.model';
 
 @Entity()
 @Index(['org', 'name', 'entityType'], { unique: true })
@@ -47,5 +48,11 @@ export class SavedLayout extends BaseEntity {
     default: '{}',
   })
   actions!: ActionsConfig;
+
+  @ManyToOne(() => SavedFilter, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  saved_filter?: SavedFilter;
 
 }

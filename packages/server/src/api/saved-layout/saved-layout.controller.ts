@@ -37,7 +37,9 @@ class SavedLayoutController {
       'entityType',
       'columns',
       'actions',
+      'savedFilter'
     ]);
+    let { savedFilter } = req.body;
 
     const existingSavedLayout = await SavedLayout.findOne({
       relations: ['org'],
@@ -52,12 +54,14 @@ class SavedLayoutController {
       throw new BadRequestError('There is already a layout with that name.');
     }
 
+    if (savedFilter && savedFilter < 0) savedFilter = null as any;
     const savedLayout = new SavedLayout();
     savedLayout.org = req.appOrg;
     savedLayout.name = name;
     savedLayout.entityType = entityType;
     savedLayout.columns = columns;
     savedLayout.actions = actions;
+    savedLayout.saved_filter = savedFilter as any;
     await savedLayout.save();
 
     res.status(201).json(savedLayout);

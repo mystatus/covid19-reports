@@ -32,6 +32,7 @@ import { Modal } from '../../actions/modal.actions';
 import { savedLayoutApi } from '../../api/saved-layout.api';
 import { useAppDispatch } from '../../hooks/use-app-dispatch';
 import {
+  FilterId,
   isDefaultLayout,
   makeDefaultViewLayout,
   viewLayoutDefaults,
@@ -95,6 +96,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [saveNewLayoutDialogOpen, setSaveNewLayoutDialogOpen] = useState(false);
   const [newLayout, setNewLayout] = useState<SavedLayoutSerialized | undefined>();
+  const [selectedFilterId, setSelectedFilterId] = usePersistedState<FilterId>(`${currentLayout.name}SelectedFilterId`, currentLayout.savedFilter);
 
   const selectLayoutButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -249,8 +251,15 @@ export default function ViewLayout(props: ViewLayoutProps) {
   }, [currentLayout.actions, currentLayout.columns, currentLayout.id, currentLayout.name, layoutsById]);
 
   const handleSaveClick = useCallback(async () => {
+    setCurrentLayout({
+      ...currentLayout,
+      savedFilter: selectedFilterId,
+    });
     if (isDefaultLayout(currentLayout.id)) {
-      handleSaveNewLayout(currentLayout);
+      handleSaveNewLayout({
+        ...currentLayout,
+        savedFilter: selectedFilterId,
+      });
       return;
     }
 
@@ -396,8 +405,10 @@ export default function ViewLayout(props: ViewLayoutProps) {
       {ButtonSetComponent && (
         <ButtonSetComponent />
       )}
-
+{/* selectedFilterId, setSelectedFilterId */}
       <View
+        selectedFilterId={selectedFilterId}
+        setSelectedFilterId={setSelectedFilterId}
         layout={{
           entityType,
           columns,
