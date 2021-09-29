@@ -75,6 +75,7 @@ export type MusterConfigurationParam = {
 
 export type RosterParam = {
   rosterId: string;
+  rowId: string;
 };
 
 export type WorkspaceParam = {

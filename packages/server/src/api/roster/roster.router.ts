@@ -121,4 +121,12 @@ router.put(
   controller.updateRosterEntry,
 );
 
+router.patch(
+  '/:orgId/:rowId',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageRoster),
+  bodyParser.json(),
+  controller.patchRosterEntry,
+);
+
 export default router;
