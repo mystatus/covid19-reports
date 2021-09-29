@@ -45,18 +45,19 @@ export const addRosterEntry = new BulkAction(
     pii: false,
     refetchEntities: true,
   },
+  // eslint-disable-next-line require-await
   (async () => {
     return defer();
   }),
-  (exectionContext: ActionExecutionContext) => {
+  (executionContext: ActionExecutionContext) => {
     return (
       <AddRosterEntry
         open
         onClose={() => {
-          exectionContext.deferred.resolve(true);
+          executionContext.deferred.resolve(true);
         }}
         onError={(error: string) => {
-          exectionContext.deferred.reject(error);
+          executionContext.deferred.reject(error);
         }}
       />
     );

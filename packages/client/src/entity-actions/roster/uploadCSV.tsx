@@ -75,6 +75,7 @@ export const uploadCSV = new BulkAction(
     pii: false,
     refetchEntities: true,
   },
+  // eslint-disable-next-line require-await
   async () => {
     return defer();
   },

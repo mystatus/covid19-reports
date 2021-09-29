@@ -41,7 +41,7 @@ export class BulkAction {
   constructor(
     public readonly actionInfo: ActionInfo,
     public execute: (data?: any) => Promise<Deferred<any>>,
-    public activeRender?: (exectionContext: ActionExecutionContext) => JSX.Element,
+    public activeRender?: (executionContext: ActionExecutionContext) => JSX.Element,
   ) {
     this.execute = this.execute.bind(this);
     this.activeRender = this.activeRender?.bind(this);
@@ -67,7 +67,7 @@ export class ColumnAction {
     actionInfo: ColumnActionInfo,
     public execute: (entity: any, data?: any) => Promise<Deferred<any>>,
     public render: (entity: any) => JSX.Element,
-    public activeRender?: (exectionContext: ActionExecutionContext) => JSX.Element,
+    public activeRender?: (executionContext: ActionExecutionContext) => JSX.Element,
   ) {
     this.columnInfo = {
       ...actionInfo,

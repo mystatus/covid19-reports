@@ -137,19 +137,20 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
     // eslint-disable-next-line promise/prefer-await-to-callbacks
     callback(row);
   };
-  
+
   const getEnumColumnValue = (c: TableColumn, uuid: string) => {
-    if(c.type === ColumnType.Enum) {
+    if (c.type === ColumnType.Enum) {
       const enumConfig = c.config as { options: { id: string; label: string}[] };
-      const selectedOption = enumConfig.options.find(option => option.id == uuid); 
+      // eslint-disable-next-line eqeqeq
+      const selectedOption = enumConfig.options.find(option => option.id == uuid);
       return selectedOption?.label;
     }
     return null;
-  }
-  
+  };
+
   const renderCell = (row: any, column: TableColumn) => {
     return (column.type === ColumnType.Enum ? getEnumColumnValue(column, row[column.fullyQualifiedName]) : row[column.fullyQualifiedName]);
-  }
+  };
 
   const getRowId = (row: any) => { return (typeof idColumn === 'function' ? idColumn(row) : row[idColumn] as string); };
   const getRowProps = (row: any) => (typeof rowOptions?.rowProps === 'function' ? rowOptions?.rowProps?.(row) : rowOptions?.rowProps);

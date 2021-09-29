@@ -320,6 +320,17 @@ class RosterController {
     res.json(entry);
   }
 
+  async patchRosterEntry(req: ApiRequest<OrgRosterParams, RosterEntryData>, res: Response) {
+    assertRequestParams(req, ['rowId']);
+    const entryId = +req.params.rowId;
+
+    const entry = await getManager().transaction(manager => {
+      return editRosterEntry(req.appOrg!, req.appUserRole!, entryId, req.body, manager);
+    });
+
+    res.json(entry);
+  }
+
 }
 
 export async function getRosterInfosForIndividualOnDate(edipi: string, dateStr: string) {
