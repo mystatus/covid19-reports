@@ -1,31 +1,24 @@
 import csv from 'csvtojson';
 import { Response } from 'express';
 import fs from 'fs';
-import {
-  getConnection,
-  getManager,
-  In,
-} from 'typeorm';
+import { getConnection, getManager, In } from 'typeorm';
 import {
   AddCustomColumnBody,
-  Paginated,
-  ReportDateQuery,
   ColumnInfo,
   ColumnInfoWithValue,
   ColumnType,
+  CustomColumnData,
+  edipiColumnDisplayName,
+  GetEntitiesQuery,
+  Paginated,
+  ReportDateQuery,
   RosterEntryData,
   RosterFileRow,
   RosterInfo,
-  edipiColumnDisplayName,
   unitColumnDisplayName,
-  CustomColumnData,
-  GetEntitiesQuery,
 } from '@covid19-reports/shared';
 import { EntityService } from '../../util/entity-utils';
-import {
-  assertRequestBody,
-  assertRequestParams,
-} from '../../util/api-utils';
+import { assertRequestBody, assertRequestParams } from '../../util/api-utils';
 import {
   BadRequestError,
   CsvRowError,
@@ -33,28 +26,13 @@ import {
   RosterUploadError,
   UnprocessableEntity,
 } from '../../util/error-types';
-import {
-  addRosterEntry,
-  editRosterEntry,
-} from '../../util/roster-utils';
+import { addRosterEntry, editRosterEntry } from '../../util/roster-utils';
 import { getDatabaseErrorMessage } from '../../util/typeorm-utils';
-import {
-  dateFromString,
-  getMissingKeys,
-} from '../../util/util';
-import {
-  ApiRequest,
-  EdipiParam,
-  OrgColumnParams,
-  OrgParam,
-  OrgRosterParams,
-} from '../api.router';
+import { dateFromString, getMissingKeys } from '../../util/util';
+import { ApiRequest, EdipiParam, OrgColumnParams, OrgParam, OrgRosterParams } from '../api.router';
 import { Unit } from '../unit/unit.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
-import {
-  ChangeType,
-  RosterHistory,
-} from './roster-history.model';
+import { ChangeType, RosterHistory } from './roster-history.model';
 import { Roster } from './roster.model';
 
 class RosterController {
@@ -261,12 +239,6 @@ class RosterController {
     res.json(columns);
   }
 
-  async getRosterInfosForIndividual(req: ApiRequest<EdipiParam, null, ReportDateQuery>, res: Response) {
-    res.json({
-      rosters: await getRosterInfosForIndividualOnDate(req.params.edipi, req.query.reportDate),
-    });
-  }
-
   async addRosterEntry(req: ApiRequest<OrgParam, RosterEntryData>, res: Response) {
     const newRosterEntry = await getManager().transaction(manager => {
       return addRosterEntry(req.appOrg!, req.appUserRole!.role, req.body, manager);
@@ -322,43 +294,27 @@ class RosterController {
 
 }
 
-export async function getRosterInfosForIndividualOnDate(edipi: string, dateStr: string) {
+export async function getRosterForIndividualOnDate(orgId: number, edipi: string, dateStr: string) {
   const reportDate = dateFromString(dateStr);
 
   if (!reportDate) {
     throw new BadRequestError('Missing reportDate.');
   }
   const timestamp = reportDate.getTime() / 1000;
-  const entries = await RosterHistory.createQueryBuilder('roster')
+  const entry = await RosterHistory.createQueryBuilder('roster')
     .leftJoinAndSelect('roster.unit', 'unit')
     .leftJoinAndSelect('unit.org', 'org')
     .where('roster.edipi = :edipi', { edipi })
+    .andWhere('org.id = :orgId', { orgId })
     .andWhere(`roster.timestamp <= to_timestamp(:timestamp) AT TIME ZONE '+0'`, { timestamp })
     .select()
-    .distinctOn(['roster.unit_id'])
-    .orderBy('roster.unit_id')
-    .addOrderBy('roster.timestamp', 'DESC')
-    .addOrderBy('roster.change_type', 'DESC')
-    .getMany();
+    .orderBy('roster.timestamp', 'DESC')
+    .getOne();
 
-  const responseData: RosterInfo[] = [];
-  for (const roster of entries) {
-    if (roster.changeType === ChangeType.Deleted) {
-      continue;
-    }
-
-    const columns = (await Roster.getColumns(roster.unit.org!)).map(column => ({
-      ...column,
-      value: roster.getColumnValue(column),
-    } as ColumnInfoWithValue));
-
-    const rosterInfo: RosterInfo = {
-      unit: roster.unit,
-      columns,
-    };
-    responseData.push(rosterInfo);
+  if (!entry || entry.changeType === ChangeType.Deleted) {
+    return undefined;
   }
-  return responseData;
+  return entry;
 }
 
 function getRosterEntryFromCsvRow(csvRow: RosterFileRow, columns: ColumnInfo[], rowIndex: number, orgUnits: Unit[], existingEntries: Roster[]) {

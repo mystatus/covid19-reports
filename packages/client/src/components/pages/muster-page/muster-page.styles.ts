@@ -46,4 +46,7 @@ export default makeStyles((theme: Theme) => createStyles({
       paddingBottom: '0',
     },
   },
+  complianceRow: {
+    height: '128px',
+  },
 }));

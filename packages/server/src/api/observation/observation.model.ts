@@ -7,13 +7,11 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import { startCase } from 'lodash';
 import {
   baseObservationColumns,
   getFullyQualifiedColumnName,
   ColumnInfo,
-  ColumnType,
-  CustomColumns,
+  CustomColumns, MusterStatus,
 } from '@covid19-reports/shared';
 import { ReportSchema } from '../report-schema/report-schema.model';
 import { Roster } from '../roster/roster.model';
@@ -27,6 +25,7 @@ import {
 import { Org } from '../org/org.model';
 import { UserRole } from '../user/user-role.model';
 import { RosterHistory } from '../roster/roster-history.model';
+import { MusterConfiguration } from '../muster/muster-config.model';
 
 /**
  * Observation are created when users self-report COVID-19 symptoms via https://mystatus.mil/
@@ -34,14 +33,13 @@ import { RosterHistory } from '../roster/roster-history.model';
  */
 @MakeEntity()
 @Entity()
-@Unique(['id', 'documentId'])
 export class Observation extends BaseEntity {
 
   @PrimaryGeneratedColumn()
   id!: number;
 
   // ID of the original document
-  @Column({ length: 100 })
+  @Column({ length: 100, nullable: true, unique: true })
   documentId!: string;
 
   /* DOD unique ID that is associated with personnel and their CAC card.
@@ -75,6 +73,26 @@ export class Observation extends BaseEntity {
   })
   customColumns!: CustomColumns;
 
+  @ManyToOne(() => MusterConfiguration)
+  musterConfiguration?: MusterConfiguration;
+
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  musterWindowId!: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: MusterStatus,
+    default: null,
+    nullable: true,
+  })
+  musterStatus!: MusterStatus;
+
+  @ManyToOne(() => RosterHistory)
+  rosterHistoryEntry?: RosterHistory;
+
 
   static getColumnSelect(column: ColumnInfo) {
     return getColumnSelect(column, 'custom_columns', 'observation');
@@ -96,16 +114,7 @@ export class Observation extends BaseEntity {
       throw new Error(`Report Schema '${version}' not defined for org '${org.id}'`);
     }
 
-    const customColumns: ColumnInfo[] = reportSchema.columns.map(column => ({
-      name: column.keyPath.join('_'),
-      displayName: startCase(column.keyPath[column.keyPath.length - 1]),
-      type: ['long', 'float'].includes(column.type) ? ColumnType.Number : ColumnType.String,
-      pii: column.pii,
-      phi: column.phi,
-      custom: true,
-      required: false,
-      updatable: false,
-    }));
+    const customColumns: ColumnInfo[] = reportSchema.columns;
 
     if (includeRelationships) {
       const service = new EntityService(RosterHistory);
@@ -135,13 +144,10 @@ export class Observation extends BaseEntity {
         }
         return qb
           .select([])
-          .from(RosterHistory, 'rh')
-          .distinctOn(['rh.edipi'])
-          .orderBy('rh.edipi', 'DESC')
-          .addOrderBy('rh.timestamp', 'DESC');
+          .from(RosterHistory, 'rh');
       },
       'roster',
-      `observation.edipi = roster.edipi and roster.change_type <> 'deleted' and observation.timestamp > roster.timestamp`,
+      `observation.roster_history_entry_id = roster.id`,
     );
 
     // Always select the id column

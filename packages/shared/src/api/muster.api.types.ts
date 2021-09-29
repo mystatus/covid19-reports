@@ -21,16 +21,15 @@ export type UpdateMusterConfigurationBody = MusterConfigurationData;
 export type GetMusterRosterQuery = {
   fromDate: string;
   toDate: string;
-  unitId?: string;
+  reportId: string;
+  filterId?: string;
 } & PaginatedQuery;
 
-export type GetMusterUnitTrendsQuery = {
-  currentDate: string;
+export type GetWeeklyMusterTrendsQuery = {
   weeksCount?: string;
-  monthsCount?: string;
 };
 
-export type GetClosedMusterWindowsQuery = {
+export type CloseMusterWindowsQuery = {
   since: string;
   until: string;
 };
@@ -41,8 +40,10 @@ export type GetNearestMusterWindowQuery = {
 };
 
 export type GetMusterComplianceByDateRangeQuery = {
-  isoStartDate: string;
-  isoEndDate: string;
+  fromDate: string;
+  toDate: string;
+  filterId: string;
+  reportId: string;
 };
 
 export type GetMusterComplianceByDateRangeResponse = {
@@ -50,6 +51,9 @@ export type GetMusterComplianceByDateRangeResponse = {
 };
 
 export type MusterComplianceByDate = {
-  musterComplianceRate: number;
+  unit: number;
+  onTime: number;
+  total: number;
+  compliance: number;
   isoDate: string;
 };

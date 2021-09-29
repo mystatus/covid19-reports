@@ -5,10 +5,10 @@ import controller from './muster.controller';
 
 const router = express.Router() as any;
 
-router.get(
-  '/closed',
+router.post(
+  '/close',
   requireInternalUser,
-  controller.getClosedMusterWindows,
+  controller.closeMusterWindows,
 );
 
 router.get(
@@ -26,10 +26,10 @@ router.post(
 );
 
 router.get(
-  '/:orgId/unit-trends',
+  '/:orgId/weekly-trends',
   requireOrgAccess,
   requireRolePermission(role => role.canViewMuster),
-  controller.getMusterUnitTrends,
+  controller.getWeeklyMusterTrends,
 );
 
 router.put(
@@ -62,9 +62,10 @@ router.get(
 );
 
 router.get(
-  '/:orgId/:filterId/complianceByDateRange',
-  bodyParser.json(),
-  controller.getFilterMusterComplianceByDateRange,
+  '/:orgId/roster/complianceStatsByDateRange',
+  requireOrgAccess,
+  requireRolePermission(role => role.canViewMuster),
+  controller.getMusterComplianceStatsByDateRange,
 );
 
 export default router;

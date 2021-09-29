@@ -18,7 +18,6 @@ import InfoOutlinedIcon from '@material-ui/icons/InfoOutlined';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 import FavoriteIcon from '@material-ui/icons/Favorite';
 import clsx from 'clsx';
-import moment from 'moment';
 import { OrphanedRecordSelector } from '../../../selectors/orphaned-record.selector';
 import { UserSelector } from '../../../selectors/user.selector';
 import { WorkspaceSelector } from '../../../selectors/workspace.selector';
@@ -73,7 +72,7 @@ const HomePageHelp = () => {
             <li>
               <Typography>
                 <strong><Link to="/muster">Muster Snapshot</Link></strong><br />
-                Track your group&apos;s daily muster compliance, view weekly and monthly trends, as well as
+                Track your group&apos;s daily muster compliance, view daily trends, as well as
                 export data.
               </Typography>
             </li>
@@ -126,7 +125,7 @@ export const HomePage = () => {
   const dashboards = useAppSelector(WorkspaceSelector.dashboards)!;
 
   const [accessRequests, setAccessRequests] = useState<ApiAccessRequest[]>([]);
-  const [musterComplianceLastTwoWeeks, setMusterComplianceLastTwoWeek] = useState<number[]>([1.0, 0.0]);
+  const [musterComplianceLastTwoWeeks, setMusterComplianceLastTwoWeek] = useState<number[]>([-1.0, -1.0]);
 
   useEffect(() => {
     dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
@@ -160,26 +159,16 @@ export const HomePage = () => {
     if (orgId) {
       try {
         const requestsPromise = AccessRequestClient.getAccessRequests(orgId!);
-        const { weekly } = await MusterClient.getMusterUnitTrends(orgId!, {
-          currentDate: moment().toISOString(),
+        const { weekly } = await MusterClient.getWeeklyMusterTrends(orgId!, {
           weeksCount: '2',
-          monthsCount: '0',
         });
-
-        // Sum up muster percent for each of the last two weeks
-        const weeklyAverages = Object.keys(weekly).sort().map(date => {
-          const units = Object.keys(weekly[date]);
-          let sum = 0;
-          for (const unitName of units) {
-            sum += weekly[date][unitName].musterPercent;
-          }
-          return units.length ? sum / units.length : 0;
-        });
-
-        const twoWeeksOfAverages = [0, 0, ...weeklyAverages].slice(-2);
 
         const requests = await requestsPromise;
-        setMusterComplianceLastTwoWeek(twoWeeksOfAverages);
+        if (weekly.length === 2) {
+          const week1Compliance = weekly[0].total > 0 ? weekly[0].onTime / weekly[0].total : -1;
+          const week2Compliance = weekly[1].total > 0 ? weekly[1].onTime / weekly[1].total : -1;
+          setMusterComplianceLastTwoWeek([week1Compliance * 100, week2Compliance * 100]);
+        }
         setAccessRequests(requests);
       } catch (_) {
         // Error handling? This should probably just retry?
@@ -191,7 +180,9 @@ export const HomePage = () => {
     void initializeTable();
   }, [initializeTable]);
 
-  const complianceDelta = musterComplianceLastTwoWeeks[1] - musterComplianceLastTwoWeeks[0];
+
+  const noMusterData = musterComplianceLastTwoWeeks[1] < 0;
+  const complianceDelta = musterComplianceLastTwoWeeks[0] < 0 ? 0 : musterComplianceLastTwoWeeks[1] - musterComplianceLastTwoWeeks[0];
   const trendingUp = complianceDelta > 0;
   const trendingDown = complianceDelta < 0;
 
@@ -226,21 +217,32 @@ export const HomePage = () => {
                     </HtmlTooltip>
                   </Typography>
                   <Typography className={classes.metricValue}>
-                    {Math.round(musterComplianceLastTwoWeeks[1])}%
+                    {noMusterData ? '----' : `${Math.round(musterComplianceLastTwoWeeks[1])}%`}
                   </Typography>
-                  <Typography className={clsx(classes.metricTrending, {
-                    [classes.metricUp]: trendingUp,
-                    [classes.metricDown]: trendingDown,
-                  })}
-                  >
-                    <span className={classes.metricTrendingIcon}>
-                      <ArrowUpwardIcon />
-                    </span>
-                    {(complianceDelta).toFixed(2)}%
-                    <Hidden smDown>
-                      <span className={classes.subtle}>last 7 days</span>
-                    </Hidden>
-                  </Typography>
+                  {!noMusterData ? (
+                    <Typography className={clsx(classes.metricTrending, {
+                      [classes.metricUp]: trendingUp,
+                      [classes.metricDown]: trendingDown,
+                    })}
+                    >
+                      <span className={classes.metricTrendingIcon}>
+                        <ArrowUpwardIcon />
+                      </span>
+                      {(complianceDelta).toFixed(2)}%
+                      <Hidden smDown>
+                        <span className={classes.subtle}>last 7 days</span>
+                      </Hidden>
+                    </Typography>
+                  ) : (
+                    <Typography className={classes.metricTrending}>
+                      <span className={classes.metricTrendingIcon}>
+                        <ArrowUpwardIcon />
+                      </span>
+                      <Hidden smDown>
+                        <span className={classes.subtle}>No observations last 7 days</span>
+                      </Hidden>
+                    </Typography>
+                  )}
                 </CardContent>
               </Card>
             </Grid>

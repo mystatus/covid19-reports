@@ -62,7 +62,7 @@ export class Roster extends RosterEntity {
     displayName: 'Last Reported Symptoms',
     type: ColumnType.DateTime,
     pii: true,
-    phi: false,
+    phi: true,
     custom: false,
     required: false,
     updatable: false,
@@ -92,7 +92,7 @@ export class Roster extends RosterEntity {
   }
 
   static getColumnWhere(column: ColumnInfo) {
-    return getColumnWhere(column, 'custom_columns', 'roster');
+    return getColumnWhere(column, 'custom_columns', 'roster', true);
   }
 
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {

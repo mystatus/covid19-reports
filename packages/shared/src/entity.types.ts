@@ -21,11 +21,16 @@ export type ColumnTypeMapping = {
 };
 
 export const friendlyColumnValue = <T>(entity: T & Record<string, unknown>, column: ColumnInfo) => {
-  const value: any = entity[column.name];
+  const value: any = entity[getFullyQualifiedColumnName(column)];
   if (value == null) {
     return '';
   }
   switch (column.type) {
+    case ColumnType.Enum: {
+      const enumConfig = column.config as { options: { id: string; label: string }[] };
+      const selectedOption = enumConfig.options.find(option => option.id === value);
+      return selectedOption?.label;
+    }
     case ColumnType.Date:
       return moment(value as string).format('l');
     case ColumnType.DateTime:
@@ -73,6 +78,13 @@ export type ColumnInfo = {
 export type ColumnInfoWithValue = ColumnInfo & {
   value: ColumnValue;
 };
+
+export enum MusterStatus {
+  EARLY = 'early',
+  ON_TIME = 'on_time',
+  LATE = 'late',
+  NON_REPORTING = 'non_reporting',
+}
 
 export type QueryOp =
   | '='

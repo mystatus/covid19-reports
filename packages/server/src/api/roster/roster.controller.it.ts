@@ -168,50 +168,6 @@ describe(`Roster Controller`, () => {
     });
   });
 
-  describe(`${basePath}/info/:edipi : get`, () => {
-    it(`gets an individual's roster infos`, async () => {
-      const userInternal = await seedUserInternal();
-      const unit = await seedUnit(org);
-      const rosterEntry = await seedRosterEntry(unit);
-
-      req.setUser(userInternal);
-      const res = await req.get(`/info/${rosterEntry.edipi}?reportDate=2045-01-01`);
-
-      expectNoErrors(res);
-      expect(res.data.rosters).to.be.array();
-      expect(res.data.rosters).to.have.lengthOf(1);
-      expect(res.data.rosters[0]).to.have.keys([
-        'unit',
-        'columns',
-      ]);
-      expect(res.data.rosters[0].unit).to.have.keys([
-        'id',
-        'name',
-        'org',
-      ]);
-      expect(res.data.rosters[0].unit.org).to.have.keys([
-        'id',
-        'name',
-        'description',
-        'indexPrefix',
-        'reportingGroup',
-      ]);
-      expect(res.data.rosters[0].columns).to.be.array();
-      expect(res.data.rosters[0].columns).to.have.lengthOf(baseRosterColumns.length);
-      expect(res.data.rosters[0].columns[0]).to.have.keys([
-        'name',
-        'displayName',
-        'type',
-        'pii',
-        'phi',
-        'custom',
-        'required',
-        'updatable',
-        'value',
-      ]);
-    });
-  });
-
   describe(`${basePath}/:orgId/template : get`, () => {
     it(`gets the org's roster template`, async () => {
       const customColumn = await seedCustomRosterColumn(org);

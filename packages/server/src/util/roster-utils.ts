@@ -112,21 +112,6 @@ export function getCsvValueForRosterColumn(entry: RosterEntryData, column: Colum
   return entry[column.name] ?? '';
 }
 
-export async function saveRosterPhoneNumber(edipi: string, phoneNumber: string, entityManager: EntityManager) {
-  // The same edipi can potentially be in the roster table multiple times
-  // since an individual can be on multiple units.
-  // This is not however intentional but we will handle this case.
-  const rosters: Roster[] = await Roster.find({ where: { edipi } });
-  if (!rosters || rosters.length === 0) {
-    throw new BadRequestError(`Unable to find ${edipi} in Roster`);
-  }
-
-  for (const roster of rosters) {
-    roster.phoneNumber = phoneNumber;
-    await entityManager.save(roster);
-  }
-}
-
 /**
  * The <strong><code>getRosterWithUnitsAndEdipis()</code></strong> function <strong> returns roster information
  * for the given unit and organization</strong>.

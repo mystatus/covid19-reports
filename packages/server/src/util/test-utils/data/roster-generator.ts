@@ -8,8 +8,9 @@ import { adminUserTestData } from './user-generator';
 import { unitsTestData } from './unit-generator';
 import { reportSchemaTestData } from './report-schema-generator';
 
-export function rosterTestData(numRosterEntries: number, customColumn: CustomRosterColumn, units: Unit[], numUnits: number) {
+export async function rosterTestData(numRosterEntries: number, customColumn: CustomRosterColumn, units: Unit[], numUnits: number) {
   const rosterEntries: Roster[] = [];
+  const batch: Roster[] = [];
   for (let i = 0; i < numRosterEntries; i++) {
     const customColumns: any = {};
     customColumns[customColumn.name] = `custom column value`;
@@ -23,7 +24,16 @@ export function rosterTestData(numRosterEntries: number, customColumn: CustomRos
       phoneNumber: '1234567890',
       customColumns,
     });
-    rosterEntries.push(rosterEntry);
+    batch.push(rosterEntry);
+    if (batch.length > 100) {
+      await Roster.save(batch);
+      rosterEntries.push(...batch);
+      batch.splice(0, batch.length);
+    }
+  }
+  if (batch.length > 0) {
+    await Roster.save(batch);
+    rosterEntries.push(...batch);
   }
   return rosterEntries;
 }

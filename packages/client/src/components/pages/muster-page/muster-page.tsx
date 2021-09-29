@@ -56,23 +56,28 @@ import { AppFrameActions } from '../../../slices/app-frame.slice';
 import { useAppDispatch } from '../../../hooks/use-app-dispatch';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 import { UnitMusterComplianceTable } from './table-unit-muster-compliance';
+import { ReportSchemaSelector } from '../../../selectors/report-schema.selector';
+import { SavedFilterSelector } from '../../../selectors/saved-filter.selector';
+import { SavedFilter } from '../../../actions/saved-filter.actions';
+import { ReportSchema } from '../../../actions/report-schema.actions';
 
 export const MusterPage = () => {
   const classes = useStyles();
   const dispatch = useAppDispatch();
   const units = useAppSelector(UnitSelector.all);
+  const reports = useAppSelector(ReportSchemaSelector.all);
+  const filters = useAppSelector(SavedFilterSelector.rosterEntry);
   const user = useAppSelector(state => state.user);
   const org = useAppSelector(UserSelector.org)!;
   const isPageLoading = useAppSelector(state => state.appFrame.isPageLoading);
 
-  const orgId = org.id;
-  const orgName = org.name;
   const maxNumColumnsToShow = 6;
 
   const [rosterSelectedTimeRangeIndex, setRosterSelectedTimeRangeIndex] = usePersistedState('musterRosterSelectedTimeRangeIndex', 0);
   const [rosterFromDateIso, setRosterFromDateIso] = usePersistedState('musterRosterFromDateIso', moment().startOf('day').toISOString());
   const [rosterToDateIso, setRosterToDateIso] = usePersistedState('musterRosterToDateIso', moment().endOf('day').toISOString());
-  const [rosterUnitId, setRosterUnitId] = usePersistedState('musterRosterUnitId', -1);
+  const [filterId, setFilterId] = usePersistedState('musterFilterId', -1);
+  const [reportId, setReportId] = usePersistedState('musterReportId', 'es6ddssymptomobs');
   const [rosterPage, setRosterPage] = useState(0);
   const [rosterRowsPerPage, setRosterRowsPerPage] = usePersistedState('musterRosterRowsPerPage', 10);
   const [exportLoading, setExportLoading] = useState(false);
@@ -140,23 +145,31 @@ export const MusterPage = () => {
   // Effects
   //
 
-  const getUnits = useCallback(async () => {
-    if (orgId) {
-      await dispatch(Unit.fetch(orgId));
+  const getResources = useCallback(async () => {
+    if (org.id) {
+      await Promise.all([
+        dispatch(Unit.fetch(org.id)),
+        dispatch(SavedFilter.fetch(org.id, 'roster')),
+        dispatch(ReportSchema.fetch(org.id)),
+      ]);
     }
-  }, [orgId, dispatch]);
+  }, [org, dispatch]);
 
   const showErrorDialog = useCallback((title: string, error: Error) => {
     void dispatch(Modal.alert(`Error: ${title}`, formatErrorMessage(error)));
   }, [dispatch]);
 
   const reloadTable = useCallback(async () => {
+    if (reportId === '') {
+      return;
+    }
     let data: ApiMusterRosterEntriesPaginated;
     try {
-      data = await MusterClient.getRosterMusterComplianceByDateRange(orgId, {
+      data = await MusterClient.getRosterMusterComplianceByDateRange(org.id, {
         fromDate: rosterFromDateIso,
         toDate: rosterToDateIso,
-        unitId: rosterUnitId >= 0 ? `${rosterUnitId}` : undefined,
+        filterId: filterId >= 0 ? `${filterId}` : undefined,
+        reportId,
         page: `${rosterPage}`,
         limit: `${rosterRowsPerPage}`,
       });
@@ -174,16 +187,20 @@ export const MusterPage = () => {
     } else {
       setRosterData(data);
     }
-  }, [rosterFromDateIso, rosterToDateIso, rosterRowsPerPage, rosterPage, orgId, rosterUnitId, showErrorDialog]);
+  }, [rosterFromDateIso, rosterToDateIso, rosterRowsPerPage, rosterPage, org, reportId, filterId, showErrorDialog]);
+
+  useEffect(() => {
+    void reloadTable();
+  }, [reloadTable]);
 
   const initializeRosterColumnInfo = useCallback(async () => {
     try {
-      const infos = await RosterClient.getAllowedRosterColumnsInfo(orgId);
+      const infos = await RosterClient.getAllowedRosterColumnsInfo(org.id);
       setRosterColumnInfos(infos);
     } catch (error) {
       showErrorDialog('Get Roster Info', error.message);
     }
-  }, [orgId, showErrorDialog]);
+  }, [org, showErrorDialog]);
 
   const initialize = useCallback(async () => {
     dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
@@ -191,11 +208,7 @@ export const MusterPage = () => {
     try {
       await Promise.all([
         initializeRosterColumnInfo(),
-        getUnits(),
-      ]);
-
-      await Promise.all([
-        reloadTable(),
+        getResources(),
       ]);
 
       // Make sure non-custom time ranges like Today/Yesterday/etc override persisted dates.
@@ -205,7 +218,7 @@ export const MusterPage = () => {
     } finally {
       dispatch(AppFrameActions.setPageLoading({ isLoading: false }));
     }
-  }, [dispatch, initializeRosterColumnInfo, getUnits, reloadTable, timeRanges, rosterSelectedTimeRangeIndex, setRosterFromDateIso, setRosterToDateIso]);
+  }, [dispatch, initializeRosterColumnInfo, getResources, timeRanges, rosterSelectedTimeRangeIndex, setRosterFromDateIso, setRosterToDateIso]);
 
   useEffect(() => {
     void initialize();
@@ -229,16 +242,17 @@ export const MusterPage = () => {
   const downloadCSVExport = async () => {
     try {
       setExportLoading(true);
-      const data = await ExportClient.exportMusterRosterToCsv(orgId, {
+      const data = await ExportClient.exportMusterRosterToCsv(org.id, {
         fromDate: rosterFromDateIso,
         toDate: rosterToDateIso,
-        unitId: rosterUnitId >= 0 ? `${rosterUnitId}` : undefined,
+        filterId: filterId >= 0 ? `${filterId}` : undefined,
+        reportId,
       });
 
       const fromDateStr = moment(rosterFromDateIso).format('YYYY-MM-DD_h-mm-a');
       const toDateStr = moment(rosterToDateIso).format('YYYY-MM-DD_h-mm-a');
-      const unitId = rosterUnitId >= 0 ? `${rosterUnitId}` : 'all-units';
-      const filename = `${_.kebabCase(orgName)}_${unitId}_muster-compliance_${fromDateStr}_to_${toDateStr}`;
+      const filter = filterId >= 0 ? _.kebabCase(filters.find(f => f.id === filterId)!.name) : 'full-roster';
+      const filename = `${_.kebabCase(org.name)}_${filter}_muster-compliance_${fromDateStr}_to_${toDateStr}`;
       downloadFile(data, filename, 'csv');
     } catch (error) {
       void dispatch(Modal.alert('Export to CSV', formatErrorMessage(error, 'Unable to export')));
@@ -300,9 +314,14 @@ export const MusterPage = () => {
     ]).slice(0, maxNumColumnsToShow);
   };
 
-  const handleRosterUnitChange = (event: ChangeEvent<{ name?: string; value: unknown }>) => {
-    const unitId = event.target.value as number;
-    setRosterUnitId(unitId);
+  const handleFilterChange = (event: ChangeEvent<{ name?: string; value: unknown }>) => {
+    const id = event.target.value as number;
+    setFilterId(id);
+  };
+
+  const handleReportChange = (event: ChangeEvent<{ name?: string; value: unknown }>) => {
+    const id = event.target.value as string;
+    setReportId(id);
   };
 
   const handleRosterFromDateChange = (date: MaterialUiPickersDate) => {
@@ -406,31 +425,54 @@ export const MusterPage = () => {
                         </Box>
                       </Box>
 
-                      <Box className={classes.tableHeaderControls}>
-                        <Box fontWeight="bold" marginBottom={1}>
-                          <label>Unit</label>
+                      {reports && reports.length > 0 && (
+                        <Box className={classes.tableHeaderControls}>
+                          <Box fontWeight="bold" marginBottom={1}>
+                            <label>Report Type</label>
+                          </Box>
+
+                          <Box display="flex" alignItems="center">
+                            <Select
+                              value={reportId}
+                              displayEmpty
+                              onChange={handleReportChange}
+                            >
+                              {reports.map(report => (
+                                <MenuItem key={report.id} value={report.id}>
+                                  {report.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </Box>
                         </Box>
+                      )}
 
-                        <Box display="flex" alignItems="center">
-                          <Select
-                            value={rosterUnitId}
-                            displayEmpty
-                            onChange={handleRosterUnitChange}
-                          >
-                            <MenuItem value={-1}>
-                              <em>All Units</em>
-                            </MenuItem>
+                      {filters && filters.length > 0 && (
+                        <Box className={classes.tableHeaderControls}>
+                          <Box fontWeight="bold" marginBottom={1}>
+                            <label>Filter</label>
+                          </Box>
 
-                            {units.map(unit => (
-                              <MenuItem key={unit.id} value={unit.id}>
-                                {unit.name}
+                          <Box display="flex" alignItems="center">
+                            <Select
+                              value={filterId}
+                              displayEmpty
+                              onChange={handleFilterChange}
+                            >
+                              <MenuItem key={-1} value={-1}>
+                                <em>Full Roster</em>
                               </MenuItem>
-                            ))}
-                          </Select>
-                        </Box>
-                      </Box>
-                    </Box>
 
+                              {filters.map(filter => (
+                                <MenuItem key={filter.id} value={filter.id}>
+                                  {filter.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </Box>
+                        </Box>
+                      )}
+                    </Box>
                     <Box
                       className={classes.tableHeaderControls}
                       flex={1}
@@ -488,7 +530,8 @@ export const MusterPage = () => {
             <UnitMusterComplianceTable
               rosterFromDateIso={rosterFromDateIso}
               rosterToDateIso={rosterToDateIso}
-              rosterUnitId={rosterUnitId}
+              filterId={filterId}
+              reportId={reportId}
             />
           )}
         </Grid>

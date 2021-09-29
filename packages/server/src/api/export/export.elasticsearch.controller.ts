@@ -14,7 +14,6 @@ import { elasticsearch } from '../../elasticsearch/elasticsearch';
 import { assertRequestQuery } from '../../util/api-utils';
 import { buildEsIndexPatternsForDataExport } from '../../util/elasticsearch-utils';
 import { InternalServerError } from '../../util/error-types';
-import { getMusterRosterStats } from '../../util/muster-utils';
 import {
   getCsvHeaderForRosterColumn,
   getCsvValueForRosterColumn,
@@ -25,6 +24,7 @@ import {
 } from '../api.router';
 import { Roster } from '../roster/roster.model';
 import { Unit } from '../unit/unit.model';
+import { individualMusterComplianceByDateRange } from '../../util/muster-utils';
 
 class ExportElasticsearchController {
 
@@ -161,22 +161,19 @@ class ExportElasticsearchController {
 
     const fromDate = moment(req.query.fromDate);
     const toDate = moment(req.query.toDate);
-    const unitId = (req.query.unitId != null) ? parseInt(req.query.unitId) : undefined;
+    const filterId = (req.query.filterId != null) ? parseInt(req.query.filterId) : undefined;
+    const reportId = req.query.reportId;
 
-    const individuals = await getMusterRosterStats({
-      org: req.appOrg!,
-      userRole: req.appUserRole!,
-      unitId,
-      fromDate,
-      toDate,
-    });
+    const individuals = await individualMusterComplianceByDateRange(
+      req.appOrg!,
+      req.appUserRole!,
+      filterId,
+      reportId,
+      fromDate.valueOf(),
+      toDate.valueOf(),
+    );
 
-    // Delete roster ids since they're meaningless to the user.
-    for (const individual of individuals) {
-      delete (individual as any).id;
-    }
-
-    const csv = await json2csvAsync(individuals);
+    const csv = await json2csvAsync(individuals.rows);
 
     res.header('Content-Type', 'text/csv');
     res.attachment('muster-compliance.csv');
