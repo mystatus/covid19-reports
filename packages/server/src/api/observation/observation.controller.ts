@@ -137,28 +137,33 @@ function saveObservationWithReportSchema(
   }
   const customColumns: CustomColumns = {};
   for (const column of reportSchema.columns) {
-    let current: any = report;
-    let keyIndex = 0;
-    let key = column.keyPath[keyIndex];
-    while (keyIndex + 1 < column.keyPath.length) {
-      current = current[column.keyPath[keyIndex]];
-      if (!current) {
-        break;
-      }
-      keyIndex += 1;
-      key = column.keyPath[keyIndex];
-    }
-    if (current) {
-      let value = current[key];
-      if ((!value || value === '-') && column.otherField) {
-        value = current[`${key}Other`];
-      }
-      customColumns[column.name] = getColumnValue(column, value);
-    }
+    customColumns[column.name] = getValueFromKeyPath(report, column);
   }
   observation.customColumns = customColumns;
   Log.info(`Saving new observation for ${observation.documentId} documentId`);
   return manager.save(observation);
+}
+
+function getValueFromKeyPath(object: any, column: SchemaColumn) {
+  let current: any = object;
+  let keyIndex = 0;
+  let key = column.keyPath[keyIndex];
+  while (keyIndex + 1 < column.keyPath.length) {
+    current = current[column.keyPath[keyIndex]];
+    if (!current) {
+      break;
+    }
+    keyIndex += 1;
+    key = column.keyPath[keyIndex];
+  }
+  if (current) {
+    let value = current[key];
+    if ((!value || value === '-') && column.otherField) {
+      value = current[`${key}Other`];
+    }
+    return getColumnValue(column, value);
+  }
+  return undefined;
 }
 
 function getColumnValue(column: SchemaColumn, value: any) {
