@@ -8,7 +8,6 @@ import { seedOrphanedRecords } from '../../api/orphaned-record/orphaned-record.m
 import { Role } from '../../api/role/role.model';
 import { User } from '../../api/user/user.model';
 import { Workspace } from '../../api/workspace/workspace.model';
-import { Roster } from '../../api/roster/roster.model';
 import { Unit } from '../../api/unit/unit.model';
 import { env } from '../env';
 import { Log } from '../log';
@@ -213,15 +212,18 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
     durationMinutes: 120,
     reportSchema: reportSchemas[0],
   }).save();
-  // Add some units to the muster config
+
   let musterWindows = getMusterWindows(
     org,
     recurringMusterConfig,
     moment('2020-01-01T00:00:00Z').valueOf(),
     moment('2020-01-07T12:00:00Z').valueOf(),
   );
+
   const nonReportRate = 4; // 1 out of 4 reports will be non-reporting
   let reportCount = 0;
+
+  // Add some units to the muster config
   for (let i = 0; i < numUnits; i += 2) {
     await MusterFilter.create({
       musterConfig: recurringMusterConfig,
@@ -238,6 +240,16 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
         },
       });
       for (const window of musterWindows) {
+        // Create custom column info for the observations
+        const customColumns = {
+          Affiliation: 'test',
+          TalkToSomeone: true,
+          Symptoms: 'cough, fever',
+          TemperatureFarenheit: 102,
+          Score: 20,
+          Category: 'high',
+        };
+
         observations.push(Observation.create({
           unit: units[i].name,
           reportSchema: reportSchemas[0],
@@ -248,9 +260,7 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
           musterConfiguration: recurringMusterConfig,
           musterWindowId: window.id,
           rosterHistoryEntry,
-          customColumns: {
-            Affiliation: 'test',
-          },
+          customColumns,
         }));
         reportCount += 1;
       }
