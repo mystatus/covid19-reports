@@ -125,7 +125,6 @@ export function registerActionsForUpdatableColumns(columns: ColumnInfo[], entity
       canMenu: action.renderType !== 'editor',
       refetchEntities: true,
     },
-    // eslint-disable-next-line require-await
     (async (row: any, data?: any) => {
       const deferred = defer();
       const patchPayload: Record<string, ColumnValue> = {};
@@ -135,7 +134,7 @@ export function registerActionsForUpdatableColumns(columns: ColumnInfo[], entity
         patchPayload[field] = expressions[`${v}`]?.() ?? v;
       });
       const orgId = UserSelector.orgId(store.getState())!;
-      const endpoint = entityApi[entityType].endpoints.patch;
+      const endpoint = entityApi[entityType].endpoints.patchEntities;
       await store.dispatch(endpoint.initiate({
         orgId,
         rowId: row.id,

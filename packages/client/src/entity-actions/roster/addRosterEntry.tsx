@@ -45,9 +45,8 @@ export const addRosterEntry = new BulkAction(
     pii: false,
     refetchEntities: true,
   },
-  // eslint-disable-next-line require-await
-  (async () => {
-    return defer();
+  (() => {
+    return Promise.resolve(defer());
   }),
   (executionContext: ActionExecutionContext) => {
     return (

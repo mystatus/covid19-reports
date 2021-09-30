@@ -141,7 +141,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
   const getEnumColumnValue = (c: TableColumn, uuid: string) => {
     if (c.type === ColumnType.Enum) {
       const enumConfig = c.config as { options: { id: string; label: string}[] };
-      const selectedOption = enumConfig.options.find(option => option.id == uuid);
+      const selectedOption = enumConfig.options.find(option => option.id === uuid);
       return selectedOption?.label;
     }
     return null;

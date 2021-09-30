@@ -18,7 +18,7 @@ import {
   unitColumnDisplayName,
 } from '@covid19-reports/shared';
 import { EntityService } from '../../util/entity-utils';
-import { assertRequestBody, assertRequestParams } from '../../util/api-utils';
+import { assertIsNumber, assertRequestBody, assertRequestParams } from '../../util/api-utils';
 import {
   BadRequestError,
   CsvRowError,
@@ -294,7 +294,8 @@ class RosterController {
 
   async patchRosterEntry(req: ApiRequest<OrgRosterParams, RosterEntryData>, res: Response) {
     assertRequestParams(req, ['rowId']);
-    const entryId = +req.params.rowId;
+    assertIsNumber(req.params.rowId);
+    const entryId = parseInt(req.params.rowId);
 
     const entry = await getManager().transaction(manager => {
       return editRosterEntry(req.appOrg!, req.appUserRole!, entryId, req.body, manager);

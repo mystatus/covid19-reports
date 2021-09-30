@@ -86,7 +86,7 @@ function buildEntityEndpoints<TEntity extends EntityType, TEntityData extends En
       providesTags: [entityType],
     }),
 
-    patch: build.mutation<ColumnValue, {
+    patchEntities: build.mutation<ColumnValue, {
       orgId: number;
       rowId: number;
       payload: Record<string, ColumnValue>;
