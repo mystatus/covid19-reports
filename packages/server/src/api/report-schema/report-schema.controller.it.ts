@@ -1,12 +1,9 @@
 import { expect } from 'chai';
+import { ColumnType } from '@covid19-reports/shared';
 import { expectNoErrors } from '../../util/test-utils/expect';
-import {
-  seedOrgContactRoles,
-} from '../../util/test-utils/seed';
+import { seedOrgContactRoles } from '../../util/test-utils/seed';
 import { TestRequest } from '../../util/test-utils/test-request';
-import {
-  uniqueString,
-} from '../../util/test-utils/unique';
+import { uniqueString } from '../../util/test-utils/unique';
 import { Org } from '../org/org.model';
 import { User } from '../user/user.model';
 import { seedReport, seedReports } from './report-schema.model.mock';
@@ -55,9 +52,14 @@ describe(`Report Schema Controller`, () => {
         name: uniqueString(),
         columns: [{
           keyPath: [uniqueString(), uniqueString()],
+          name: uniqueString(),
+          displayName: uniqueString(),
           phi: false,
           pii: false,
-          type: 'string',
+          type: ColumnType.String,
+          required: false,
+          custom: true,
+          updatable: false,
         }],
       };
 
@@ -101,9 +103,14 @@ describe(`Report Schema Controller`, () => {
         name: uniqueString(),
         columns: [...report.columns, {
           keyPath: [uniqueString(), uniqueString()],
+          name: uniqueString(),
+          displayName: uniqueString(),
           phi: false,
           pii: false,
-          type: 'string',
+          type: ColumnType.String,
+          required: false,
+          custom: true,
+          updatable: false,
         }],
       };
 
