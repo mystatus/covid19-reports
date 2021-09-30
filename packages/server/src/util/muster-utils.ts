@@ -328,16 +328,13 @@ async function filterMatchesRoster(filter: SavedFilter | null, columns: ColumnIn
     .from(q => {
       return q
         .select('roster_history.*')
-        .addSelect('roster_history.unit_id', 'unit')
-        .distinctOn(['roster_history.unit_id'])
         .from(RosterHistory, 'roster_history')
-        .leftJoinAndSelect('roster_history.unit', 'unit')
         .where('roster_history.edipi = :edipi', { edipi })
+        .andWhere('roster_history.org_id = :orgId', { orgId })
         .andWhere(`roster_history.timestamp <= to_timestamp(:timestamp) AT TIME ZONE '+0'`, { timestamp: timestamp / 1000 })
-        .andWhere('unit.org_id = :orgId', { orgId })
-        .orderBy('roster_history.unit_id')
         .addOrderBy('roster_history.timestamp', 'DESC')
-        .addOrderBy('roster_history.change_type', 'DESC');
+        .addOrderBy('roster_history.change_type', 'DESC')
+        .limit(1);
     }, 'roster')
     .where('roster.change_type <> :changeType', { changeType: ChangeType.Deleted }) as SelectQueryBuilder<RosterHistory>;
   if (filter != null) {

@@ -129,19 +129,10 @@ export class Observation extends BaseEntity {
     const queryBuilder = Observation.createQueryBuilder('observation').select([]);
     queryBuilder.leftJoin('observation.reportSchema', 'rs');
 
-    const units = `rh.unit_id IN (${(await userRole.getUnits()).map(unit => unit.id).join(',')})`;
-    queryBuilder.leftJoin(
-      qb => {
-        if (!userRole.allUnits) {
-          qb.where(units);
-        }
-        return qb
-          .select([])
-          .from(RosterHistory, 'rh');
-      },
-      'roster',
-      `observation.roster_history_entry_id = roster.id`,
-    );
+    queryBuilder.leftJoin(RosterHistory, 'roster', 'observation.roster_history_entry_id = roster.id');
+    if (!userRole.allUnits) {
+      queryBuilder.where(`roster.unit_id IN (${(await userRole.getUnits()).map(unit => unit.id).join(',')})`);
+    }
 
     // Always select the id column
     queryBuilder.addSelect('observation.id', 'id');
@@ -158,7 +149,7 @@ export class Observation extends BaseEntity {
       }
     });
 
-    queryBuilder.where('rs.org_id = :orgId', { orgId: org.id });
+    queryBuilder.andWhere('rs.org_id = :orgId', { orgId: org.id });
     return queryBuilder;
   }
 

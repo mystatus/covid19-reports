@@ -9,6 +9,7 @@ import { Roster } from './roster.model';
 export function mockRosterEntry(unit: Unit) {
   return Roster.create({
     unit,
+    org: unit.org,
     edipi: uniqueEdipi(),
     firstName: uniqueString(),
     lastName: uniqueString(),

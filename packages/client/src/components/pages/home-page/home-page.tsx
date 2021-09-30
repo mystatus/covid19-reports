@@ -139,14 +139,16 @@ export const HomePage = () => {
         await dispatch(Workspace.fetchDashboards(orgId, workspace.id));
       }
 
-      try {
-        await dispatch(OrphanedRecordActions.fetchCount({ orgId: orgId! }));
-      } catch (error) {
-        void dispatch(Modal.alert('Get Orphaned Records', formatErrorMessage(error, 'Failed to get orphaned records')));
+      if (user.activeRole?.role.canManageRoster) {
+        try {
+          await dispatch(OrphanedRecordActions.fetchCount({ orgId: orgId! }));
+        } catch (error) {
+          void dispatch(Modal.alert('Get Orphaned Records', formatErrorMessage(error, 'Failed to get orphaned records')));
+        }
       }
       dispatch(AppFrameActions.setPageLoading({ isLoading: false }));
     })();
-  }, [dispatch, orgId, workspaces]);
+  }, [dispatch, user, orgId, workspaces]);
 
   const isDashboardFavorited = (workspace: ApiWorkspace, dashboard: ApiDashboard) => {
     if (favoriteDashboards[workspace.id]) {
@@ -158,23 +160,26 @@ export const HomePage = () => {
   const initializeTable = React.useCallback(async () => {
     if (orgId) {
       try {
-        const requestsPromise = AccessRequestClient.getAccessRequests(orgId!);
-        const { weekly } = await MusterClient.getWeeklyMusterTrends(orgId!, {
-          weeksCount: '2',
-        });
-
-        const requests = await requestsPromise;
-        if (weekly.length === 2) {
-          const week1Compliance = weekly[0].total > 0 ? weekly[0].onTime / weekly[0].total : -1;
-          const week2Compliance = weekly[1].total > 0 ? weekly[1].onTime / weekly[1].total : -1;
-          setMusterComplianceLastTwoWeek([week1Compliance * 100, week2Compliance * 100]);
+        if (user.activeRole?.role.canManageGroup) {
+          const requests = await AccessRequestClient.getAccessRequests(orgId!);
+          setAccessRequests(requests);
         }
-        setAccessRequests(requests);
+        if (user.activeRole?.role.canViewMuster) {
+          const { weekly } = await MusterClient.getWeeklyMusterTrends(orgId!, {
+            weeksCount: '2',
+          });
+
+          if (weekly.length === 2) {
+            const week1Compliance = weekly[0].total > 0 ? weekly[0].onTime / weekly[0].total : -1;
+            const week2Compliance = weekly[1].total > 0 ? weekly[1].onTime / weekly[1].total : -1;
+            setMusterComplianceLastTwoWeek([week1Compliance * 100, week2Compliance * 100]);
+          }
+        }
       } catch (_) {
         // Error handling? This should probably just retry?
       }
     }
-  }, [orgId]);
+  }, [user, orgId]);
 
   useEffect(() => {
     void initializeTable();

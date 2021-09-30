@@ -5,16 +5,13 @@ import { getConnection, getManager, In } from 'typeorm';
 import {
   AddCustomColumnBody,
   ColumnInfo,
-  ColumnInfoWithValue,
   ColumnType,
   CustomColumnData,
   edipiColumnDisplayName,
   GetEntitiesQuery,
   Paginated,
-  ReportDateQuery,
   RosterEntryData,
   RosterFileRow,
-  RosterInfo,
   unitColumnDisplayName,
 } from '@covid19-reports/shared';
 import { EntityService } from '../../util/entity-utils';
@@ -29,11 +26,12 @@ import {
 import { addRosterEntry, editRosterEntry } from '../../util/roster-utils';
 import { getDatabaseErrorMessage } from '../../util/typeorm-utils';
 import { dateFromString, getMissingKeys } from '../../util/util';
-import { ApiRequest, EdipiParam, OrgColumnParams, OrgParam, OrgRosterParams } from '../api.router';
+import { ApiRequest, OrgColumnParams, OrgParam, OrgRosterParams } from '../api.router';
 import { Unit } from '../unit/unit.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { ChangeType, RosterHistory } from './roster-history.model';
 import { Roster } from './roster.model';
+import { Org } from '../org/org.model';
 
 class RosterController {
 
@@ -168,9 +166,10 @@ class RosterController {
     }
 
     const existingEntries = await Roster.find({
-      relations: ['unit', 'unit.org'],
+      relations: ['org', 'unit'],
       where: {
         edipi: In(rosterCsvRows.map(x => x[edipiColumnDisplayName])),
+        org: req.appOrg!.id,
       },
     });
 
@@ -187,7 +186,8 @@ class RosterController {
       // Try to get a roster entry from the row.
       let entry: Roster;
       try {
-        entry = getRosterEntryFromCsvRow(csvRow, columns, rowIndex, orgUnits, existingEntries);
+        entry = getRosterEntryFromCsvRow(csvRow, columns, rowIndex, req.appOrg!, orgUnits, existingEntries);
+        entry.org = req.appOrg!;
       } catch (err) {
         if (err instanceof CsvRowError) {
           rowErrors.push(err);
@@ -302,13 +302,12 @@ export async function getRosterForIndividualOnDate(orgId: number, edipi: string,
   }
   const timestamp = reportDate.getTime() / 1000;
   const entry = await RosterHistory.createQueryBuilder('roster')
-    .leftJoinAndSelect('roster.unit', 'unit')
-    .leftJoinAndSelect('unit.org', 'org')
+    .select('roster.*')
     .where('roster.edipi = :edipi', { edipi })
-    .andWhere('org.id = :orgId', { orgId })
+    .andWhere('roster.org_id = :orgId', { orgId })
     .andWhere(`roster.timestamp <= to_timestamp(:timestamp) AT TIME ZONE '+0'`, { timestamp })
-    .select()
     .orderBy('roster.timestamp', 'DESC')
+    .limit(1)
     .getOne();
 
   if (!entry || entry.changeType === ChangeType.Deleted) {
@@ -317,7 +316,7 @@ export async function getRosterForIndividualOnDate(orgId: number, edipi: string,
   return entry;
 }
 
-function getRosterEntryFromCsvRow(csvRow: RosterFileRow, columns: ColumnInfo[], rowIndex: number, orgUnits: Unit[], existingEntries: Roster[]) {
+function getRosterEntryFromCsvRow(csvRow: RosterFileRow, columns: ColumnInfo[], rowIndex: number, org: Org, orgUnits: Unit[], existingEntries: Roster[]) {
   const unitName = csvRow.Unit;
   if (!unitName) {
     throw new CsvRowError('"Unit" is required.', csvRow, rowIndex, unitColumnDisplayName);
@@ -330,13 +329,14 @@ function getRosterEntryFromCsvRow(csvRow: RosterFileRow, columns: ColumnInfo[], 
 
   const edipi = csvRow[edipiColumnDisplayName];
   const unit = units[0];
-  if (existingEntries.some(x => x.edipi === edipi && x.unit.org!.id === unit!.org!.id)) {
+  if (existingEntries.some(x => x.edipi === edipi)) {
     throw new CsvRowError(`Entry with ${edipiColumnDisplayName} ${edipi} already exists.`, csvRow, rowIndex, edipiColumnDisplayName);
   }
 
   // Create a new roster entry and set its columns from the csv row.
   const entry = new Roster();
   entry.unit = unit;
+  entry.org = org;
   for (const column of columns) {
     try {
       entry.setColumnValueFromFileRow(column, csvRow);

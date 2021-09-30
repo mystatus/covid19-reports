@@ -87,23 +87,14 @@ export async function seedAll() {
     .set({ timestamp: new Date('2020-01-01T08:00:00Z') })
     .execute();
 
-  const rosterRemoved = RosterHistory.create({
-    ...orgData1.rosterEntries[0],
-    timestamp: new Date('2020-01-03T08:00:00Z'),
-    changeType: ChangeType.Deleted,
-  });
-  rosterRemoved.id = orgData1.rosterEntries.length * orgCount + 1;
-  await rosterRemoved.save();
+  orgData1.rosterEntries[0].unit = orgData1.units[3];
+  await orgData1.rosterEntries[0].save();
 
-  const added = RosterHistory.create({
-    ...orgData1.rosterEntries[0],
-    timestamp: new Date('2020-01-05T08:00:00Z'),
-    changeType: ChangeType.Added,
-  });
-  // this offsets unit assignment see original assignment in generateOrg() method below.
-  added.id = orgData1.rosterEntries.length * orgCount + 2;
-  added.unit = orgData1.units[3];
-  await added.save();
+  await RosterHistory.createQueryBuilder()
+    .update()
+    .set({ timestamp: new Date('2020-01-05T08:00:00Z') })
+    .where('change_type = :changeType', { changeType: ChangeType.Changed })
+    .execute();
 
   // Create lots of orphaned records to catch possible UI issues.
   let orphanUnitCount = 0;

@@ -15,9 +15,7 @@ import {
   ColumnType,
   ColumnValue,
   RosterEntryData,
-  RosterFileRow,
-  isEdipiColumn,
-  columnTypeToDataType,
+  RosterFileRow, columnTypeToDataType, isEdipiColumn,
 } from '@covid19-reports/shared';
 import {
   BadRequestError,
@@ -30,6 +28,7 @@ import {
   getRequiredValue,
 } from '../../util/util';
 import { Unit } from '../unit/unit.model';
+import { Org } from '../org/org.model';
 
 /**
  * This class serves as the base entity for both Roster and RosterHistory.  This allows both Roster and RosterHistory
@@ -40,6 +39,12 @@ export abstract class RosterEntity extends BaseEntity {
 
   @PrimaryGeneratedColumn()
   id!: number;
+
+  @ManyToOne(() => Org, org => org.id, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  org!: Org;
 
   @ManyToOne(() => Unit, unit => unit.id, {
     nullable: false,

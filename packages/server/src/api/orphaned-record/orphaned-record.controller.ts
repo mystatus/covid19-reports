@@ -144,7 +144,7 @@ class OrphanedRecordController {
     try {
       await getManager().transaction(async manager => {
         for (const orphanedRecord of orphanedRecords) {
-          await orphanedRecord.resolve(entry, manager);
+          await orphanedRecord.resolve(entry, manager, req.appOrg!.id);
         }
       });
     } catch (err) {
@@ -193,7 +193,7 @@ class OrphanedRecordController {
     try {
       await getManager().transaction(async manager => {
         for (const orphanedRecord of orphanedRecords) {
-          await orphanedRecord.resolve(entry, manager);
+          await orphanedRecord.resolve(entry, manager, req.appOrg!.id);
         }
       });
     } catch (err) {

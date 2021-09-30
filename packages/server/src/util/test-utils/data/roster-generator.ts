@@ -20,6 +20,7 @@ export async function rosterTestData(numRosterEntries: number, customColumn: Cus
       edipi,
       firstName: `RosterFirst${edipiNum}`,
       lastName: `RosterLast${edipiNum}`,
+      org: units[i % numUnits].org,
       unit: units[i % numUnits],
       phoneNumber: '1234567890',
       customColumns,

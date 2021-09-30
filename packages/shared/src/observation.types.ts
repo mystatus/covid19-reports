@@ -30,7 +30,7 @@ export const baseObservationColumnLookup: Readonly<{
   },
   unit: {
     name: 'unit',
-    displayName: 'Unit',
+    displayName: 'Reported Unit',
     type: ColumnType.String,
     pii: true,
     phi: false,

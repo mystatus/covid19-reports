@@ -23,7 +23,7 @@ import { Observation } from '../observation/observation.model';
 
 @MakeEntity()
 @Entity()
-@Unique(['edipi', 'unit'])
+@Unique(['org', 'edipi'])
 export class Roster extends RosterEntity {
 
   static sqlRawColumns: Array<ColumnInfo & { sql: string }> = [{
@@ -115,7 +115,7 @@ export class Roster extends RosterEntity {
 
     // Filter out roster entries that are not on the active roster or are not allowed by the role's index prefix.
     queryBuilder
-      .where('u.org_id = :orgId', { orgId: org.id });
+      .where('roster.org_id = :orgId', { orgId: org.id });
 
     queryBuilder.leftJoin(
       qb => {
