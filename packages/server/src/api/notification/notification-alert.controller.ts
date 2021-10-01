@@ -58,7 +58,6 @@ class NotificationAlertController {
           userSetting: setting,
           alertData,
         });
-        await updateNotificationAlertParams(setting);
       }
     }
     res.json(output);
@@ -109,7 +108,6 @@ class NotificationAlertController {
           userSetting: setting,
           alertData,
         });
-        await updateNotificationAlertParams(setting);
       }
     }
     res.json(output);
@@ -214,7 +212,6 @@ class NotificationAlertController {
           userSetting: setting,
           alertData,
         });
-        await updateNotificationAlertParams(setting);
       }
     }
     res.json(numTrendingSymptomsByUnit);
@@ -252,7 +249,6 @@ class NotificationAlertController {
           userSetting: setting,
           alertData,
         });
-        await updateNotificationAlertParams(setting);
       }
     }
     res.json(output);
@@ -282,7 +278,6 @@ class NotificationAlertController {
             accessRequestCount,
           },
         });
-        await updateNotificationAlertParams(setting);
       }
     }
     res.json(output);
@@ -314,12 +309,6 @@ async function getUsersRegisteredForNotification(orgId: number, notificationId: 
       org: orgId,
     },
   });
-}
-
-async function updateNotificationAlertParams(setting: UserNotificationSetting) {
-  setting.dailyCount += 1;
-  setting.lastNotifiedDate = moment().toDate();
-  await setting.save();
 }
 
 export default new NotificationAlertController();
