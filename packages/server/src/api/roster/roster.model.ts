@@ -58,7 +58,7 @@ export class Roster extends RosterEntity {
     custom: false,
     required: false,
     updatable: false,
-    sql: `COUNT(json_array_length("observation"."custom_columns"->'Symptoms') > 0)`,
+    sql: `COUNT(length("observation"."custom_columns"->>'Symptoms') > 0)`,
   }, {
     name: 'lastReportWithSymptoms',
     table: 'observation',
@@ -69,7 +69,7 @@ export class Roster extends RosterEntity {
     custom: false,
     required: false,
     updatable: false,
-    sql: `MAX(case when json_array_length("observation"."custom_columns"->'Symptoms') > 0 then "observation"."timestamp" end)`,
+    sql: `MAX(case when length("observation"."custom_columns"->>'Symptoms') > 0 then "observation"."timestamp" end)`,
   }];
 
   getEntityTarget(): EntityTarget<any> {
