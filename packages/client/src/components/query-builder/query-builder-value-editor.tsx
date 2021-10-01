@@ -45,6 +45,7 @@ export type QueryBuilderValueEditorProps = {
   onChange: (row: QueryRow) => void;
   row: QueryRow;
   expressionRefsByType?: Map<QueryValueType, ExpressionReference[]>;
+  disabled?: boolean;
 };
 
 export const QueryBuilderValueEditor = (props: QueryBuilderValueEditorProps) => {
@@ -80,7 +81,7 @@ export const QueryBuilderValueEditor = (props: QueryBuilderValueEditorProps) => 
   return editor;
 };
 
-const QueryBuilderStringEditor = ({ onChange, row }: QueryBuilderValueEditorProps) => {
+const QueryBuilderStringEditor = ({ onChange, row, disabled }: QueryBuilderValueEditorProps) => {
   const classes = useStyles();
 
   const isExpressionValid = useMemo(() => {
@@ -101,6 +102,7 @@ const QueryBuilderStringEditor = ({ onChange, row }: QueryBuilderValueEditorProp
         placeholder={row.field.displayName}
         type={row.field.type === ColumnType.Number ? 'number' : 'text'}
         value={row.value}
+        disabled={disabled}
       />
     );
   };
@@ -134,6 +136,7 @@ const QueryBuilderStringEditor = ({ onChange, row }: QueryBuilderValueEditorProp
           error={!isExpressionValid}
           helperText={getExpressionHelperText(row, isExpressionValid)}
           placeholder={expressionFieldPlaceholder}
+          disabled={disabled}
         />
       </Tooltip>
     );
@@ -147,6 +150,7 @@ const QueryBuilderStringEditor = ({ onChange, row }: QueryBuilderValueEditorProp
           <Checkbox
             value={row.expressionEnabled}
             onChange={event => handleUseExpressionChange(event.target.checked)}
+            disabled={disabled}
           />
         </Tooltip>
       )}
@@ -154,7 +158,7 @@ const QueryBuilderStringEditor = ({ onChange, row }: QueryBuilderValueEditorProp
   );
 };
 
-const QueryBuilderBooleanEditor = ({ onChange, row }: QueryBuilderValueEditorProps) => {
+const QueryBuilderBooleanEditor = ({ onChange, row, disabled }: QueryBuilderValueEditorProps) => {
   return (
     <Switch
       checked={Boolean(row.value)}
@@ -166,6 +170,7 @@ const QueryBuilderBooleanEditor = ({ onChange, row }: QueryBuilderValueEditorPro
       }}
       color="primary"
       inputProps={{ 'aria-label': 'primary checkbox' }}
+      disabled={disabled}
     />
   );
 };
@@ -175,7 +180,7 @@ type QueryBuilderDateTimeEditorProps = QueryBuilderValueEditorProps & {
   expressionReferences?: ExpressionReference[];
 };
 
-const QueryBuilderDateTimeEditor = ({ expressionReferences, hasTime, onChange, row }: QueryBuilderDateTimeEditorProps) => {
+const QueryBuilderDateTimeEditor = ({ expressionReferences, hasTime, onChange, row, disabled }: QueryBuilderDateTimeEditorProps) => {
   const classes = useStyles();
 
   const isExpressionValid = useMemo(() => {
@@ -214,6 +219,7 @@ const QueryBuilderDateTimeEditor = ({ expressionReferences, hasTime, onChange, r
               value,
             });
           }}
+          disabled={disabled}
         />
       </MuiPickersUtilsProvider>
     );
@@ -249,6 +255,7 @@ const QueryBuilderDateTimeEditor = ({ expressionReferences, hasTime, onChange, r
           autoFocus
           value={row.expressionRef}
           onChange={event => handleExpressionRefChange(event.target.value as string)}
+          disabled={disabled}
         >
           {
             expressionReferences?.map((ref: ExpressionReference) => {
@@ -280,6 +287,7 @@ const QueryBuilderDateTimeEditor = ({ expressionReferences, hasTime, onChange, r
         error={!isExpressionValid}
         helperText={relativeTimeExpressionTooltip}
         placeholder={expressionFieldPlaceholder}
+        disabled={disabled}
       />
     );
   };
@@ -297,6 +305,7 @@ const QueryBuilderDateTimeEditor = ({ expressionReferences, hasTime, onChange, r
               <Checkbox
                 checked={row.expressionEnabled}
                 onChange={event => handleUseExpressionChange(event.target.checked)}
+                disabled={disabled}
               />
             </Tooltip>
           </Grid>
@@ -308,6 +317,7 @@ const QueryBuilderDateTimeEditor = ({ expressionReferences, hasTime, onChange, r
             <Checkbox
               checked={row.expressionEnabled}
               onChange={event => handleUseExpressionChange(event.target.checked)}
+              disabled={disabled}
             />
           </Tooltip>
         </>
@@ -320,7 +330,7 @@ type QueryBuilderValueRangeEditorProps = QueryBuilderValueEditorProps & {
   editorComponent: ReactElement<QueryBuilderValueEditorProps>;
 };
 
-const QueryBuilderValueRangeEditor = ({ editorComponent, onChange, row }: QueryBuilderValueRangeEditorProps) => {
+const QueryBuilderValueRangeEditor = ({ editorComponent, onChange, row, disabled }: QueryBuilderValueRangeEditorProps) => {
   // Convert the row value to a two-element array if necessary.
   useEffect(() => {
     let value = row.value;
@@ -361,6 +371,7 @@ const QueryBuilderValueRangeEditor = ({ editorComponent, onChange, row }: QueryB
               ...row,
               value: (row.value as QueryValueScalarType[])[index],
             },
+            disabled,
           })}
         </Grid>
       ))}
@@ -370,8 +381,8 @@ const QueryBuilderValueRangeEditor = ({ editorComponent, onChange, row }: QueryB
 
 const QueryBuilderEnumEditor = (props: QueryBuilderValueEditorProps) => {
   const classes = useStyles();
+  const { onChange, row, disabled } = props;
 
-  const { onChange, row } = props;
   return (
     <Select
       native
@@ -384,6 +395,7 @@ const QueryBuilderEnumEditor = (props: QueryBuilderValueEditorProps) => {
           value: event.target.value as string | number,
         });
       }}
+      disabled={disabled}
     >
       {row.field.enumItems!.map(({ label, value }) => (
         <option key={label} value={value}>

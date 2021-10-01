@@ -29,10 +29,11 @@ export type QueryBuilderRowProps = {
   onRemoveClick: (row: QueryRow) => void;
   row: QueryRow;
   expressionRefsByType?: Map<QueryValueType, ExpressionReference[]>;
+  disabled?: boolean;
 };
 
 export const QueryBuilderRow = (props: QueryBuilderRowProps) => {
-  const { availableFields, onChange, onRemoveClick, row, expressionRefsByType } = props;
+  const { availableFields, onChange, onRemoveClick, row, expressionRefsByType, disabled } = props;
 
   const classes = useStyles();
   const ops = getFieldQueryOpDesc(row.field);
@@ -77,6 +78,7 @@ export const QueryBuilderRow = (props: QueryBuilderRowProps) => {
               expressionEnabled: false,
             });
           }}
+          disabled={disabled}
         />
       </Grid>
 
@@ -94,20 +96,28 @@ export const QueryBuilderRow = (props: QueryBuilderRowProps) => {
             }}
             ops={ops}
             value={row.op}
+            disabled={disabled}
           />
         </Grid>
       )}
 
       <Grid item>
-        <QueryBuilderValueEditor onChange={onChange} row={row} expressionRefsByType={expressionRefsByType} />
+        <QueryBuilderValueEditor
+          onChange={onChange}
+          row={row}
+          expressionRefsByType={expressionRefsByType}
+          disabled={disabled}
+        />
       </Grid>
 
-      <IconButton
-        className={classes.removeRowButton}
-        onClick={handleRemoveClick}
-      >
-        <HighlightOffIcon />
-      </IconButton>
+      {!disabled && (
+        <IconButton
+          className={classes.removeRowButton}
+          onClick={handleRemoveClick}
+        >
+          <HighlightOffIcon />
+        </IconButton>
+      )}
     </>
   );
 };

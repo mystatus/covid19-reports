@@ -18,10 +18,7 @@ import _ from 'lodash';
 import deepEquals from 'fast-deep-equal';
 import { Button } from '@material-ui/core';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
-import {
-  TableColumn,
-  TableRowOptions,
-} from '../tables/table-custom-columns-content';
+import { TableRowOptions } from '../tables/table-custom-columns-content';
 import { UserSelector } from '../../selectors/user.selector';
 import usePersistedState from '../../hooks/use-persisted-state';
 import { useAppSelector } from '../../hooks/use-app-selector';
@@ -92,6 +89,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
   const dispatch = useAppDispatch();
 
   const orgId = useAppSelector(UserSelector.orgId)!;
+  const { canManageGroup } = useAppSelector(UserSelector.role)!;
 
   const [currentLayout, setCurrentLayout] = usePersistedState<SavedLayoutSerialized>(`${entityType}CurrentLayout`, makeDefaultViewLayout(entityType, [], maxTableColumns));
   const [selectedLayoutId, setSelectedLayoutId] = usePersistedState<ViewLayoutId>(`${entityType}SelectedLayoutId`, currentLayout.id);
@@ -369,10 +367,11 @@ export default function ViewLayout(props: ViewLayoutProps) {
                   onItemClick={selectLayout}
                   onItemDuplicateClick={handleSaveNewLayout}
                   onItemDeleteClick={handleDeleteClick}
-                  showItemDeleteButton={item => !isDefaultLayout(item.id)}
+                  showItemDuplicateButton={() => canManageGroup}
+                  showItemDeleteButton={layout => canManageGroup && !isDefaultLayout(layout.id)}
                 />
 
-                {hasChanges && (
+                {canManageGroup && hasChanges && (
                   <ViewLayoutButtons
                     selectedLayoutId={selectedLayoutId}
                     onSaveClick={handleSaveClick}

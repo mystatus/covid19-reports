@@ -82,6 +82,7 @@ export default function View({ layout, idColumn }: ViewProps) {
   const dispatch = useAppDispatch();
   const units = useAppSelector(UnitSelector.all);
   const orgId = useAppSelector(UserSelector.orgId)!;
+  const { canManageGroup } = useAppSelector(UserSelector.role)!;
 
   const [entitiesQuery, setEntitiesQuery] = usePersistedState<GetEntitiesQuery>(`${layout.name}EntitiesQuery`, {
     limit: '10',
@@ -143,7 +144,7 @@ export default function View({ layout, idColumn }: ViewProps) {
         enumItems,
       };
     });
-  }, [columns, units]);
+  }, [columns, entityType, units]);
 
   const fetchSavedFilters = useCallback(async () => {
     let savedFiltersNew: SavedFilterSerialized[];
@@ -381,19 +382,19 @@ export default function View({ layout, idColumn }: ViewProps) {
             onItemClick={selectFilter}
             onItemDuplicateClick={handleFilterDuplicateClick}
             onItemDeleteClick={handleFilterDeleteClick}
-            showItemDuplicateButton={isSavedFilter}
-            showItemDeleteButton={isSavedFilter}
+            showItemDuplicateButton={filter => canManageGroup && isSavedFilter(filter)}
+            showItemDeleteButton={filter => canManageGroup && isSavedFilter(filter)}
           />
 
           {selectedFilterId !== noFilterId && (
             <Button
-              aria-label="Toggle Filter Editor"
+              aria-label="Toggle Filter Settings"
               className={classes.tableHeaderButton}
               onClick={() => setFilterEditorOpen(!filterEditorOpen)}
               size="small"
               variant="outlined"
             >
-              {`${filterEditorOpen ? 'Hide' : 'Show'} Filter Editor`}
+              {`${filterEditorOpen ? 'Hide' : 'Show'} Filter Settings`}
             </Button>
           )}
         </Box>
@@ -407,8 +408,8 @@ export default function View({ layout, idColumn }: ViewProps) {
           onChangeQueryRows={handleChangeFilterQueryRows}
           onSaveClick={handleFilterSaveClick}
           hasChanges={filterHasChanges}
-          showAddCriteriaButton
-          showSaveButton
+          allowEdit={isCustomFilter(selectedFilterId) || canManageGroup}
+          allowSave={canManageGroup}
         />
       </Collapse>
 

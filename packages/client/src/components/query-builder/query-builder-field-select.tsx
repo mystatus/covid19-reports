@@ -6,10 +6,11 @@ import { QueryField } from '../../utility/query-builder-utils';
 type QueryBuilderFieldSelectProps = {
   fields: QueryField[];
   onChange: (field: QueryField) => void;
+  disabled?: boolean;
 };
 
 export const QueryBuilderFieldSelect = (props: QueryBuilderFieldSelectProps) => {
-  const { fields, onChange } = props;
+  const { fields, onChange, disabled } = props;
   return (
     <Select
       native
@@ -18,6 +19,7 @@ export const QueryBuilderFieldSelect = (props: QueryBuilderFieldSelectProps) => 
       onChange={event => {
         onChange(fields[event.target.value as number]);
       }}
+      disabled={disabled}
     >
       {fields.map((field, index) => (
         <option key={getFullyQualifiedColumnName(field)} value={index}>
