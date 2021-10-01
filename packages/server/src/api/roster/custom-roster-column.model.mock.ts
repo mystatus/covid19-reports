@@ -19,7 +19,10 @@ export function mockCustomRosterColumn(org: Org, options?: {
     phi: true,
     required: true,
     config: {
-      stuff: uniqueString(),
+      options: [{
+        id: uniqueString(),
+        label: uniqueString(),
+      }],
     },
     ...customData,
   });

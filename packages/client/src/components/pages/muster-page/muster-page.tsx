@@ -34,7 +34,7 @@ import {
   columnInfosOrdered,
 } from '../../../utility/table';
 import PageHeader from '../../page-header/page-header';
-import { ColumnInfoToTableColumns, TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
+import { columnInfoToTableColumns, TableCustomColumnsContent } from '../../tables/table-custom-columns-content';
 import { TablePagination } from '../../tables/table-pagination/table-pagination';
 import { MusterPageHelp } from './muster-page-help';
 import useStyles from './muster-page.styles';
@@ -495,7 +495,7 @@ export const MusterPage = () => {
 
                   <TableCustomColumnsContent
                     rows={rosterData.rows}
-                    columns={ColumnInfoToTableColumns(getVisibleColumns())}
+                    columns={columnInfoToTableColumns(getVisibleColumns())}
                     idColumn="edipi"
                     noDataText={isPageLoading ? 'Loading...' : 'No Data'}
                     rowOptions={{

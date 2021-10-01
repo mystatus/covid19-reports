@@ -17,6 +17,7 @@ export * from './api/workspace.api.types';
 export * from './utils/days';
 export * from './utils/expression-utils';
 export * from './utils/string-utils';
+export * from './utils/entity-column-utils';
 
 export * from './entity.types';
 export * from './observation.types';

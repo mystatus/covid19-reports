@@ -17,6 +17,7 @@ import {
   oneDayMilliseconds,
   Paginated,
   UpdateMusterConfigurationBody,
+  findColumnByFullyQualifiedName,
 } from '@covid19-reports/shared';
 import { assertRequestBody, assertRequestQuery } from '../../util/api-utils';
 import { BadRequestError, NotFoundError } from '../../util/error-types';
@@ -45,7 +46,7 @@ import { MusterConfiguration } from './muster-config.model';
 import { SavedFilter } from '../saved-filter/saved-filter.model';
 import { MusterFilter } from './muster-filter.model';
 import { Org } from '../org/org.model';
-import { EntityService, findColumnByName } from '../../util/entity-utils';
+import { EntityService } from '../../util/entity-utils';
 
 
 class MusterController {
@@ -247,7 +248,11 @@ class MusterController {
         for (const filter of window.configuration.filters!) {
           const filterQb = RosterHistory.createQueryBuilder().select();
           Object.keys(filter.filter.config).forEach(columnName => {
-            service.applyWhere(filterQb, findColumnByName(columnName, columns), filter.filter.config[columnName]);
+            const column = findColumnByFullyQualifiedName(columnName, columns);
+            if (!column) {
+              throw new Error(`Column "${columnName}" was not found`);
+            }
+            service.applyWhere(filterQb, column, filter.filter.config[columnName]);
           });
           const [fullFilterQuery, filterParams] = filterQb.getQueryAndParameters();
           let filterQuery = fullFilterQuery.substring(fullFilterQuery.indexOf('WHERE') + 6);

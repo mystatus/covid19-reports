@@ -1,6 +1,8 @@
-import moment from 'moment-timezone';
-
 export type ColumnValue = string | boolean | number | null;
+
+export type CustomColumns = {
+  [columnName: string]: ColumnValue;
+};
 
 export enum ColumnType {
   String = 'string',
@@ -11,55 +13,22 @@ export enum ColumnType {
   Enum = 'enum',
 }
 
-export type ColumnTypeMapping = {
-  [ColumnType.String]: string | null;
-  [ColumnType.Number]: number | null;
-  [ColumnType.Date]: ColumnValue;
-  [ColumnType.DateTime]: ColumnValue;
-  [ColumnType.Boolean]: boolean | null;
-  [ColumnType.Enum]: ColumnValue;
+export type CustomColumnConfigString = {
+  multiline?: boolean;
 };
 
-export const friendlyColumnValue = <T>(entity: T & Record<string, unknown>, column: ColumnInfo) => {
-  const value: any = entity[getFullyQualifiedColumnName(column)];
-  if (value == null) {
-    return '';
-  }
-  switch (column.type) {
-    case ColumnType.Enum: {
-      const enumConfig = column.config as { options: { id: string; label: string }[] };
-      const selectedOption = enumConfig.options.find(option => option.id === value);
-      return selectedOption?.label;
-    }
-    case ColumnType.Date:
-      return moment(value as string).format('l');
-    case ColumnType.DateTime:
-      return moment(value as string).format('lll');
-    case ColumnType.Boolean:
-      return value ? 'Yes' : 'No';
-    default:
-      return value;
-  }
+export type CustomColumnConfigEnumOption = {
+  id: string;
+  label: string;
 };
 
-export const getFullyQualifiedColumnName = (column: { name: string; table?: string }) => {
-  return column.table ? `${column.table}.${column.name}` : column.name;
+export type CustomColumnConfigEnum = {
+  options?: CustomColumnConfigEnumOption[];
 };
 
-export const getFullyQualifiedColumnDisplayName = (column: { displayName?: string; table?: string }) => {
-  if (!column.displayName) {
-    return '';
-  }
-  return column.table ? `${column.displayName} (${column.table})` : column.displayName;
-};
-
-export type NarrowTypeForColumnType<T extends ColumnType> = ColumnTypeMapping[T];
-
-export type CustomColumnConfig = {};
-
-export type CustomColumns = {
-  [columnName: string]: ColumnValue;
-};
+export type CustomColumnConfig =
+  | CustomColumnConfigString
+  | CustomColumnConfigEnum;
 
 export type ColumnInfo = {
   name: string;
@@ -98,7 +67,6 @@ export type QueryOp =
   | 'between'
   | 'null'
   | 'notnull';
-
 
 export type QueryValueScalarType = string | number | boolean;
 

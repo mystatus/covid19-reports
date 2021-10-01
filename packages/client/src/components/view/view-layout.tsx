@@ -6,11 +6,11 @@ import React, {
   useState,
 } from 'react';
 import {
-  getFullyQualifiedColumnName,
   ColumnInfo,
   ColumnsConfig,
   EntityType,
   friendlyColumnValue,
+  getFullyQualifiedColumnName,
   SavedLayoutSerialized,
   SortedQuery,
 } from '@covid19-reports/shared';
@@ -18,7 +18,10 @@ import _ from 'lodash';
 import deepEquals from 'fast-deep-equal';
 import { Button } from '@material-ui/core';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
-import { TableRowOptions } from '../tables/table-custom-columns-content';
+import {
+  TableColumn,
+  TableRowOptions,
+} from '../tables/table-custom-columns-content';
 import { UserSelector } from '../../selectors/user.selector';
 import usePersistedState from '../../hooks/use-persisted-state';
 import { useAppSelector } from '../../hooks/use-app-selector';
@@ -412,7 +415,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
                 },
               }));
             },
-            renderCell: (row: any, column: any) => {
+            renderCell: (row, column) => {
               const action = getColumnAction(entityType, column.fullyQualifiedName);
               if (action) {
                 return action.render(row);

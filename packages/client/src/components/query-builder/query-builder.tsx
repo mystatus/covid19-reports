@@ -5,7 +5,10 @@ import {
 } from '@material-ui/core';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import SaveIcon from '@material-ui/icons/Save';
-import React, { useEffect } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+} from 'react';
 import { getFullyQualifiedColumnName, QueryValueType } from '@covid19-reports/shared';
 import useStyles from './query-builder.styles';
 import {
@@ -44,7 +47,11 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
   const classes = useStyles();
 
   // Don't allow duplicate fields.
-  const availableFields = queryFields.filter(field => !queryRows.some(row => getFullyQualifiedColumnName(row.field) === getFullyQualifiedColumnName(field)));
+  const availableFields = useMemo(() => {
+    return queryFields.filter(field => {
+      return !queryRows.some(row => getFullyQualifiedColumnName(row.field) === getFullyQualifiedColumnName(field));
+    });
+  }, [queryFields, queryRows]);
 
   const addRow = () => {
     if (availableFields.length <= 0) {

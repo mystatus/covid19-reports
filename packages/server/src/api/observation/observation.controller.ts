@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { EntityManager, getConnection } from 'typeorm';
 import { ColumnType, CustomColumns, MusterStatus } from '@covid19-reports/shared';
 import { Report } from './observation.types';
-
 import { Observation } from './observation.model';
 import { ApiRequest, EdipiParam } from '../api.router';
 import { Log } from '../../util/log';

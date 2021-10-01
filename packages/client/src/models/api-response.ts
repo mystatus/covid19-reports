@@ -1,9 +1,9 @@
 import {
-  DaysOfTheWeek,
-  OrphanedRecordActionType,
   ColumnType,
   CustomColumns,
-  CustomColumnConfig, SavedFilterSerialized,
+  DaysOfTheWeek,
+  OrphanedRecordActionType,
+  SavedFilterSerialized,
 } from '@covid19-reports/shared';
 
 export interface ApiPaginated<TData> {
@@ -113,22 +113,6 @@ export interface ApiUserNotificationSetting {
   maxDailyCount: number;
   smsEnabled: boolean;
   emailEnabled: boolean;
-}
-
-export interface ApiRosterStringColumnConfig extends CustomColumnConfig {
-  multiline?: boolean;
-}
-
-export type ApiRosterEnumColumnConfigOption = { id: string; label: string };
-
-export interface ApiRosterEnumColumnConfig extends CustomColumnConfig {
-  options?: ApiRosterEnumColumnConfigOption[];
-}
-
-export type ApiEnumColumnConfigOption = { id: string; label: string };
-
-export interface ApiEnumColumnConfig extends CustomColumnConfig {
-  options?: ApiEnumColumnConfigOption[];
 }
 
 export type ApiRosterEntryData = {
