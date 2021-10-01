@@ -137,7 +137,7 @@ export function columnTypeToDataType(columnType: ColumnType) {
     case ColumnType.Date:
     case ColumnType.DateTime:
     case ColumnType.Enum:
-      return 'string';
+      return ColumnType.String;
     default:
       return columnType;
   }
