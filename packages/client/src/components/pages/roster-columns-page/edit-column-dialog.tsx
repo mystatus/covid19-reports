@@ -18,16 +18,16 @@ import AddCircleIcon from '@material-ui/icons/AddCircle';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import { v4 as uuidv4 } from 'uuid';
 import {
+  CustomColumnConfigString,
   ColumnInfo,
   ColumnType,
   CustomColumnConfig,
   UpdateCustomColumnBody,
+  CustomColumnConfigEnumOption,
+  CustomColumnConfigEnum,
 } from '@covid19-reports/shared';
 import useStyles from './edit-column-dialog.styles';
 import {
-  ApiRosterEnumColumnConfig,
-  ApiRosterEnumColumnConfigOption,
-  ApiRosterStringColumnConfig,
   rosterColumnTypeDisplayName,
 } from '../../../models/api-response';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
@@ -45,7 +45,7 @@ export interface EditColumnDialogProps {
 
 type CustomFlag = {
   label: string;
-  key: keyof Pick<ApiRosterStringColumnConfig, 'multiline'>;
+  key: keyof Pick<CustomColumnConfigString, 'multiline'>;
 };
 
 const customFlagsForType = (type: ColumnType): CustomFlag[] => {
@@ -62,7 +62,7 @@ const customFlagsForType = (type: ColumnType): CustomFlag[] => {
 
 const isCustomFlagSet = (config: CustomColumnConfig, type: ColumnType, customFlag: CustomFlag): boolean => {
   if (type === ColumnType.String) {
-    const cfg = config as ApiRosterStringColumnConfig;
+    const cfg = config as CustomColumnConfigString;
     return cfg[customFlag.key] === true;
   }
   return false;
@@ -70,20 +70,20 @@ const isCustomFlagSet = (config: CustomColumnConfig, type: ColumnType, customFla
 
 const setCustomFlag = (config: CustomColumnConfig, type: ColumnType, customFlag: CustomFlag, value: boolean) => {
   if (type === ColumnType.String) {
-    const cfg = config as ApiRosterStringColumnConfig;
+    const cfg = config as CustomColumnConfigString;
     cfg[customFlag.key] = value;
   }
   return { ...config };
 };
 
-const getEnumOptions = (config: CustomColumnConfig, type: ColumnType): ApiRosterEnumColumnConfigOption[] => {
+const getEnumOptions = (config: CustomColumnConfigEnum, type: ColumnType): CustomColumnConfigEnumOption[] => {
   if (type !== ColumnType.Enum) {
     throw new Error('Invalid call to getEnumOptions for non-enum type');
   }
-  return (config as ApiRosterEnumColumnConfig).options ?? [];
+  return config.options ?? [];
 };
 
-const addEnumOption = (config: CustomColumnConfig, type: ColumnType): ApiRosterEnumColumnConfig => {
+const addEnumOption = (config: CustomColumnConfigEnum, type: ColumnType): CustomColumnConfigEnum => {
   return {
     ...config,
     options: [...getEnumOptions(config, type), {
@@ -93,7 +93,7 @@ const addEnumOption = (config: CustomColumnConfig, type: ColumnType): ApiRosterE
   };
 };
 
-const editEnumOption = (config: CustomColumnConfig, type: ColumnType, id: string, label: string): ApiRosterEnumColumnConfig => {
+const editEnumOption = (config: CustomColumnConfigEnum, type: ColumnType, id: string, label: string): CustomColumnConfigEnum => {
   return {
     ...config,
     options: getEnumOptions(config, type).map(option => {
@@ -105,7 +105,7 @@ const editEnumOption = (config: CustomColumnConfig, type: ColumnType, id: string
   };
 };
 
-const deleteEnumOption = (config: CustomColumnConfig, type: ColumnType, id: string): ApiRosterEnumColumnConfig => {
+const deleteEnumOption = (config: CustomColumnConfigEnum, type: ColumnType, id: string): CustomColumnConfigEnum => {
   return {
     ...config,
     options: getEnumOptions(config, type).filter(option => option.id !== id),
@@ -148,7 +148,7 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
   };
 
   const onCustomEnumChanged = (id: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setConfig(editEnumOption(config, type, id, event.target.value));
+    setConfig(editEnumOption(config as CustomColumnConfigEnum, type, id, event.target.value));
   };
 
   const onSave = async () => {
@@ -223,7 +223,7 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
             <Grid item xs={12}>
               <Typography className={classes.headerLabel}>Options:</Typography>
 
-              {getEnumOptions(config, type).map(({ id, label }) => (
+              {getEnumOptions(config as CustomColumnConfigEnum, type).map(({ id, label }) => (
                 <Grid key={id} container item xs={12} spacing={1}>
                   <Grid item xs={10}>
                     <TextField
@@ -237,7 +237,7 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
                   <Grid item xs={2}>
                     <IconButton
                       className={classes.removeEnumButton}
-                      onClick={() => setConfig(deleteEnumOption(config, type, id))}
+                      onClick={() => setConfig(deleteEnumOption(config as CustomColumnConfigEnum, type, id))}
                     >
                       <HighlightOffIcon />
                     </IconButton>
@@ -248,7 +248,7 @@ export const EditColumnDialog = (props: EditColumnDialogProps) => {
               <Button
                 aria-label="Add option"
                 className={classes.addEnumButton}
-                onClick={() => setConfig(addEnumOption(config, type))}
+                onClick={() => setConfig(addEnumOption(config as CustomColumnConfigEnum, type))}
                 size="small"
                 startIcon={<AddCircleIcon />}
                 variant="outlined"

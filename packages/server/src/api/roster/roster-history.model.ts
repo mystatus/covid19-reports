@@ -8,13 +8,17 @@ import {
 import {
   baseRosterColumns,
   ColumnInfo,
+  getColumnSelect,
 } from '@covid19-reports/shared';
 import { RosterEntity } from './roster-entity';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { UserRole } from '../user/user-role.model';
-import { getColumnSelect, getColumnWhere, isColumnAllowed, MakeEntity } from '../../util/entity-utils';
+import {
+  isColumnAllowed,
+  MakeEntity,
+} from '../../util/entity-utils';
 import { timestampColumnTransformer } from '../../util/util';
 
 
@@ -49,11 +53,7 @@ export class RosterHistory extends RosterEntity {
   }
 
   static getColumnSelect(column: ColumnInfo) {
-    return getColumnSelect(column, 'custom_columns', 'roster');
-  }
-
-  static getColumnWhere(column: ColumnInfo) {
-    return getColumnWhere(column, 'custom_columns', 'roster', true);
+    return getColumnSelect(column, 'roster');
   }
 
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {

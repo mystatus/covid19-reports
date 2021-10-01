@@ -1,18 +1,18 @@
 import {
-  getFullyQualifiedColumnName,
   ColumnInfo,
   ColumnType,
   ColumnValue,
-  edipiColumnDisplayName,
-  GetEntitiesQuery,
   FilterConfig,
   FilterConfigItem,
+  findColumnByFullyQualifiedName,
+  formatColumnSelect,
+  getFullyQualifiedColumnName,
+  GetEntitiesQuery,
   Paginated,
   QueryOp,
 } from '@covid19-reports/shared';
 import bodyParser from 'body-parser';
 import { Response } from 'express';
-import { snakeCase } from 'lodash';
 import moment from 'moment';
 import {
   OrderByCondition,
@@ -28,15 +28,12 @@ import { UserRole } from '../api/user/user-role.model';
 import { requireOrgAccess } from '../auth/auth-middleware';
 import { BadRequestError } from './error-types';
 
-const join = (...args: Array<string | null | undefined>) => args.filter(Boolean).join('.');
-
 export interface IEntity {
 }
 
 export interface IEntityModel<T extends IEntity> {
   new(): T;
   getColumnSelect(column: ColumnInfo): string;
-  getColumnWhere(column: ColumnInfo): string;
   filterAllowedColumns?(columns: ColumnInfo[], role: Role): ColumnInfo[];
   getColumns(org: Org, includeRelationships?: boolean, version?: string): Promise<ColumnInfo[]>;
   buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]): Promise<SelectQueryBuilder<T>>;
@@ -47,132 +44,12 @@ export function MakeEntity<T, S extends IEntityModel<T>>() {
     return constructor;
   };
 }
-
-export function getColumnSelect(column: ColumnInfo, customColumn: string, alias: string) {
-  // Make sure custom columns are converted to appropriate types
-  if (column.custom) {
-    const path = column.name.split('_');
-    const jsonSelects = path.slice(0, -1).map(k => `'${k}'`);
-    const leafSelect = path.slice(-1);
-    const jsonNodes = jsonSelects.length ? ['', jsonSelects].join('->') : '';
-
-    const select = `${join(column?.table ?? alias, customColumn)} ${jsonNodes} ->> '${leafSelect}'`;
-
-    switch (column.type) {
-      case ColumnType.Boolean:
-        return `(${select})::BOOLEAN`;
-      case ColumnType.Number:
-        return `(${select})::DOUBLE PRECISION`;
-      default:
-        return select;
-    }
-  }
-  return join(column?.table ?? alias, snakeCase(column.name));
-}
-
-export function getColumnWhere(column: ColumnInfo, customColumn: string, alias: string, roster?: boolean) {
-  let columnName = column.name;
-  if (roster && (column.name === 'unit' && !column.custom)) {
-    // HACK: Unit filters use 'unit' as the column name, but should really be using 'unit_id'.
-    // Another ticket has been created to address this issue.
-    columnName = 'unit_id';
-  }
-  return join(`"${column?.table ?? alias}"`, `"${columnName}"`);
-}
-
-export const isColumnAllowed = (column: ColumnInfo, role: Role) => {
-  return ((!column.pii || role.canViewPII) && (!column.phi || role.canViewPHI));
-};
-
-export const filterAllowedColumns = (columns: ColumnInfo[], role: Role) => columns.filter(column => isColumnAllowed(column, role));
-
-
-export function columnTypeToDataType(columnType: ColumnType) {
-  // Get dates and enums as strings.
-  switch (columnType) {
-    case ColumnType.Date:
-    case ColumnType.DateTime:
-    case ColumnType.Enum:
-      return 'string';
-    default:
-      return columnType;
-  }
-}
-
-export const isEdipiColumn = (column: ColumnInfo) => column.displayName === edipiColumnDisplayName;
-
-
-const formatValue = (val: ColumnValue, column: ColumnInfo) => {
-  if (val === null) {
-    return val;
-  }
-  switch (column.type) {
-    case ColumnType.String:
-      return val.toString().toLowerCase();
-    case ColumnType.DateTime:
-      return `'${moment.utc(val.toString()).format('YYYY-MM-DD HH:mm')}:00.000000'`;
-    case ColumnType.Date:
-      return `'${moment.utc(val.toString()).format('YYYY-MM-DD')} 00:00:00.000000'`;
-    default:
-      return val;
-  }
-};
-
-function formatColumnSelect(columnSelect: string, column: ColumnInfo) {
-  // Ensure no camel case columns make it to the query string.
-  const tableField = columnSelect.split('.');
-  const targetElement = tableField.length - 1;
-  tableField[targetElement] = snakeCase(tableField[targetElement]);
-  columnSelect = tableField.join('.');
-  // Perform formatting
-  switch (column.type) {
-    case ColumnType.String:
-      return `LOWER(${columnSelect})`;
-    case ColumnType.DateTime:
-      return `date_trunc('minute', (${columnSelect})::TIMESTAMP)`;
-    case ColumnType.Date:
-      return `date_trunc('day', (${columnSelect})::TIMESTAMP)`;
-    default:
-      return columnSelect;
-  }
-}
-
-export function findColumnByName(name: string, columns: ColumnInfo[]): ColumnInfo {
-  if (name === 'unit') {
-    return {
-      name: 'unit',
-      displayName: 'Unit',
-      custom: false,
-      phi: false,
-      pii: false,
-      type: ColumnType.Number,
-      updatable: false,
-      required: false,
-    };
-  }
-
-  // the name may be in the format table.columnName if there is join information
-  // the code below handles the name regardless if it is from joined-entity or this one.
-  const nameToks = name.split('.');
-  const column = columns.find(col => {
-    return nameToks.length > 1 ? (col.name === nameToks[1] && col.table === nameToks[0]) : (col.name === nameToks[0]);
-  });
-  if (!column) {
-    throw new BadRequestError(`Malformed search query. Unknown column name: '${name}'.`);
-  }
-  return column;
-}
-
 export class EntityService<T extends IEntity> {
 
   constructor(private entity: IEntityModel<T>) {}
 
   getColumnSelect(column: ColumnInfo) {
     return this.entity.getColumnSelect(column);
-  }
-
-  getColumnWhere(column: ColumnInfo) {
-    return this.entity.getColumnWhere(column);
   }
 
   getColumns(org: Org, includeRelationships?: boolean, version?: string): Promise<ColumnInfo[]> {
@@ -183,7 +60,7 @@ export class EntityService<T extends IEntity> {
     if (this.entity.filterAllowedColumns) {
       return this.entity.filterAllowedColumns(columns, role);
     }
-    return filterAllowedColumns(columns, role);
+    return columns.filter(column => isColumnAllowed(column, role));
   }
 
   async getEntities<R = T>(query: GetEntitiesQuery, org: Org, userRole: UserRole): Promise<Paginated<R>> {
@@ -198,13 +75,21 @@ export class EntityService<T extends IEntity> {
 
     Object.keys(filterConfig)
       .forEach(columnName => {
-        const column = findColumnByName(columnName, allowedColumns);
+        const column = findColumnByFullyQualifiedName(columnName, allowedColumns);
+        if (!column) {
+          throw new BadRequestError(`Malformed search query. Unknown column: '${columnName}'.`);
+        }
+
         // check for expressions
         const colFilter = filterConfig[columnName];
         if (colFilter.expressionEnabled && colFilter.expression) {
           if (column.type === ColumnType.Date || column.type === ColumnType.DateTime) {
             if (colFilter.expressionRef) {
-              const refColumn = findColumnByName(colFilter.expressionRef, allowedColumns);
+              const refColumn = findColumnByFullyQualifiedName(colFilter.expressionRef, allowedColumns);
+              if (!refColumn) {
+                throw new Error(`Malformed expression. Unknown column path: '${colFilter.expressionRef}'.`);
+              }
+
               colFilter.expressionRef = formatColumnSelect(this.getColumnSelect(refColumn), refColumn);
               const expressionVal = parseInt(colFilter.expression);
               const sign = expressionVal < 0 ? '-' : '+';
@@ -228,7 +113,7 @@ export class EntityService<T extends IEntity> {
     if (sortColumn) {
       const order: OrderByCondition = {};
       if (sortColumn.table && sortColumn.hasOwnProperty('sql')) {
-        order[`"${sortColumn.table}"."${sortColumn.name}"`] = sortDirection;
+        order[getFullyQualifiedColumnName(sortColumn)] = sortDirection;
       } else {
         order[this.entity.getColumnSelect(sortColumn)] = sortDirection;
       }
@@ -275,9 +160,9 @@ export class EntityService<T extends IEntity> {
     if (!Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected array value for ${getFullyQualifiedColumnName(column)}.`);
     }
-    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
     return queryBuilder.andWhere(`${columnSelect} ${op} (:...${column.name})`, {
-      [column.name]: value.map(v => formatValue(v, column)),
+      [column.name]: value.map(v => formatColumnValue(v, column)),
     });
   }
 
@@ -289,10 +174,10 @@ export class EntityService<T extends IEntity> {
     if (!Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected array value for ${getFullyQualifiedColumnName(column)}.`);
     }
-    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
     return queryBuilder.andWhere(`${columnSelect} BETWEEN (:${minKey}) AND (:${maxKey})`, {
-      [minKey]: formatValue(value[0], column),
-      [maxKey]: formatValue(value[1], column),
+      [minKey]: formatColumnValue(value[0], column),
+      [maxKey]: formatColumnValue(value[1], column),
     });
   }
 
@@ -304,7 +189,7 @@ export class EntityService<T extends IEntity> {
     }
     const prefix = op !== 'startsWith' ? '%' : '';
     const suffix = op !== 'endsWith' ? '%' : '';
-    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
     return queryBuilder.andWhere(`${columnSelect} LIKE :${column.name}`, {
       [column.name]: `${prefix}${value}${suffix}`.toLowerCase(),
     });
@@ -316,19 +201,19 @@ export class EntityService<T extends IEntity> {
     if (Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected scalar value for ${column.name}.`);
     }
-    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
     if (expressionRef) {
       return queryBuilder.andWhere(`${columnSelect} ${op} ${expressionRef}`);
     }
 
     return queryBuilder.andWhere(`${columnSelect} ${op} :${column.name}`, {
-      [column.name]: formatValue(value, column),
+      [column.name]: formatColumnValue(value, column),
     });
   }
 
   whereNull(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) {
     const { op } = filterConfigItem;
-    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
     const nullOrNot = op === 'null' ? 'NULL' : 'NOT NULL';
     return queryBuilder.andWhere(`${columnSelect} IS ${nullOrNot}`);
   }
@@ -388,4 +273,24 @@ export class EntityController<T = any> {
     );
   };
 
+}
+
+function formatColumnValue(val: ColumnValue, column: ColumnInfo) {
+  if (val === null) {
+    return val;
+  }
+  switch (column.type) {
+    case ColumnType.String:
+      return val.toString().toLowerCase();
+    case ColumnType.DateTime:
+      return `'${moment.utc(val.toString()).format('YYYY-MM-DD HH:mm')}:00.000000'`;
+    case ColumnType.Date:
+      return `'${moment.utc(val.toString()).format('YYYY-MM-DD')} 00:00:00.000000'`;
+    default:
+      return val;
+  }
+}
+
+export function isColumnAllowed(column: ColumnInfo, role: Role) {
+  return ((!column.pii || role.canViewPII) && (!column.phi || role.canViewPHI));
 }

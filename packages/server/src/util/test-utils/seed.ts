@@ -248,6 +248,9 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
           musterConfiguration: recurringMusterConfig,
           musterWindowId: window.id,
           rosterHistoryEntry,
+          customColumns: {
+            Affiliation: 'test',
+          },
         }));
         reportCount += 1;
       }

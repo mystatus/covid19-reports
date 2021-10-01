@@ -26,19 +26,19 @@ import {
   GetEntitiesQuery,
   QueryValueType,
   SavedFilterSerialized,
+  CustomColumnConfigEnum,
 } from '@covid19-reports/shared';
 import { RenderActiveAction } from 'client/src/entity-actions/actions';
 import useEffectDebounced from '../../hooks/use-effect-debounced';
 import { getNewPageIndex } from '../../utility/table';
 import {
-  ColumnInfoToTableColumns,
+  columnInfoToTableColumns,
   SortDirection,
   TableColumn,
   TableCustomColumnsContent,
 } from '../tables/table-custom-columns-content';
 import { TablePagination } from '../tables/table-pagination/table-pagination';
 import useStyles from './view.styles';
-import { ApiEnumColumnConfig } from '../../models/api-response';
 import { UnitSelector } from '../../selectors/unit.selector';
 import { QueryBuilder } from '../query-builder/query-builder';
 import { formatErrorMessage } from '../../utility/errors';
@@ -127,19 +127,20 @@ export default function View({ layout, idColumn }: ViewProps) {
 
       if (column.name === 'unit') {
         type = ColumnType.Enum;
-        enumItems = units.map(({ id, name }) => ({ label: name, value: id }));
+        enumItems = units.map(({ id, name }) => ({
+          label: name,
+          value: (entityType === 'roster') ? id : name, // HACK: Units are a special case right now for the roster table.
+        }));
       } else if (column.type === ColumnType.Enum) {
-        const options = (column.config as ApiEnumColumnConfig)?.options?.slice() ?? [];
+        const options = (column.config as CustomColumnConfigEnum)?.options?.slice() ?? [];
         options.unshift({ id: '', label: '' });
         enumItems = options.map(({ id, label }) => ({ label, value: id }));
       }
 
       return {
+        ...column,
         type,
         enumItems,
-        displayName: column.displayName,
-        name: column.name,
-        table: column.table,
       };
     });
   }, [columns, units]);
@@ -414,7 +415,7 @@ export default function View({ layout, idColumn }: ViewProps) {
       <div className={classes.tableWrapper}>
         <TableCustomColumnsContent
           rows={entities?.rows ?? []}
-          columns={ColumnInfoToTableColumns(visibleColumns)}
+          columns={columnInfoToTableColumns(visibleColumns)}
           sortable
           defaultSort={orderBy && sortDirection ? { column: orderBy, direction: sortDirection ?? 'ASC' } : undefined}
           onSortChange={handleSortChanged}

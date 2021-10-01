@@ -5,20 +5,19 @@ import {
   Index,
   ManyToOne,
   PrimaryGeneratedColumn,
-  Unique,
 } from 'typeorm';
 import {
   baseObservationColumns,
-  getFullyQualifiedColumnName,
   ColumnInfo,
-  CustomColumns, MusterStatus,
+  CustomColumns,
+  getFullyQualifiedColumnName,
+  getColumnSelect,
+  MusterStatus,
 } from '@covid19-reports/shared';
 import { ReportSchema } from '../report-schema/report-schema.model';
 import { Roster } from '../roster/roster.model';
 import { timestampColumnTransformer } from '../../util/util';
 import {
-  getColumnSelect,
-  getColumnWhere,
   EntityService,
   MakeEntity,
 } from '../../util/entity-utils';
@@ -66,7 +65,6 @@ export class Observation extends BaseEntity {
   @Column({ length: 100, nullable: true })
   reportingGroup?: string;
 
-
   @Column('json', {
     nullable: false,
     default: '{}',
@@ -93,13 +91,8 @@ export class Observation extends BaseEntity {
   @ManyToOne(() => RosterHistory)
   rosterHistoryEntry?: RosterHistory;
 
-
   static getColumnSelect(column: ColumnInfo) {
-    return getColumnSelect(column, 'custom_columns', 'observation');
-  }
-
-  static getColumnWhere(column: ColumnInfo) {
-    return getColumnWhere(column, 'custom_columns', 'observation');
+    return getColumnSelect(column, 'observation');
   }
 
   static async getColumns(org: Org, includeRelationships?: boolean, version?: string) {
@@ -156,10 +149,12 @@ export class Observation extends BaseEntity {
 
     // Add all columns that are allowed by the user's role
     columns.forEach(column => {
+      const columnPath = getFullyQualifiedColumnName(column);
+
       if (column.table === 'roster') {
-        queryBuilder.addSelect(Roster.getColumnSelect(column), getFullyQualifiedColumnName(column));
+        queryBuilder.addSelect(Roster.getColumnSelect(column), columnPath);
       } else if (!column.table) {
-        queryBuilder.addSelect(Observation.getColumnSelect(column), getFullyQualifiedColumnName(column));
+        queryBuilder.addSelect(Observation.getColumnSelect(column), columnPath);
       }
     });
 

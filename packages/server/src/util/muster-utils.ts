@@ -1,8 +1,13 @@
 // @ts-ignore
 import moment from 'moment-timezone';
 import {
-  ColumnInfo, dayIsIn, DaysOfTheWeek, MusterComplianceByDate,
-  nextDay, oneDayMilliseconds,
+  ColumnInfo,
+  dayIsIn,
+  DaysOfTheWeek,
+  findColumnByFullyQualifiedName,
+  MusterComplianceByDate,
+  nextDay,
+  oneDayMilliseconds,
 } from '@covid19-reports/shared';
 import { getConnection, SelectQueryBuilder } from 'typeorm';
 import { Org } from '../api/org/org.model';
@@ -11,10 +16,11 @@ import { Roster } from '../api/roster/roster.model';
 import { MusterConfiguration } from '../api/muster/muster-config.model';
 import { RosterEntry } from './roster-utils';
 import { SavedFilter } from '../api/saved-filter/saved-filter.model';
-import { EntityService, findColumnByName } from './entity-utils';
+import { EntityService } from './entity-utils';
 import { ChangeType, RosterHistory } from '../api/roster/roster-history.model';
 import { Unit } from '../api/unit/unit.model';
 import { Observation } from '../api/observation/observation.model';
+import { BadRequestError } from './error-types';
 
 /**
  * Returns the compliance per individual for each member of the roster
@@ -121,7 +127,11 @@ function buildIndividualMusterComplianceQuery(
   }
   if (filter != null) {
     Object.keys(filter.config).forEach(columnName => {
-      query = service.applyWhere(query, findColumnByName(columnName, columns), filter!.config[columnName]);
+      const column = findColumnByFullyQualifiedName(columnName, columns);
+      if (!column) {
+        throw new BadRequestError(`Malformed search query. Unknown column: '${columnName}'.`);
+      }
+      query = service.applyWhere(query, column, filter!.config[columnName]);
     });
   }
   if (offset != null) {
@@ -170,7 +180,11 @@ export async function musterComplianceStatsByDateRange(
   }
   if (filter != null) {
     Object.keys(filter.config).forEach(columnName => {
-      query = service.applyWhere(query, findColumnByName(columnName, columns), filter!.config[columnName]);
+      const column = findColumnByFullyQualifiedName(columnName, columns);
+      if (!column) {
+        throw new BadRequestError(`Malformed search query. Unknown column: '${columnName}'.`);
+      }
+      query = service.applyWhere(query, column, filter!.config[columnName]);
     });
   }
   if (!role.allUnits) {
@@ -328,7 +342,11 @@ async function filterMatchesRoster(filter: SavedFilter | null, columns: ColumnIn
     .where('roster.change_type <> :changeType', { changeType: ChangeType.Deleted }) as SelectQueryBuilder<RosterHistory>;
   if (filter != null) {
     Object.keys(filter.config).forEach(columnName => {
-      rosterQuery = service.applyWhere(rosterQuery, findColumnByName(columnName, columns), filter.config[columnName]);
+      const column = findColumnByFullyQualifiedName(columnName, columns);
+      if (!column) {
+        throw new BadRequestError(`Malformed search query. Unknown column: '${columnName}'.`);
+      }
+      rosterQuery = service.applyWhere(rosterQuery, column, filter.config[columnName]);
     });
   }
   return (await rosterQuery.getRawOne()) != null;

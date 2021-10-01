@@ -21,13 +21,17 @@ import {
 } from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import MomentUtils from '@date-io/moment';
-import { ColumnInfo, ColumnType } from '@covid19-reports/shared';
+import {
+  CustomColumnConfigString,
+  ColumnInfo,
+  ColumnType,
+  CustomColumnConfigEnum,
+} from '@covid19-reports/shared';
 import useStyles from './edit-roster-entry-dialog.style';
 import {
   ApiOrphanedRecord,
   ApiRosterEntry,
-  ApiRosterEnumColumnConfig,
-  ApiRosterStringColumnConfig,
+
 } from '../../../models/api-response';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
@@ -217,7 +221,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
 
   const buildTextInput = (columnInfo: ColumnInfo) => {
     const numberField = columnInfo.type === ColumnType.Number;
-    const multiline = columnInfo.type === ColumnType.String && (columnInfo?.config as ApiRosterStringColumnConfig)?.multiline === true;
+    const multiline = columnInfo.type === ColumnType.String && (columnInfo?.config as CustomColumnConfigString)?.multiline === true;
     return (
       <TextField
         className={classes.textField}
@@ -272,7 +276,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   };
 
   const buildEnumInput = (columnInfo: ColumnInfo) => {
-    const options = (columnInfo.config as ApiRosterEnumColumnConfig)?.options?.slice() ?? [];
+    const options = (columnInfo.config as CustomColumnConfigEnum)?.options?.slice() ?? [];
 
     if (!columnInfo.required) {
       options.unshift({ id: '', label: '' });

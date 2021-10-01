@@ -8,15 +8,18 @@ import {
   baseRosterColumns,
   ColumnInfo,
   ColumnType,
+  getColumnSelect,
 } from '@covid19-reports/shared';
 import { Org } from '../org/org.model';
 import { Role } from '../role/role.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { RosterEntity } from './roster-entity';
 import { UserRole } from '../user/user-role.model';
-import { getColumnSelect, getColumnWhere, isColumnAllowed, MakeEntity } from '../../util/entity-utils';
+import {
+  isColumnAllowed,
+  MakeEntity,
+} from '../../util/entity-utils';
 import { Observation } from '../observation/observation.model';
-
 
 @MakeEntity()
 @Entity()
@@ -55,7 +58,7 @@ export class Roster extends RosterEntity {
     custom: false,
     required: false,
     updatable: false,
-    sql: `COUNT(json_array_length("observation"."custom_columns"->'Details'->'Symptoms') > 0)`,
+    sql: `COUNT(json_array_length("observation"."custom_columns"->'Symptoms') > 0)`,
   }, {
     name: 'lastReportWithSymptoms',
     table: 'observation',
@@ -66,7 +69,7 @@ export class Roster extends RosterEntity {
     custom: false,
     required: false,
     updatable: false,
-    sql: `MAX(case when json_array_length("observation"."custom_columns"->'Details'->'Symptoms') > 0 then "observation"."timestamp" end)`,
+    sql: `MAX(case when json_array_length("observation"."custom_columns"->'Symptoms') > 0 then "observation"."timestamp" end)`,
   }];
 
   getEntityTarget(): EntityTarget<any> {
@@ -88,11 +91,7 @@ export class Roster extends RosterEntity {
     if (raw) {
       return raw.sql;
     }
-    return getColumnSelect(column, 'custom_columns', 'roster');
-  }
-
-  static getColumnWhere(column: ColumnInfo) {
-    return getColumnWhere(column, 'custom_columns', 'roster', true);
+    return getColumnSelect(column, 'roster');
   }
 
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {

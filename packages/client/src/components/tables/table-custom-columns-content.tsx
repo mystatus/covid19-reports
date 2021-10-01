@@ -1,8 +1,21 @@
 import {
-  IconButton, Menu, MenuItem, MenuItemProps, Table,
-  TableBody, TableCell, TableHead, TableProps, TableRow, TableRowProps, Typography,
+  IconButton,
+  Menu,
+  MenuItem,
+  MenuItemProps,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableProps,
+  TableRow,
+  TableRowProps,
+  Typography,
 } from '@material-ui/core';
-import React, { useCallback, useEffect } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+} from 'react';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
@@ -10,9 +23,9 @@ import clsx from 'clsx';
 import {
   getFullyQualifiedColumnName,
   getFullyQualifiedColumnDisplayName,
-  CustomColumnConfig,
   ColumnInfo,
   ColumnType,
+  getEnumColumnValue,
 } from '@covid19-reports/shared';
 import { OverrideType } from '../../utility/typescript-utils';
 import useStyles from './table-custom-columns-content.styles';
@@ -31,31 +44,23 @@ interface TableCustomColumnsRow {
 
 export type SortDirection = 'ASC' | 'DESC';
 
-export interface TableColumn {
-  type?: ColumnType;
-  table?: string;
-  name: string;
-  displayName: string;
+export type TableColumn = ColumnInfo & {
   fullyQualifiedName: string;
-  config?: CustomColumnConfig;
-}
+};
 
-export const ColumnInfoToTableColumns = (visibleColumns: ColumnInfo[]): TableColumn[] => {
-  return visibleColumns.map((c: ColumnInfo) => {
+export function columnInfoToTableColumns(visibleColumns: ColumnInfo[]): TableColumn[] {
+  return visibleColumns.map((column: ColumnInfo) => {
     return {
-      type: c.type,
-      table: c.table,
-      name: c.name,
-      displayName: getFullyQualifiedColumnDisplayName(c),
-      fullyQualifiedName: getFullyQualifiedColumnName(c),
-      config: c.config,
+      ...column,
+      displayName: getFullyQualifiedColumnDisplayName(column),
+      fullyQualifiedName: getFullyQualifiedColumnName(column),
     };
   });
-};
+}
 
 export type TableRowOptions = {
   menuItems?: TableCustomColumnsMenuItem[] | ((row: any) => TableCustomColumnsMenuItem[]);
-  renderCell?: (row: any, column: any) => void;
+  renderCell?: (row: any, column: TableColumn) => void;
   rowProps?: Partial<TableRowProps> | ((row: any) => Partial<TableRowProps> | void | null | undefined);
 };
 
@@ -138,17 +143,10 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
     callback(row);
   };
 
-  const getEnumColumnValue = (c: TableColumn, uuid: string) => {
-    if (c.type === ColumnType.Enum) {
-      const enumConfig = c.config as { options: { id: string; label: string}[] };
-      const selectedOption = enumConfig.options.find(option => option.id == uuid);
-      return selectedOption?.label;
-    }
-    return null;
-  };
-
   const renderCell = (row: any, column: TableColumn) => {
-    return (column.type === ColumnType.Enum ? getEnumColumnValue(column, row[column.fullyQualifiedName]) : row[column.fullyQualifiedName]);
+    return column.type === ColumnType.Enum
+      ? getEnumColumnValue(column, row[column.fullyQualifiedName])
+      : row[column.fullyQualifiedName];
   };
 
   const getRowId = (row: any) => { return (typeof idColumn === 'function' ? idColumn(row) : row[idColumn] as string); };

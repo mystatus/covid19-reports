@@ -1,12 +1,13 @@
 import moment from 'moment';
 import _ from 'lodash';
 import {
-  getFullyQualifiedColumnName,
   QueryOp,
   QueryValueScalarType,
   QueryValueType,
   FilterConfig,
   ColumnType,
+  getFullyQualifiedColumnName,
+  ColumnInfo,
 } from '@covid19-reports/shared';
 
 export type QueryFieldEnumItem = {
@@ -14,14 +15,9 @@ export type QueryFieldEnumItem = {
   value: string | number;
 };
 
-export type QueryField = {
-  displayName?: string;
-  name: string;
-  table?: string;
-  type: ColumnType;
+export type QueryField = ColumnInfo & {
   enumItems?: QueryFieldEnumItem[];
 };
-
 
 export type QueryRow = {
   field: QueryField;
