@@ -99,7 +99,7 @@ export class Observation extends BaseEntity {
     const reportSchema = await ReportSchema.findOne({
       where: {
         org: org.id,
-        id: version,
+        ...(version && { id: version }),
       },
     });
 

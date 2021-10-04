@@ -19,14 +19,11 @@ class SavedFilterController {
   async getSavedFilters(req: ApiRequest<null, null, GetSavedFiltersQuery>, res: Response) {
     const { entityType } = req.query;
 
-    const savedFilters = await SavedFilter.find({
-      relations: ['org'],
-      where: {
-        org: req.appOrg!.id,
-        ...(entityType && { entityType }),
-      },
-      order: { name: 'ASC' },
-    });
+    const savedFilters = await SavedFilter.getAllowedSavedFilters(
+      req.appOrg!,
+      req.appUserRole!.role,
+      entityType,
+    );
 
     res.json(savedFilters);
   }

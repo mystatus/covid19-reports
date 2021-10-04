@@ -28,8 +28,8 @@ export interface QueryBuilderProps {
   onChangeQueryRows: (queryRows: QueryRow[]) => void;
   onSaveClick: (queryRows: QueryRow[]) => void;
   hasChanges: boolean;
-  showAddCriteriaButton: boolean;
-  showSaveButton: boolean;
+  allowEdit?: boolean;
+  allowSave?: boolean;
 }
 
 export const QueryBuilder = (props: QueryBuilderProps) => {
@@ -40,8 +40,8 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
     onSaveClick,
     hasChanges,
     expressionRefsByType,
-    showAddCriteriaButton,
-    showSaveButton,
+    allowEdit = true,
+    allowSave = true,
   } = props;
 
   const classes = useStyles();
@@ -113,13 +113,14 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
                 onRemoveClick={removeRow(index)}
                 row={row}
                 expressionRefsByType={expressionRefsByType}
+                disabled={!allowEdit}
               />
             </Grid>
           ))}
         </Box>
       )}
 
-      {showAddCriteriaButton && (
+      {allowEdit && (
         <Button
           aria-label="Add Criteria"
           className={classes.button}
@@ -133,7 +134,7 @@ export const QueryBuilder = (props: QueryBuilderProps) => {
         </Button>
       )}
 
-      {showSaveButton && (
+      {allowSave && (
         <Button
           aria-label="Save"
           className={classes.button}

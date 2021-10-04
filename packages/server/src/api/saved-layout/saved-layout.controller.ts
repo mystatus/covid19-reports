@@ -19,14 +19,11 @@ class SavedLayoutController {
   async getSavedLayouts(req: ApiRequest<null, null, GetSavedLayoutsQuery>, res: Response) {
     const { entityType } = req.query;
 
-    const savedLayouts = await SavedLayout.find({
-      relations: ['org'],
-      where: {
-        org: req.appOrg!.id,
-        ...(entityType && { entityType }),
-      },
-      order: { name: 'ASC' },
-    });
+    const savedLayouts = await SavedLayout.getAllowedSavedLayouts(
+      req.appOrg!,
+      req.appUserRole!.role,
+      entityType,
+    );
 
     res.json(savedLayouts);
   }

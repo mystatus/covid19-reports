@@ -7,10 +7,11 @@ type QueryBuilderOpSelectProps = {
   onChange: (op: QueryOp) => void;
   value: QueryOp;
   ops: QueryOpsDesc;
+  disabled?: boolean;
 };
 
 export const QueryBuilderOpSelect = (props: QueryBuilderOpSelectProps) => {
-  const { onChange, ops, value } = props;
+  const { onChange, ops, value, disabled } = props;
   return (
     <Select
       native
@@ -20,6 +21,7 @@ export const QueryBuilderOpSelect = (props: QueryBuilderOpSelectProps) => {
       onChange={event => {
         onChange(event.target.value as QueryOp);
       }}
+      disabled={disabled}
     >
       {Object.entries(ops).map(([key, label]) => (
         <option key={key} value={key}>

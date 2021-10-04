@@ -6,5 +6,5 @@ export namespace UserSelector {
   export const org = (state: AppState) => state.user.activeRole?.role.org;
   export const workspaces = (state: AppState) => state.user.activeRole?.role.workspaces;
   export const favoriteDashboards = (state: AppState) => state.user.activeRole?.favoriteDashboards;
-  export const canManageRoster = (state: AppState) => Boolean(state.user.activeRole?.role.canManageRoster);
+  export const role = (state: AppState) => state.user.activeRole?.role;
 }

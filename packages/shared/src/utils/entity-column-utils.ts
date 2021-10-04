@@ -33,7 +33,7 @@ export function getFullyQualifiedColumnName(column: FullyQualifiedColumnNamePart
     : columnName;
 }
 
-function getFullyQualifiedColumnNameParts(fullyQualifiedName: string): FullyQualifiedColumnNameParts {
+export function getFullyQualifiedColumnNameParts(fullyQualifiedName: string): FullyQualifiedColumnNameParts {
   const parts = fullyQualifiedName.split(delimiters.table);
   if (parts.length < 1 && parts.length > 2) {
     throw new Error('Column path must be in format {table}.{columnName}');

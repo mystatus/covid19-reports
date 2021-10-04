@@ -9,8 +9,13 @@ export type ActionConfig = {
   order: number;
 };
 
-export type ColumnsConfig = Record<string, ColumnConfig>;
-export type ActionsConfig = Record<string, ColumnConfig>;
+export type ColumnsConfig = {
+  [fullyQualifiedColumnName: string]: ColumnConfig;
+};
+
+export type ActionsConfig = {
+  [fullyQualifiedColumnName: string]: ColumnConfig;
+};
 
 export type SavedLayoutSerialized = {
   id: number;
