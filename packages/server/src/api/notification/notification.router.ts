@@ -2,7 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import alertController from './notification-alert.controller';
 import controller from './notification.controller';
-import { requireOrgAccess, requireRolePermission } from '../../auth/auth-middleware';
+import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth/auth-middleware';
 
 const router = express.Router() as any;
 
@@ -54,6 +54,7 @@ router.put(
 router.get(
   '/:orgId/users-requesting-medical-attention',
   bodyParser.json(),
+  requireInternalUser,
   requireOrgAccess,
   alertController.getUsersRequestingMedicalAttentionByUnit,
 );
@@ -61,6 +62,7 @@ router.get(
 router.get(
   '/:orgId/users-requiring-medical-attention',
   bodyParser.json(),
+  requireInternalUser,
   requireOrgAccess,
   alertController.getUsersRequiringMedicalAttentionByUnit,
 );
@@ -68,6 +70,7 @@ router.get(
 router.get(
   '/:orgId/trending-symptoms',
   bodyParser.json(),
+  requireInternalUser,
   requireOrgAccess,
   alertController.getNumTrendingSymptomsByUnit,
 );
@@ -75,6 +78,7 @@ router.get(
 router.get(
   '/:orgId/low-muster-rates',
   bodyParser.json(),
+  requireInternalUser,
   requireOrgAccess,
   alertController.getLowMusterRates,
 );
@@ -82,6 +86,7 @@ router.get(
 router.get(
   '/:orgId/user-access-requests',
   bodyParser.json(),
+  requireInternalUser,
   requireOrgAccess,
   alertController.getUserAccessRequests,
 );

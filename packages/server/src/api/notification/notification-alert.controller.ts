@@ -44,7 +44,7 @@ class NotificationAlertController {
         })
         .groupBy('observation.unit')
         .getRawMany();
-      console.log(rows);
+
       rows.forEach((row: any) => {
         // only add counts for units where the threshold is exceeded
         if (row.count >= setting.threshold) {
