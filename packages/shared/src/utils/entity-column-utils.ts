@@ -4,7 +4,7 @@ import {
   baseObservationColumnLookup,
   CustomColumnConfigEnum,
   edipiColumnDisplayName,
-} from '@covid19-reports/shared';
+} from '..';
 import {
   ColumnInfo,
   ColumnType,
