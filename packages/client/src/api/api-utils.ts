@@ -1,6 +1,7 @@
 import {
   AddCustomColumnBody,
   ColumnInfo,
+  ColumnValue,
   EntityType,
   GetEntitiesQuery,
   ObservationEntryData,
@@ -27,7 +28,7 @@ export type EntityTypeData = {
   observation: ObservationEntryData;
 };
 
-export function createEntityApi<TEntity extends EntityType, TEntityData extends EntityTypeData[TEntity]>(
+export function createEntityApi<TEntity extends EntityType>(
   args: {
     entityType: TEntity;
     hasVersionedColumns?: boolean;
@@ -37,15 +38,17 @@ export function createEntityApi<TEntity extends EntityType, TEntityData extends 
 
   return createApi({
     reducerPath: entityType,
+    tagTypes: [entityType],
     baseQuery: fetchBaseQuery({
       baseUrl: `${apiBaseUrl}${_.kebabCase(entityType)}/`,
     }),
-    endpoints: build => buildEntityEndpoints<TEntityData>(build, hasVersionedColumns),
+    endpoints: build => buildEntityEndpoints(build, entityType, hasVersionedColumns),
   });
 }
 
-function buildEntityEndpoints<TEntityData>(
+function buildEntityEndpoints<TEntity extends EntityType, TEntityData extends EntityTypeData[TEntity]>(
   build: EndpointBuilder<BaseQueryFn, string, string>,
+  entityType: TEntity,
   hasVersionedColumns?: boolean,
 ) {
   return {
@@ -80,6 +83,20 @@ function buildEntityEndpoints<TEntityData>(
       query: GetEntitiesQuery;
     }>({
       query: ({ orgId, query }) => `${orgId}?${qs.stringify(query)}`,
+      providesTags: [entityType],
+    }),
+
+    patchEntities: build.mutation<ColumnValue, {
+      orgId: number;
+      rowId: number;
+      payload: Record<string, ColumnValue>;
+    }>({
+      query: ({ orgId, rowId, payload }) => ({
+        url: `${orgId}/${rowId}`,
+        method: 'PATCH',
+        body: payload,
+      }),
+      invalidatesTags: [entityType],
     }),
   };
 }

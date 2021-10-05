@@ -50,8 +50,9 @@ export const editRosterEntry = new ColumnAction(
     canMenu: true,
     refetchEntities: true,
   },
-  (async () => {
-    return defer();
+
+  (() => {
+    return Promise.resolve(defer());
   }),
   function render(this: ColumnAction, row: any) {
     return (
@@ -60,17 +61,17 @@ export const editRosterEntry = new ColumnAction(
       </ButtonAsyncSpinner>
     );
   },
-  ((exectionContext: ActionExecutionContext) => {
+  ((executionContext: ActionExecutionContext) => {
     return (
       <EditRosterEntry
         open
         onClose={() => {
-          exectionContext.deferred.resolve(true);
+          executionContext.deferred.resolve(true);
         }}
         onError={(error: string) => {
-          exectionContext.deferred.reject(error);
+          executionContext.deferred.reject(error);
         }}
-        row={exectionContext.entity}
+        row={executionContext.entity}
       />
     );
   }),

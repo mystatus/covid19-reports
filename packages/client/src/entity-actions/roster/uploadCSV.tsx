@@ -75,8 +75,9 @@ export const uploadCSV = new BulkAction(
     pii: false,
     refetchEntities: true,
   },
-  async () => {
-    return defer();
+
+  () => {
+    return Promise.resolve(defer());
   },
   ((executionContext: ActionExecutionContext) => {
     return (

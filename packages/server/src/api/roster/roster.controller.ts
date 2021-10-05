@@ -5,20 +5,17 @@ import { getConnection, getManager, In } from 'typeorm';
 import {
   AddCustomColumnBody,
   ColumnInfo,
-  ColumnInfoWithValue,
   ColumnType,
   CustomColumnData,
   edipiColumnDisplayName,
   GetEntitiesQuery,
   Paginated,
-  ReportDateQuery,
   RosterEntryData,
   RosterFileRow,
-  RosterInfo,
   unitColumnDisplayName,
 } from '@covid19-reports/shared';
 import { EntityService } from '../../util/entity-utils';
-import { assertRequestBody, assertRequestParams } from '../../util/api-utils';
+import { assertIsNumber, assertRequestBody, assertRequestParams } from '../../util/api-utils';
 import {
   BadRequestError,
   CsvRowError,
@@ -29,7 +26,7 @@ import {
 import { addRosterEntry, editRosterEntry } from '../../util/roster-utils';
 import { getDatabaseErrorMessage } from '../../util/typeorm-utils';
 import { dateFromString, getMissingKeys } from '../../util/util';
-import { ApiRequest, EdipiParam, OrgColumnParams, OrgParam, OrgRosterParams } from '../api.router';
+import { ApiRequest, OrgColumnParams, OrgParam, OrgRosterParams } from '../api.router';
 import { Unit } from '../unit/unit.model';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { ChangeType, RosterHistory } from './roster-history.model';
@@ -284,6 +281,18 @@ class RosterController {
   async updateRosterEntry(req: ApiRequest<OrgRosterParams, RosterEntryData>, res: Response) {
     assertRequestParams(req, ['rosterId']);
     const entryId = +req.params.rosterId;
+
+    const entry = await getManager().transaction(manager => {
+      return editRosterEntry(req.appOrg!, req.appUserRole!, entryId, req.body, manager);
+    });
+
+    res.json(entry);
+  }
+
+  async patchRosterEntry(req: ApiRequest<OrgRosterParams, RosterEntryData>, res: Response) {
+    assertRequestParams(req, ['rowId']);
+    assertIsNumber(req.params.rowId);
+    const entryId = parseInt(req.params.rowId);
 
     const entry = await getManager().transaction(manager => {
       return editRosterEntry(req.appOrg!, req.appUserRole!, entryId, req.body, manager);

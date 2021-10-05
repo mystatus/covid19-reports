@@ -4,6 +4,9 @@ import { ButtonAsyncSpinner } from '../components/buttons/button-async-spinner';
 import { ColumnAction, defer, executeAction, getRegistry } from './actions';
 import { QueryBuilderValueEditor } from '../components/query-builder/query-builder-value-editor';
 import { QueryRow } from '../utility/query-builder-utils';
+import { store } from '../store';
+import { entityApi } from '../api/entity.api';
+import { UserSelector } from '../selectors/user.selector';
 
 const registry = getRegistry('roster');
 
@@ -116,7 +119,7 @@ const DataActionComponent = ({ columns, dataAction, entityType, row, columnActio
 
 export function registerActionsForUpdatableColumns(columns: ColumnInfo[], entityType: EntityType) {
   dataActionsResponse.forEach(action => {
-    // this is likely inadquate, needs fully qualified?
+    // this is likely inadequate, needs fully qualified?
     const cols = columns.filter(c => action.operations.some(a => a.field === c.name)).filter(c => c.updatable);
 
     registry.register(new ColumnAction({
@@ -135,9 +138,13 @@ export function registerActionsForUpdatableColumns(columns: ColumnInfo[], entity
         const v = value ?? data?.[field];
         patchPayload[field] = expressions[`${v}`]?.() ?? v;
       });
-
-      // entityApi.patch(row.id, patchPayload)
-      console.log({ patchPayload, row });
+      const orgId = UserSelector.orgId(store.getState())!;
+      const endpoint = entityApi[entityType].endpoints.patchEntities;
+      await store.dispatch(endpoint.initiate({
+        orgId,
+        rowId: row.id,
+        payload: patchPayload,
+      }));
 
       deferred.resolve(null);
       return deferred;

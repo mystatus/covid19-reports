@@ -4,7 +4,6 @@ import path from 'path';
 import bodyParser from 'body-parser';
 import controller from './roster.controller';
 import {
-  requireInternalUser,
   requireOrgAccess,
   requireRolePermission,
 } from '../../auth/auth-middleware';
@@ -119,6 +118,14 @@ router.put(
   requireRolePermission(role => role.canManageRoster),
   bodyParser.json(),
   controller.updateRosterEntry,
+);
+
+router.patch(
+  '/:orgId/:rowId',
+  requireOrgAccess,
+  requireRolePermission(role => role.canManageRoster),
+  bodyParser.json(),
+  controller.patchRosterEntry,
 );
 
 export default router;
