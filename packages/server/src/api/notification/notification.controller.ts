@@ -89,30 +89,11 @@ class NotificationController {
     setting.user = req.appUser;
     setting.notification = notification;
 
-    await setNotificationSettingFromBody(setting, req.body);
+    setNotificationSettingFromBody(setting, req.body);
 
     const newSetting = await setting.save();
 
-    await res.status(201).json(sanitizeUserNotificationSetting(newSetting));
-  }
-
-  async getUserNotificationSetting(req: ApiRequest<OrgSettingParams>, res: Response) {
-    const settingId = parseInt(req.params.settingId);
-
-    const setting = await UserNotificationSetting.findOne({
-      relations: ['notification'],
-      where: {
-        id: settingId,
-        org: req.appOrg!.id,
-        user: req.appUser.edipi,
-      },
-    });
-
-    if (!setting) {
-      throw new NotFoundError('Notification setting could not be found.');
-    }
-
-    res.json(sanitizeUserNotificationSetting(setting));
+    res.status(201).json(sanitizeUserNotificationSetting(newSetting));
   }
 
   async deleteUserNotificationSetting(req: ApiRequest<OrgSettingParams>, res: Response) {
@@ -150,7 +131,7 @@ class NotificationController {
       throw new NotFoundError('Notification setting could not be found.');
     }
 
-    await setNotificationSettingFromBody(setting, req.body);
+    setNotificationSettingFromBody(setting, req.body);
 
     const updatedSetting = await setting.save();
 

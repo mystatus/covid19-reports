@@ -1,3 +1,4 @@
+import moment from 'moment-timezone';
 import React, {
   useEffect,
   useState,
@@ -107,6 +108,7 @@ export const NotificationsTab = (props: TabPanelProps) => {
           threshold: notification.defaultThreshold,
           minMinutesBetweenAlerts: notification.defaultMinMinutesBetweenAlerts,
           maxDailyCount: notification.defaultMaxDailyCount,
+          lastNotifiedDate: moment().valueOf(),
           smsEnabled: false,
           emailEnabled: true,
         });

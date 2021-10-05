@@ -1,7 +1,8 @@
 import express from 'express';
 import bodyParser from 'body-parser';
+import alertController from './notification-alert.controller';
 import controller from './notification.controller';
-import { requireOrgAccess, requireRolePermission } from '../../auth/auth-middleware';
+import { requireInternalUser, requireOrgAccess, requireRolePermission } from '../../auth/auth-middleware';
 
 const router = express.Router() as any;
 
@@ -34,7 +35,7 @@ router.post(
 router.get(
   '/:orgId/setting/:settingId',
   requireOrgAccess,
-  controller.getUserNotificationSetting,
+  controller.getUserNotificationSettings,
 );
 
 router.delete(
@@ -48,6 +49,46 @@ router.put(
   bodyParser.json(),
   requireOrgAccess,
   controller.updateUserNotificationSetting,
+);
+
+router.get(
+  '/:orgId/users-requesting-medical-attention',
+  bodyParser.json(),
+  requireInternalUser,
+  requireOrgAccess,
+  alertController.getUsersRequestingMedicalAttentionByUnit,
+);
+
+router.get(
+  '/:orgId/users-requiring-medical-attention',
+  bodyParser.json(),
+  requireInternalUser,
+  requireOrgAccess,
+  alertController.getUsersRequiringMedicalAttentionByUnit,
+);
+
+router.get(
+  '/:orgId/trending-symptoms',
+  bodyParser.json(),
+  requireInternalUser,
+  requireOrgAccess,
+  alertController.getNumTrendingSymptomsByUnit,
+);
+
+router.get(
+  '/:orgId/low-muster-rates',
+  bodyParser.json(),
+  requireInternalUser,
+  requireOrgAccess,
+  alertController.getLowMusterRates,
+);
+
+router.get(
+  '/:orgId/user-access-requests',
+  bodyParser.json(),
+  requireInternalUser,
+  requireOrgAccess,
+  alertController.getUserAccessRequests,
 );
 
 export default router;
