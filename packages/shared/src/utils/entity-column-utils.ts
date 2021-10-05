@@ -79,7 +79,7 @@ export function getColumnSelect(column: ColumnInfo, alias?: string) {
 export function formatColumnSelect(columnSelect: string, column: ColumnInfo) {
   // HACK: Units are a special case right now for the roster table.
   if (columnSelect === 'roster.unit') {
-    return columnSelect;
+    return 'roster.unit_id';
   }
 
   switch (column.type) {

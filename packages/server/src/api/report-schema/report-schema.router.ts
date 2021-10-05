@@ -11,7 +11,6 @@ const router = express.Router() as any;
 router.get(
   '/:orgId',
   requireOrgAccess,
-  requireRolePermission(role => role.canManageGroup),
   controller.getOrgReports,
 );
 
@@ -26,7 +25,6 @@ router.post(
 router.get(
   '/:orgId/:reportId',
   requireOrgAccess,
-  requireRolePermission(role => role.canManageGroup),
   controller.getReport,
 );
 
