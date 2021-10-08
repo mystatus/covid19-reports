@@ -74,6 +74,7 @@ export const uploadCSV = new BulkAction(
     phi: false,
     pii: false,
     refetchEntities: true,
+    isVisible: role => Boolean(role?.canManageRoster),
   },
   async () => {
     return defer();

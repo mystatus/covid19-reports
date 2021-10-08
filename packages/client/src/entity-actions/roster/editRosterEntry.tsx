@@ -49,6 +49,7 @@ export const editRosterEntry = new ColumnAction(
     pii: false,
     canMenu: true,
     refetchEntities: true,
+    isVisible: role => Boolean(role?.canManageRoster),
   },
   (async () => {
     return defer();

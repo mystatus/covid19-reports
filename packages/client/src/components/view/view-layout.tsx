@@ -89,6 +89,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
   const dispatch = useAppDispatch();
 
   const orgId = useAppSelector(UserSelector.orgId)!;
+  const user = useAppSelector(state => state.user);
   const { canManageGroup } = useAppSelector(UserSelector.role)!;
 
   const [currentLayout, setCurrentLayout] = usePersistedState<SavedLayoutSerialized>(`${entityType}CurrentLayout`, makeDefaultViewLayout(entityType, [], maxTableColumns));
@@ -110,8 +111,8 @@ export default function ViewLayout(props: ViewLayoutProps) {
   }, [allowedColumns, entityType]);
 
   const columns = useMemo(() => {
-    return [...allowedColumns, ...getActionColumnInfos(entityType)];
-  }, [allowedColumns, entityType]);
+    return [...allowedColumns, ...getActionColumnInfos(entityType, user.activeRole?.role)];
+  }, [user, allowedColumns, entityType]);
 
   const {
     data: savedLayouts = [],
@@ -174,11 +175,11 @@ export default function ViewLayout(props: ViewLayoutProps) {
   }, [columnsMap, currentLayout.columns]);
 
   const menuItems = useMemo(() => {
-    const availableActions = getActionColumnInfos(entityType).filter(t => t.canMenu);
+    const availableActions = getActionColumnInfos(entityType, user.activeRole?.role).filter(t => t.canMenu);
     const excluded = Object.keys(currentLayout.columns)
       .filter(key => currentLayout.columns[key].order < 0);
     return availableActions.filter(candidate => !excluded.includes(candidate.name));
-  }, [currentLayout.columns, entityType]);
+  }, [user, currentLayout.columns, entityType]);
 
   const setVisibleColumns = useCallback((visibleColumnsNew: ColumnInfo[]) => {
     const columnsNew: ColumnsConfig = {};
@@ -390,7 +391,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
               visibleColumns={visibleColumns}
               onVisibleColumnsChange={setVisibleColumns}
             />
-            <ActionSelector entityType={entityType} onActionPinned={handleActionPinned} />
+            <ActionSelector entityType={entityType} onActionPinned={handleActionPinned} user={user} />
           </>
         )}
       />
@@ -419,8 +420,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
               if (action) {
                 return action.render(row);
               }
-              const value = friendlyColumnValue(row, column);
-              return value;
+              return friendlyColumnValue(row, column);
             },
             ...(rowOptions ?? {}),
           },

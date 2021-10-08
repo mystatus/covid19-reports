@@ -14,6 +14,7 @@ export const exportCSV = new BulkAction(
     phi: false,
     pii: false,
     refetchEntities: false,
+    isVisible: role => Boolean(role?.canViewRoster),
   },
   async () => {
     const deferred = defer();
