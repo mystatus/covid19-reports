@@ -33,7 +33,7 @@ export async function addRosterEntry(org: Org, role: Role, entryData: RosterEntr
   const rosterEntry = await Roster.findOne({
     where: {
       edipi,
-      unit: unit.id,
+      org: org.id,
     },
   });
 
@@ -43,6 +43,7 @@ export async function addRosterEntry(org: Org, role: Role, entryData: RosterEntr
 
   const entry = new Roster();
   entry.unit = unit;
+  entry.org = org;
 
   const allowedColumns = Roster.filterAllowedColumns(await Roster.getColumns(org), role);
 
@@ -54,10 +55,8 @@ export async function addRosterEntry(org: Org, role: Role, entryData: RosterEntr
 }
 
 export async function editRosterEntry(org: Org, userRole: UserRole, entryId: number, entryData: RosterEntryData, manager: EntityManager) {
-  const { unit: unitId } = entryData;
-
-  let entry = await Roster.findOne({
-    relations: ['unit'],
+  const entry = await Roster.findOne({
+    relations: ['org', 'unit'],
     where: {
       id: entryId,
     },
@@ -67,18 +66,13 @@ export async function editRosterEntry(org: Org, userRole: UserRole, entryId: num
     throw new Error(`Unable to find roster entry with id: ${entryId}`);
   }
 
-  if (unitId && unitId !== entry.unit!.id) {
-    // If the unit changed, delete the individual from the old unit's roster.
-    const unit = await userRole.getUnit(unitId);
+  if (entryData.unit && entryData.unit !== entry.unit!.id) {
+    // Make sure the user is allowed to move the roster to the target unit
+    const unit = await userRole.getUnit(entryData.unit);
     if (!unit) {
-      throw new NotFoundError(`Unit with ID ${unitId} could not be found.`);
+      throw new NotFoundError(`Unit with ID ${entry.unit} could not be found.`);
     }
-
-    const oldEntry = entry;
-    entry = oldEntry.clone();
     entry.unit = unit;
-
-    await manager.delete(Roster, oldEntry.id);
   }
 
   const allowedColumns = Roster.filterAllowedColumns(await Roster.getColumns(org), userRole.role);
@@ -95,12 +89,11 @@ export async function editRosterEntry(org: Org, userRole: UserRole, entryId: num
   return manager.save(entry);
 }
 
-export function getRosterHistoryForIndividual(edipi: string, unitId: number) {
+export function getRosterHistoryForIndividual(edipi: string, orgId: number) {
   return RosterHistory.createQueryBuilder('rh')
-    .where('rh.unit_id = :unitId', { unitId })
-    .andWhere('rh.edipi = :edipi', { edipi })
+    .where('rh.edipi = :edipi', { edipi })
+    .andWhere('rh.org_id = :orgId', { orgId })
     .addOrderBy('rh.timestamp', 'DESC')
-    .addOrderBy('rh.change_type', 'DESC')
     .getMany();
 }
 
@@ -142,7 +135,7 @@ export function toRosterEntry(rosters: Roster[]): RosterEntry[] {
       lastName: roster.lastName,
       // This filed is to be implemented as part of a different task
       myCustomColumn1: 'tbd',
-      unitId: roster.unit.id,
+      unitId: roster.unit!.id,
       phone: roster.phoneNumber,
     };
   });
@@ -151,16 +144,16 @@ export function toRosterEntry(rosters: Roster[]): RosterEntry[] {
 async function getRosters(unitId: string, orgId: number): Promise<Roster[]> {
   let rosters;
   if (unitId) {
-    rosters = await Roster.find({ relations: ['unit', 'unit.org'], where: { unit: unitId } });
+    rosters = await Roster.find({ relations: ['org', 'unit'], where: { org: orgId, unit: unitId } });
   } else {
-    rosters = await Roster.find({ relations: ['unit', 'unit.org'] });
+    rosters = await Roster.find({ relations: ['org', 'unit'], where: { org: orgId } });
   }
-  return rosters.filter(roster => roster.unit.org!.id === orgId);
+  return rosters;
 }
 
 /** Get an array of unique Unit IDs */
 function getUnitIds(rosters: Roster[]): number[] {
-  return Array.from(new Set(rosters.map(r => r.unit.id)));
+  return Array.from(new Set(rosters.map(r => r.unit!.id)));
 }
 
 /** Get an array of unique edipis */

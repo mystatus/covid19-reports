@@ -9,6 +9,7 @@ import { Roster } from './roster.model';
 export function mockRosterEntry(unit: Unit) {
   return Roster.create({
     unit,
+    org: unit.org,
     edipi: uniqueEdipi(),
     firstName: uniqueString(),
     lastName: uniqueString(),
@@ -45,7 +46,7 @@ export function mockRosterUploadCsv(args: {
   for (let i = 0; i < rosterCount; i++) {
     const entry = mockRosterEntry(unit);
     const entryData = {
-      Unit: entry.unit.name,
+      Unit: unit.name,
       'DoD ID': entry.edipi,
       'First Name': entry.firstName,
       'Last Name': entry.lastName,

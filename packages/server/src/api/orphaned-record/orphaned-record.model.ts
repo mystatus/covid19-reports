@@ -83,8 +83,8 @@ export class OrphanedRecord extends BaseEntity {
     this.compositeId = `${this.edipi};${this.org!.id};${this.phone};${this.unit}`;
   }
 
-  async resolve(entry: RosterEntity, manager: EntityManager) {
-    await this.backdateRosterHistory(entry, manager);
+  async resolve(entry: RosterEntity, manager: EntityManager, orgId: number) {
+    await this.backdateRosterHistory(manager, orgId);
 
     await manager.softRemove(this);
 
@@ -104,8 +104,8 @@ export class OrphanedRecord extends BaseEntity {
       .execute();
   }
 
-  private async backdateRosterHistory(entry: RosterEntity, manager: EntityManager) {
-    const rosterHistory = await getRosterHistoryForIndividual(this.edipi, entry.unit.id);
+  private async backdateRosterHistory(manager: EntityManager, orgId: number) {
+    const rosterHistory = await getRosterHistoryForIndividual(this.edipi, orgId);
     if (!rosterHistory.length) {
       throw new InternalServerError('Unable to locate RosterHistory record.');
     }

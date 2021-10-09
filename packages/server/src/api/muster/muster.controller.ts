@@ -296,8 +296,8 @@ class MusterController {
     /* Dates come in UTC timezone.
       For example the date 2021-07-04 11:59 PM selected in a browser
                   comes as 2021-07-05T04:59:00.000Z */
-    const fromDate = moment(req.query.fromDate, 'YYYY-MM-DD');
-    const toDate = moment(req.query.toDate, 'YYYY-MM-DD');
+    const fromDate = moment(req.query.fromDate);
+    const toDate = moment(req.query.toDate);
 
     if (!fromDate.isValid() || !toDate.isValid() || fromDate > toDate) {
       throw new BadRequestError('Invalid ISO date range.');
@@ -322,8 +322,8 @@ class MusterController {
     res: Response<GetMusterComplianceByDateRangeResponse>,
   ) {
     assertRequestQuery(req, ['fromDate', 'toDate', 'reportId']);
-    const fromDate = moment(req.query.fromDate, 'YYYY-MM-DD');
-    const toDate = moment(req.query.toDate, 'YYYY-MM-DD');
+    const fromDate = moment(req.query.fromDate);
+    const toDate = moment(req.query.toDate);
 
     if (!fromDate.isValid() || !toDate.isValid() || fromDate > toDate) {
       throw new BadRequestError('Invalid ISO date range.');
