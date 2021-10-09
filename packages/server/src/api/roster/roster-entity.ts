@@ -44,13 +44,13 @@ export abstract class RosterEntity extends BaseEntity {
     nullable: false,
     onDelete: 'CASCADE',
   })
-  org!: Org;
+  org?: Org;
 
   @ManyToOne(() => Unit, unit => unit.id, {
     nullable: false,
     onDelete: 'RESTRICT',
   })
-  unit!: Unit;
+  unit?: Unit;
 
   @Index()
   @Column({

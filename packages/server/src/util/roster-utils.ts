@@ -135,7 +135,7 @@ export function toRosterEntry(rosters: Roster[]): RosterEntry[] {
       lastName: roster.lastName,
       // This filed is to be implemented as part of a different task
       myCustomColumn1: 'tbd',
-      unitId: roster.unit.id,
+      unitId: roster.unit!.id,
       phone: roster.phoneNumber,
     };
   });
@@ -153,7 +153,7 @@ async function getRosters(unitId: string, orgId: number): Promise<Roster[]> {
 
 /** Get an array of unique Unit IDs */
 function getUnitIds(rosters: Roster[]): number[] {
-  return Array.from(new Set(rosters.map(r => r.unit.id)));
+  return Array.from(new Set(rosters.map(r => r.unit!.id)));
 }
 
 /** Get an array of unique edipis */

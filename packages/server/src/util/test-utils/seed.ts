@@ -192,7 +192,7 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
 
   // Insert observations per roster entry
   const observations: Observation[] = [];
-  const rosterEntriesByUnit = _.groupBy(rosterEntries, entry => entry.unit.name);
+  const rosterEntriesByUnit = _.groupBy(rosterEntries, entry => entry.unit!.name);
 
   // Add muster configurations
   const recurringMusterConfig = await MusterConfiguration.create({
