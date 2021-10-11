@@ -8,18 +8,24 @@ import { Box, Button, IconButton, Menu, MenuItem } from '@material-ui/core';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import useStyles from './column-selector.styles';
 import { executeAction, getBulkActions } from '../../entity-actions/actions';
+import { UserState } from '../../slices/user.slice';
 
 export type ActionSelectorProps = {
   entityType: EntityType;
   onActionPinned: (action: any) => void;
+  user: UserState;
 };
 
 export function ActionSelector(props: ActionSelectorProps) {
-  const { entityType, onActionPinned } = props;
+  const { entityType, onActionPinned, user } = props;
   const classes = useStyles();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuToggleButtonRef = useRef<HTMLSpanElement>(null);
-  const actions = getBulkActions(entityType);
+  const actions = getBulkActions(entityType, user.activeRole?.role);
+
+  if (actions.length === 0) {
+    return (<></>);
+  }
 
   return (
     <>

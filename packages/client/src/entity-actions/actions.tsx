@@ -1,9 +1,11 @@
 import React, { Dispatch, useCallback, useEffect, useState } from 'react';
 import { v4 } from 'uuid';
 import { ColumnInfo, ColumnType, EntityType } from '@covid19-reports/shared';
+import { ApiRole } from '../models/api-response';
 
 export type ActionInfo = Pick<ColumnInfo, 'name' | 'displayName' | 'pii' | 'phi'> & {
   refetchEntities: boolean;
+  isVisible(role?: ApiRole): boolean;
 };
 
 export type ColumnActionInfo = ActionInfo & {
@@ -121,15 +123,19 @@ const actions: ActionRegistry = {
 
 export const getBulkAction = (entityType: EntityType, action: string) => actions[entityType].bulk[action];
 export const getColumnAction = (entityType: EntityType, action: string) => actions[entityType].columns[action];
-export const getBulkActions = (entityType: EntityType) => {
+export const getBulkActions = (entityType: EntityType, role?: ApiRole) => {
   return Object.values(actions[entityType].bulk)
+    .filter(action => action.actionInfo.isVisible(role))
     .sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' }));
 };
-export const getColumnActions = (entityType: EntityType) => Object.values(actions[entityType].columns);
+export const getColumnActions = (entityType: EntityType, role?: ApiRole) => {
+  return Object.values(actions[entityType].columns)
+    .filter(action => action.asColumnInfo().isVisible(role));
+};
 export const isAction = (entityType: EntityType, action: string) => !!(getColumnAction(entityType, action) || getBulkAction(entityType, action));
 
-export const getActionColumnInfos = (entityType: EntityType) => {
-  return getColumnActions(entityType)
+export const getActionColumnInfos = (entityType: EntityType, role?: ApiRole) => {
+  return getColumnActions(entityType, role)
     .map(action => action.asColumnInfo())
     .sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' }));
 };

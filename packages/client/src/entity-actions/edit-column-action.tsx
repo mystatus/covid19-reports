@@ -126,6 +126,7 @@ export function registerActionsForUpdatableColumns(columns: ColumnInfo[], entity
       phi: cols.some(c => c.phi),
       canMenu: action.renderType !== 'editor',
       refetchEntities: true,
+      isVisible: role => Boolean(role?.canManageRoster),
     },
     (async (row: any, data?: any) => {
       const deferred = defer();

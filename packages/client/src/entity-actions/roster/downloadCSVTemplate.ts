@@ -13,6 +13,7 @@ export const downloadCSVTemplate = new BulkAction(
     phi: false,
     pii: false,
     refetchEntities: false,
+    isVisible: role => Boolean(role?.canViewRoster),
   },
   async () => {
     const deferred = defer();
