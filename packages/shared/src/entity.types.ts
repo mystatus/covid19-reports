@@ -42,6 +42,7 @@ export type ColumnInfo = {
   config?: CustomColumnConfig;
   table?: string;
   aggregate?: string;
+  action?: boolean;
 };
 
 export type ColumnInfoWithValue = ColumnInfo & {

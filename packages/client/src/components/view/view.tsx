@@ -28,7 +28,6 @@ import {
   SavedFilterSerialized,
   CustomColumnConfigEnum,
 } from '@covid19-reports/shared';
-import { RenderActiveAction } from 'client/src/entity-actions/actions';
 import useEffectDebounced from '../../hooks/use-effect-debounced';
 import { getNewPageIndex } from '../../utility/table';
 import {
@@ -76,8 +75,10 @@ export type ViewProps = {
   layout: Layout;
 };
 
-export default function View({ layout, idColumn }: ViewProps) {
-  const { columns, entityType, orderBy, rowOptions, sortDirection, visibleColumns } = layout;
+export default function View(props: ViewProps) {
+  const { layout, idColumn } = props;
+  const { columns, entityType, orderBy, sortDirection, visibleColumns } = layout;
+
   const classes = useStyles();
   const dispatch = useAppDispatch();
   const units = useAppSelector(UnitSelector.all);
@@ -356,7 +357,6 @@ export default function View({ layout, idColumn }: ViewProps) {
 
   return (
     <TableContainer component={Paper}>
-      <RenderActiveAction entityType={entityType} refetchEntities={refetchEntities} />
       <Box className={classes.tableHeader}>
         <Box>
           <Button
@@ -422,7 +422,7 @@ export default function View({ layout, idColumn }: ViewProps) {
           onSortChange={handleSortChanged}
           idColumn={idColumn ?? 'id'}
           noDataText={entitiesFetching ? 'Searching...' : 'No Data'}
-          rowOptions={rowOptions}
+          entityType={entityType}
         />
         <TablePagination
           className={classes.pagination}

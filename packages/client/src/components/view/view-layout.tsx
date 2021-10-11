@@ -8,8 +8,8 @@ import React, {
 import {
   ColumnInfo,
   ColumnsConfig,
+  ColumnType,
   EntityType,
-  friendlyColumnValue,
   getFullyQualifiedColumnName,
   SavedLayoutSerialized,
   SortedQuery,
@@ -22,9 +22,7 @@ import { TableRowOptions } from '../tables/table-custom-columns-content';
 import { UserSelector } from '../../selectors/user.selector';
 import usePersistedState from '../../hooks/use-persisted-state';
 import { useAppSelector } from '../../hooks/use-app-selector';
-import PageHeader, {
-  PageHeaderHelpProps,
-} from '../page-header/page-header';
+import PageHeader, { PageHeaderHelpProps } from '../page-header/page-header';
 import { entityApi } from '../../api/entity.api';
 import View from './view';
 import { SavedItemSelector } from './saved-item-selector';
@@ -40,11 +38,14 @@ import {
 import { SaveNewLayoutDialog } from '../pages/roster-page/save-new-layout-dialog';
 import { useEffectError } from '../../hooks/use-effect-error';
 import { ColumnSelector } from './column-selector';
-import { ActionSelector } from './action-selector';
-import { executeAction, getActionColumnInfos, getColumnAction } from '../../entity-actions/actions';
-import { registerActionsForUpdatableColumns } from '../../entity-actions/edit-column-action';
 import { ViewLayoutButtons } from './view-layout-buttons';
 import useStyles from './view-layout.styles';
+import { EntityActionRegistrySelector } from '../../selectors/entity-action-registry.selector';
+import { EntityActionSelector } from './entity-action-selector';
+import {
+  isEntityActionAllowed,
+  isEntityActionColumnItem,
+} from '../../entity-actions/entity-action-utils';
 
 export type LayoutConfigParams = SortedQuery & {
   columns: ColumnInfo[];
@@ -69,7 +70,6 @@ export type ViewLayoutProps = {
   };
   maxTableColumns?: number;
   name?: string;
-  rowOptions?: TableRowOptions;
 
   // TODO: Build this from configured actions eventually instead of passing it in.
   buttonSetComponent?: React.ComponentType;
@@ -82,15 +82,14 @@ export default function ViewLayout(props: ViewLayoutProps) {
     header,
     buttonSetComponent: ButtonSetComponent,
     maxTableColumns = viewLayoutDefaults.maxTableColumns,
-    rowOptions = {},
   } = props;
   const { name = entityType } = props;
   const classes = useStyles();
   const dispatch = useAppDispatch();
 
   const orgId = useAppSelector(UserSelector.orgId)!;
-  const user = useAppSelector(state => state.user);
-  const { canManageGroup } = useAppSelector(UserSelector.role)!;
+  const role = useAppSelector(UserSelector.role)!;
+  const actions = useAppSelector(EntityActionRegistrySelector.all);
 
   const [currentLayout, setCurrentLayout] = usePersistedState<SavedLayoutSerialized>(`${entityType}CurrentLayout`, makeDefaultViewLayout(entityType, [], maxTableColumns));
   const [selectedLayoutId, setSelectedLayoutId] = usePersistedState<ViewLayoutId>(`${entityType}SelectedLayoutId`, currentLayout.id);
@@ -106,13 +105,30 @@ export default function ViewLayout(props: ViewLayoutProps) {
     isLoading: columnsIsLoading,
   } = entityApi[entityType].useGetAllowedColumnsInfoQuery({ orgId });
 
-  useEffect(() => {
-    registerActionsForUpdatableColumns(allowedColumns, entityType);
-  }, [allowedColumns, entityType]);
+  const actionColumnInfos = useMemo(() => {
+    return _.chain(actions)
+      .values()
+      .filter(action => action.entityType === entityType)
+      .filter(action => isEntityActionColumnItem(action))
+      .filter(action => isEntityActionAllowed(action, role))
+      .sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' }))
+      .map((action): ColumnInfo => ({
+        name: action.id,
+        displayName: action.displayName,
+        type: ColumnType.String,
+        pii: false,
+        phi: false,
+        custom: true,
+        required: false,
+        updatable: true,
+        action: true,
+      }))
+      .value();
+  }, [actions, entityType, role]);
 
   const columns = useMemo(() => {
-    return [...allowedColumns, ...getActionColumnInfos(entityType, user.activeRole?.role)];
-  }, [user, allowedColumns, entityType]);
+    return [...allowedColumns, ...actionColumnInfos];
+  }, [allowedColumns, actionColumnInfos]);
 
   const {
     data: savedLayouts = [],
@@ -173,13 +189,6 @@ export default function ViewLayout(props: ViewLayoutProps) {
         return orderA - orderB;
       }) as ColumnInfo[];
   }, [columnsMap, currentLayout.columns]);
-
-  const menuItems = useMemo(() => {
-    const availableActions = getActionColumnInfos(entityType, user.activeRole?.role).filter(t => t.canMenu);
-    const excluded = Object.keys(currentLayout.columns)
-      .filter(key => currentLayout.columns[key].order < 0);
-    return availableActions.filter(candidate => !excluded.includes(candidate.name));
-  }, [user, currentLayout.columns, entityType]);
 
   const setVisibleColumns = useCallback((visibleColumnsNew: ColumnInfo[]) => {
     const columnsNew: ColumnsConfig = {};
@@ -300,10 +309,6 @@ export default function ViewLayout(props: ViewLayoutProps) {
     selectLayout({ ...selectedLayoutReverted! });
   }, [selectLayout, dispatch, layouts, selectedLayoutId]);
 
-  const handleActionPinned = useCallback(() => {
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
-  }, [currentLayout, setCurrentLayout]);
-
   //
   // Effects
   //
@@ -368,11 +373,11 @@ export default function ViewLayout(props: ViewLayoutProps) {
                   onItemClick={selectLayout}
                   onItemDuplicateClick={handleSaveNewLayout}
                   onItemDeleteClick={handleDeleteClick}
-                  showItemDuplicateButton={() => canManageGroup}
-                  showItemDeleteButton={layout => canManageGroup && !isDefaultLayout(layout.id)}
+                  showItemDuplicateButton={() => role.canManageGroup}
+                  showItemDeleteButton={layout => role.canManageGroup && !isDefaultLayout(layout.id)}
                 />
 
-                {canManageGroup && hasChanges && (
+                {role.canManageGroup && hasChanges && (
                   <ViewLayoutButtons
                     selectedLayoutId={selectedLayoutId}
                     onSaveClick={handleSaveClick}
@@ -391,7 +396,7 @@ export default function ViewLayout(props: ViewLayoutProps) {
               visibleColumns={visibleColumns}
               onVisibleColumnsChange={setVisibleColumns}
             />
-            <ActionSelector entityType={entityType} onActionPinned={handleActionPinned} user={user} />
+            <EntityActionSelector entityType={entityType} />
           </>
         )}
       />
@@ -405,25 +410,6 @@ export default function ViewLayout(props: ViewLayoutProps) {
           entityType,
           columns,
           name,
-          rowOptions: {
-            menuItems: row => {
-              return menuItems.map(item => ({
-                name: item.displayName,
-                callback: () => {
-                  const action = getColumnAction(entityType, item.name);
-                  void executeAction(entityType, action, row);
-                },
-              }));
-            },
-            renderCell: (row, column) => {
-              const action = getColumnAction(entityType, column.fullyQualifiedName);
-              if (action) {
-                return action.render(row);
-              }
-              return friendlyColumnValue(row, column);
-            },
-            ...(rowOptions ?? {}),
-          },
           visibleColumns,
         }}
         idColumn={idColumn}

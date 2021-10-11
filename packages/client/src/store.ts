@@ -67,6 +67,10 @@ import {
   savedFilterInitialState,
   savedFilterReducer,
 } from './reducers/saved-filter.reducer';
+import {
+  entityActionRegistryInitialState,
+  entityActionRegistrySlice,
+} from './slices/entity-action-registry.slice';
 
 const initialState = {
   appFrame: appFrameInitialState,
@@ -81,6 +85,7 @@ const initialState = {
   user: userInitialState,
   workspace: workspaceInitialState,
   localStorage: localStorageInitialState,
+  entityActionRegistry: entityActionRegistryInitialState,
 };
 
 export type AppState = typeof initialState;
@@ -98,6 +103,7 @@ const reducers = combineReducers({
   user: userSlice.reducer,
   workspace: workspaceReducer,
   localStorage: localStorageSlice.reducer,
+  entityActionRegistry: entityActionRegistrySlice.reducer,
   [savedLayoutApi.reducerPath]: savedLayoutApi.reducer,
   [rosterApi.reducerPath]: rosterApi.reducer,
   [observationApi.reducerPath]: observationApi.reducer,

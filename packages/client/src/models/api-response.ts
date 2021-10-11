@@ -29,6 +29,7 @@ export interface ApiRole {
   allowedNotificationEvents: string[];
   canManageGroup: boolean;
   canManageRoster: boolean;
+  canViewObservation: boolean;
   canManageWorkspace: boolean;
   canViewRoster: boolean;
   canViewMuster: boolean;

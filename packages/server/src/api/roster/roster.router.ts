@@ -113,12 +113,12 @@ router.delete(
   controller.deleteRosterEntry,
 );
 
-router.put(
+router.patch(
   '/:orgId/:rosterId',
   requireOrgAccess,
   requireRolePermission(role => role.canManageRoster),
   bodyParser.json(),
-  controller.updateRosterEntry,
+  controller.patchRosterEntry,
 );
 
 export default router;

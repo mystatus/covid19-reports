@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, {
+  useState,
+} from 'react';
 import {
   Box,
   Button,
@@ -31,15 +33,14 @@ import useStyles from './edit-roster-entry-dialog.style';
 import {
   ApiOrphanedRecord,
   ApiRosterEntry,
-
 } from '../../../models/api-response';
 import { ButtonWithSpinner } from '../../buttons/button-with-spinner';
 import { EditableBooleanTable } from '../../tables/editable-boolean-table';
 import { UnitSelector } from '../../../selectors/unit.selector';
-import { formatErrorMessage } from '../../../utility/errors';
-import { RosterClient } from '../../../client/roster.client';
 import { useAppSelector } from '../../../hooks/use-app-selector';
 import { Dialog } from '../../dialog/dialog';
+import { entityApi } from '../../../api/entity.api';
+import { useEffectError } from '../../../hooks/use-effect-error';
 
 export interface EditRosterEntryDialogProps {
   open: boolean;
@@ -50,14 +51,13 @@ export interface EditRosterEntryDialogProps {
   orphanedRecord?: Partial<ApiOrphanedRecord>;
   onSave?: (rosterEntry: ApiRosterEntry) => void;
   onClose?: () => void;
-  onError?: (error: string) => void;
 }
 
 export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   const classes = useStyles();
   const units = useAppSelector(UnitSelector.all);
   const {
-    open, orgId, prepopulated, orphanedRecord, rosterColumnInfos, onClose, onError,
+    open, orgId, prepopulated, orphanedRecord, rosterColumnInfos, onClose,
   } = props;
 
   const hiddenEditFields = ['unit'];
@@ -69,9 +69,16 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   const [rosterEntry, setRosterEntryProperties] = useState(existingRosterEntry ? props.rosterEntry as ApiRosterEntry : (prepopulated ?? {}) as ApiRosterEntry);
   const originalUnit = props.rosterEntry?.unit ?? prepopulated?.unit;
 
-  if (!open) {
-    return <></>;
-  }
+  const [addEntity, {
+    error: addEntityError,
+  }] = entityApi.roster.useAddEntityMutation();
+
+  const [patchEntity, {
+    error: patchEntityError,
+  }] = entityApi.roster.usePatchEntityMutation();
+
+  useEffectError(addEntityError, 'Add Entity', 'Failed to add entity');
+  useEffectError(patchEntityError, 'Patch Entity', 'Failed to patch entity');
 
   function updateRosterEntryProperty(property: string, value: any) {
     setRosterEntryProperties({
@@ -120,30 +127,36 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
 
   const onSave = async () => {
     setFormDisabled(true);
+    setSaveRosterEntryLoading(true);
+
+    const data = {
+      ...rosterEntry,
+    };
+
+    if (!data.unit) {
+      data.unit = units[0].id;
+    }
+
     try {
-      setSaveRosterEntryLoading(true);
-      const data = {
-        ...rosterEntry,
-      };
-      if (!data.unit) {
-        data.unit = units[0].id;
-      }
       if (props.onSave) {
         await props.onSave(data);
       } else if (existingRosterEntry) {
-        await RosterClient.updateRosterEntry(orgId!, rosterEntry.id, data);
+        await patchEntity({
+          orgId: orgId!,
+          entityId: rosterEntry.id,
+          body: data,
+        });
       } else {
-        await RosterClient.addRosterEntry(orgId!, data);
+        await addEntity({
+          orgId: orgId!,
+          body: data,
+        });
       }
-    } catch (error) {
-      if (onError) {
-        onError(formatErrorMessage(error));
-      }
-      setFormDisabled(false);
-      return;
     } finally {
+      setFormDisabled(false);
       setSaveRosterEntryLoading(false);
     }
+
     if (onClose) {
       onClose();
     }
@@ -185,7 +198,6 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
 
     return true;
   };
-
 
   const buildCheckboxFields = () => {
     const columns = rosterColumnInfos?.filter(columnInfo => {
@@ -339,6 +351,10 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
         return '';
     }
   };
+
+  if (!open) {
+    return <></>;
+  }
 
   return (
     <>

@@ -1,8 +1,6 @@
 import {
   IconButton,
   Menu,
-  MenuItem,
-  MenuItemProps,
   Table,
   TableBody,
   TableCell,
@@ -13,30 +11,35 @@ import {
   Typography,
 } from '@material-ui/core';
 import React, {
+  createRef,
   useCallback,
   useEffect,
+  useMemo,
+  useState,
 } from 'react';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import clsx from 'clsx';
+import _ from 'lodash';
 import {
   getFullyQualifiedColumnName,
   getFullyQualifiedColumnDisplayName,
   ColumnInfo,
-  ColumnType,
-  getEnumColumnValue,
+  friendlyColumnValue,
+  EntityType,
 } from '@covid19-reports/shared';
 import { OverrideType } from '../../utility/typescript-utils';
 import useStyles from './table-custom-columns-content.styles';
-
-interface TableCustomColumnsMenuItem {
-  name: string;
-  disabled?: boolean;
-  hidden?: boolean;
-  props?: MenuItemProps;
-  callback: (row: any) => void;
-}
+import { useAppSelector } from '../../hooks/use-app-selector';
+import { EntityActionRegistrySelector } from '../../selectors/entity-action-registry.selector';
+import { EntityTypeData } from '../../api/api-utils';
+import {
+  EntityActionColumnButtonItem,
+  EntityActionColumnButtonItemBaked,
+  EntityActionColumnItem,
+} from '../../entity-actions/entity-action.types';
+import { EntityActionColumnElement } from '../entity-action/entity-action-column-element';
 
 interface TableCustomColumnsRow {
   [column: string]: any;
@@ -48,18 +51,19 @@ export type TableColumn = ColumnInfo & {
   fullyQualifiedName: string;
 };
 
+export type EntityTableRow<TEntityType extends EntityType> = EntityTypeData[TEntityType] & { id: number };
+
 export function columnInfoToTableColumns(visibleColumns: ColumnInfo[]): TableColumn[] {
   return visibleColumns.map((column: ColumnInfo) => {
     return {
       ...column,
       displayName: getFullyQualifiedColumnDisplayName(column),
-      fullyQualifiedName: getFullyQualifiedColumnName(column),
+      fullyQualifiedName: column.action ? column.name : getFullyQualifiedColumnName(column),
     };
   });
 }
 
 export type TableRowOptions = {
-  menuItems?: TableCustomColumnsMenuItem[] | ((row: any) => TableCustomColumnsMenuItem[]);
   renderCell?: (row: any, column: TableColumn) => void;
   rowProps?: Partial<TableRowProps> | ((row: any) => Partial<TableRowProps> | void | null | undefined);
 };
@@ -74,6 +78,7 @@ type TableCustomColumnsContentProps = OverrideType<TableProps, {
   onSortChange?: (column: TableColumn, direction: SortDirection) => void;
   noDataText?: string;
   title?: React.ReactNode;
+  entityType?: EntityType;
 }>;
 
 interface RowMenuState {
@@ -82,20 +87,32 @@ interface RowMenuState {
 }
 
 export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps) => {
-  const classes = useStyles();
-  const [rowMenu, setRowMenu] = React.useState<RowMenuState>({ anchor: null });
-
-  const [leftShadowVisible, setLeftShadowVisible] = React.useState(false);
-  const [rightShadowVisible, setRightShadowVisible] = React.useState(false);
-  const [sortColumn, setSortColumn] = React.useState<TableColumn | undefined>();
-  const [sortDirection, setSortDirection] = React.useState<SortDirection>(props.defaultSort?.direction ?? 'ASC');
-
-  const scrollRef = React.createRef<HTMLDivElement>();
-
-
   const {
-    rows, columns, defaultSort, rowOptions, idColumn, noDataText, sortable, title, onSortChange,
+    rows, columns, defaultSort, rowOptions, idColumn, noDataText, sortable, title, onSortChange, entityType,
   } = props;
+  const classes = useStyles();
+
+  const actions = useAppSelector(EntityActionRegistrySelector.all);
+
+  const [rowMenu, setRowMenu] = useState<RowMenuState>({ anchor: null });
+  const [leftShadowVisible, setLeftShadowVisible] = useState(false);
+  const [rightShadowVisible, setRightShadowVisible] = useState(false);
+  const [sortColumn, setSortColumn] = useState<TableColumn | undefined>();
+  const [sortDirection, setSortDirection] = useState<SortDirection>(props.defaultSort?.direction ?? 'ASC');
+
+  const scrollRef = createRef<HTMLDivElement>();
+
+  const rowMenuActions = useMemo<(EntityActionColumnButtonItem | EntityActionColumnButtonItemBaked)[]>(() => {
+    if (!entityType) {
+      return [];
+    }
+
+    return _.chain(actions)
+      .values()
+      .filter(action => action.entityType === entityType)
+      .filter(action => action.type === 'column-button-item' || action.type === 'column-button-item-baked')
+      .value() as (EntityActionColumnButtonItem | EntityActionColumnButtonItemBaked)[];
+  }, [actions, entityType]);
 
   useEffect(() => {
     if (!sortColumn && defaultSort) {
@@ -135,25 +152,24 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
     setRowMenu({ anchor: null });
   };
 
-  // eslint-disable-next-line promise/prefer-await-to-callbacks
-  const handleMenuItemClick = (callback: (row: any) => void) => () => {
-    const row = rowMenu.row;
-    handleRowMenuClose();
-    // eslint-disable-next-line promise/prefer-await-to-callbacks
-    callback(row);
-  };
-
   const renderCell = (row: any, column: TableColumn) => {
-    return column.type === ColumnType.Enum
-      ? getEnumColumnValue(column, row[column.fullyQualifiedName])
-      : row[column.fullyQualifiedName];
+    if (column.action) {
+      return (
+        <EntityActionColumnElement
+          action={actions[column.name] as EntityActionColumnItem}
+          columns={columns}
+          rows={rows}
+          row={row}
+          renderAs="inline"
+        />
+      );
+    }
+
+    return friendlyColumnValue(row, column);
   };
 
   const getRowId = (row: any) => { return (typeof idColumn === 'function' ? idColumn(row) : row[idColumn] as string); };
   const getRowProps = (row: any) => (typeof rowOptions?.rowProps === 'function' ? rowOptions?.rowProps?.(row) : rowOptions?.rowProps);
-  const getRowActions = (row: any) => (typeof rowOptions?.menuItems === 'function' ? rowOptions?.menuItems?.(row) : rowOptions?.menuItems) || [];
-  const showRowActions = (row: any) => Boolean(getRowActions(row)?.length);
-  const showActions = Boolean(rowMenu.row) && rows.some(showRowActions);
 
   useEffect(() => {
     updateScroll();
@@ -191,7 +207,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
               </TableCell>
             ))}
 
-            <TableCell className={showActions ? classes.iconHeader : classes.rightShadowCell} />
+            <TableCell className={rowMenuActions.length ? classes.iconHeader : classes.rightShadowCell} />
           </TableRow>
         </TableHead>
 
@@ -209,7 +225,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
                 </TableCell>
               ))}
 
-              {showRowActions(row) ? (
+              {rowMenuActions.length ? (
                 <TableCell className={classes.iconCell}>
                   {rightShadowVisible && (
                     <div className={classes.iconShadow} />
@@ -222,6 +238,25 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
                   >
                     <MoreVertIcon />
                   </IconButton>
+
+                  <Menu
+                    id="row-menu"
+                    anchorEl={rowMenu.anchor}
+                    open={row.id === rowMenu.row?.id}
+                    onClose={handleRowMenuClose}
+                  >
+                    {rowMenuActions.map(action => (
+                      <EntityActionColumnElement
+                        key={action.id}
+                        action={action}
+                        columns={columns}
+                        rows={rows}
+                        row={row}
+                        renderAs="menuItem"
+                        onComplete={handleRowMenuClose}
+                      />
+                    ))}
+                  </Menu>
                 </TableCell>
               ) : (
                 <TableCell className={classes.rightShadowCell}>
@@ -232,26 +267,6 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
               )}
             </TableRow>
           ))}
-          {showActions && (
-            <Menu
-              id="row-menu"
-              anchorEl={rowMenu.anchor}
-              keepMounted
-              open={Boolean(rowMenu.row)}
-              onClose={handleRowMenuClose}
-            >
-              {getRowActions(rowMenu.row).filter(menuItem => !menuItem.hidden).map(menuItem => (
-                <MenuItem
-                  disabled={menuItem.disabled}
-                  onClick={handleMenuItemClick(menuItem.callback)}
-                  key={menuItem.name}
-                  {...(menuItem.props as any ?? {})}
-                >
-                  {menuItem.name}
-                </MenuItem>
-              ))}
-            </Menu>
-          )}
 
           {rows.length === 0 && (
             <TableRow>

@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import _ from 'lodash';
 import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import FlashOnOutlinedIcon from '@material-ui/icons/FlashOnOutlined';
 import {
@@ -21,7 +22,8 @@ import {
 import { getFullyQualifiedColumnName, ColumnInfo, EntityType } from '@covid19-reports/shared';
 import { Box, Button, Menu } from '@material-ui/core';
 import useStyles from './column-selector.styles';
-import { isAction } from '../../entity-actions/actions';
+import { useAppSelector } from '../../hooks/use-app-selector';
+import { EntityActionRegistrySelector } from '../../selectors/entity-action-registry.selector';
 
 function reorder<T>(list: T[], startIndex: number, endIndex: number) {
   const result = Array.from(list);
@@ -141,11 +143,14 @@ export type ColumnSelectorProps = {
 };
 
 export function ColumnSelector(props: ColumnSelectorProps) {
+  const { columns, entityType, onVisibleColumnsChange, visibleColumns } = props;
   const classes = useStyles();
+
+  const actions = useAppSelector(EntityActionRegistrySelector.all);
+
   const [visibleColumnsMenuOpen, setVisibleColumnsMenuOpen] = useState(false);
   const visibleColumnsButtonRef = useRef<HTMLSpanElement>(null);
   const [isDropDisabled, setIsDropDisabled] = useState(false);
-  const { columns, entityType, onVisibleColumnsChange, visibleColumns } = props;
 
   const handleDragUpdate = useCallback((update: DragUpdate) => {
     const { destination, source } = update;
@@ -173,6 +178,18 @@ export function ColumnSelector(props: ColumnSelectorProps) {
     const columnMap = reorderColumnMap(columnInfoMap, result);
     onVisibleColumnsChange([...columnMap.visible]);
   }, [columnInfoMap, onVisibleColumnsChange]);
+
+  const entityActions = useMemo(() => {
+    return _.chain(actions)
+      .values()
+      .filter(action => action.entityType === entityType)
+      .keyBy(action => action.id)
+      .value();
+  }, [actions, entityType]);
+
+  const isAction = useCallback((column: ColumnInfo) => {
+    return entityActions[column.name];
+  }, [entityActions]);
 
   return (
     <>
@@ -220,10 +237,10 @@ export function ColumnSelector(props: ColumnSelectorProps) {
                       style={getListStyle(key, visibleColumns, droppableSnapshot)}
                       className={classes.droppableList}
                     >
-                      {columnInfoMap[key].map((item, index) => (
+                      {columnInfoMap[key].map((column, index) => (
                         <Draggable
-                          key={getFullyQualifiedColumnName(item)}
-                          draggableId={getFullyQualifiedColumnName(item)}
+                          key={getFullyQualifiedColumnName(column)}
+                          draggableId={getFullyQualifiedColumnName(column)}
                           index={index}
                           disableInteractiveElementBlocking
                         >
@@ -244,13 +261,13 @@ export function ColumnSelector(props: ColumnSelectorProps) {
                             >
                               <Box display="flex" width="100%" justifyContent="space-between" alignItems="center">
                                 <span>
-                                  {item.displayName}
-                                  {item.table && <span className={classes.tableName}>({item.table})</span>}
+                                  {column.displayName}
+                                  {column.table && <span className={classes.tableName}>({column.table})</span>}
                                 </span>
                                 <Box display="flex" alignItems="center">
-                                  {item.pii && <span className={classes.phipii}>PII</span>}
-                                  {item.phi && <span className={classes.phipii}>PHI</span>}
-                                  {isAction(entityType, item.name) && (
+                                  {column.pii && <span className={classes.phipii}>PII</span>}
+                                  {column.phi && <span className={classes.phipii}>PHI</span>}
+                                  {isAction(column) && (
                                     <span className={classes.phipii}>
                                       <FlashOnOutlinedIcon fontSize="small" opacity="0.8" color="action" />
                                     </span>
