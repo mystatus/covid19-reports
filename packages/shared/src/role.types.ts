@@ -21,12 +21,15 @@ export type RoleSerialized = {
   canManageWorkspace: boolean;
 };
 
-export type RolePermission =
-  | 'canManageGroup'
-  | 'canManageRoster'
-  | 'canViewRoster'
-  | 'canViewObservation'
-  | 'canViewMuster'
-  | 'canViewPII'
-  | 'canViewPHI'
-  | 'canManageWorkspace';
+export const rolePermissions = [
+  'canManageGroup',
+  'canManageRoster',
+  'canViewRoster',
+  'canViewObservation',
+  'canViewMuster',
+  'canViewPII',
+  'canViewPHI',
+  'canManageWorkspace',
+] as const;
+
+export type RolePermission = typeof rolePermissions[number];

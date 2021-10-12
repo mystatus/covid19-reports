@@ -476,7 +476,7 @@ describe(`Roster Controller`, () => {
     });
   });
 
-  describe(`${basePath}/:orgId/:rosterId : put`, () => {
+  describe(`${basePath}/:orgId/:rosterId : patch`, () => {
     it(`updates a roster entry in the org`, async () => {
       const unit = await seedUnit(org);
       const rosterEntries = [
@@ -488,7 +488,7 @@ describe(`Roster Controller`, () => {
         firstName: uniqueString(),
         lastName: uniqueString(),
       };
-      const res = await req.put(`/${org.id}/${rosterEntries[0].id}`, body);
+      const res = await req.patch(`/${org.id}/${rosterEntries[0].id}`, body);
 
       expectNoErrors(res);
 
