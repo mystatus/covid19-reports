@@ -288,7 +288,7 @@ export const defaultReportSchemas: Partial<ReportSchema>[] = [{
   }, {
     keyPath: ['Details', 'Unit'],
     name: 'Unit',
-    displayName: 'Unit',
+    displayName: 'Reported Unit',
     type: ColumnType.String,
     pii: true,
     phi: false,

@@ -12,7 +12,6 @@ import {
   Paginated,
   RosterEntryData,
   RosterFileRow,
-  unitColumnDisplayName,
 } from '@covid19-reports/shared';
 import { EntityService } from '../../util/entity-utils';
 import {
@@ -36,6 +35,8 @@ import { CustomRosterColumn } from './custom-roster-column.model';
 import { ChangeType, RosterHistory } from './roster-history.model';
 import { Roster } from './roster.model';
 import { Org } from '../org/org.model';
+
+const unitColumnDisplayName = 'Unit';
 
 class RosterController {
 
@@ -342,6 +343,10 @@ function getRosterEntryFromCsvRow(csvRow: RosterFileRow, columns: ColumnInfo[], 
   entry.unit = unit;
   entry.org = org;
   for (const column of columns) {
+    if (column.name === 'unit') {
+      // We handled unit already
+      continue;
+    }
     try {
       entry.setColumnValueFromFileRow(column, csvRow);
     } catch (err) {

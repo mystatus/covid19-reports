@@ -133,7 +133,7 @@ export default function View(props: ViewProps) {
           type = ColumnType.Enum;
           enumItems = units.map(({ id, name }) => ({
             label: name,
-            value: (entityType === 'roster') ? id : name, // HACK: Units are a special case right now for the roster table.
+            value: id,
           }));
         } else if (column.type === ColumnType.Enum) {
           const options = (column.config as CustomColumnConfigEnum)?.options?.slice() ?? [];
