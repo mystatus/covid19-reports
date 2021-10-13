@@ -6,11 +6,8 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  ManyToMany,
-  JoinTable,
 } from 'typeorm';
 import { Org } from '../org/org.model';
-import { Workspace } from '../workspace/workspace.model';
 import { UserRole } from '../user/user-role.model';
 
 @Entity()
@@ -40,10 +37,6 @@ export class Role extends BaseEntity {
 
   @OneToMany(() => UserRole, userRole => userRole.role)
   userRoles?: UserRole[];
-
-  @ManyToMany(() => Workspace, workspace => workspace.roles)
-  @JoinTable()
-  workspaces?: Workspace[];
 
   @Column('simple-array', {
     default: '',
@@ -93,11 +86,6 @@ export class Role extends BaseEntity {
     default: false,
   })
   canViewPHI: boolean = false;
-
-  @Column({
-    default: false,
-  })
-  canManageWorkspace: boolean = false;
 
   isSupersetOf(role: Role) {
     // Loop through all permission properties and return false if the input role has

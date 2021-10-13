@@ -1,6 +1,5 @@
 import express, { Request } from 'express';
 import { OrphanedRecordActionType } from '@covid19-reports/shared';
-import { KibanaApi } from '../kibana/kibana-api';
 import orgRoutes from './org/org.router';
 import userRoutes from './user/user.router';
 import roleRoutes from './role/role.router';
@@ -8,7 +7,6 @@ import rosterRoutes from './roster/roster.router';
 import unitRoutes from './unit/unit.router';
 import reingestRoutes from './reingest/reingest.router';
 import accessRequestRoutes from './access-request/access-request.router';
-import workspaceRoutes from './workspace/workspace.router';
 import notificationRoutes from './notification/notification.router';
 import musterRoutes from './muster/muster.router';
 import reportRoutes from './report-schema/report-schema.router';
@@ -20,7 +18,6 @@ import savedLayoutRoutes from './saved-layout/saved-layout.router';
 import { User } from './user/user.model';
 import { Org } from './org/org.model';
 import { UserRole } from './user/user-role.model';
-import { Workspace } from './workspace/workspace.model';
 
 const router = express.Router();
 
@@ -30,7 +27,6 @@ router.use('/role', roleRoutes);
 router.use('/roster', rosterRoutes);
 router.use('/unit', unitRoutes);
 router.use('/access-request', accessRequestRoutes);
-router.use('/workspace', workspaceRoutes);
 router.use('/notification', notificationRoutes);
 router.use('/muster', musterRoutes);
 router.use('/report', reportRoutes);
@@ -45,8 +41,6 @@ export interface ApiRequest<ReqParams = object, ReqBody = object, ReqQuery = obj
   appUser: User;
   appOrg?: Org;
   appUserRole?: UserRole;
-  appWorkspace?: Workspace;
-  kibanaApi?: KibanaApi;
 }
 
 export type OrgParam = {
@@ -77,10 +71,6 @@ export type RosterParam = {
   rosterId: string;
 };
 
-export type WorkspaceParam = {
-  workspaceId: string;
-};
-
 export type UnitParam = {
   unitId: string;
 };
@@ -91,10 +81,6 @@ export type SettingParam = {
 
 export type ColumnParam = {
   columnName: string;
-};
-
-export type DashboardParam = {
-  dashboardUuid: string;
 };
 
 export type OrphanedRecordActionParam = OrgParam & {
@@ -122,7 +108,6 @@ export type OrgReportParams = OrgParam & ReportParam;
 export type OrgEdipiParams = OrgParam & EdipiParam;
 export type OrgRosterParams = OrgParam & RosterParam;
 export type OrgMusterConfigurationParams = OrgParam & MusterConfigurationParam;
-export type OrgWorkspaceParams = OrgParam & WorkspaceParam;
 export type OrgUnitParams = OrgParam & UnitParam;
 export type OrgSavedFilterParams = OrgParam & SavedFilterParam;
 export type OrgSavedLayoutParams = OrgParam & SavedLayoutParam;

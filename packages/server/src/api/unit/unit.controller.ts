@@ -6,7 +6,6 @@ import {
   UnitData,
   UpdateUnitBody,
 } from '@covid19-reports/shared';
-import { Log } from '../../util/log';
 import {
   ApiRequest,
   OrgParam,
@@ -15,11 +14,9 @@ import {
 import { Unit } from './unit.model';
 import {
   BadRequestError,
-  InternalServerError,
   NotFoundError,
 } from '../../util/error-types';
 import { Roster } from '../roster/roster.model';
-import { elasticsearch } from '../../elasticsearch/elasticsearch';
 import {
   ChangeType,
   RosterHistory,
@@ -65,29 +62,8 @@ class UnitController {
       throw new NotFoundError('The unit could not be found.');
     }
 
-    const rename = req.body.name && (req.body.name !== existingUnit.name);
-
     await setUnitFromBody(req.appOrg!.id, existingUnit, req.body);
     const updatedUnit: Unit = await existingUnit.save();
-
-    // Rename elasticsearch documents
-    if (rename) {
-      try {
-        await elasticsearch.updateByQuery({
-          index: `${req.appOrg!.indexPrefix}-${req.params.unitId}-*`,
-          type: '_doc',
-          body: {
-            script: {
-              source: `ctx._source.Roster.unit = '${updatedUnit.name}'`,
-              lang: 'painless',
-            },
-          },
-        });
-      } catch (err) {
-        Log.info(err);
-        throw new InternalServerError('Unit was updated, but there was an error updating elasticsearch documents.');
-      }
-    }
 
     res.json(updatedUnit);
   }

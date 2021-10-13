@@ -1,5 +1,4 @@
 import { Org } from '../../../api/org/org.model';
-import { ReportSchema } from '../../../api/report-schema/report-schema.model';
 import { Unit } from '../../../api/unit/unit.model';
 
 /**
@@ -9,9 +8,8 @@ import { Unit } from '../../../api/unit/unit.model';
  * @param unitsNameStartIndex The starting index for unit names.
  * For example for the value 2 the first unit crated would be called Unit 2
  * @param org The organization the units belong to
- * @param reportSchemas The report schema for the units
  */
-export function unitsTestData(numUnits: number, unitsNameStartIndex: number, org: Org, reportSchemas: ReportSchema[]) {
+export function unitsTestData(numUnits: number, unitsNameStartIndex: number, org: Org) {
   const units: Unit[] = [];
 
   for (let i = 1; i <= numUnits; i++) {

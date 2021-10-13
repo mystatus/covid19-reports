@@ -7,7 +7,6 @@ import { Org } from '../../api/org/org.model';
 import { seedOrphanedRecords } from '../../api/orphaned-record/orphaned-record.model.mock';
 import { Role } from '../../api/role/role.model';
 import { User } from '../../api/user/user.model';
-import { Workspace } from '../../api/workspace/workspace.model';
 import { Unit } from '../../api/unit/unit.model';
 import { env } from '../env';
 import { Log } from '../log';
@@ -144,7 +143,7 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
   await customColumn.save();
 
   // Add Units
-  const units = unitsTestData(numUnits, unitsNameStartIndex, org, reportSchemas);
+  const units = unitsTestData(numUnits, unitsNameStartIndex, org);
   await Unit.save(units);
 
   const groupAdminRole = createGroupAdminRole(org);
@@ -313,7 +312,7 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
   return { org, rosterEntries, units, observations };
 }
 
-function createGroupAdminRole(org: Org, workspaces?: Workspace[]) {
+function createGroupAdminRole(org: Org) {
   return Role.create({
     name: 'Admin',
     description: 'For managing the group.',
@@ -322,15 +321,13 @@ function createGroupAdminRole(org: Org, workspaces?: Workspace[]) {
     allowedNotificationEvents: ['*'],
     canManageGroup: true,
     canManageRoster: true,
-    canManageWorkspace: true,
     canViewMuster: true,
     canViewPII: true,
     canViewRoster: true,
-    workspaces,
   });
 }
 
-function createGroupUserRole(org: Org, workspaces?: Workspace[]) {
+function createGroupUserRole(org: Org) {
   return Role.create({
     name: 'User',
     description: `Basic role for all Group ${org.id} users.`,
@@ -340,6 +337,5 @@ function createGroupUserRole(org: Org, workspaces?: Workspace[]) {
     canViewRoster: true,
     canViewMuster: true,
     canViewPII: true,
-    workspaces,
   });
 }

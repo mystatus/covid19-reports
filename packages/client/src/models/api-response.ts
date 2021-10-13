@@ -22,7 +22,6 @@ export interface ApiOrg {
 export interface ApiRole {
   id: number;
   org?: ApiOrg;
-  workspaces: ApiWorkspace[];
   name: string;
   description: string;
   allowedRosterColumns: string[];
@@ -30,7 +29,6 @@ export interface ApiRole {
   canManageGroup: boolean;
   canManageRoster: boolean;
   canViewObservation: boolean;
-  canManageWorkspace: boolean;
   canViewRoster: boolean;
   canViewMuster: boolean;
   canViewPII: boolean;
@@ -43,11 +41,6 @@ export interface ApiUserRole {
   user: ApiUser;
   units: ApiUnit[];
   allUnits: boolean;
-  favoriteDashboards: {
-    [workspaceId: string]: {
-      [dashboardUuid: string]: boolean;
-    };
-  };
 }
 
 export interface ApiUser {
@@ -162,30 +155,6 @@ export interface ApiOrphanedRecordAction {
   createdOn: string;
   expiresOn?: string;
   type: OrphanedRecordActionType;
-}
-
-export interface ApiWorkspaceTemplate {
-  id: number;
-  name: string;
-  description: string;
-  pii: boolean;
-  phi: boolean;
-}
-
-export interface ApiWorkspace {
-  id: number;
-  name: string;
-  description: string;
-  org?: ApiOrg;
-  workspaceTemplate?: ApiWorkspaceTemplate;
-  pii: boolean;
-  phi: boolean;
-}
-
-export interface ApiDashboard {
-  uuid: string;
-  title: string;
-  description: string;
 }
 
 export interface ApiUnitStatsByDate {

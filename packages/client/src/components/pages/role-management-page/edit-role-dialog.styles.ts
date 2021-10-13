@@ -23,16 +23,6 @@ export default makeStyles((theme: Theme) => createStyles({
     lineHeight: '24px',
     color: '#A9AEB1',
   },
-  workspaceSelect: {
-    width: '100%',
-    '&:before': {
-      border: 'none',
-    },
-  },
-  workspaceDescription: {
-    width: '100%',
-    margin: 0,
-  },
   roleDialogActions: {
     justifyContent: 'center',
     backgroundColor: '#F0F1F1',

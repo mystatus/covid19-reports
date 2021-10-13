@@ -4,14 +4,11 @@ import {
   RegisterUserBody,
   UpsertUserBody,
 } from '@covid19-reports/shared';
-import { getKibanaWorkspaceDashboards } from '../../kibana/kibana-utility';
 import { AccessRequest } from '../access-request/access-request.model';
 import {
   ApiRequest,
-  DashboardParam,
   OrgEdipiParams,
   OrgParam,
-  WorkspaceParam,
 } from '../api.router';
 import { User } from './user.model';
 import { Role } from '../role/role.model';
@@ -207,30 +204,6 @@ class UserController {
     });
 
     res.json(accessRequests);
-  }
-
-  async addFavoriteDashboard(req: ApiRequest<WorkspaceParam & DashboardParam>, res: Response) {
-    const workspaceId = req.params.workspaceId;
-    const dashboardUuid = req.params.dashboardUuid;
-
-    // Check that this is a valid dashboard that the user has access to.
-    const dashboards = await getKibanaWorkspaceDashboards(req.kibanaApi!);
-    if (!dashboards.some(x => x.uuid === dashboardUuid)) {
-      throw new BadRequestError('Dashboard could not be found!');
-    }
-
-    await req.appUserRole!.addFavoriteDashboard(workspaceId, dashboardUuid, getManager());
-
-    res.status(200).send();
-  }
-
-  async removeFavoriteDashboard(req: ApiRequest<WorkspaceParam & DashboardParam>, res: Response) {
-    const workspaceId = req.params.workspaceId;
-    const dashboardUuid = req.params.dashboardUuid;
-
-    await req.appUserRole!.removeFavoriteDashboard(workspaceId, dashboardUuid, getManager());
-
-    res.status(200).send();
   }
 
 }

@@ -16,7 +16,7 @@ import { Unit } from '../unit/unit.model';
 import { BadRequestError } from '../../util/error-types';
 import { individualMusterComplianceByDateRange } from '../../util/muster-utils';
 
-class ExportSqlController {
+class ExportController {
 
   async exportOrgToCsv(req: ApiRequest<OrgParam, null, ExportOrgQuery>, res: Response) {
     const startDate = moment(req.query.startDate ?? 0);
@@ -97,4 +97,4 @@ class ExportSqlController {
   }
 
 }
-export default new ExportSqlController();
+export default new ExportController();

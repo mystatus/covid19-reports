@@ -1,6 +1,5 @@
 import { uniqueString } from '../../util/test-utils/unique';
 import { Org } from '../org/org.model';
-import { Workspace } from '../workspace/workspace.model';
 import { Role } from './role.model';
 
 export function mockRole(org: Org, options?: {
@@ -22,31 +21,28 @@ export function seedRole(org: Org, options?: {
   return mockRole(org, options).save();
 }
 
-export function seedRoleBasicUser(org: Org, workspaces?: Workspace[]) {
+export function seedRoleBasicUser(org: Org) {
   return seedRole(org, {
     customData: {
       allowedRosterColumns: ['edipi', 'firstName', 'lastName'],
       allowedNotificationEvents: [],
       canViewRoster: true,
       canViewMuster: true,
-      workspaces,
     },
   });
 }
 
-export function seedRoleAdmin(org: Org, workspaces?: Workspace[]) {
+export function seedRoleAdmin(org: Org) {
   return seedRole(org, {
     customData: {
       allowedRosterColumns: ['*'],
       allowedNotificationEvents: ['*'],
       canManageGroup: true,
       canManageRoster: true,
-      canManageWorkspace: true,
       canViewRoster: true,
       canViewMuster: true,
       canViewPII: true,
       canViewPHI: true,
-      workspaces,
     },
   });
 }

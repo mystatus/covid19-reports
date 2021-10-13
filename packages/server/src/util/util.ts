@@ -124,28 +124,6 @@ export type TimeInterval =
   | 'month'
   | 'year';
 
-export function getElasticsearchTimeInterval(interval: TimeInterval) {
-  switch (interval) {
-    case 'day': return 'd';
-    case 'week': return 'w';
-    case 'month': return 'M';
-    case 'year': return 'y';
-    default:
-      throw new Error(`Unsupported time interval '${interval}'`);
-  }
-}
-
-export function getElasticsearchDateFormat(interval: TimeInterval) {
-  switch (interval) {
-    case 'day':
-    case 'week': return 'yyyy-MM-dd';
-    case 'month': return 'yyyy-MM';
-    case 'year': return 'yyyy';
-    default:
-      throw new Error(`Unsupported interval '${interval}'`);
-  }
-}
-
 export function getMomentDateFormat(interval: TimeInterval) {
   switch (interval) {
     case 'day':

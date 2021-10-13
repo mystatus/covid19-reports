@@ -1,11 +1,9 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import { KibanaApi } from '../../kibana/kibana-api';
 import controller from './user.controller';
 import {
   requireOrgAccess,
   requireRolePermission,
-  requireWorkspaceAccess,
 } from '../../auth/auth-middleware';
 
 const router = express.Router() as any;
@@ -46,21 +44,6 @@ router.delete(
   requireOrgAccess,
   requireRolePermission(role => role.canManageGroup),
   controller.removeUserFromOrg,
-);
-
-router.post(
-  '/:orgId/favorite-dashboards/:workspaceId/:dashboardUuid',
-  requireOrgAccess,
-  requireWorkspaceAccess,
-  KibanaApi.connect,
-  controller.addFavoriteDashboard,
-);
-
-router.delete(
-  '/:orgId/favorite-dashboards/:workspaceId/:dashboardUuid',
-  requireOrgAccess,
-  requireWorkspaceAccess,
-  controller.removeFavoriteDashboard,
 );
 
 export default router;

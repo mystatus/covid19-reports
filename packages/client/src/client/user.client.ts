@@ -36,12 +36,4 @@ export class UserClient {
     return client.delete(`${orgId}/${edipi}`);
   }
 
-  static addFavoriteDashboard(orgId: number, workspaceId: number, dashboardUuid: string): Promise<void> {
-    return client.post(`${orgId}/favorite-dashboards/${workspaceId}/${dashboardUuid}`);
-  }
-
-  static removeFavoriteDashboard(orgId: number, workspaceId: number, dashboardUuid: string): Promise<void> {
-    return client.delete(`${orgId}/favorite-dashboards/${workspaceId}/${dashboardUuid}`);
-  }
-
 }

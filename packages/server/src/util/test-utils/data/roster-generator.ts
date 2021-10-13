@@ -46,7 +46,7 @@ export function rosterTestDataSimple(numOfRosterEntries: number, numOfUnits: num
   return rosterTestData(
     numOfRosterEntries,
     customRosterColumnTestData(org, customColumnOrgCount),
-    unitsTestData(numOfUnits, unitsNameStartIndex, org, reportSchemaTestData(org)),
+    unitsTestData(numOfUnits, unitsNameStartIndex, org),
     numOfUnits,
   );
 }

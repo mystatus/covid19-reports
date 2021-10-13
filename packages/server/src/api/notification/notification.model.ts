@@ -54,9 +54,4 @@ export class Notification extends BaseEntity {
   })
   defaultMinMinutesBetweenAlerts: number = 60;
 
-  @Column({
-    nullable: true,
-  })
-  dashboardUuid?: string;
-
 }

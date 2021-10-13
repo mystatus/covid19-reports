@@ -4,7 +4,6 @@ import path from 'path';
 import bodyParser from 'body-parser';
 import controller from './roster.controller';
 import {
-  requireInternalUser,
   requireOrgAccess,
   requireRolePermission,
 } from '../../auth/auth-middleware';

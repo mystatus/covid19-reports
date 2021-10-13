@@ -1,6 +1,5 @@
 import { OrgSerialized } from './org.types';
 import { UserRoleSerialized } from './user-role.types';
-import { WorkspaceSerialized } from './workspace.types';
 
 export type RoleSerialized = {
   id: number;
@@ -8,7 +7,6 @@ export type RoleSerialized = {
   description: string;
   org?: OrgSerialized;
   userRoles?: UserRoleSerialized[];
-  workspaces?: WorkspaceSerialized[];
   allowedRosterColumns: string[];
   allowedNotificationEvents: string[];
   canManageGroup: boolean;
@@ -18,7 +16,6 @@ export type RoleSerialized = {
   canViewMuster: boolean;
   canViewPII: boolean;
   canViewPHI: boolean;
-  canManageWorkspace: boolean;
 };
 
 export const rolePermissions = [
@@ -29,7 +26,6 @@ export const rolePermissions = [
   'canViewMuster',
   'canViewPII',
   'canViewPHI',
-  'canManageWorkspace',
 ] as const;
 
 export type RolePermission = typeof rolePermissions[number];
