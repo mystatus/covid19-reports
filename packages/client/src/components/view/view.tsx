@@ -123,28 +123,30 @@ export default function View(props: ViewProps) {
   }, [entityType, savedFilters]);
 
   const queryBuilderFields = useMemo((): QueryField[] => {
-    return columns.map(column => {
-      let type = column.type;
-      let enumItems: QueryFieldEnumItem[] | undefined;
+    return columns
+      .filter(column => !column.action)
+      .map(column => {
+        let type = column.type;
+        let enumItems: QueryFieldEnumItem[] | undefined;
 
-      if (column.name === 'unit') {
-        type = ColumnType.Enum;
-        enumItems = units.map(({ id, name }) => ({
-          label: name,
-          value: (entityType === 'roster') ? id : name, // HACK: Units are a special case right now for the roster table.
-        }));
-      } else if (column.type === ColumnType.Enum) {
-        const options = (column.config as CustomColumnConfigEnum)?.options?.slice() ?? [];
-        options.unshift({ id: '', label: '' });
-        enumItems = options.map(({ id, label }) => ({ label, value: id }));
-      }
+        if (column.name === 'unit') {
+          type = ColumnType.Enum;
+          enumItems = units.map(({ id, name }) => ({
+            label: name,
+            value: (entityType === 'roster') ? id : name, // HACK: Units are a special case right now for the roster table.
+          }));
+        } else if (column.type === ColumnType.Enum) {
+          const options = (column.config as CustomColumnConfigEnum)?.options?.slice() ?? [];
+          options.unshift({ id: '', label: '' });
+          enumItems = options.map(({ id, label }) => ({ label, value: id }));
+        }
 
-      return {
-        ...column,
-        type,
-        enumItems,
-      };
-    });
+        return {
+          ...column,
+          type,
+          enumItems,
+        };
+      });
   }, [columns, entityType, units]);
 
   const fetchSavedFilters = useCallback(async () => {
