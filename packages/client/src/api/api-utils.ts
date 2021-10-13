@@ -27,7 +27,7 @@ export type EntityTypeData = {
   observation: ObservationEntryData;
 };
 
-export function createEntityApi<TEntity extends EntityType, TEntityData extends EntityTypeData[TEntity]>(
+export function createEntityApi<TEntity extends EntityType>(
   args: {
     entityType: TEntity;
     hasVersionedColumns?: boolean;
@@ -37,15 +37,17 @@ export function createEntityApi<TEntity extends EntityType, TEntityData extends 
 
   return createApi({
     reducerPath: entityType,
+    tagTypes: [entityType],
     baseQuery: fetchBaseQuery({
       baseUrl: `${apiBaseUrl}${_.kebabCase(entityType)}/`,
     }),
-    endpoints: build => buildEntityEndpoints<TEntityData>(build, hasVersionedColumns),
+    endpoints: build => buildEntityEndpoints(build, entityType, hasVersionedColumns),
   });
 }
 
-function buildEntityEndpoints<TEntityData>(
+function buildEntityEndpoints<TEntity extends EntityType, TEntityData extends EntityTypeData[TEntity]>(
   build: EndpointBuilder<BaseQueryFn, string, string>,
+  entityType: TEntity,
   hasVersionedColumns?: boolean,
 ) {
   return {
@@ -80,6 +82,32 @@ function buildEntityEndpoints<TEntityData>(
       query: GetEntitiesQuery;
     }>({
       query: ({ orgId, query }) => `${orgId}?${qs.stringify(query)}`,
+      providesTags: [entityType],
+    }),
+
+    addEntity: build.mutation<TEntityData, {
+      orgId: number;
+      body: Partial<TEntityData>;
+    }>({
+      query: ({ orgId, body }) => ({
+        url: `${orgId}`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: [entityType],
+    }),
+
+    patchEntity: build.mutation<TEntityData, {
+      orgId: number;
+      entityId: number;
+      body: Partial<TEntityData>;
+    }>({
+      query: ({ orgId, entityId, body }) => ({
+        url: `${orgId}/${entityId}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: [entityType],
     }),
   };
 }

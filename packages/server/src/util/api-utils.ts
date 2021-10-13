@@ -37,3 +37,11 @@ export function assertRequestParams<TParams, TParamsKey extends keyof TParams>(
 
   return req.params;
 }
+
+export function assertNumber(numberAsString: string) {
+  const number = parseInt(numberAsString);
+  if (Number.isNaN(number)) {
+    throw new BadRequestError('A number was required, but was not provided');
+  }
+  return number;
+}

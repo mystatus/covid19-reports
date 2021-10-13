@@ -6,7 +6,8 @@ interface ButtonAsyncSpinnerProps extends ButtonProps {
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => Promise<any>;
 }
 
-export const ButtonAsyncSpinner = ({ children, onClick }: ButtonAsyncSpinnerProps) => {
+export const ButtonAsyncSpinner = (props: ButtonAsyncSpinnerProps) => {
+  const { onClick, children, ...rest } = props;
   const [isExecuting, setIsExecuting] = useState(false);
 
   const handleClick = useCallback(async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -22,6 +23,7 @@ export const ButtonAsyncSpinner = ({ children, onClick }: ButtonAsyncSpinnerProp
     <ButtonWithSpinner
       onClick={handleClick}
       loading={isExecuting}
+      {...rest}
     >
       {children}
     </ButtonWithSpinner>

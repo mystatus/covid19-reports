@@ -15,7 +15,11 @@ import {
   unitColumnDisplayName,
 } from '@covid19-reports/shared';
 import { EntityService } from '../../util/entity-utils';
-import { assertRequestBody, assertRequestParams } from '../../util/api-utils';
+import {
+  assertNumber,
+  assertRequestBody,
+  assertRequestParams,
+} from '../../util/api-utils';
 import {
   BadRequestError,
   CsvRowError,
@@ -281,9 +285,9 @@ class RosterController {
     res.json(deletedEntry);
   }
 
-  async updateRosterEntry(req: ApiRequest<OrgRosterParams, RosterEntryData>, res: Response) {
+  async patchRosterEntry(req: ApiRequest<OrgRosterParams, RosterEntryData>, res: Response) {
     assertRequestParams(req, ['rosterId']);
-    const entryId = +req.params.rosterId;
+    const entryId = assertNumber(req.params.rosterId);
 
     const entry = await getManager().transaction(manager => {
       return editRosterEntry(req.appOrg!, req.appUserRole!, entryId, req.body, manager);

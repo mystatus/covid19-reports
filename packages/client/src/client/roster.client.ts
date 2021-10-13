@@ -53,8 +53,8 @@ export class RosterClient {
     return client.post(`${orgId}`, body);
   }
 
-  static updateRosterEntry(orgId: number, rosterEntryId: number, body: UpdateRosterEntryBody): Promise<ApiRosterEntry> {
-    return client.put(`${orgId}/${rosterEntryId}`, body);
+  static patchRosterEntry(orgId: number, rosterEntryId: number, body: UpdateRosterEntryBody): Promise<ApiRosterEntry> {
+    return client.patch(`${orgId}/${rosterEntryId}`, body);
   }
 
   static deleteRosterEntry(orgId: number, rosterEntryId: number): Promise<ApiRosterEntry> {
