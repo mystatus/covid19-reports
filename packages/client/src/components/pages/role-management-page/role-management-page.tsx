@@ -29,7 +29,6 @@ import RoleInfoPanel from '../../role-info-panel/role-info-panel';
 import { UserSelector } from '../../../selectors/user.selector';
 import { RoleSelector } from '../../../selectors/role.selector';
 import { Role } from '../../../actions/role.actions';
-import { Workspace } from '../../../actions/workspace.actions';
 import { ButtonSet } from '../../buttons/button-set';
 import { Modal } from '../../../actions/modal.actions';
 import { formatErrorMessage } from '../../../utility/errors';
@@ -53,7 +52,6 @@ export const RoleManagementPage = () => {
     if (orgId) {
       dispatch(AppFrameActions.setPageLoading({ isLoading: true }));
       await dispatch(Role.fetch(orgId));
-      await dispatch(Workspace.fetch(orgId));
       dispatch(AppFrameActions.setPageLoading({ isLoading: false }));
     }
   }, [orgId, dispatch]);

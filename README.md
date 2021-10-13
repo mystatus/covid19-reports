@@ -63,13 +63,6 @@ If you need to stop or reset the docker-compose dev database:
 yarn run stop-db
 ```
 
-There are a couple of things in the app that won’t work unless you have
-elasticsearch/kibana running. If you try to go to the Muster page
-you’ll get an internal server error without them running. Anything
-involving Workspaces won’t work quite right, since those exist in
-ES/Kibana.
-
-
 
 ## Switching Users
 

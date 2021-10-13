@@ -147,7 +147,7 @@ export default function View(props: ViewProps) {
           enumItems,
         };
       });
-  }, [columns, entityType, units]);
+  }, [columns, units]);
 
   const fetchSavedFilters = useCallback(async () => {
     let savedFiltersNew: SavedFilterSerialized[];

@@ -21,10 +21,7 @@ import { seedRoleAdmin } from '../role/role.model.mock';
 import { seedUnit } from '../unit/unit.model.mock';
 import { seedUserRole } from '../user/user-role.model.mock';
 import { User } from '../user/user.model';
-import {
-  seedUser,
-  seedUserInternal,
-} from '../user/user.model.mock';
+import { seedUser } from '../user/user.model.mock';
 import { CustomRosterColumn } from './custom-roster-column.model';
 import { seedCustomRosterColumn } from './custom-roster-column.model.mock';
 import {

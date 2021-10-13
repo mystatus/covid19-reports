@@ -2,7 +2,6 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import chaiSubset from 'chai-subset';
 import chaiArrays from 'chai-arrays';
-import { getManager } from 'typeorm';
 import { AccessRequest } from './api/access-request/access-request.model';
 import { UserNotificationSetting } from './api/notification/user-notification-setting.model';
 import { Observation } from './api/observation/observation.model';
@@ -15,8 +14,6 @@ import { Unit } from './api/unit/unit.model';
 import { UserRole } from './api/user/user-role.model';
 import { User } from './api/user/user.model';
 import { Notification } from './api/notification/notification.model';
-import { WorkspaceTemplate } from './api/workspace/workspace-template.model';
-import { Workspace } from './api/workspace/workspace.model';
 import server from './index';
 import { ReportSchema } from './api/report-schema/report-schema.model';
 
@@ -39,16 +36,11 @@ beforeEach(async () => {
     return;
   }
   try {
-    // Clear relations that will cause constraint errors.
-    await getManager().query(`DELETE FROM role_workspaces_workspace`);
-
     // Clear every type of model manually without relying on cascades. This should run very efficiently to keep
     // the tests fast, and will also prevent any corrupted state if cascades aren't properly set up.
     await AccessRequest.delete({});
     await UserRole.delete({});
     await Role.delete({});
-    await WorkspaceTemplate.delete({});
-    await Workspace.delete({});
     await CustomRosterColumn.delete({});
     await Roster.delete({});
     await RosterHistory.delete({});

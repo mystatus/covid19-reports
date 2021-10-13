@@ -232,7 +232,6 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
                     <div className={classes.iconShadow} />
                   )}
                   <IconButton
-                    aria-label="workspace actions"
                     aria-controls={`row-${getRowId(row)}-menu`}
                     aria-haspopup="true"
                     onClick={handleRowMenuClick(row)}

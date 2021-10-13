@@ -1,6 +1,4 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
-import { WorkspaceTemplate } from '../api/workspace/workspace-template.model';
-import { kibanaSavedObjectsMock } from '../kibana/kibana-saved-objects.mock';
 
 export class Workspaces1602287934964 implements MigrationInterface {
 
@@ -15,22 +13,6 @@ export class Workspaces1602287934964 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "workspace" ADD CONSTRAINT "FK_a5498b79ec16741b57e976105ee" FOREIGN KEY ("org_id") REFERENCES "org"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
     await queryRunner.query(`ALTER TABLE "workspace" ADD CONSTRAINT "FK_a55d0d92d3dbbff75445a7cb824" FOREIGN KEY ("workspace_template_id") REFERENCES "workspace_template"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
     await queryRunner.query(`ALTER TABLE "role" ADD CONSTRAINT "FK_79824a434de2b4547a1be0c759a" FOREIGN KEY ("workspace_id") REFERENCES "workspace"("id") ON DELETE RESTRICT ON UPDATE NO ACTION`);
-
-    // Create workspace templates
-    const workspaceTemplateRepo = queryRunner.manager.getRepository(WorkspaceTemplate);
-    await workspaceTemplateRepo.insert([{
-      name: 'Symptom Tracking (Non-PII)',
-      description: 'Symptom tracker without PII data',
-      pii: false,
-      phi: false,
-      kibanaSavedObjects: kibanaSavedObjectsMock.nonPii,
-    }, {
-      name: 'Symptom Tracking (PII)',
-      description: 'Symptom tracker with PII data',
-      pii: true,
-      phi: false,
-      kibanaSavedObjects: kibanaSavedObjectsMock.pii,
-    }]);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

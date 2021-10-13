@@ -10,7 +10,6 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@material-ui/core';
-import BarChartIcon from '@material-ui/icons/BarChart';
 import HomeIcon from '@material-ui/icons/Home';
 import AssignmentIndIcon from '@material-ui/icons/AssignmentInd';
 import SupervisorAccountIcon from '@material-ui/icons/SupervisorAccount';
@@ -18,7 +17,6 @@ import GroupWorkIcon from '@material-ui/icons/GroupWork';
 import SecurityIcon from '@material-ui/icons/Security';
 import HelpIcon from '@material-ui/icons/Help';
 import ViewWeekOutlinedIcon from '@material-ui/icons/ViewWeekOutlined';
-import DashboardOutlinedIcon from '@material-ui/icons/DashboardOutlined';
 import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
 import clsx from 'clsx';
 import { useLocation } from 'react-router-dom';
@@ -97,11 +95,6 @@ export const AppSidenav = () => {
     }
   }, [orgId, dispatch, user]);
 
-  const userHasWorkspaces = () => {
-    const workspaces = user.activeRole?.role.workspaces;
-    return (workspaces && workspaces.length > 0);
-  };
-
   return (
     <div className={classes.root}>
       <div className={clsx(classes.expander, {
@@ -135,20 +128,11 @@ export const AppSidenav = () => {
             name="Home"
             icon={(<HomeIcon />)}
           />
-          {userHasWorkspaces() && (
-            <SidenavLink
-              to="/spaces"
-              name="Spaces"
-              icon={(<BarChartIcon />)}
-            />
-          )}
-          {userHasWorkspaces() && (
-            <SidenavLink
-              to="/data-export"
-              name="Data Export"
-              icon={(<DataExportIcon />)}
-            />
-          )}
+          <SidenavLink
+            to="/data-export"
+            name="Data Export"
+            icon={(<DataExportIcon />)}
+          />
           {user.activeRole?.role.canViewMuster && (
             <SidenavLink
               to="/muster"
@@ -156,13 +140,11 @@ export const AppSidenav = () => {
               icon={(<PersonCheckIcon />)}
             />
           )}
-          {/* {user.activeRole?.role.canViewObservations && ( */}
           <SidenavLink
             to="/observations"
             name="Observations"
             icon={(<AssignmentIndIcon />)}
           />
-          {/* )} */}
           {user.activeRole?.role.canViewRoster && (
             <SidenavLink
               to="/roster"
@@ -208,11 +190,6 @@ export const AppSidenav = () => {
                 to="/roster-columns"
                 name="Roster Columns"
                 icon={(<ViewWeekOutlinedIcon />)}
-              />
-              <SidenavLink
-                to="/edit-spaces"
-                name="Edit Spaces"
-                icon={(<DashboardOutlinedIcon />)}
               />
             </List>
           </>

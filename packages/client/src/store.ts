@@ -36,10 +36,6 @@ import {
   userSlice,
 } from './slices/user.slice';
 import {
-  workspaceInitialState,
-  workspaceReducer,
-} from './reducers/workspace.reducer';
-import {
   unitInitialState,
   unitReducer,
 } from './reducers/unit.reducer';
@@ -83,7 +79,6 @@ const initialState = {
   reportSchema: reportSchemaInitialState,
   orphanedRecord: orphanedRecordInitialState,
   user: userInitialState,
-  workspace: workspaceInitialState,
   localStorage: localStorageInitialState,
   entityActionRegistry: entityActionRegistryInitialState,
 };
@@ -101,7 +96,6 @@ const reducers = combineReducers({
   reportSchema: reportSchemaReducer,
   orphanedRecord: orphanedRecordSlice.reducer,
   user: userSlice.reducer,
-  workspace: workspaceReducer,
   localStorage: localStorageSlice.reducer,
   entityActionRegistry: entityActionRegistrySlice.reducer,
   [savedLayoutApi.reducerPath]: savedLayoutApi.reducer,

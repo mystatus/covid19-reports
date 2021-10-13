@@ -179,8 +179,6 @@ export const RosterColumnsPage = () => {
                   </TableCell>
                   <TableCell className={classes.iconCell}>
                     <IconButton
-                      aria-label="workspace actions"
-                      aria-controls={`workspace-${column.name}-menu`}
                       aria-haspopup="true"
                       onClick={handleColumnMenuClick(column)}
                     >

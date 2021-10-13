@@ -17,7 +17,6 @@ export function mockNotification() {
     defaultThreshold: uniqueInt(),
     defaultMaxDailyCount: uniqueInt(),
     defaultMinMinutesBetweenAlerts: uniqueInt(),
-    dashboardUuid: uniqueString(),
   });
 }
 

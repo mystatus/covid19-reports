@@ -8,9 +8,4 @@ export type UserRoleSerialized = {
   role?: RoleSerialized;
   units?: UnitSerialized[];
   allUnits: boolean;
-  favoriteDashboards: {
-    [workspaceId: string]: {
-      [dashboardUuid: string]: boolean;
-    };
-  };
 };

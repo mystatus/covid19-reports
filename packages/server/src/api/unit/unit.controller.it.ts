@@ -1,15 +1,12 @@
 import { expect } from 'chai';
-import { stub } from 'sinon';
 import { In } from 'typeorm';
 import moment from 'moment';
 import { UnitData } from '@covid19-reports/shared';
-import { elasticsearch } from '../../elasticsearch/elasticsearch';
 import { expectNoErrors } from '../../util/test-utils/expect';
 import {
   seedOrgContact,
   seedOrgContactRoles,
 } from '../../util/test-utils/seed';
-import { Stub } from '../../util/test-utils/stub';
 import { TestRequest } from '../../util/test-utils/test-request';
 import {
   uniqueString,
@@ -90,16 +87,6 @@ describe(`Unit Controller`, () => {
   });
 
   describe(`${basePath}/:orgId/:unitId : put`, () => {
-    let elasticsearchUpdateByQueryStub: Stub<typeof elasticsearch['updateByQuery']>;
-
-    beforeEach(() => {
-      elasticsearchUpdateByQueryStub = stub(elasticsearch, 'updateByQuery');
-    });
-
-    afterEach(() => {
-      elasticsearchUpdateByQueryStub.restore();
-    });
-
     it(`updates the org's unit`, async () => {
       const unit = await seedUnit(org);
 
@@ -119,8 +106,6 @@ describe(`Unit Controller`, () => {
 
       const unitAfter = (await Unit.findOne(unit.id))!;
       expect(unitAfter.name).to.eql(body.name);
-
-      expect(elasticsearchUpdateByQueryStub.callCount).to.eql(1);
     });
   });
 

@@ -6,7 +6,6 @@ import { customRosterColumnTestData } from './custom-roster-column-generator';
 import { orgTestData } from './org-generator';
 import { adminUserTestData } from './user-generator';
 import { unitsTestData } from './unit-generator';
-import { reportSchemaTestData } from './report-schema-generator';
 
 export async function rosterTestData(numRosterEntries: number, customColumn: CustomRosterColumn, units: Unit[], numUnits: number) {
   const rosterEntries: Roster[] = [];
@@ -46,7 +45,7 @@ export function rosterTestDataSimple(numOfRosterEntries: number, numOfUnits: num
   return rosterTestData(
     numOfRosterEntries,
     customRosterColumnTestData(org, customColumnOrgCount),
-    unitsTestData(numOfUnits, unitsNameStartIndex, org, reportSchemaTestData(org)),
+    unitsTestData(numOfUnits, unitsNameStartIndex, org),
     numOfUnits,
   );
 }

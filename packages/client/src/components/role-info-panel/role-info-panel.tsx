@@ -46,16 +46,6 @@ const Section = ({
   );
 };
 
-type TextSectionProps = Exclude<SectionProps, 'children'> & {
-  text?: string;
-};
-
-const TextSection = ({ text, ...rest }: TextSectionProps) => (
-  <Section {...rest}>
-    <Typography>{text}</Typography>
-  </Section>
-);
-
 export type RoleInfoPanelProps = {
   role?: ApiRole;
   scrollFix?: boolean;
@@ -98,20 +88,12 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
     <Box display="flex" width="100%">
       <Box flex={1}>
         <Box className={classes.section}>
-          <TextSection
-            text={role.workspaces.map(x => x.name).join(', ') || 'None'}
-            title="Spaces"
-          />
-        </Box>
-
-        <Box className={classes.section}>
           <Section title="Permissions">
             <RoleDataTable
               aria-label="Permissions"
               data={[
                 { label: 'Manage Group', value: role.canManageGroup },
                 { label: 'Manage Roster', value: role.canManageRoster },
-                { label: 'Manage Workspace', value: role.canManageWorkspace },
                 { label: 'View Roster', value: role.canViewRoster },
                 { label: 'View Muster Reports', value: role.canViewMuster },
                 { label: 'View PII', value: role.canViewPII },

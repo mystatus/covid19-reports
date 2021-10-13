@@ -3,48 +3,27 @@ import {
   requireOrgAccess,
   requireRolePermission,
 } from '../../auth/auth-middleware';
-import esController from './export.elasticsearch.controller';
-import sqlController from './export.sql.controller';
+import controller from './export.controller';
 
 const router = Router() as any;
 
 router.get(
-  '/:orgId/elasticsearch',
-  requireOrgAccess,
-  esController.exportOrgToCsv,
-);
-
-router.get(
   '/:orgId/sql',
   requireOrgAccess,
-  sqlController.exportOrgToCsv,
+  controller.exportOrgToCsv,
 );
 
 router.get(
   '/:orgId/roster/sql',
   requireOrgAccess,
-  sqlController.exportRosterToCsv,
-);
-
-router.get(
-  '/:orgId/roster',
-  requireOrgAccess,
-  requireRolePermission(role => role.canViewRoster),
-  esController.exportRosterToCsv,
-);
-
-router.get(
-  '/:orgId/muster/roster',
-  requireOrgAccess,
-  requireRolePermission(role => role.canViewMuster),
-  esController.exportMusterRosterToCsv,
+  controller.exportRosterToCsv,
 );
 
 router.get(
   '/:orgId/muster/roster/sql',
   requireOrgAccess,
   requireRolePermission(role => role.canViewMuster),
-  sqlController.exportRosterMusterComplianceToCsv,
+  controller.exportRosterMusterComplianceToCsv,
 );
 
 export default router;
