@@ -2,7 +2,7 @@ import { ColumnInfo, ColumnType, CustomColumns, MusterStatus } from './entity.ty
 
 
 export type BaseObservationColumnInfo = ColumnInfo & {
-  name: 'edipi' | 'timestamp' | 'unit' | 'muster_status';
+  name: 'edipi' | 'timestamp' | 'muster_status';
 };
 
 export const baseObservationColumnLookup: Readonly<{
@@ -27,16 +27,6 @@ export const baseObservationColumnLookup: Readonly<{
     custom: false,
     required: true,
     updatable: false,
-  },
-  unit: {
-    name: 'unit',
-    displayName: 'Reported Unit',
-    type: ColumnType.String,
-    pii: true,
-    phi: false,
-    custom: false,
-    required: true,
-    updatable: true,
   },
   muster_status: {
     name: 'muster_status',
@@ -67,12 +57,10 @@ export const baseObservationColumnLookup: Readonly<{
 
 export const baseObservationColumns: Readonly<Readonly<BaseObservationColumnInfo>>[] = Object.values(baseObservationColumnLookup);
 export const edipiColumnDisplayName = baseObservationColumnLookup.edipi.displayName;
-export const unitColumnDisplayName = 'Unit';
 
 export type ObservationEntryData = {
   edipi: string;
   timestamp: Date;
-  unit: string;
   lastName?: string;
 } & CustomColumns;
 

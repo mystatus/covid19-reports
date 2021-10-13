@@ -50,11 +50,6 @@ export function getFullyQualifiedColumnNameParts(fullyQualifiedName: string): Fu
 export function findColumnByFullyQualifiedName(fullyQualifiedName: string, columns: ColumnInfo[]): ColumnInfo | undefined {
   const { table, name } = getFullyQualifiedColumnNameParts(fullyQualifiedName);
 
-  // HACK: Unit is a special case at the moment, but should eventually become a custom column.
-  if (name === 'unit') {
-    return baseObservationColumnLookup.unit;
-  }
-
   // Force every column name to snake case in comparisons, since some column names may still
   // be in camel case.
   return columns.find(x => x.table === table && _.snakeCase(x.name) === _.snakeCase(name));

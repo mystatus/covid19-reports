@@ -3,7 +3,7 @@ import { UnitSerialized } from './unit.types';
 
 
 export type BaseRosterColumnInfo = ColumnInfo & {
-  name: 'edipi' | 'firstName' | 'lastName';
+  name: 'edipi' | 'unit' | 'firstName' | 'lastName';
 };
 
 export const baseRosterColumnLookup: Readonly<{
@@ -18,6 +18,16 @@ export const baseRosterColumnLookup: Readonly<{
     custom: false,
     required: true,
     updatable: false,
+  },
+  unit: {
+    name: 'unit',
+    displayName: 'Unit',
+    type: ColumnType.Number,
+    pii: false,
+    phi: false,
+    custom: false,
+    required: true,
+    updatable: true,
   },
   firstName: {
     name: 'firstName',

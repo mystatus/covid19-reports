@@ -10,24 +10,19 @@ import {
   TableRowProps,
   Typography,
 } from '@material-ui/core';
-import React, {
-  createRef,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { createRef, useCallback, useEffect, useMemo, useState } from 'react';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import ArrowDropUpIcon from '@material-ui/icons/ArrowDropUp';
 import clsx from 'clsx';
 import _ from 'lodash';
 import {
-  getFullyQualifiedColumnName,
-  getFullyQualifiedColumnDisplayName,
   ColumnInfo,
-  friendlyColumnValue,
+  ColumnType,
   EntityType,
+  friendlyColumnValue,
+  getFullyQualifiedColumnDisplayName,
+  getFullyQualifiedColumnName,
 } from '@covid19-reports/shared';
 import { OverrideType } from '../../utility/typescript-utils';
 import useStyles from './table-custom-columns-content.styles';
@@ -40,6 +35,7 @@ import {
   EntityActionColumnItem,
 } from '../../entity-actions/entity-action.types';
 import { EntityActionColumnElement } from '../entity-action/entity-action-column-element';
+import { UnitSelector } from '../../selectors/unit.selector';
 
 interface TableCustomColumnsRow {
   [column: string]: any;
@@ -93,6 +89,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
   const classes = useStyles();
 
   const actions = useAppSelector(EntityActionRegistrySelector.all);
+  const units = useAppSelector(UnitSelector.all);
 
   const [rowMenu, setRowMenu] = useState<RowMenuState>({ anchor: null });
   const [leftShadowVisible, setLeftShadowVisible] = useState(false);
@@ -163,6 +160,10 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
           renderAs="inline"
         />
       );
+    }
+    if (column.name === 'unit' && column.type === ColumnType.Number) {
+      const unitId = parseInt(friendlyColumnValue(row, column));
+      return units.find(unit => unit.id === unitId)?.name || unitId;
     }
 
     return friendlyColumnValue(row, column);

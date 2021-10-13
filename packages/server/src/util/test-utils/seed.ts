@@ -239,10 +239,10 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
           TemperatureFarenheit: 102,
           Score: 20,
           Category: 'high',
+          Unit: units[i].name,
         };
 
         observations.push(Observation.create({
-          unit: units[i].name,
           reportSchema: reportSchemas[0],
           timestamp: new Date(window.startTimestamp),
           documentId: `DocumentId_${roster.edipi}_${window.id}`,
@@ -292,7 +292,6 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
       });
       for (const window of musterWindows) {
         observations.push(Observation.create({
-          unit: units[i].name,
           reportSchema: reportSchemas[1],
           timestamp: new Date(window.startTimestamp),
           documentId: `DocumentId_${roster.edipi}_${window.id}`,
@@ -301,6 +300,9 @@ async function generateOrg(admin: User, numUsers: number, numRosterEntries: numb
           musterConfiguration: oneTimeMusterConfig,
           musterWindowId: window.id,
           rosterHistoryEntry,
+          customColumns: {
+            Unit: units[i].name,
+          },
         }));
       }
       await Observation.save(observations);

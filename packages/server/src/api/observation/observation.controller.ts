@@ -120,7 +120,6 @@ function saveObservationWithReportSchema(
   observation.edipi = report.EDIPI;
   observation.timestamp = timestampColumnTransformer.to(report.Timestamp);
   observation.reportSchema = reportSchema;
-  observation.unit = `${report.Details?.Unit ?? ''}`;
   observation.reportingGroup = org.reportingGroup;
   observation.rosterHistoryEntry = roster;
   if (muster) {

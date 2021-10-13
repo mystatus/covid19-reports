@@ -77,6 +77,10 @@ export async function editRosterEntry(org: Org, userRole: UserRole, entryId: num
 
   const allowedColumns = Roster.filterAllowedColumns(await Roster.getColumns(org), userRole.role);
   for (const column of allowedColumns) {
+    if (column.name === 'unit') {
+      // We already handled the unit column
+      continue;
+    }
     if (entryData[column.name] === undefined) {
       continue;
     }
