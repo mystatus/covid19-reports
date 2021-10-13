@@ -34,6 +34,7 @@ export interface IEntity {
 export interface IEntityModel<T extends IEntity> {
   new(): T;
   getColumnSelect(column: ColumnInfo): string;
+  getColumnWhere(column: ColumnInfo): string;
   filterAllowedColumns?(columns: ColumnInfo[], role: Role): ColumnInfo[];
   getColumns(org: Org, includeRelationships?: boolean, version?: string): Promise<ColumnInfo[]>;
   buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]): Promise<SelectQueryBuilder<T>>;
@@ -50,6 +51,10 @@ export class EntityService<T extends IEntity> {
 
   getColumnSelect(column: ColumnInfo) {
     return this.entity.getColumnSelect(column);
+  }
+
+  getColumnWhere(column: ColumnInfo) {
+    return this.entity.getColumnWhere(column);
   }
 
   getColumns(org: Org, includeRelationships?: boolean, version?: string): Promise<ColumnInfo[]> {
@@ -160,7 +165,7 @@ export class EntityService<T extends IEntity> {
     if (!Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected array value for ${getFullyQualifiedColumnName(column)}.`);
     }
-    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
     return queryBuilder.andWhere(`${columnSelect} ${op} (:...${column.name})`, {
       [column.name]: value.map(v => formatColumnValue(v, column)),
     });
@@ -174,7 +179,7 @@ export class EntityService<T extends IEntity> {
     if (!Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected array value for ${getFullyQualifiedColumnName(column)}.`);
     }
-    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
     return queryBuilder.andWhere(`${columnSelect} BETWEEN (:${minKey}) AND (:${maxKey})`, {
       [minKey]: formatColumnValue(value[0], column),
       [maxKey]: formatColumnValue(value[1], column),
@@ -189,7 +194,7 @@ export class EntityService<T extends IEntity> {
     }
     const prefix = op !== 'startsWith' ? '%' : '';
     const suffix = op !== 'endsWith' ? '%' : '';
-    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
     return queryBuilder.andWhere(`${columnSelect} LIKE :${column.name}`, {
       [column.name]: `${prefix}${value}${suffix}`.toLowerCase(),
     });
@@ -201,7 +206,7 @@ export class EntityService<T extends IEntity> {
     if (Array.isArray(value)) {
       throw new BadRequestError(`Malformed search query. Expected scalar value for ${column.name}.`);
     }
-    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
     if (expressionRef) {
       return queryBuilder.andWhere(`${columnSelect} ${op} ${expressionRef}`);
     }
@@ -213,7 +218,7 @@ export class EntityService<T extends IEntity> {
 
   whereNull(queryBuilder: SelectQueryBuilder<T>, column: ColumnInfo, filterConfigItem: FilterConfigItem) {
     const { op } = filterConfigItem;
-    const columnSelect = formatColumnSelect(this.getColumnSelect(column), column);
+    const columnSelect = formatColumnSelect(this.getColumnWhere(column), column);
     const nullOrNot = op === 'null' ? 'NULL' : 'NOT NULL';
     return queryBuilder.andWhere(`${columnSelect} IS ${nullOrNot}`);
   }

@@ -56,6 +56,10 @@ export class RosterHistory extends RosterEntity {
     return getColumnSelect(column, 'roster');
   }
 
+  static getColumnWhere(column: ColumnInfo) {
+    return getColumnSelect(column, 'roster');
+  }
+
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     //
     // Query the roster, returning only columns and rows that are allowed for the role of the requester.
