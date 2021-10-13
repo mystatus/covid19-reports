@@ -15,11 +15,12 @@ export type EntityActionColumnProps = {
   rows: EntityTableRow<any>[];
   row: EntityTableRow<any>;
   renderAs: EntityActionRenderAs;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement | HTMLLIElement>) => void;
   onComplete?: () => void;
 };
 
 export function EntityActionColumnElement(props: EntityActionColumnProps) {
-  const { action, columns, rows, row, renderAs, onComplete } = props;
+  const { action, columns, rows, row, renderAs, onClick, onComplete } = props;
 
   if (!action) {
     return <div>Err: Action Not Found</div>;
@@ -32,6 +33,7 @@ export function EntityActionColumnElement(props: EntityActionColumnProps) {
           action={action}
           row={row}
           renderAs={renderAs}
+          onClick={onClick}
           onComplete={onComplete}
         />
       );
@@ -41,6 +43,7 @@ export function EntityActionColumnElement(props: EntityActionColumnProps) {
           action={action}
           columns={columns}
           row={row}
+          onClick={onClick}
           onComplete={onComplete}
         />
       );
@@ -53,6 +56,7 @@ export function EntityActionColumnElement(props: EntityActionColumnProps) {
           rows={rows}
           row={row}
           renderAs={renderAs}
+          onClick={onClick}
           onComplete={onComplete}
         />
       );

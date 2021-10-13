@@ -10,7 +10,7 @@ import { EntityActionTableButtonBakedProps } from '../../../entity-actions/entit
 import { EntityActionButton } from '../entity-action-button';
 
 export function EntityActionRosterAddEntry(props: EntityActionTableButtonBakedProps) {
-  const { action, renderAs, onComplete } = props;
+  const { action, renderAs, onClick, onComplete } = props;
 
   const orgId = useAppSelector(UserSelector.orgId)!;
 
@@ -20,9 +20,13 @@ export function EntityActionRosterAddEntry(props: EntityActionTableButtonBakedPr
     data: rosterColumnInfos,
   } = entityApi.roster.useGetAllowedColumnsInfoQuery({ orgId });
 
-  const handleClick = useCallback(() => {
+  const handleClick = useCallback((event: React.MouseEvent<HTMLButtonElement | HTMLLIElement>) => {
+    if (onClick) {
+      onClick(event);
+    }
+
     setDialogOpen(true);
-  }, []);
+  }, [onClick]);
 
   const handleClose = useCallback(() => {
     setDialogOpen(false);

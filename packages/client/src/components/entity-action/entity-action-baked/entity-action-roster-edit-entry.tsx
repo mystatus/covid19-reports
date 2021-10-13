@@ -10,7 +10,7 @@ import { EntityActionColumnButtonBakedProps } from '../../../entity-actions/enti
 import { EntityActionButton } from '../entity-action-button';
 
 export function EntityActionRosterEditEntry(props: EntityActionColumnButtonBakedProps<'roster'>) {
-  const { action, row, renderAs, onComplete } = props;
+  const { action, row, renderAs, onClick, onComplete } = props;
 
   const orgId = useAppSelector(UserSelector.orgId)!;
 
@@ -20,9 +20,13 @@ export function EntityActionRosterEditEntry(props: EntityActionColumnButtonBaked
     data: rosterColumnInfos,
   } = entityApi.roster.useGetAllowedColumnsInfoQuery({ orgId });
 
-  const handleClick = useCallback(() => {
+  const handleClick = useCallback((event: React.MouseEvent<HTMLButtonElement | HTMLLIElement>) => {
+    if (onClick) {
+      onClick(event);
+    }
+
     setDialogOpen(true);
-  }, []);
+  }, [onClick]);
 
   const handleClose = useCallback(() => {
     setDialogOpen(false);

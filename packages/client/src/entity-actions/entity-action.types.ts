@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   ColumnInfo,
   EntityType,
@@ -89,11 +90,13 @@ export type EntityActionColumnButtonBakedProps<TEntityType extends EntityType> =
   row: EntityTableRow<TEntityType>;
   rows: EntityTableRow<TEntityType>[];
   renderAs: EntityActionRenderAs;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement | HTMLLIElement>) => void;
   onComplete?: () => void;
 };
 
 export type EntityActionTableButtonBakedProps = {
   action: EntityActionTableButtonItemBaked;
   renderAs: EntityActionRenderAs;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement | HTMLLIElement>) => void;
   onComplete?: () => void;
 };

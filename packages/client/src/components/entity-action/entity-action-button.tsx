@@ -9,7 +9,7 @@ import { ButtonWithSpinner } from '../buttons/button-with-spinner';
 export type EntityActionButtonProps = {
   action: EntityActionButtonItem;
   renderAs: EntityActionRenderAs;
-  onClick?: () => void;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement | HTMLLIElement>) => void;
   loading?: boolean;
 };
 
@@ -37,6 +37,6 @@ export function EntityActionButton(props: EntityActionButtonProps) {
         </MenuItem>
       );
     default:
-      return <div>Err: Unknown 'renderAs' value</div>;
+      return <div>Err: Unknown renderAs value</div>;
   }
 }

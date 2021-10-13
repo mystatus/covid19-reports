@@ -73,13 +73,14 @@ export function EntityActionSelector(props: EntityActionSelectorProps) {
         anchorEl={menuAnchorEl}
         open={!!menuAnchorEl}
         onClose={handleClose}
+        keepMounted
       >
         {entityActions.map(action => (
           <EntityActionTableElement
             key={action.id}
             action={action}
             renderAs="menuItem"
-            onComplete={handleClose}
+            onClick={handleClose}
           />
         ))}
       </Menu>

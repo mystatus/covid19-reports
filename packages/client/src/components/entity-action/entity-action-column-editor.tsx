@@ -23,11 +23,12 @@ export type EntityActionColumnEditorProps = {
   action: EntityActionColumnEditorItem;
   columns: ColumnInfo[];
   row: { [columnName: string]: ColumnValue } & { id: number };
+  onClick?: (event: React.MouseEvent<HTMLButtonElement | HTMLLIElement>) => void;
   onComplete?: () => void;
 };
 
 export function EntityActionColumnEditor(props: EntityActionColumnEditorProps) {
-  const { action, columns, row, onComplete } = props;
+  const { action, columns, row, onClick, onComplete } = props;
 
   const orgId = useAppSelector(UserSelector.orgId)!;
 
@@ -62,7 +63,11 @@ export function EntityActionColumnEditor(props: EntityActionColumnEditorProps) {
   //  custom or generic ('op' doesn't make sense here for example).
   const [queryRows, setQueryRows] = useState<QueryRow[] | undefined>(getInitialQueryRows);
 
-  const handleSaveClick = useCallback(async () => {
+  const handleSaveClick = useCallback(async (event: React.MouseEvent<HTMLButtonElement | HTMLLIElement>) => {
+    if (onClick) {
+      onClick(event);
+    }
+
     if (!queryRows?.length) {
       return;
     }
@@ -86,7 +91,7 @@ export function EntityActionColumnEditor(props: EntityActionColumnEditorProps) {
     if (onComplete) {
       onComplete();
     }
-  }, [action.operation.type, onComplete, orgId, patchEntity, queryRows, row.id]);
+  }, [action.operation.type, onClick, onComplete, orgId, patchEntity, queryRows, row.id]);
 
   const hasChanges = useMemo(() => {
     if (!queryRows?.length) {

@@ -15,11 +15,12 @@ export type EntityActionColumnButtonProps = {
   action: EntityActionColumnButtonItem;
   row: { [columnName: string]: ColumnValue } & { id: number };
   renderAs: EntityActionRenderAs;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement | HTMLLIElement>) => void;
   onComplete?: () => void;
 };
 
 export function EntityActionColumnButton(props: EntityActionColumnButtonProps) {
-  const { action, row, renderAs, onComplete } = props;
+  const { action, row, renderAs, onClick, onComplete } = props;
 
   const orgId = useAppSelector(UserSelector.orgId)!;
 
@@ -28,7 +29,11 @@ export function EntityActionColumnButton(props: EntityActionColumnButtonProps) {
     isLoading: patchEntityIsLoading,
   }] = entityApi[action.entityType].usePatchEntityMutation();
 
-  const handleClick = useCallback(async () => {
+  const handleClick = useCallback(async (event: React.MouseEvent<HTMLButtonElement | HTMLLIElement>) => {
+    if (onClick) {
+      onClick(event);
+    }
+
     if (action.operation.type === 'editorValue') {
       throw new Error(`ActionColumnButton cannot have action operation of type 'editorValue'`);
     }
@@ -48,7 +53,7 @@ export function EntityActionColumnButton(props: EntityActionColumnButtonProps) {
     if (onComplete) {
       onComplete();
     }
-  }, [action.operation, onComplete, orgId, patchEntity, row.id]);
+  }, [action.operation, onClick, onComplete, orgId, patchEntity, row.id]);
 
   useEffectError(patchEntityError, 'Patch Entity', 'Failed to patch entity');
 

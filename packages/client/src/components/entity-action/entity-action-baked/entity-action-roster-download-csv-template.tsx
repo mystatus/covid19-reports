@@ -12,12 +12,16 @@ import { Modal } from '../../../actions/modal.actions';
 import { EntityActionButton } from '../entity-action-button';
 
 export function EntityActionRosterDownloadCsvTemplate(props: EntityActionTableButtonBakedProps) {
-  const { action, renderAs, onComplete } = props;
+  const { action, renderAs, onClick, onComplete } = props;
   const dispatch = useAppDispatch();
 
   const orgId = useAppSelector(UserSelector.orgId)!;
 
-  const handleClick = useCallback(async () => {
+  const handleClick = useCallback(async (event: React.MouseEvent<HTMLButtonElement | HTMLLIElement>) => {
+    if (onClick) {
+      onClick(event);
+    }
+
     try {
       const data = await RosterClient.getRosterTemplate(orgId);
       downloadFile(data, 'roster-template', 'csv');
@@ -28,7 +32,7 @@ export function EntityActionRosterDownloadCsvTemplate(props: EntityActionTableBu
     if (onComplete) {
       onComplete();
     }
-  }, [dispatch, onComplete, orgId]);
+  }, [dispatch, onClick, onComplete, orgId]);
 
   return (
     <EntityActionButton

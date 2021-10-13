@@ -13,12 +13,16 @@ import { ExportClient } from '../../../client/export.client';
 import { EntityActionButton } from '../entity-action-button';
 
 export function EntityActionRosterExportCsv(props: EntityActionTableButtonBakedProps) {
-  const { action, renderAs, onComplete } = props;
+  const { action, renderAs, onClick, onComplete } = props;
   const dispatch = useAppDispatch();
 
   const org = useAppSelector(UserSelector.org)!;
 
-  const handleClick = useCallback(async () => {
+  const handleClick = useCallback(async (event: React.MouseEvent<HTMLButtonElement | HTMLLIElement>) => {
+    if (onClick) {
+      onClick(event);
+    }
+
     try {
       const data = await ExportClient.exportRosterToCsv(org.id);
       const date = new Date().toISOString();
@@ -31,7 +35,7 @@ export function EntityActionRosterExportCsv(props: EntityActionTableButtonBakedP
     if (onComplete) {
       onComplete();
     }
-  }, [dispatch, onComplete, org.id, org.name]);
+  }, [dispatch, onClick, onComplete, org.id, org.name]);
 
   return (
     <EntityActionButton

@@ -1,4 +1,6 @@
 import React, {
+  useCallback,
+  useEffect,
   useState,
 } from 'react';
 import {
@@ -28,6 +30,7 @@ import {
   ColumnInfo,
   ColumnType,
   CustomColumnConfigEnum,
+  ColumnValue,
 } from '@covid19-reports/shared';
 import useStyles from './edit-roster-entry-dialog.style';
 import {
@@ -61,12 +64,17 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   } = props;
 
   const hiddenEditFields = ['unit'];
-
   const existingRosterEntry: boolean = !!props.rosterEntry;
+
+  const getInitialRosterEntry = useCallback(() => {
+    const rosterEntryData = existingRosterEntry ? props.rosterEntry : prepopulated;
+    return { ...rosterEntryData } as ApiRosterEntry;
+  }, [existingRosterEntry, prepopulated, props.rosterEntry]);
+
   const [formDisabled, setFormDisabled] = useState(false);
   const [saveRosterEntryLoading, setSaveRosterEntryLoading] = useState(false);
   const [unitChangedPromptOpen, setUnitChangedPromptOpen] = useState(false);
-  const [rosterEntry, setRosterEntryProperties] = useState(existingRosterEntry ? props.rosterEntry as ApiRosterEntry : (prepopulated ?? {}) as ApiRosterEntry);
+  const [rosterEntry, setRosterEntry] = useState(getInitialRosterEntry);
   const originalUnit = props.rosterEntry?.unit ?? prepopulated?.unit;
 
   const [addEntity, {
@@ -80,8 +88,13 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   useEffectError(addEntityError, 'Add Entity', 'Failed to add entity');
   useEffectError(patchEntityError, 'Patch Entity', 'Failed to patch entity');
 
-  function updateRosterEntryProperty(property: string, value: any) {
-    setRosterEntryProperties({
+  // Make sure we reset state on open, in case the dialog has stayed mounted.
+  useEffect(() => {
+    setRosterEntry(getInitialRosterEntry());
+  }, [getInitialRosterEntry, open]);
+
+  function updateRosterEntryProperty(property: string, value: ColumnValue) {
+    setRosterEntry({
       ...rosterEntry,
       [property]: value,
     });
@@ -101,7 +114,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   };
 
   const onDateFieldChanged = (columnName: string) => (date: MaterialUiPickersDate) => {
-    updateRosterEntryProperty(columnName, date?.toISOString());
+    updateRosterEntryProperty(columnName, date?.toISOString() ?? null);
   };
 
   const onUnitChanged = (event: React.ChangeEvent<{ value: unknown }>) => {

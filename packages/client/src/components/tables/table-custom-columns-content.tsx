@@ -244,6 +244,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
                     anchorEl={rowMenu.anchor}
                     open={row.id === rowMenu.row?.id}
                     onClose={handleRowMenuClose}
+                    keepMounted
                   >
                     {rowMenuActions.map(action => (
                       <EntityActionColumnElement
@@ -253,7 +254,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
                         rows={rows}
                         row={row}
                         renderAs="menuItem"
-                        onComplete={handleRowMenuClose}
+                        onClick={handleRowMenuClose}
                       />
                     ))}
                   </Menu>

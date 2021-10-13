@@ -12,7 +12,7 @@ import { RosterClient } from '../../../client/roster.client';
 import { EntityActionButton } from '../entity-action-button';
 
 export function EntityActionRosterUploadCsv(props: EntityActionTableButtonBakedProps) {
-  const { action, renderAs, onComplete } = props;
+  const { action, renderAs, onClick, onComplete } = props;
   const dispatch = useAppDispatch();
 
   const org = useAppSelector(UserSelector.org)!;
@@ -63,6 +63,7 @@ export function EntityActionRosterUploadCsv(props: EntityActionTableButtonBakedP
         <EntityActionButton
           action={action}
           renderAs={renderAs}
+          onClick={onClick}
         />
       </label>
     </>

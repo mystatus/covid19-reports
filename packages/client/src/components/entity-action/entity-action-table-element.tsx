@@ -1,18 +1,9 @@
 import React from 'react';
-import {
-  EntityActionRenderAs,
-  EntityActionTableButtonItemBaked,
-} from '../../entity-actions/entity-action.types';
+import { EntityActionTableButtonBakedProps } from '../../entity-actions/entity-action.types';
 import { entityActionBakedTableComponents } from '../../entity-actions/entity-action-baked';
 
-export type EntityActionTableElementProps = {
-  action: EntityActionTableButtonItemBaked | undefined;
-  renderAs: EntityActionRenderAs;
-  onComplete?: () => void;
-};
-
-export function EntityActionTableElement(props: EntityActionTableElementProps) {
-  const { action, renderAs, onComplete } = props;
+export function EntityActionTableElement(props: EntityActionTableButtonBakedProps) {
+  const { action, renderAs, onClick, onComplete } = props;
 
   if (!action) {
     return <div>Err: Action Not Found</div>;
@@ -25,6 +16,7 @@ export function EntityActionTableElement(props: EntityActionTableElementProps) {
     <EntityActionTableBakedButton
       action={action}
       renderAs={renderAs}
+      onClick={onClick}
       onComplete={onComplete}
     />
   );
