@@ -185,11 +185,16 @@ export default function View(props: ViewProps) {
   }, [columns]);
 
   const handleChangeFilterQueryRows = useCallback((queryRowsNew: QueryRow[]) => {
+    setEntitiesQuery({
+      ...entitiesQuery,
+      page: '0',
+    });
+
     setCurrentFilter({
       ...currentFilter,
       config: queryRowsToFilterConfig(queryRowsNew),
     });
-  }, [setCurrentFilter, currentFilter]);
+  }, [setEntitiesQuery, entitiesQuery, setCurrentFilter, currentFilter]);
 
   const handleSortChanged = useCallback((column: TableColumn, direction: SortDirection) => {
     setEntitiesQuery({
@@ -285,7 +290,12 @@ export default function View(props: ViewProps) {
     if (filter.id === customFilterId) {
       setFilterEditorOpen(true);
     }
-  }, [setSelectedFilterId, setCurrentFilter, setFilterEditorOpen]);
+
+    setEntitiesQuery({
+      ...entitiesQuery,
+      page: '0',
+    });
+  }, [setEntitiesQuery, entitiesQuery, setSelectedFilterId, setCurrentFilter, setFilterEditorOpen]);
 
   const handleFilterDuplicateClick = useCallback((filter: SavedFilterSerialized) => {
     setNewFilter({ ...filter });
