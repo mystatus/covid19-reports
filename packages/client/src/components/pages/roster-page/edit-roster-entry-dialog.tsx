@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 import {
@@ -48,7 +49,7 @@ import { useEffectError } from '../../../hooks/use-effect-error';
 export interface EditRosterEntryDialogProps {
   open: boolean;
   orgId?: number;
-  rosterColumnInfos?: ColumnInfo[];
+  rosterColumnInfos: ColumnInfo[];
   rosterEntry?: ApiRosterEntry;
   prepopulated?: Partial<ApiRosterEntry>;
   orphanedRecord?: Partial<ApiOrphanedRecord>;
@@ -77,6 +78,11 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   const [rosterEntry, setRosterEntry] = useState(getInitialRosterEntry);
   const originalUnit = props.rosterEntry?.unit ?? prepopulated?.unit;
 
+  const columnInfos = useMemo(() => {
+    // Filter out any join/aggregate columns, since we shouldn't be able to edit those.
+    return rosterColumnInfos.filter(column => column.table == null);
+  }, [rosterColumnInfos]);
+
   const [addEntity, {
     error: addEntityError,
   }] = entityApi.roster.useAddEntityMutation();
@@ -90,6 +96,9 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
 
   // Make sure we reset state on open, in case the dialog has stayed mounted.
   useEffect(() => {
+    setFormDisabled(false);
+    setSaveRosterEntryLoading(false);
+    setUnitChangedPromptOpen(false);
     setRosterEntry(getInitialRosterEntry());
   }, [getInitialRosterEntry, open]);
 
@@ -180,11 +189,11 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   };
 
   const canSave = () => {
-    if (formDisabled || !rosterColumnInfos) {
+    if (formDisabled || !columnInfos) {
       return false;
     }
 
-    const requiredColumns = rosterColumnInfos.filter(columnInfo => columnInfo.required);
+    const requiredColumns = columnInfos.filter(columnInfo => columnInfo.required);
     if (requiredColumns) {
       for (const column of requiredColumns) {
         const value = rosterEntry[column.name] as string;
@@ -213,7 +222,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   };
 
   const buildCheckboxFields = () => {
-    const columns = rosterColumnInfos?.filter(columnInfo => {
+    const columns = columnInfos.filter(columnInfo => {
       return columnInfo.type === 'boolean' && hiddenEditFields.indexOf(columnInfo.name) < 0;
     });
     if (!columns || columns.length === 0) {
@@ -338,7 +347,7 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
   };
 
   const buildInputFields = () => {
-    const columns = rosterColumnInfos?.filter(columnInfo => {
+    const columns = columnInfos.filter(columnInfo => {
       return columnInfo.type !== 'boolean' && hiddenEditFields.indexOf(columnInfo.name) < 0;
     });
     return columns?.map(columnInfo => (
@@ -419,11 +428,11 @@ export const EditRosterEntryDialog = (props: EditRosterEntryDialogProps) => {
           Are you sure you want to move the individual to {getUnitName(rosterEntry.unit)}?
         </DialogContent>
         <DialogActions className={classes.unitChangedDialogActions}>
-          <Button onClick={() => onSave()} color="primary">
-            Yes
-          </Button>
           <Button variant="outlined" onClick={cancelUnitChangedDialog} color="primary">
             No
+          </Button>
+          <Button onClick={() => onSave()} color="primary">
+            Yes
           </Button>
         </DialogActions>
       </Dialog>

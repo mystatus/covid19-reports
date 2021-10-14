@@ -44,14 +44,16 @@ export function EntityActionRosterEditEntry(props: EntityActionColumnButtonBaked
         onClick={handleClick}
       />
 
-      <EditRosterEntryDialog
-        open={dialogOpen}
-        orgId={orgId}
-        rosterColumnInfos={rosterColumnInfos}
-        rosterEntry={row}
-        prepopulated={row}
-        onClose={handleClose}
-      />
+      {rosterColumnInfos && (
+        <EditRosterEntryDialog
+          open={dialogOpen}
+          orgId={orgId}
+          rosterColumnInfos={rosterColumnInfos}
+          rosterEntry={row}
+          prepopulated={row}
+          onClose={handleClose}
+        />
+      )}
     </>
   );
 }
