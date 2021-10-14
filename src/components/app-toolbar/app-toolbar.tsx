@@ -5,6 +5,7 @@ import { ArrowDropDown, Settings } from '@material-ui/icons';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Md5 } from 'ts-md5/dist/md5';
+import Alert from '@material-ui/lab/Alert';
 import { Link } from '../link/link';
 import { User } from '../../actions/user.actions';
 import { UserState } from '../../reducers/user.reducer';
@@ -39,6 +40,7 @@ export const AppToolbar = () => {
       >
         <Toolbar className={classes.toolbar}>
           <img className={classes.logo} src={logoImage} alt="StatusEngine Logo" height="35" />
+          <Alert severity="error">Please be advised that the Status Engine service will be terminated at 1200 ET on October 18th.</Alert>
           <div className={classes.spacer} />
           {user.activeRole && user.userRoles && (
             <>
