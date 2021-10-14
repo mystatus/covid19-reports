@@ -9,6 +9,7 @@ import {
 } from './entity-action.types';
 import { EntityActionRosterExportCsv } from '../components/entity-action/entity-action-baked/entity-action-roster-export-csv';
 import { EntityActionRosterUploadCsv } from '../components/entity-action/entity-action-baked/entity-action-roster-upload-csv';
+import { EntityActionRosterDeleteEntry } from '../components/entity-action/entity-action-baked/entity-action-roster-delete-entry';
 
 export type EntityActionBakedTableItemIds =
   | 'actionRosterAddEntry'
@@ -54,7 +55,8 @@ export const entityActionBakedTableItems: {
 } as const;
 
 export type EntityActionBakedColumnItemIds =
-  | 'actionRosterEditEntry';
+  | 'actionRosterEditEntry'
+  | 'actionRosterDeleteEntry';
 
 export const entityActionBakedColumnItems: {
   [K in EntityActionBakedColumnItemIds]: EntityActionColumnItem;
@@ -64,6 +66,14 @@ export const entityActionBakedColumnItems: {
     id: 'actionRosterEditEntry',
     entityType: 'roster',
     displayName: 'Edit Roster Entry',
+    operation: undefined,
+    requiredPermissions: ['canManageRoster'],
+  },
+  actionRosterDeleteEntry: {
+    type: 'column-button-item-baked',
+    id: 'actionRosterDeleteEntry',
+    entityType: 'roster',
+    displayName: 'Delete Roster Entry',
     operation: undefined,
     requiredPermissions: ['canManageRoster'],
   },
@@ -82,4 +92,5 @@ export const entityActionBakedColumnComponents: {
   [K in EntityActionBakedColumnItemIds]: (props: EntityActionColumnButtonBakedProps<any>) => JSX.Element;
 } = {
   actionRosterEditEntry: EntityActionRosterEditEntry,
+  actionRosterDeleteEntry: EntityActionRosterDeleteEntry,
 } as const;
