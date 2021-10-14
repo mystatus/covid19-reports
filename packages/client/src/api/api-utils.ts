@@ -109,5 +109,16 @@ function buildEntityEndpoints<TEntity extends EntityType, TEntityData extends En
       }),
       invalidatesTags: [entityType],
     }),
+
+    deleteEntity: build.mutation<TEntityData, {
+      orgId: number;
+      entityId: number;
+    }>({
+      query: ({ orgId, entityId }) => ({
+        url: `${orgId}/${entityId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [entityType],
+    }),
   };
 }
