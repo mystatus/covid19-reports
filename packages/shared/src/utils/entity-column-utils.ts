@@ -33,9 +33,9 @@ export function getFullyQualifiedColumnName(column: FullyQualifiedColumnNamePart
 }
 
 export function getFullyQualifiedColumnNameParts(fullyQualifiedName: string): FullyQualifiedColumnNameParts {
-  const parts = fullyQualifiedName.split(delimiters.table);
+  let parts = fullyQualifiedName.split(delimiters.table);
   if (parts.length < 1 && parts.length > 2) {
-    throw new Error('Column path must be in format {table}.{columnName}');
+    parts = [fullyQualifiedName];
   }
 
   return parts.length === 1
@@ -106,11 +106,8 @@ export function friendlyColumnValue<T extends Record<string, any>>(
   entity: T,
   column: Pick<ColumnInfo, 'type' | 'config' | 'table' | 'name'>,
 ) {
-  const name = getFullyQualifiedColumnName(column);
-  const value = entity[name];
-  if (value == null) {
-    return '';
-  }
+  const name = entity[getFullyQualifiedColumnName(column)];
+  const value = name ?? entity[column.name];
   switch (column.type) {
     case ColumnType.Date:
       return moment(value as string).format('l');
