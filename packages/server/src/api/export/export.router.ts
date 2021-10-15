@@ -10,12 +10,14 @@ const router = Router() as any;
 router.get(
   '/:orgId/sql',
   requireOrgAccess,
+  requireRolePermission(role => role.canViewObservation),
   controller.exportOrgToCsv,
 );
 
 router.get(
   '/:orgId/roster/sql',
   requireOrgAccess,
+  requireRolePermission(role => role.canViewRoster),
   controller.exportRosterToCsv,
 );
 

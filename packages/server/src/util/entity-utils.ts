@@ -9,7 +9,7 @@ import {
   getFullyQualifiedColumnName,
   GetEntitiesQuery,
   Paginated,
-  QueryOp,
+  QueryOp, GetAllowedColumnsQuery,
 } from '@covid19-reports/shared';
 import bodyParser from 'body-parser';
 import { Response } from 'express';
@@ -110,9 +110,12 @@ export class EntityService<T extends IEntity> {
       });
 
     const pagedQuery = queryBuilder
-      .clone()
-      .offset(page * limit)
-      .limit(limit);
+      .clone();
+    if (limit > 0) {
+      pagedQuery
+        .offset(page * limit)
+        .limit(limit);
+    }
 
     const sortColumn = allowedColumns.find(column => column.name === orderBy);
     if (sortColumn) {
@@ -245,8 +248,9 @@ export class EntityController<T = any> {
     this.service = new EntityService(entityConstructor);
   }
 
-  getAllowedColumns = async (req: ApiRequest<AllowedColumnsParam>, res: Response<ColumnInfo[]>) => {
-    const columns = this.service.filterAllowedColumns(await this.entityConstructor.getColumns(req.appOrg!, true, req.params.version), req.appUserRole!.role);
+  getAllowedColumns = async (req: ApiRequest<AllowedColumnsParam, null, GetAllowedColumnsQuery>, res: Response<ColumnInfo[]>) => {
+    const includeRelationships = req.query.includeRelationships !== 'false'; // undefined should default to true
+    const columns = this.service.filterAllowedColumns(await this.entityConstructor.getColumns(req.appOrg!, includeRelationships, req.params.version), req.appUserRole!.role);
     res.json(columns);
   };
 
