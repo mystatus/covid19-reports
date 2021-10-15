@@ -41,7 +41,6 @@ import { Observation } from '../observation/observation.model';
 import { Roster } from '../roster/roster.model';
 import { ChangeType, RosterHistory } from '../roster/roster-history.model';
 import { ReportSchema } from '../report-schema/report-schema.model';
-import { Unit } from '../unit/unit.model';
 import { MusterConfiguration } from './muster-config.model';
 import { SavedFilter } from '../saved-filter/saved-filter.model';
 import { MusterFilter } from './muster-filter.model';
@@ -218,7 +217,6 @@ class MusterController {
         .createQueryBuilder()
         .select('roster.edipi')
         .addSelect(`to_timestamp(${timestamp})`)
-        .addSelect('roster.unit_name')
         .addSelect(org.reportingGroup ? `'${org.reportingGroup}'` : 'NULL')
         .addSelect(`'${window.configuration.reportSchema!.id}'`)
         .addSelect(`${org.id}`)
@@ -230,9 +228,7 @@ class MusterController {
           return qb.select()
             .distinctOn(['rh.edipi'])
             .addSelect('rh.*')
-            .addSelect('u.name', 'unit_name')
             .from(RosterHistory, 'rh')
-            .leftJoin(Unit, 'u', 'rh.unit_id = u.id')
             .where(`rh.timestamp <= to_timestamp(${timestamp})`)
             .orderBy('rh.edipi')
             .addOrderBy('rh.timestamp', 'DESC');
@@ -269,7 +265,7 @@ class MusterController {
       const selectQuery = queryBuilder.getQuery();
 
       await getConnection().query(`
-      INSERT INTO observation(edipi, timestamp, unit, reporting_group, report_schema_id, report_schema_org,
+      INSERT INTO observation(edipi, timestamp, reporting_group, report_schema_id, report_schema_org,
                               muster_window_id, muster_status, muster_configuration_id, roster_history_entry_id)
       ${selectQuery}
       `, allParams);

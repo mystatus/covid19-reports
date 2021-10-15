@@ -151,6 +151,9 @@ async function setRoleFromBody(org: Org, role: Role, body: UpdateRoleBody) {
   if (body.canManageRoster != null) {
     role.canManageRoster = body.canManageRoster;
   }
+  if (body.canViewObservation != null) {
+    role.canViewObservation = body.canViewObservation;
+  }
   if (body.canViewRoster != null) {
     role.canViewRoster = body.canViewRoster;
   }

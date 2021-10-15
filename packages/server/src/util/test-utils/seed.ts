@@ -321,6 +321,7 @@ function createGroupAdminRole(org: Org) {
     allowedNotificationEvents: ['*'],
     canManageGroup: true,
     canManageRoster: true,
+    canViewObservation: true,
     canViewMuster: true,
     canViewPII: true,
     canViewRoster: true,

@@ -41,7 +41,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   const classes = useStyles();
 
   const notifications = useAppSelector(NotificationSelector.all);
-  const { data: rosterColumns } = rosterApi.useGetAllowedColumnsInfoQuery({ orgId: orgId! });
+  const { data: rosterColumns } = rosterApi.useGetAllowedColumnsInfoQuery({ orgId: orgId!, includeRelationships: false });
 
   const [formDisabled, setFormDisabled] = useState(false);
 
@@ -57,6 +57,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
   }) || [], role?.allowedNotificationEvents));
   const [canManageGroup, setCanManageGroup] = useState(role ? role.canManageGroup : false);
   const [canManageRoster, setCanManageRoster] = useState(role ? role.canManageRoster : false);
+  const [canViewObservation, setCanViewObservation] = useState(role ? role.canViewObservation : false);
   const [canViewRoster, setCanViewRoster] = useState(role ? role.canViewRoster : false);
   const [canViewMuster, setCanViewMuster] = useState(role ? role.canViewMuster : false);
   const [canViewPII, setCanViewPII] = useState(role ? role.canViewPII : false);
@@ -112,6 +113,7 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
       allowedNotificationEvents: permissionsToArray(allowedNotificationEvents),
       canManageGroup,
       canManageRoster: canManageGroup || canManageRoster,
+      canViewObservation: canManageGroup || canViewObservation,
       canViewRoster: canManageGroup || canManageRoster || canViewRoster,
       canViewMuster: canManageGroup || canViewMuster,
       canViewPII: canViewPII || canViewPHI,
@@ -241,6 +243,17 @@ export const EditRoleDialog = (props: EditRoleDialogProps) => {
                       disabled={formDisabled || canManageGroup}
                       checked={canManageGroup || canViewMuster}
                       onChange={onPermissionChanged(setCanViewMuster)}
+                    />
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>View Observations</TableCell>
+                  <TableCell>
+                    <Checkbox
+                      color="primary"
+                      disabled={formDisabled || canManageGroup}
+                      checked={canManageGroup || canViewObservation}
+                      onChange={onPermissionChanged(setCanViewObservation)}
                     />
                   </TableCell>
                 </TableRow>

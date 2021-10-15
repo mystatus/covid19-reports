@@ -59,7 +59,7 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
   const orgId = useAppSelector(UserSelector.org)!.id;
   const availableNotifications = useAppSelector(NotificationSelector.all);
 
-  const { data: rosterColumns } = entityApi.roster.useGetAllowedColumnsInfoQuery({ orgId });
+  const { data: rosterColumns } = entityApi.roster.useGetAllowedColumnsInfoQuery({ orgId, includeRelationships: false });
 
   const initializeTable = React.useCallback(() => {
     if (orgId) {
@@ -95,6 +95,7 @@ const RoleInfoPanel = (props: RoleInfoPanelProps) => {
                 { label: 'Manage Group', value: role.canManageGroup },
                 { label: 'Manage Roster', value: role.canManageRoster },
                 { label: 'View Roster', value: role.canViewRoster },
+                { label: 'View Observations', value: role.canViewObservation },
                 { label: 'View Muster Reports', value: role.canViewMuster },
                 { label: 'View PII', value: role.canViewPII },
                 { label: 'View PHI', value: role.canViewPHI },

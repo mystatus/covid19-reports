@@ -94,6 +94,15 @@ export class Roster extends RosterEntity {
     return getColumnSelect(column, 'roster');
   }
 
+  static getColumnWhere(column: ColumnInfo) {
+    const raw = Roster.sqlRawColumns.find(c => c.name === column.name);
+    if (raw) {
+      // Use the alias for where clauses
+      return `"${raw.name}"`;
+    }
+    return getColumnSelect(column, 'roster');
+  }
+
   static async buildSearchQuery(org: Org, userRole: UserRole, columns: ColumnInfo[]) {
     //
     // Query the roster, returning only columns and rows that are allowed for the role of the requester.

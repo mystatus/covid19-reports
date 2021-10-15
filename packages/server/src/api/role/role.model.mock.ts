@@ -26,6 +26,7 @@ export function seedRoleBasicUser(org: Org) {
     customData: {
       allowedRosterColumns: ['edipi', 'firstName', 'lastName'],
       allowedNotificationEvents: [],
+      canViewObservation: true,
       canViewRoster: true,
       canViewMuster: true,
     },
@@ -39,6 +40,7 @@ export function seedRoleAdmin(org: Org) {
       allowedNotificationEvents: ['*'],
       canManageGroup: true,
       canManageRoster: true,
+      canViewObservation: true,
       canViewRoster: true,
       canViewMuster: true,
       canViewPII: true,

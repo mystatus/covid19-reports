@@ -90,6 +90,10 @@ export class Observation extends BaseEntity {
     return getColumnSelect(column, 'observation');
   }
 
+  static getColumnWhere(column: ColumnInfo) {
+    return getColumnSelect(column, 'observation');
+  }
+
   static async getColumns(org: Org, includeRelationships?: boolean, version?: string) {
     const reportSchema = await ReportSchema.findOne({
       where: {

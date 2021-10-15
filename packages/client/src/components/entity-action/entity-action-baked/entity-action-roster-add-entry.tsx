@@ -18,7 +18,7 @@ export function EntityActionRosterAddEntry(props: EntityActionTableButtonBakedPr
 
   const {
     data: rosterColumnInfos,
-  } = entityApi.roster.useGetAllowedColumnsInfoQuery({ orgId });
+  } = entityApi.roster.useGetAllowedColumnsInfoQuery({ orgId, includeRelationships: false });
 
   const handleClick = useCallback((event: React.MouseEvent<HTMLButtonElement | HTMLLIElement>) => {
     if (onClick) {

@@ -59,10 +59,11 @@ function buildEntityEndpoints<TEntity extends EntityType, TEntityData extends En
 
     getAllowedColumnsInfo: build.query<ColumnInfo[], {
       orgId: number;
+      includeRelationships?: boolean;
       version?: string;
     }>({
-      query: ({ orgId, version = 'es6ddssymptomobs' }) => {
-        return `${orgId}/allowed-column${(hasVersionedColumns) ? `/${version}` : ''}`;
+      query: ({ orgId, includeRelationships = true, version = 'es6ddssymptomobs' }) => {
+        return `${orgId}/allowed-column${hasVersionedColumns ? `/${version}` : ''}${!includeRelationships ? '?includeRelationships=false' : ''}`;
       },
     }),
 

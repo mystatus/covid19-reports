@@ -128,11 +128,13 @@ export const AppSidenav = () => {
             name="Home"
             icon={(<HomeIcon />)}
           />
-          <SidenavLink
-            to="/data-export"
-            name="Data Export"
-            icon={(<DataExportIcon />)}
-          />
+          {user.activeRole?.role.canViewObservation && (
+            <SidenavLink
+              to="/data-export"
+              name="Data Export"
+              icon={(<DataExportIcon />)}
+            />
+          )}
           {user.activeRole?.role.canViewMuster && (
             <SidenavLink
               to="/muster"
@@ -140,11 +142,13 @@ export const AppSidenav = () => {
               icon={(<PersonCheckIcon />)}
             />
           )}
-          <SidenavLink
-            to="/observations"
-            name="Observations"
-            icon={(<AssignmentIndIcon />)}
-          />
+          {user.activeRole?.role.canViewObservation && (
+            <SidenavLink
+              to="/observations"
+              name="Observations"
+              icon={(<AssignmentIndIcon />)}
+            />
+          )}
           {user.activeRole?.role.canViewRoster && (
             <SidenavLink
               to="/roster"

@@ -5,6 +5,7 @@ export type AddRoleBody = {
   allowedNotificationEvents?: string[];
   canManageGroup?: boolean;
   canManageRoster?: boolean;
+  canViewObservation?: boolean;
   canViewRoster?: boolean;
   canViewMuster?: boolean;
   canViewPII?: boolean;

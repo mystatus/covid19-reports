@@ -20,29 +20,30 @@ export const entityActionRegistryInitialState: EntityActionRegistryState = {
     ...entityActionBakedColumnItems,
 
     // TEST ACTIONS
-    actionRosterAddToRom: {
-      type: 'column-button-item',
-      id: 'actionRosterAddToRom',
-      entityType: 'roster',
-      displayName: 'Add to ROM *test*',
-      operation: {
-        type: 'expression',
-        columnName: 'myCustomColumn1',
-        expressionKey: 'now',
-      },
-      requiredPermissions: ['canManageRoster'],
-    },
-    actionRosterEditMyCustomColumn1: {
-      type: 'column-editor-item',
-      id: 'actionRosterEditMyCustomColumn1',
-      entityType: 'roster',
-      displayName: 'Edit My Custom Column 1 *test*',
-      operation: {
-        type: 'editorValue',
-        columnName: 'myCustomColumn1',
-      },
-      requiredPermissions: ['canManageRoster'],
-    },
+    // The following are examples of how to define actions for roster entries:
+    // actionRosterAddToRom: {
+    //   type: 'column-button-item',
+    //   id: 'actionRosterAddToRom',
+    //   entityType: 'roster',
+    //   displayName: 'Add to ROM *test*',
+    //   operation: {
+    //     type: 'expression',
+    //     columnName: 'myCustomColumn1',
+    //     expressionKey: 'now',
+    //   },
+    //   requiredPermissions: ['canManageRoster'],
+    // },
+    // actionRosterEditMyCustomColumn1: {
+    //   type: 'column-editor-item',
+    //   id: 'actionRosterEditMyCustomColumn1',
+    //   entityType: 'roster',
+    //   displayName: 'Edit My Custom Column 1 *test*',
+    //   operation: {
+    //     type: 'editorValue',
+    //     columnName: 'myCustomColumn1',
+    //   },
+    //   requiredPermissions: ['canManageRoster'],
+    // },
   },
 };
 

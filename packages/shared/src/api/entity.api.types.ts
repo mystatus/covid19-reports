@@ -18,3 +18,7 @@ export type CustomColumnData = {
 };
 
 export type GetEntitiesQuery = PaginatedQuery & SortedQuery & FilteredQuery;
+
+export type GetAllowedColumnsQuery = {
+  includeRelationships?: string;
+};

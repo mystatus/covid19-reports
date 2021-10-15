@@ -7,7 +7,7 @@ import {
   ColumnInfo,
   ColumnType,
   CustomColumnData,
-  edipiColumnDisplayName,
+  edipiColumnDisplayName, GetAllowedColumnsQuery,
   GetEntitiesQuery,
   Paginated,
   RosterEntryData,
@@ -239,8 +239,9 @@ class RosterController {
     res.json(columns);
   }
 
-  async getAllowedRosterColumnsInfo(req: ApiRequest<OrgParam>, res: Response) {
-    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!, true), req.appUserRole!.role);
+  async getAllowedRosterColumnsInfo(req: ApiRequest<OrgParam, null, GetAllowedColumnsQuery>, res: Response) {
+    const includeRelationships = req.query.includeRelationships !== 'false'; // undefined should default to true
+    const columns = Roster.filterAllowedColumns(await Roster.getColumns(req.appOrg!, includeRelationships), req.appUserRole!.role);
     res.json(columns);
   }
 
