@@ -3,7 +3,7 @@ import { Response } from 'express';
 import { json2csvAsync } from 'json-2-csv';
 import {
   ExportOrgQuery,
-  ExportMusterIndividualsQuery, RosterEntryData, FilterConfig,
+  ExportMusterIndividualsQuery, FilterConfig,
 } from '@covid19-reports/shared';
 import {
   ApiRequest,
@@ -11,8 +11,6 @@ import {
 } from '../api.router';
 import { Observation } from '../observation/observation.model';
 import { Roster } from '../roster/roster.model';
-import { RosterHistory } from '../roster/roster-history.model';
-import { Unit } from '../unit/unit.model';
 import { BadRequestError } from '../../util/error-types';
 import { individualMusterComplianceByDateRange } from '../../util/muster-utils';
 import { EntityService } from '../../util/entity-utils';

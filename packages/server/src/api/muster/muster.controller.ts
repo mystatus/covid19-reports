@@ -41,7 +41,6 @@ import { Observation } from '../observation/observation.model';
 import { Roster } from '../roster/roster.model';
 import { ChangeType, RosterHistory } from '../roster/roster-history.model';
 import { ReportSchema } from '../report-schema/report-schema.model';
-import { Unit } from '../unit/unit.model';
 import { MusterConfiguration } from './muster-config.model';
 import { SavedFilter } from '../saved-filter/saved-filter.model';
 import { MusterFilter } from './muster-filter.model';
