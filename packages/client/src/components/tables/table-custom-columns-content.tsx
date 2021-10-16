@@ -118,7 +118,7 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
   }, [columns, defaultSort, sortColumn]);
 
   const columnClicked = (column: TableColumn) => () => {
-    if (!sortable) {
+    if (!sortable || column.action) {
       return;
     }
     let newSortDirection: SortDirection = 'ASC';
@@ -194,13 +194,13 @@ export const TableCustomColumnsContent = (props: TableCustomColumnsContentProps)
                 onClick={columnClicked(column)}
                 key={column.fullyQualifiedName}
                 className={clsx({
-                  [classes.sortableHeader]: sortable,
+                  [classes.sortableHeader]: sortable && !column.action,
                 })}
               >
                 <div>
                   <div>{column.displayName}</div>
                   <div>
-                    {sortColumn === column && (
+                    {sortColumn?.fullyQualifiedName === column.fullyQualifiedName && (
                       sortDirection === 'ASC' ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />
                     )}
                   </div>
